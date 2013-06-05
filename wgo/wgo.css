@@ -1,0 +1,603 @@
+/*--- Basic ------------------------------------------------------------------------*/
+
+.wgo-player-main {
+	font-family: Calibri, Tahoma, Arial;
+	color: black;
+	margin: 0 auto;
+	width: 100%;
+	height: 100%;
+}
+
+.wgo-player-main:after {
+	content: "";
+	clear: both;
+	display: block;
+}
+
+/*--- /Basic -----------------------------------------------------------------------*/
+
+/*--- Regions ----------------------------------------------------------------------*/
+
+.wgo-player-left, .wgo-player-center, .wgo-player-right  {
+	float: left;
+}
+
+.wgo-player-center {
+	width: 100%;
+}
+
+.wgo-player-left-wrapper, .wgo-player-right-wrapper  {
+	height: 100%;
+	position: relative;
+}
+
+/*--- /Regions ----------------------------------------------------------------------*/
+
+/*--- Two columns modificatons ------------------------------------------------------*/
+
+.wgo-twocols .wgo-player-left, .wgo-twocols  .wgo-player-right  {
+	width: 30%;
+}
+
+.wgo-twocols .wgo-player-center {
+	width: 70%;
+}
+
+/*--- /Two columns modificatons ------------------------------------------------------*/
+
+/*--- Board --------------------------------------------------------------------------*/
+
+.wgo-player-board {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+}
+
+.wgo-board {
+	background-color: rgba(150,75,0,0.33);
+	margin: 0 auto;
+	background-image: url("wood1.jpg");
+	background-size: 100% 100%;
+}
+
+/*--- /Board --------------------------------------------------------------------------*/
+
+/*--- Box styles ----------------------------------------------------------------------*/
+
+.wgo-box-wrapper {
+	background: -moz-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%, rgba(219,219,219,0.5) 50%, rgba(209,209,209,0.5) 51%, rgba(254,254,254,0.5) 100%);
+	background: -webkit-gradient(linear, left top, right bottom, color-stop(0%,rgba(226,226,226,0.5)), color-stop(50%,rgba(219,219,219,0.5)), color-stop(51%,rgba(209,209,209,0.5)), color-stop(100%,rgba(254,254,254,0.5)));
+	background: -webkit-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
+	background: -o-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
+	background: -ms-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
+	background: linear-gradient(135deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
+	/*margin: 10px;*/
+	/*outline: 3px solid rgba(200,200,200,0.3);*/
+}
+
+.wgo-box-title {
+	padding: 0 10px;
+	line-height: 40px;
+	font-weight: bold;
+	font-size: 20px;
+	height: 40px;
+	overflow: hidden;
+}
+
+.wgo-box-title:hover {
+	overflow: visible;
+}
+
+.wgo-box-img {
+	float: right;
+	padding: 10px;
+	width: 20px;
+}
+
+.wgo-player-top .wgo-box-img, .wgo-player-bottom .wgo-box-img {
+	float: left;
+}
+
+/*--- /Box styles ----------------------------------------------------------------------*/
+
+/*--- Player box -----------------------------------------------------------------------*/
+
+.wgo-player-name-wrapper {
+	display: table;
+	width: 100%;
+}
+
+.wgo-player-name-cell {
+	display:table-cell; 
+	vertical-align:middle;
+	height: 40px;
+	padding: 0 5px;
+	line-height: 90%;
+	padding-left: 10px;
+	font-weight: bold;
+	font-size: 1.3em;
+}
+
+.wgo-player-info {
+	padding: 0px 2%;
+}
+
+.wgo-player-info-box {
+	width: 23%;
+	padding: 0px 2% 1px 2%;
+	margin: 0 2%;
+	border: 1px solid rgba(200,200,200,0.3);
+	background-color: rgba(255,255,255,0.3);
+	border-radius: 2px;
+	display: inline-block;
+	font-size: 12px;
+	text-align: center;
+}
+
+.wgo-player-info-title {
+	font-size: 11px;
+}
+
+.wgo-player-cap {
+	float:right;
+}
+
+.wgo-player-st {
+	display:table-cell; 
+	margin:5px;
+	
+}
+
+.wgo-player-name-img div {
+	width: 20px;
+	height: 20px;
+	border-radius: 10px;
+	box-shadow: 1px 1px 1px 1px rgba(127, 127, 127, 0.3);
+}
+
+.wgo-black .wgo-player-name-img div {
+	background: rgb(35,36,39);
+	background: -moz-linear-gradient(-45deg,  rgba(35,36,39,1) 0%, rgba(0,0,0,1) 100%);
+	background: -webkit-gradient(linear, left top, right bottom, color-stop(0%,rgba(35,36,39,1)), color-stop(100%,rgba(0,0,0,1)));
+	background: -webkit-linear-gradient(-45deg,  rgba(35,36,39,1) 0%,rgba(0,0,0,1) 100%);
+	background: -o-linear-gradient(-45deg,  rgba(35,36,39,1) 0%,rgba(0,0,0,1) 100%);
+	background: -ms-linear-gradient(-45deg,  rgba(35,36,39,1) 0%,rgba(0,0,0,1) 100%);
+	background: linear-gradient(135deg,  rgba(35,36,39,1) 0%,rgba(0,0,0,1) 100%);
+}
+
+.wgo-white .wgo-player-name-img div {
+	background: rgb(255,255,255);
+	background: -moz-linear-gradient(-45deg,  rgba(255,255,255,1) 0%, rgba(246,246,246,1) 47%, rgba(237,237,237,1) 100%);
+	background: -webkit-gradient(linear, left top, right bottom, color-stop(0%,rgba(255,255,255,1)), color-stop(47%,rgba(246,246,246,1)), color-stop(100%,rgba(237,237,237,1)));
+	background: -webkit-linear-gradient(-45deg,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 47%,rgba(237,237,237,1) 100%);
+	background: -o-linear-gradient(-45deg,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 47%,rgba(237,237,237,1) 100%);
+	background: -ms-linear-gradient(-45deg,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 47%,rgba(237,237,237,1) 100%);/
+	background: linear-gradient(135deg,  rgba(255,255,255,1) 0%,rgba(246,246,246,1) 47%,rgba(237,237,237,1) 100%);
+}
+
+/* right and left modifications*/
+
+.wgo-player-left .wgo-infobox, .wgo-player-right .wgo-infobox {
+	overflow: hidden;
+	position: absolute;
+	top: 0;
+	right: 0;
+	left: 10px;
+}
+
+.wgo-player-right .wgo-player-wrapper, .wgo-player-left .wgo-player-wrapper {
+	height: 85px;
+	margin-bottom: 10px;
+}
+
+/* top and bottom modifications */
+
+.wgo-player-top .wgo-player-name-wrapper, .wgo-player-bottom .wgo-player-name-wrapper {
+	float: left;
+}
+
+.wgo-player-top .wgo-player-info, .wgo-player-bottom .wgo-player-info {
+	position: absolute;
+	width: 40%;
+	right: 0px;
+	top: 4px;
+	bottom: 4px;
+	overflow: hidden;
+	text-align: right;
+}
+
+.wgo-player-top .wgo-player-wrapper, .wgo-player-bottom .wgo-player-wrapper {
+	height: 40px;
+	display: inline-block;
+	width: 50%;
+	margin: 0;
+	position: relative;
+}
+
+.wgo-player-top .wgo-infobox .wgo-box-title, .wgo-player-bottom .wgo-infobox .wgo-box-title {
+	position: absolute;
+	right: 40%;
+	left: 30px;
+}
+
+/*--- /Player box -----------------------------------------------------------------------*/
+
+/*--- Comments box ----------------------------------------------------------------------*/
+
+.wgo-comments-wrapper {
+	overflow: auto;
+	margin: 0 0 0 0;
+	height: 100%;
+	position: relative;
+}
+
+.wgo-comments-content {
+	padding: 3px 5px;
+	border: 1px solid rgba(200,200,200,0.3);
+	background-color: rgba(255,255,255,0.3);
+	border-radius: 2px;
+	overflow-y: auto;
+}
+
+.wgo-comments-content p {
+	font-size: 0.9em;
+	margin: 0.5em 0;
+}
+
+.wgo-comments-title {
+	font-size: 1.3em;
+	font-weight: bold;
+	margin: 10px;
+}
+
+.wgo-comment-img div {
+	margin-top: 3px;
+	width: 16px;
+	height: 10px;
+	border-radius: 4px;
+	border: 1px solid rgba(125,125,125,0.3);
+	background-color: rgba(200,200,200,0.3);
+	box-shadow: 2px 2px 0px 0px rgba(200, 200, 200, 0.3);
+	font-size: 4px;
+	color: rgba(125,125,125,0.3);
+	padding: 2px 1px;
+}
+
+.wgo-comments-nick {
+	color: rgba(0,0,0,0.75);
+}
+
+a.wgo-move-link { 
+	text-decoration: none; 
+	border-bottom:1px dotted; 
+}
+
+/* right and left modifications */
+
+.wgo-player-right .wgo-comments-content, .wgo-player-left .wgo-comments-content {
+	position: absolute;
+	left: 10px;
+	right: 10px;
+	bottom: 10px;
+	top: 40px;
+}
+
+.wgo-player-right .wgo-commentbox, .wgo-player-left .wgo-commentbox {
+	overflow: auto;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	left: 10px;
+	top: 190px;
+}
+
+/* top and bottom modifications */
+
+.wgo-player-top .wgo-comments-content, .wgo-player-bottom .wgo-comments-content {
+	height: 150px;
+}
+
+.wgo-player-top .wgo-commentbox .wgo-box-title, .wgo-player-bottom .wgo-commentbox .wgo-box-title { 
+	transform: rotate(-90deg);
+	-ms-transform: rotate(-90deg);
+	-webkit-transform: rotate(-90deg);
+	position: absolute;
+	left: -37px;
+	top: 70px;
+}
+
+.wgo-player-top .wgo-comments-wrapper, .wgo-player-bottom .wgo-comments-wrapper {
+	margin-top: 10px;
+}
+
+/* game info table */
+
+.wgo-commentbox .wgo-info-list {
+	display: table;
+}
+
+.wgo-commentbox .wgo-info-title {
+	display: table-caption;
+	font-weight: 600;
+	border-bottom: 2px solid rgba(200, 200, 200, 0.3);
+	padding: 2px 0;
+}
+
+.wgo-commentbox .wgo-info-item {
+	display: table-row;
+}
+
+.wgo-commentbox .wgo-info-label, .wgo-commentbox .wgo-info-value {
+	display: table-cell;
+	border-bottom: 1px solid rgba(200, 200, 200, 0.3);
+	padding: 2px 15px 2px 0;
+}
+
+.wgo-commentbox .wgo-info-label {
+	color: #000;
+}
+
+.wgo-commentbox .wgo-info-value {
+	color: #4c4c4c;
+}
+
+/*--- /Comments box ----------------------------------------------------------------------*/
+
+/*--- Control box ------------------------------------------------------------------------*/
+
+.wgo-player-control {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+}
+
+.wgo-control-wrapper {
+	width: 100%;
+	text-align: center;
+}
+
+.wgo-ctrlgroup-left {
+	float: left;
+}
+
+.wgo-ctrlgroup-right {
+	float: right;
+}
+
+.wgo-ctrlgroup-control {
+	margin: 0 auto;
+}
+
+/* button widget */
+
+.wgo-button {
+	border: 1px solid rgba(200,200,200,0.3);
+	border-radius: 2px;
+	background-color: rgba(255,255,255,0.3);
+	padding: 5px;
+	width: 44px;
+	height: 44px;
+	margin: 4px 3px;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+}
+
+.wgo-button:hover {
+	background-color: rgba(255,255,255,0.45);
+	border: 1px solid rgba(100,100,100,0.3);
+	box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+}
+
+.wgo-button.wgo-selected {
+	background-color: rgba(255,255,255,0.6);
+	border: 1px solid rgba(0,0,0,0.5);
+}
+
+.wgo-button.wgo-selected:hover {
+	background-color: rgba(255,255,255,0.7);
+	border: 1px solid rgba(0,0,0,0.7);
+}
+
+.wgo-button.wgo-disabled:hover {
+	border: 1px solid rgba(200,200,200,0.3);
+	background-color: rgba(255,255,255,0.3);
+	box-shadow: none;
+}
+
+.wgo-button img {
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+.wgo-button.wgo-button-active img {
+	left: 1px;
+	top: 1px;
+}
+
+.wgo-button.wgo-disabled img {
+	opacity: 0.5;
+}
+
+/* move number widget */
+
+.wgo-player-mn-value {
+	border: 1px solid rgba(200,200,200,0.3);
+	border-radius: 2px;
+	background-color: rgba(255,255,255,0.3);
+	width: 28px;
+	font-weight: bold;
+	font-size: 15px;
+	text-align: center;
+	display: inline;
+	position: relative;
+	bottom: 8px;
+	outline: 0;
+}
+
+.wgo-player-mn-value:focus {
+	background-color: rgba(255,255,255,0.45);
+	border: 1px solid rgba(100,100,100,0.3);
+	box-shadow: 0 0 20px 0 rgba(150,150,150,0.5);
+}
+
+.wgo-player-mn-wrapper {
+	display: inline;
+	width: 38px;
+	text-align: center;
+}
+
+/* top and bottom modifications */
+
+.wgo-player-top .wgo-player-control {
+	padding-bottom: 5px;
+}
+
+.wgo-player-bottom .wgo-player-control {
+	padding-top: 5px;
+}
+
+/*--- /Control box ------------------------------------------------------------------------*/
+
+/*--- Control menu -------------------------------------------------------------------------*/
+
+.wgo-player-menu {
+	border-left: 1px solid rgba(0,0,0,0.5);
+	border-right: 1px solid rgba(0,0,0,0.5);
+	border-top: 1px solid rgba(0,0,0,0.5);
+	
+	z-index: 900;
+	margin-top: -1px;
+	
+	box-shadow: 0 0 20px 0 rgba(127,127,127,0.5);
+}
+
+.wgo-menu-item {
+	padding: 5px 10px 5px 5px;
+	border-bottom: 1px solid rgba(127,127,127,0.5);
+	background-color: rgba(255,255,255,0.85);
+	cursor: pointer;
+}
+
+.wgo-menu-item.wgo-selected {
+	background-color: rgba(230,230,230,0.85);
+}
+
+.wgo-menu-item:last-child {
+	border-bottom: 1px solid rgba(0,0,0,0.5);
+}
+
+.wgo-menu-item:hover {
+	padding: 5px 10px 5px 5px;
+	background-color: rgba(225,225,225,0.85);
+}
+
+.wgo-menu-item img {
+	width: 25px;
+	height: 25px;
+	vertical-align: middle;
+	margin-right: 15px;
+}
+
+.wgo-menu-item .wgo-placeholder {
+	width: 25px;
+	height: 25px;
+	vertical-align: middle;
+	display: inline-block;
+	margin-right: 15px;
+}
+
+.wgo-menu-item span {
+	font-weight: bold;
+	color: #292929;
+}
+
+.wgo-menu-item.wgo-selected span {
+	color: #000;
+}
+
+/*--- /Control menu -------------------------------------------------------------------------*/
+
+/*--- Overlay window ----------------------------------------------------------------------*/
+
+.wgo-info-overlay {
+	position: absolute;
+	z-index: 1000;
+}
+
+.wgo-info-message {
+	animation-name:show;
+	animation-duration: 250ms;
+	/* Firefox: */
+	-moz-animation-name:show;
+	-moz-animation-duration: 250ms;
+	/* Safari and Chrome: */
+	-webkit-animation-name:show;
+	-webkit-animation-duration: 250ms;
+	/* Opera: */
+	-o-animation-name:show;
+	-o-animation-duration: 250ms;
+
+	margin: 15% auto;
+	min-height: 50%;
+	max-height: 70%;
+	min-width: 50%;
+	max-width: 70%;
+	background-color: rgba(0,0,0,0.95);
+	overflow: auto;
+	padding: 20px;
+	box-sizing:border-box;
+	-moz-box-sizing:border-box;
+	-webkit-box-sizing:border-box;
+	color: #d9d9d9;
+	box-shadow: 0px 0px 50px 5px rgb(0,0,0);
+	border: 1px solid #333;
+	position: relative;
+}
+
+.wgo-info-message a {
+	color: #fff !important;
+}
+
+.wgo-info-message h1 {
+	font-size: 2em !important;
+	color: #fff !important;
+	font-weight: bold !important;
+	margin: 0 0 20px 0 !important;
+	padding: 0 !important;
+}
+
+.wgo-info-close {
+	position: absolute;
+	bottom: 5px;
+	right: 10px;
+	font-size: 10px;
+}
+
+/*--- /Overlay window ----------------------------------------------------------------------*/
+
+/*--- Permalinks ---------------------------------------------------------------------------*/
+
+input.wgo-permalink {
+	padding: 7px 10px !important;
+	border: 1px solid white !important;
+	color: white !important;
+	width: 100% !important;
+	background-color: rgba(0,0,0,0) !important;
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+}
+
+/*--- /Permalinks ---------------------------------------------------------------------------*/
+
+.wgo-400 .wgo-button-multiprev, 
+.wgo-400 .wgo-button-multinext {
+	display: none;
+}
+
+.wgo-300 .wgo-button-first, 
+.wgo-300 .wgo-button-last {
+	display: none;
+}

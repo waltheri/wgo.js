@@ -1,0 +1,1 @@
+wgo.js is a library written Javascript to make easier developing of web go application. Go is a board game similiar to chess.
