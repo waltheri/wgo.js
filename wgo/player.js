@@ -287,7 +287,10 @@ var pos_diff = function(old_p, new_p) {
 	}
 }
 
-var Player = function(config) {
+var Player = function(elem, config) {
+	// save main DOM element
+	this.element = elem
+	
 	// set user configuration
 	this.config = config;
 	
@@ -363,7 +366,7 @@ Player.prototype = {
 		}
 		
 		if(!this.kifuReader.node.parent) ev.msg = this.getGameInfo();
-
+		
 		this.dispatchEvent(ev);
 	},
 	
@@ -379,7 +382,7 @@ Player.prototype = {
 		try {
 			// kifu is replayed by KifuReader, it manipulates a Kifu object and gets all changes
 			this.kifuReader = new WGo.KifuReader(this.kifu);
-	
+
 			// fire kifu loaded event
 			this.dispatchEvent({
 				type: "kifuLoaded",
@@ -993,6 +996,9 @@ var BasicTemplate = function(player) {
 		}
 		this.updateDimensions();
 	}.bind(this));
+	
+	player.element.innerHTML = "";
+	this.appendTo(player.element);
 }
 
 BasicTemplate.prototype = {
@@ -1004,8 +1010,8 @@ BasicTemplate.prototype = {
 		this.width = parseInt(css.width);
 		this.height = parseInt(css.height);
 		this.maxHeight = parseInt(css.maxHeight);
+		console.log(this.height)
 		elem.appendChild(this.element);
-		console.log(css);
 		this.updateDimensions();
 	},
 	
@@ -1192,6 +1198,8 @@ WGo.Player.i18n = {
 		"RE": "Result",
 		"RU": "Rules",
 		"PC": "Place",
+		"EV": "Event",
+		"SO": "Source",
 		"gameinfo": "Game informations",
 		"show": "show",
 		"res-show-tip": "Click to show result.",
@@ -1240,9 +1248,7 @@ var player_from_tag = function(elem) {
 		if(Player.attributes[att.name]) Player.attributes[att.name].call(config, att.value, att.name);
 	}
 
-	pl = new WGo.Player(config);
-	elem.innerHTML = "";
-	pl.appendTo(elem);
+	pl = new WGo.Player(elem, config);
 	console.log(pl);
 }
 
