@@ -322,8 +322,8 @@ Player.prototype = {
 		if(this.config.update) this.addEventListener("update", this.config.update);
 		
 		// create board object and the view, the view is actually all visible HTML
-		this.board = new WGo.Board(this.config.board);
 		this.view = new WGo.Player.BasicTemplate(this);
+		this.board = this.view.board;
 		
 		// save player into DOM - it is used to get player object from player's id (TODO analyze this solution)
 		this.view.element._wgo_player = this;
@@ -637,11 +637,11 @@ Player.prototype = {
 	toggleCoordinates: function() {
 		this.coordinates = !this.coordinates;
 		if(this.coordinates) {
-			this.board.setSection(-0.5,-0.5,this.board.size-0.5,this.board.size-0.5);
+			this.board.setSection(-0.5, -0.5, -0.5, -0.5);
 			this.board.addCustomObject(coordinates);
 		}
 		else {
-			this.board.setSection(0, 0, this.board.size-1, this.board.size-1);
+			this.board.setSection(0, 0, 0, 0);
 			this.board.removeCustomObject(coordinates);
 		}
 		return this.coordinates;
@@ -887,7 +887,7 @@ var BTgenerateDom = function() {
 	// board wrapper element
 	this.dom.board = document.createElement("div");
 	this.dom.board.className = "wgo-player-board";
-	this.board.appendTo(this.dom.board);
+	this.board = new WGo.Board(this.dom.board, this.player.config.board);
 	
 	// object wrapper for regions (left, right, top, bottom)
 	this.regions = {};

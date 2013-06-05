@@ -68,8 +68,33 @@ var extend_class = function(parent, child) {
 
 //---------------------- WGo.Board -----------------------------------------------------------------------------
 
-// main function for creating board's objects
-var Board = function(config) {
+/**
+ * Board class constructor - it creates a canvas board
+ *
+ * @param elem DOM element to put in
+ * @param config configuration object. It is object with "key: value" structure. Possible configurations are:
+ *
+ * - size: number - size of the board (default: 19)
+ * - width: number - width of the board (default: 0)
+ * - height: number - height of the board (default: 0)
+ * - font: string - font of board writings (default: "Calibri")
+ * - lineWidth: number - line width of board drawings
+ * - starPoints: Object - star points coordinates, defined for various board sizes. Look at Board.default for more info.
+ * - stoneHandler: Board.DrawHandler - stone drawing handler (default: Board.drawHandlers.NORMAL)
+ * - starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant.
+ * - stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant.
+ * - shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant.
+ * - section: {
+ *     top: number,
+ *     right: number,
+ *     bottom: number,
+ *     left: number
+ *   }
+ *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side. 
+ *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
+ */
+ 
+var Board = function(elem, config) {
 	// set user configuration
 	for(var key in config) this[key] = config[key];
 	
@@ -92,26 +117,17 @@ var Board = function(config) {
 	// event listeners, binded to board
 	this.listeners = [];
 	
-	// basic stone handler
-	this.stoneHandler = Board.drawHandlers[this.stoneStyle];
-
 	// set section if set
-	if(this.section) {
-		this.tx = this.section.x1;
-		this.ty = this.section.y1;
-		this.bx = this.section.x2;
-		this.by = this.section.y2;
-		delete this.section;
-	}
-	else {
-		this.tx = 0;
-		this.ty = 0;
-		this.bx = this.size-1;
-		this.by = this.size-1;
-	}
+	this.tx = this.section.left;
+	this.ty = this.section.top;
+	this.bx = this.size-1-this.section.right;
+	this.by = this.size-1-this.section.bottom;
 	
 	// init board
-	init.call(this);
+	this.init();
+	
+	// append to element
+	elem.appendChild(this.element);
 	
 	// set initial dimensions
 	if(this.width && this.height) this.setDimensions(this.width, this.height);
@@ -174,7 +190,7 @@ var redraw_layer = function(board, layer) {
 
 Board.drawHandlers = {
 	// handler for normal stones
-	normal: {
+	NORMAL: {
 		// draw handler for stone layer
 		stone: {
 			// drawing function - args object contain info about drawing object, board is main board object
@@ -208,7 +224,7 @@ Board.drawHandlers = {
 		shadow: shadow_handler,
 	},
 	
-	painted: {
+	PAINTED: {
 		stone: {
 			draw: function(args, board) {
 				var xr = board.getX(args.x),
@@ -250,7 +266,7 @@ Board.drawHandlers = {
 		shadow: shadow_handler,
 	},
 	
-	mono: {
+	MONO: {
 		stone: {
 			draw: function(args, board) {
 				var xr = board.getX(args.x),
@@ -537,19 +553,6 @@ var default_field_clear = function(args, board) {
 
 // Private methods of WGo.Board
 
-var init = function() {
-	this.element = document.createElement('div');
-	this.element.className = 'wgo-board';
-	
-	this.grid = new Board.GridLayer();
-	this.shadow = new Board.ShadowLayer(this.shadowSize);
-	this.stone = new Board.CanvasLayer();
-	
-	this.addLayer(this.grid, 100);
-	this.addLayer(this.shadow, 200);
-	this.addLayer(this.stone, 300);
-}
-
 var calcLeftMargin = function() {
 	return (3*this.width)/(4*(this.bx+1-this.tx)+2) - this.fieldWidth*this.tx;
 }
@@ -630,6 +633,19 @@ var updateDim = function() {
 Board.prototype = {
 	constructor: Board,
 	
+	init: function() {
+		this.element = document.createElement('div');
+		this.element.className = 'wgo-board';
+		
+		this.grid = new Board.GridLayer();
+		this.shadow = new Board.ShadowLayer(this.shadowSize);
+		this.stone = new Board.CanvasLayer();
+		
+		this.addLayer(this.grid, 100);
+		this.addLayer(this.shadow, 200);
+		this.addLayer(this.stone, 300);
+	},
+	
 	setWidth: function(width) {
 		this.width = width;
 		this.fieldHeight = this.fieldWidth = calcFieldWidth.call(this);
@@ -668,19 +684,27 @@ Board.prototype = {
 	},
 	
 	getSection: function() {
-		return {
-			x1: this.tx,
-			y1: this.ty,
-			x2: this.bx,
-			y2: this.by,
-		};
+		return this.section;
 	},
 	
-	setSection: function(x1,y1,x2,y2) {
-		this.tx = x1;
-		this.ty = y1;
-		this.bx = x2;
-		this.by = y2;
+	setSection: function(section_or_top, right, bottom, left) {
+		if(typeof section_or_top == "object") {
+			this.section = section_or_top;
+		}
+		else {
+			this.section = {
+				top: section_or_top,
+				right: right,
+				bottom: bottom,
+				left: left,
+			}
+		}
+		
+		this.tx = this.section.left;
+		this.ty = this.section.top;
+		this.bx = this.size-1-this.section.right;
+		this.by = this.size-1-this.section.bottom;
+		
 		this.setDimensions();
 	},
 	
@@ -846,10 +870,6 @@ Board.prototype = {
 		}
 		return false;
 	},
-	
-	appendTo: function(elem) {
-		elem.appendChild(this.element);
-	},
 }
 
 Board.default = {
@@ -874,10 +894,16 @@ Board.default = {
 			{x:9, y:9}],
 		9:[{x:4, y:4}],
 	},
-	stoneStyle: "normal",
+	stoneHandler: Board.drawHandlers.NORMAL,
 	starSize: 1,
 	shadowSize: 1,
 	stoneSize: 1,
+	section: {
+		top: 0,
+		right: 0,
+		bottom: 0,
+		left: 0,
+	}
 }
 
 // save Board
