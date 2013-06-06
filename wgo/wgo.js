@@ -58,13 +58,33 @@ var mydir= path.split('/').slice(0, -1).join('/')+'/';
 WGo.DIR = mydir;
 
 // helping function for class inheritance
-var extend_class = function(parent, child) {
+WGo.extendClass = function(parent, child) {
 	child.prototype = Object.create(parent.prototype);
 	child.prototype.constructor = child;
 	child.prototype.super = parent;
 	
 	return child;
 };
+
+// helping function for class inheritance
+WGo.abstractMethod = function() {
+	throw Error('unimplemented abstract method');
+};
+
+// helping function for deep cloning of simple objects,
+WGo.clone = function(obj) {
+	if(obj && typeof obj == "object") {
+		var n_obj = obj.constructor == Array ? [] : {};
+		
+		for(var key in obj) {
+			if(obj[key] == obj) n_obj[key] = obj;
+			else n_obj[key] = WGo.clone(obj[key]);
+		}
+		
+		return n_obj;
+	}
+	else return obj;
+}
 
 //---------------------- WGo.Board -----------------------------------------------------------------------------
 
@@ -445,7 +465,8 @@ Board.drawHandlers = {
 		stone: {
 			draw: function(args, board) {
 				this.globalAlpha = 0.3;
-				Board.drawHandlers[args.stoneStyle || board.stoneStyle].stone.draw.call(this, args, board);
+				if(args.stoneStyle) Board.drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
+				else board.stoneHandler.stone.draw.call(this, args, board);
 				this.globalAlpha = 1;
 			}
 		}
@@ -455,7 +476,8 @@ Board.drawHandlers = {
 		stone: {
 			draw: function(args, board) {
 				board.stoneRadius = board.stoneRadius/2;
-				Board.drawHandlers[args.stoneStyle || board.stoneStyle].stone.draw.call(this, args, board);
+				if(args.stoneStyle) Board.drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
+				else board.stoneHandler.stone.draw.call(this, args, board);
 				board.stoneRadius = board.stoneRadius*2;
 			}
 		}
@@ -463,16 +485,8 @@ Board.drawHandlers = {
 }
 
 Board.CanvasLayer = function() {
-	var canvas = document.createElement('canvas');
-
-	Object.defineProperties(this, {
-		element: {
-			value: canvas
-		},
-		context: {
-			value: canvas.getContext('2d')
-		}
-	});
+	this.element = document.createElement('canvas');
+	this.context = this.element.getContext('2d')
 }
 
 Board.CanvasLayer.prototype = {
@@ -490,7 +504,7 @@ Board.CanvasLayer.prototype = {
 	}
 }
 
-Board.GridLayer = extend_class(Board.CanvasLayer, function() {
+Board.GridLayer = WGo.extendClass(Board.CanvasLayer, function() {
 	this.super.call(this);
 });
 
@@ -533,7 +547,7 @@ Board.GridLayer.prototype.draw = function(board) {
 	}
 }
 
-Board.ShadowLayer = extend_class(Board.CanvasLayer, function(shadowSize) {
+Board.ShadowLayer = WGo.extendClass(Board.CanvasLayer, function(shadowSize) {
 	this.super.call(this);
 	this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
 });
@@ -633,6 +647,10 @@ var updateDim = function() {
 Board.prototype = {
 	constructor: Board,
 	
+	/**
+     * Initialization method, it is called in constructor. You shouldn't call it, but you can alter it.
+	 */
+	 
 	init: function() {
 		this.element = document.createElement('div');
 		this.element.className = 'wgo-board';
@@ -646,6 +664,12 @@ Board.prototype = {
 		this.addLayer(this.stone, 300);
 	},
 	
+	/**
+	 * Set new width of board, height is computed to keep aspect ratio.
+	 * 
+	 * @param {number} width
+	 */
+	
 	setWidth: function(width) {
 		this.width = width;
 		this.fieldHeight = this.fieldWidth = calcFieldWidth.call(this);
@@ -658,6 +682,12 @@ Board.prototype = {
 		this.redraw();
 	},
 	
+	/**
+	 * Set new height of board, width is computed to keep aspect ratio.
+	 * 
+	 * @param {number} height
+	 */
+	
 	setHeight: function(height) {
 		this.height = height;
 		this.fieldWidth = this.fieldHeight = calcFieldHeight.call(this);
@@ -669,6 +699,13 @@ Board.prototype = {
 		updateDim.call(this);
 		this.redraw();
 	},
+	
+	/**
+	 * Set both dimensions.
+	 * 
+	 * @param {number} width
+	 * @param {number} height
+	 */
 	
 	setDimensions: function(width, height) {
 		this.width = width || this.width;
@@ -683,9 +720,17 @@ Board.prototype = {
 		this.redraw();
 	},
 	
+	/**
+	 * Get currently visible section of the board
+	 */
+	
 	getSection: function() {
 		return this.section;
 	},
+	
+	/**
+	 * Set section of the board to be displayed
+	 */
 	
 	setSection: function(section_or_top, right, bottom, left) {
 		if(typeof section_or_top == "object") {
@@ -708,6 +753,10 @@ Board.prototype = {
 		this.setDimensions();
 	},
 	
+	/**
+	 * Redraw everything.
+	 */
+	
 	redraw: function() {
 		this.grid.clear();
 		this.stone.clear();
@@ -727,13 +776,32 @@ Board.prototype = {
 		}
 	},
 	
+	/**
+	 * Get absolute X coordinate
+	 *
+	 * @param {number} x relative coordinate
+	 */
+	
 	getX: function(x) {
 		return this.left+x*this.fieldWidth;
 	},
 	
+	/**
+	 * Get absolute Y coordinate
+	 *
+	 * @param {number} y relative coordinate
+	 */
+	
 	getY: function(y) {
 		return this.top+y*this.fieldHeight;
 	},
+	
+	/**
+	 * Add layer to the board. It is meant to be only for canvas layers.
+	 *
+	 * @param {Board.CanvasLayer} layer to add
+	 * @param {number} weight layer with biggest weight is on the top 
+	 */
 	
 	addLayer: function(layer, weight) {
 		layer.element.style.position = 'absolute';
@@ -742,6 +810,12 @@ Board.prototype = {
 		this.element.appendChild(layer.element);
 		this.layers.push(layer);
 	},
+	
+	/**
+	 * Remove layer from the board.
+	 *
+	 * @param {Board.CanvasLayer} layer to remove
+	 */
 	
 	removeLayer: function(layer) {
 		var i = this.layers.indexOf(layer);

@@ -587,9 +587,9 @@ Player.prototype = {
 	goTo: function(move) {
 		if(this.frozen || !this.kifu) return;
 		var path;
-		if(move.constructor != Array) {
-			path = this.kifuReader.path.slice(0);
-			path[0] = move || 0;
+		if(typeof move == "number") {
+			path = WGo.clone(this.kifuReader.path);
+			path.m = move || 0;
 		}
 		else path = move;
 		
@@ -672,7 +672,7 @@ Player.prototype = {
 			this.board.addEventListener("mouseout", this._ev_out);
 		}
 		else {
-			// go to original position
+			// go to the last original position
 			this._originalReader.goTo(this.kifuReader.path);
 			
 			// change object isn't actual - update it, not elegant solution, but simple

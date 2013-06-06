@@ -65,14 +65,15 @@
 /*--- Box styles ----------------------------------------------------------------------*/
 
 .wgo-box-wrapper {
-	background: -moz-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%, rgba(219,219,219,0.5) 50%, rgba(209,209,209,0.5) 51%, rgba(254,254,254,0.5) 100%);
+	/*background: -moz-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%, rgba(219,219,219,0.5) 50%, rgba(209,209,209,0.5) 51%, rgba(254,254,254,0.5) 100%);
 	background: -webkit-gradient(linear, left top, right bottom, color-stop(0%,rgba(226,226,226,0.5)), color-stop(50%,rgba(219,219,219,0.5)), color-stop(51%,rgba(209,209,209,0.5)), color-stop(100%,rgba(254,254,254,0.5)));
 	background: -webkit-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
 	background: -o-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
 	background: -ms-linear-gradient(-45deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
-	background: linear-gradient(135deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);
-	/*margin: 10px;*/
-	/*outline: 3px solid rgba(200,200,200,0.3);*/
+	background: linear-gradient(135deg,  rgba(226,226,226,0.5) 0%,rgba(219,219,219,0.5) 50%,rgba(209,209,209,0.5) 51%,rgba(254,254,254,0.5) 100%);*/
+	background: rgba(226,226,226,0.5);
+	border: 1px solid rgba(200,200,200,0.5);
+	box-sizing: border-box;
 }
 
 .wgo-box-title {
@@ -153,6 +154,7 @@
 	height: 20px;
 	border-radius: 10px;
 	box-shadow: 1px 1px 1px 1px rgba(127, 127, 127, 0.3);
+	
 }
 
 .wgo-black .wgo-player-name-img div {
@@ -229,6 +231,7 @@
 	margin: 0 0 0 0;
 	height: 100%;
 	position: relative;
+	box-sizing: border-box;
 }
 
 .wgo-comments-content {
@@ -283,7 +286,6 @@ a.wgo-move-link {
 }
 
 .wgo-player-right .wgo-commentbox, .wgo-player-left .wgo-commentbox {
-	overflow: auto;
 	position: absolute;
 	bottom: 0;
 	right: 0;

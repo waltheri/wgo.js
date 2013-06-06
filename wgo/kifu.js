@@ -265,10 +265,12 @@ var KifuReader = function(kifu) {
 	this.kifu = kifu;
 	this.node = this.kifu.root;
 	this.game = new WGo.Game(this.kifu.size);
-	this.path = [0];
+	this.path = {m:0};
 
 	this.change = exec_node(this.game, this.node, true);
 	if(this.kifu.info["HA"] && this.kifu.info["HA"] > 1) this.game.turn = WGo.W;
+	
+	this.rememberPath = true;
 }
 
 var set_subtract = function(a, b) {
@@ -293,6 +295,8 @@ var concat_changes = function(ch_orig, ch_new) {
 
 // change game object according to node, return changes
 var exec_node = function(game, node, first) {
+	if(node.parent) node.parent._last_selected = node.parent.children.indexOf(node);
+	
 	if(node.move != undefined) {
 		if(node.move.pass) {
 			game.pass(node.move.c);
@@ -335,13 +339,16 @@ var exec_node = function(game, node, first) {
 }
 
 var exec_next = function(i) {
+	if(i === undefined && this.rememberPath) i = this.node._last_selected;
+	i = i || 0;
 	var node = this.node.children[i];
+	
 	if(!node) return false;
 	
 	var ch = exec_node(this.game, node);
 	
-	this.path[0]++;
-	if(this.node.children.length > 1) this.path.push(i);
+	this.path.m++;
+	if(this.node.children.length > 1) this.path[this.path.m] = i;
 	
 	this.node = node;
 	return ch;
@@ -354,8 +361,8 @@ var exec_previous = function() {
 	
 	this.game.popPosition();
 	
-	this.path[0]--;
-	if(this.node.children.length > 1) this.path.pop();
+	this.path.m--;
+	if(this.path[this.path.m] !== undefined) delete this.path[this.path.m];
 	
 	return true;
 }
@@ -365,7 +372,8 @@ var exec_first = function() {
 	
 	this.game.firstPosition();
 	this.node = this.kifu.root;
-	this.path = [0];
+	
+	this.path = {m: 0};
 	
 	this.change = exec_node(this.game, this.node, true);
 	if(this.kifu.info["HA"] && this.kifu.info["HA"] > 1) this.game.turn = WGo.W;
@@ -375,7 +383,7 @@ KifuReader.prototype = {
 	constructor: KifuReader,
 	
 	next: function(i) {
-		this.change = exec_next.call(this, i || 0);
+		this.change = exec_next.call(this, i);
 		return this;
 	},
 	
@@ -385,7 +393,7 @@ KifuReader.prototype = {
 			add: [],
 			remove: []
 		}
-		while(ch = exec_next.call(this, 0)) concat_changes(this.change, ch);
+		while(ch = exec_next.call(this)) concat_changes(this.change, ch);
 		return this;
 	},
 	
@@ -405,16 +413,15 @@ KifuReader.prototype = {
 	
 	goTo: function(path) {
 		var old_pos = this.game.getPosition();
-		
+		console.dir(path);
 		exec_first.call(this);
 		
-		var move = path[0];
-		var j = 1, r;
+		var r;
 		
-		for(var i = 0; i < move; i++) {
-			if(this.node.children.length > 1) r = exec_next.call(this, path[j++] || 0);
-			else r = exec_next.call(this,0);
-			if(!r) break;
+		for(var i = 0; i < path.m; i++) {
+			if(!exec_next.call(this, path[i+1])) {
+				break;
+			}
 		}
 		
 		this.change = pos_diff(old_pos, this.game.getPosition());

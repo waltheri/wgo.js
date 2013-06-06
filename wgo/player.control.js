@@ -195,7 +195,7 @@ Control.MoveNumber = function(player) {
 	}.bind(player, move);
 	
 	player.addEventListener("update", function(e) {
-		this.value = e.path[0];
+		this.value = e.path.m;
 	}.bind(move));
 	
 	player.addEventListener("kifuLoaded", function(e) {
@@ -321,17 +321,16 @@ Control.menu = [{
 		click: function(player) {
 			var nums = new WGo.Position(player.kifuReader.game.size);
 			var path = player.kifuReader.path;
-			var move = path[0];
 			var node = player.kifu.root;
 			var j = 1, r;
 			
-			for(var i = 0; i < move; i++) {
+			for(var i = 0; i < path.m; i++) {
 				if(node.move) {
 					player.board.addObject({type:"LB", x: node.move.x, y: node.move.y, text: i+""});
 				}
 				
 				if(node.children.length > 1) {
-					node = node.getChild(path[j++] || 0);
+					node = node.getChild(path[i] || 0);
 				}
 				else if(node.children.length) {
 					node = node.getChild(0);
@@ -418,8 +417,8 @@ Control.widgets = [ {
 					player.addEventListener("update", butupd_first.bind(this));
 				},
 				click: function(player) { 
-					var p = player.kifuReader.path.slice(0);
-					p[0] -= 10;
+					var p = WGo.clone(player.kifuReader.path);
+					p.m -= 10; 
 					player.goTo(p);
 				},
 			}
@@ -461,8 +460,8 @@ Control.widgets = [ {
 					player.addEventListener("update", butupd_last.bind(this));
 				},
 				click: function(player) { 
-					var p = player.kifuReader.path.slice(0);
-					p[0] += 10;
+					var p = WGo.clone(player.kifuReader.path);
+					p.m += 10; 
 					player.goTo(p);
 				},
 			}
