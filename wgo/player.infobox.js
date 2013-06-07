@@ -35,12 +35,12 @@ var prepare_dom_box = function(type) {
 	t.name.className = "wgo-box-title";
 	t.name.innerHTML = type;
 	
-	var name_color;
+	/*var name_color;
 	name_color = document.createElement("div");
 	name_color.className = "wgo-player-name-img wgo-box-img";
 	name_color.innerHTML = "<div></div>";
 	
-	t.box.appendChild(name_color);
+	t.box.appendChild(name_color);*/
 	t.box.appendChild(t.name);
 	
 	var info_wrapper;

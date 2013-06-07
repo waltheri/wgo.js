@@ -365,7 +365,7 @@ Player.prototype = {
 			change: this.kifuReader.change,
 		}
 		
-		if(!this.kifuReader.node.parent) ev.msg = this.getGameInfo();
+		//if(!this.kifuReader.node.parent) ev.msg = this.getGameInfo();
 		
 		this.dispatchEvent(ev);
 	},
@@ -603,23 +603,22 @@ Player.prototype = {
 	},
 	
 	/**
-	 * Get formatted information about actual game(kifu)
+	 * Get information about actual game(kifu)
 	 *
-	 * @return {string} game info
+	 * @return {Object} game info
 	 */
 	 
 	getGameInfo: function() {
-		if(!this.kifu) return;
-		var tmp, info = [];
+		if(!this.kifu) return null;
+		var info = {};
 		for(var key in this.kifu.info) {
 			if(WGo.Kifu.infoList.indexOf(key) == -1) continue;
 			if(WGo.Kifu.infoFormatters[key]) {
-				tmp = WGo.Kifu.infoFormatters[key](this.kifu.info[key]);
-				if(tmp) info.push('<span class="wgo-info-label">'+WGo.t(key)+'</span><span class="wgo-info-value">'+tmp+'</span>');
+				info[WGo.t(key)] = WGo.Kifu.infoFormatters[key](this.kifu.info[key]);
 			}
-			else info.push('<span class="wgo-info-label">'+WGo.t(key)+'</span><span class="wgo-info-value">'+this.kifu.info[key]+'</span>');
+			else info[WGo.t(key)] = this.kifu.info[key];
 		}
-		if(info.length) return '<div class="wgo-info-list"><div class="wgo-info-title">'+WGo.t("gameinfo")+'</div><div class="wgo-info-item">'+info.join('</div><div class="wgo-info-item">')+'</div></div>';
+		return info;
 	},
 	
 	/**
@@ -1200,7 +1199,7 @@ WGo.Player.i18n = {
 		"PC": "Place",
 		"EV": "Event",
 		"SO": "Source",
-		"gameinfo": "Game informations",
+		"gameinfo": "Game info",
 		"show": "show",
 		"res-show-tip": "Click to show result.",
 		"editmode": "Edit mode",

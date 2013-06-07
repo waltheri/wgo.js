@@ -426,7 +426,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "previous",
-				icon: "modern-prev4.svg",
+				//icon: "modern-prev4.svg",
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_first.bind(this));

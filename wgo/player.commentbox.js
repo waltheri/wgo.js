@@ -5,17 +5,18 @@ var prepare_dom = function() {
 	this.box.className = "wgo-box-wrapper wgo-comments-wrapper";
 	this.element.appendChild(this.box);
 	
-	var title = document.createElement("div");
-	title.className = "wgo-box-title";
-	title.innerHTML = WGo.t("comments");
+	this.comments_title = document.createElement("div");
+	this.comments_title.className = "wgo-box-title";
+	this.comments_title.innerHTML = WGo.t("comments");
 	
+	/*
 	var name_color;
 	name_color = document.createElement("div");
 	name_color.className = "wgo-comment-img wgo-box-img";
 	name_color.innerHTML = "<div></div>";
 	
-	this.box.appendChild(name_color);
-	this.box.appendChild(title);
+	this.box.appendChild(name_color);*/
+	this.box.appendChild(this.comments_title);
 	
 	this.comments = document.createElement("div");
 	this.comments.className = "wgo-comments-content";
@@ -50,6 +51,16 @@ var search_nodes = function(nodes, player) {
 	}
 }	
 
+var format_info = function(info, title) {
+	var ret = '<div class="wgo-info-list">';
+	if(title) ret += '<div class="wgo-info-title">'+WGo.t("gameinfo")+'</div>';
+	for(var key in info) {
+		ret += '<div class="wgo-info-item"><span class="wgo-info-label">'+key+'</span><span class="wgo-info-value">'+info[key]+'</span></div>';
+	}
+	ret += '</div>';
+	return ret;
+}
+
 var CommentBox = function(player, region) {
 	this.player = player;
 	this.element = document.createElement("div");
@@ -58,9 +69,29 @@ var CommentBox = function(player, region) {
 	
 	prepare_dom.call(this);
 	
-	player.addEventListener("update", function(e) {
-		this.setComments(e);
+	player.addEventListener("kifuLoaded", function(e) {
+		if(e.kifu.hasComments()) {
+			this.comments_title.innerHTML = WGo.t("comments");
+			this.element.className = "wgo-commentbox";
+			
+			this._update = function(e) {
+				this.setComments(e);
+			}.bind(this);
+			
+			this.player.addEventListener("update", this._update);
+		}
+		else {
+			this.comments_title.innerHTML = WGo.t("gameinfo");
+			this.element.className = "wgo-commentbox wgo-gameinfo";
+			
+			if(this._update) {
+				this.player.removeEventListener("update", this._update);
+				delete this._update;
+			}
+			this.comments.innerHTML = format_info(e.target.getGameInfo());
+		}
 	}.bind(this));
+
 }
 
 CommentBox.prototype = {
@@ -71,7 +102,11 @@ CommentBox.prototype = {
 	},
 
 	setComments: function(e) {
-		this.comments.innerHTML = (e.msg || "")+this.getCommentText(e);
+		var msg = "";
+		if(!e.node.parent) {
+			msg = format_info(e.target.getGameInfo(), true);
+		}
+		this.comments.innerHTML = msg+this.getCommentText(e);
 		
 		if(e.target.config.formatMoves) {
 			if(this.comments.childNodes && this.comments.childNodes.length) search_nodes(this.comments.childNodes, e.target);

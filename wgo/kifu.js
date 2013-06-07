@@ -31,6 +31,16 @@ var recursive_clone = function(node) {
 	return n;
 }
 
+var find_property = function(prop, node) {
+	var res;
+	if(node[prop] !== undefined) return node[prop];
+	for(var ch in node.children) {
+		res = find_property(prop, node.children[ch])
+		if(res) return res;
+	}
+	return false;
+}
+
 var Kifu = function() {
 	this.size = 19;
 	this.info = {};
@@ -45,6 +55,9 @@ Kifu.prototype ={
 		clone.info = JSON.parse(JSON.stringify(this.info));
 		clone.root = recursive_clone(this.root);
 		return clone;
+	},
+	hasComments: function() {
+		return !!find_property("comment", this.root);
 	}
 }
 
@@ -413,7 +426,7 @@ KifuReader.prototype = {
 	
 	goTo: function(path) {
 		var old_pos = this.game.getPosition();
-		console.dir(path);
+
 		exec_first.call(this);
 		
 		var r;
