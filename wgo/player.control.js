@@ -23,27 +23,14 @@ var prepare_dom = function(player) {
 	//this.menu.appendChild(this.widgets[this.widgets.length-1].element);
 }
 
-var Control = function(player) {
+var Control = WGo.extendClass(WGo.Player.component.Component, function(player) {
+	this.super(player);
+	
 	this.widgets = [];
-	this.element = document.createElement("div");
-	//this.element.style.backgroundColor = "#67b";
 	this.element.className = "wgo-player-control";
 
 	prepare_dom.call(this, player);
-	
-	//this.player.addEventListener("playerLoaded", );
-}
-
-Control.prototype = {
-	constructor: Control,
-	
-	appendTo: function(target) {
-		target.appendChild(this.element);
-		
-		//tm_w = parseInt(c.width)+parseInt(c.marginLeft)+parseInt(c.marginRight);
-		//alert(c.width);
-	},
-}
+});
 
 var butupd_first = function(e) {
 	if(!e.node.parent && !this.disabled) this.disable();
@@ -102,7 +89,7 @@ Control.Button = function(player, args, menuItem) {
 	}
 	
 	var title = WGo.t(args.name);
-	
+	/*
 	if(args.icon) {
 		var img = document.createElement("img");
 		img.src = WGo.DIR+args.icon;
@@ -113,7 +100,7 @@ Control.Button = function(player, args, menuItem) {
 		var img = document.createElement("div");
 		img.className = "wgo-placeholder";
 		elem.appendChild(img);
-	}
+	}*/
 	elem.title = title;
 	
 	elem.addEventListener("mousedown", function() {
@@ -318,6 +305,7 @@ Control.menu = [{
 	args: {
 		name: "print",
 		icon: "modern-print4.svg",
+		disabled: true,
 		click: function(player) {
 			var nums = new WGo.Position(player.kifuReader.game.size);
 			var path = player.kifuReader.path;
@@ -369,7 +357,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "menu",
-				icon: "modern-menu4.svg",
+				//icon: "modern-menu4.svg",
 				togglable: true,
 				click: player_menu,
 			}
@@ -383,7 +371,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "about",
-				icon: "modern-info4.svg",
+				//icon: "modern-info4.svg",
 				click: function(player) {
 					player.showMessage(WGo.about);
 				},
@@ -398,7 +386,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "first",
-				icon: "modern-first4.svg",
+				//icon: "modern-first4.svg",
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_first.bind(this));
@@ -411,7 +399,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "multiprev",
-				icon: "modern-fprev4.svg",
+				//icon: "modern-fprev4.svg",
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_first.bind(this));
@@ -441,7 +429,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "next",
-				icon: "modern-next4.svg",
+				//icon: "modern-next4.svg",
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_last.bind(this));
@@ -454,7 +442,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "multinext",
-				icon: "modern-fnext4.svg",
+				//icon: "modern-fnext4.svg",
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_last.bind(this));
@@ -469,7 +457,7 @@ Control.widgets = [ {
 			constructor: Control.Button,
 			args: {
 				name: "last",
-				icon: "modern-last4.svg",
+				//icon: "modern-last4.svg",
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_last.bind(this));
@@ -482,12 +470,11 @@ Control.widgets = [ {
 	}
 }];
 
-WGo.Player.widgets.control = Control;
-WGo.Player.layouts["right_top"].top.push("control");
-WGo.Player.layouts["one_column"].top.push("control");
-WGo.Player.layouts["no_comment"].bottom.push("control");
-WGo.Player.layouts["minimal"].bottom.push("control");
+WGo.Player.layouts["right_top"].top.push("Control");
+WGo.Player.layouts["one_column"].top.push("Control");
+WGo.Player.layouts["no_comment"].bottom.push("Control");
+WGo.Player.layouts["minimal"].bottom.push("Control");
 
-WGo.Player.Control = Control;
+WGo.Player.component.Control = Control;
 
 })(WGo);

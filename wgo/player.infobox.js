@@ -1,8 +1,6 @@
 (function() {
 
 var prepare_dom = function() {
-	this.element = document.createElement("div");
-	
 	prepare_dom_box.call(this,"white");
 	prepare_dom_box.call(this,"black");
 	this.element.appendChild(this.white.box);
@@ -83,16 +81,16 @@ var kifu_loaded = function(e) {
 	var info = e.kifu.info || {};
 	
 	if(info.black) {
-		this.black.name.innerHTML = info.black.name || WGo.t("Black");
-		this.black.info.rank.val.innerHTML = info.black.rank || "-";
+		this.black.name.innerHTML = WGo.filterHTML(info.black.name) || WGo.t("Black");
+		this.black.info.rank.val.innerHTML = WGo.filterHTML(info.black.rank) || "-";
 	}
 	else {
 		this.black.name.innerHTML = WGo.t("Black");
 		this.black.info.rank.val.innerHTML = "-";
 	}
 	if(info.white) {
-		this.white.name.innerHTML = info.white.name || WGo.t("White");
-		this.white.info.rank.val.innerHTML = info.white.rank || "-";
+		this.white.name.innerHTML = WGo.filterHTML(info.white.name) || WGo.t("White");
+		this.white.info.rank.val.innerHTML = WGo.filterHTML(info.white.rank) || "-";
 	}
 	else {
 		this.white.name.innerHTML = WGo.t("White");
@@ -123,42 +121,27 @@ var modifyFontSize = function(color) {
 
 }
 
-var InfoBox = function(player) {
-	this.player = player;
-	
-	prepare_dom.call(this);
-	
-	//this.element.style.backgroundColor = "#bd4";
+var InfoBox = WGo.extendClass(WGo.Player.component.Component, function(player) {
+	this.super(player);
 	this.element.className = "wgo-infobox";
 	
+	prepare_dom.call(this);
+
 	player.addEventListener("kifuLoaded", kifu_loaded.bind(this));
 	
 	player.addEventListener("update", update.bind(this));
-}
+});
 
-InfoBox.prototype = {
-	constructor: InfoBox,
-	
-	appendTo: function(target) {
-		target.appendChild(this.element);
-	},
-	setPlayerTime: function(color, time) {
-		var min = Math.floor(time/60);
-		var sec = Math.round(time)%60;
-		this[color].info.time.val.innerHTML = min+":"+((sec < 10) ? "0"+sec : sec);
-	},
-	
-	updateDimensions: function() {
-		modifyFontSize.call(this,"black");
-		modifyFontSize.call(this,"white");
-	}
-}
+InfoBox.prototype.setPlayerTime = function(color, time) {
+	var min = Math.floor(time/60);
+	var sec = Math.round(time)%60;
+	this[color].info.time.val.innerHTML = min+":"+((sec < 10) ? "0"+sec : sec);
+};
 
-WGo.Player.widgets.infobox = InfoBox;
-WGo.Player.layouts["right_top"].right.push("infobox");
-WGo.Player.layouts["one_column"].top.push("infobox");
-WGo.Player.layouts["no_comment"].top.push("infobox");
+WGo.Player.layouts["right_top"].right.push("InfoBox");
+WGo.Player.layouts["one_column"].top.push("InfoBox");
+WGo.Player.layouts["no_comment"].top.push("InfoBox");
 
-WGo.Player.InfoBox = InfoBox;
+WGo.Player.component.InfoBox = InfoBox;
 
 })(WGo);

@@ -616,7 +616,7 @@ Player.prototype = {
 			if(WGo.Kifu.infoFormatters[key]) {
 				info[WGo.t(key)] = WGo.Kifu.infoFormatters[key](this.kifu.info[key]);
 			}
-			else info[WGo.t(key)] = this.kifu.info[key];
+			else info[WGo.t(key)] = WGo.filterHTML(this.kifu.info[key]);
 		}
 		return info;
 	},
@@ -754,10 +754,12 @@ Player.prototype = {
 	},
 }
 
+Player.component = {};
+
 /**
  * Preset layouts
  * They have defined regions as arrays, which can contain components. Each component specifies where it should be.
- * User can create custom layout. Region arrays should contain keys of components stored in Player.widgets.
+ * User can create custom layout. TODO: write better description
  */
  
 Player.layouts = {
@@ -854,9 +856,6 @@ Player.default = {
 	formatMoves:true,
 }
 
-// object for storing widgets and components
-Player.widgets = {};
-
 WGo.Player = Player;
 
 //--- Basic template ------------------------------------------------------------------------------------------
@@ -932,19 +931,19 @@ var getCurrentLayout = function() {
 	}
 }
 
-var appendWidgets = function(area) {
-	var widgets = this.currentLayout.layout[area];
+var appendComponents = function(area) {
+	var components = this.currentLayout.layout[area];
 	
-	if(widgets) {
+	if(components) {
 		this.regions[area].element.style.display = "block";
 		
-		for(var i in widgets) {
-			if(!this.widgets[widgets[i]]) this.widgets[widgets[i]] = new Player.widgets[widgets[i]](this.player);
+		for(var i in components) {
+			if(!this.components[components[i]]) this.components[components[i]] = new WGo.Player.component[components[i]](this.player);
 			
-			this.widgets[widgets[i]].appendTo(this.regions[area].wrapper);
+			this.components[components[i]].appendTo(this.regions[area].wrapper);
 			
 			// remove detach flag
-			this.widgets[widgets[i]]._detachFromPlayer = false;
+			this.components[components[i]]._detachFromPlayer = false;
 		}
 	}
 	else {
@@ -953,20 +952,20 @@ var appendWidgets = function(area) {
 
 }
 
-var manageWidgets = function() {
+var manageComponents = function() {
 	// add detach flags to every widget
-	for(var key in this.widgets) {
-		this.widgets[key]._detachFromPlayer = true;
+	for(var key in this.components) {
+		this.components[key]._detachFromPlayer = true;
 	}
 	
-	appendWidgets.call(this, "left");
-	appendWidgets.call(this, "right");
-	appendWidgets.call(this, "top");
-	appendWidgets.call(this, "bottom");
+	appendComponents.call(this, "left");
+	appendComponents.call(this, "right");
+	appendComponents.call(this, "top");
+	appendComponents.call(this, "bottom");
 	
-	// detach all invisible widgets
-	for(var key in this.widgets) {
-		if(this.widgets[key]._detachFromPlayer && this.widgets[key].element.parentNode) this.widgets[key].element.parentNode.removeChild(this.widgets[key].element);
+	// detach all invisible components
+	for(var key in this.components) {
+		if(this.components[key]._detachFromPlayer && this.components[key].element.parentNode) this.components[key].element.parentNode.removeChild(this.components[key].element);
 	}
 }
 
@@ -980,7 +979,7 @@ var BasicTemplate = function(player) {
 	
 	BTgenerateDom.call(this);
 	
-	this.widgets = {};
+	this.components = {};
 	
 	window.addEventListener("resize", function() {
 		if(!this.noresize) {
@@ -1020,7 +1019,7 @@ BasicTemplate.prototype = {
 		if(this.currentLayout && this.lastLayout != this.currentLayout) {
 			if(this.currentLayout.className) this.element.className = "wgo-player-main "+this.currentLayout.className;
 			else this.element.className = "wgo-player-main";
-			manageWidgets.call(this);
+			manageComponents.call(this);
 			this.lastLayout = this.currentLayout;
 		}
 		
@@ -1053,8 +1052,8 @@ BasicTemplate.prototype = {
 		this.regions.left.element.style.height = this.dom.center.clientHeight+"px";
 		this.regions.right.element.style.height = this.dom.center.clientHeight+"px";
 
-		for(var i in this.widgets) {
-			if(this.widgets[i].updateDimensions) this.widgets[i].updateDimensions();
+		for(var i in this.components) {
+			if(this.components[i].updateDimensions) this.components[i].updateDimensions();
 		}
 	},
 	

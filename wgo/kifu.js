@@ -129,13 +129,13 @@ Kifu.prototype.toJGO = function(stringify) {
 var player_formatter = function(value) {
 	var str;
 	if(value.name) {
-		str = value.name;
-		if(value.rank) str += " ("+value.rank+")";
-		if(value.team) str += ", "+value.team;
+		str = WGo.filterHTML(value.name);
+		if(value.rank) str += " ("+WGo.filterHTML(value.rank)+")";
+		if(value.team) str += ", "+WGo.filterHTML(value.team);
 	}
 	else {
-		if(value.team) str = value.team;
-		if(value.rank) str += " ("+value.rank+")";
+		if(value.team) str = WGo.filterHTML(value.team);
+		if(value.rank) str += " ("+WGo.filterHTML(value.rank)+")";
 	}
 	return str;
 }
@@ -156,7 +156,7 @@ Kifu.infoFormatters = {
 		return res;
 	},
 	RE: function(res) {
-		return '<a href="javascript: void(0)" onclick="this.parentNode.innerHTML = \''+res+'\'" title="'+WGo.t('res-show-tip')+'">'+WGo.t('show')+'</a>';
+		return '<a href="javascript: void(0)" onclick="this.parentNode.innerHTML = \''+WGo.filterHTML(res)+'\'" title="'+WGo.t('res-show-tip')+'">'+WGo.t('show')+'</a>';
 	},
 }
 

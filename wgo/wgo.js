@@ -86,6 +86,11 @@ WGo.clone = function(obj) {
 	else return obj;
 }
 
+WGo.filterHTML = function(text) {
+	// TODO filter text to avoid XSS
+	return text;
+}
+
 //---------------------- WGo.Board -----------------------------------------------------------------------------
 
 /**

@@ -61,10 +61,9 @@ var format_info = function(info, title) {
 	return ret;
 }
 
-var CommentBox = function(player, region) {
-	this.player = player;
-	this.element = document.createElement("div");
-	//this.element.style.backgroundColor = "#4d9";
+var CommentBox = WGo.extendClass(WGo.Player.component.Component, function(player) {
+	this.super(player);
+
 	this.element.className = "wgo-commentbox";
 	
 	prepare_dom.call(this);
@@ -92,49 +91,38 @@ var CommentBox = function(player, region) {
 		}
 	}.bind(this));
 
-}
+});
 
-CommentBox.prototype = {
-	constructor: CommentBox,
-	
-	appendTo: function(target) {
-		target.appendChild(this.element);
-	},
-
-	setComments: function(e) {
-		var msg = "";
-		if(!e.node.parent) {
-			msg = format_info(e.target.getGameInfo(), true);
-		}
-		this.comments.innerHTML = msg+this.getCommentText(e);
-		
-		if(e.target.config.formatMoves) {
-			if(this.comments.childNodes && this.comments.childNodes.length) search_nodes(this.comments.childNodes, e.target);
-		}
-	},
-	
-	getCommentText: function(e) {
-		// to avoid XSS we must transform < and > to entities, it is highly recomanded not to change it
-		//.replace(/</g,"&lt;").replace(/>/g,"&gt;") : "";
-		if(e.node.comment) {
-			var comm =  "<p>"+e.node.comment.replace(/\n/g, "</p><p>")+"</p>";
-			if(e.target.config.formatNicks) comm = comm.replace(/(<p>)([^:]{3,}:)\s/g, '<p><span class="wgo-comments-nick">$2</span> ');
-			if(e.target.config.formatMoves) comm = comm.replace(/\b[a-zA-Z]1?\d\b/g, '<a href="javascript:void(0)" class="wgo-move-link">$&</a>');
-			return comm;
-		}
-		return "";
-	},
-	
-	updateDimensions: function() {
-		//this.element.style.height = this.element.style.maxHeight = this.element.clientHeight+"px";
+CommentBox.prototype.setComments = function(e) {
+	var msg = "";
+	if(!e.node.parent) {
+		msg = format_info(e.target.getGameInfo(), true);
 	}
-}
+	
+	this.comments.innerHTML = msg+this.getCommentText(e.node.comment, e.target.config.formatNicks, e.target.config.formatMoves);
+	
+	if(e.target.config.formatMoves) {
+		if(this.comments.childNodes && this.comments.childNodes.length) search_nodes(this.comments.childNodes, e.target);
+	}
+};
+
+CommentBox.prototype.getCommentText = function(comment, formatNicks, formatMoves) {
+	// to avoid XSS we must transform < and > to entities, it is highly recomanded not to change it
+	//.replace(/</g,"&lt;").replace(/>/g,"&gt;") : "";
+	if(comment) {
+		var comm =  "<p>"+WGo.filterHTML(comment).replace(/\n/g, "</p><p>")+"</p>";
+		if(formatNicks) comm = comm.replace(/(<p>)([^:]{3,}:)\s/g, '<p><span class="wgo-comments-nick">$2</span> ');
+		if(formatMoves) comm = comm.replace(/\b[a-zA-Z]1?\d\b/g, '<a href="javascript:void(0)" class="wgo-move-link">$&</a>');
+		return comm;
+	}
+	return "";
+};
 
 //CommentBox.comment_transform = CommentBox.addAround("getCommentText", comment_transform, CommentBox.prototype.getCommentText);
-WGo.Player.widgets.commentbox = CommentBox;
-WGo.Player.layouts["right_top"].right.push("commentbox");
-WGo.Player.layouts["one_column"].bottom.push("commentbox");
 
-WGo.Player.CommentBox = CommentBox
+WGo.Player.layouts["right_top"].right.push("CommentBox");
+WGo.Player.layouts["one_column"].bottom.push("CommentBox");
+
+WGo.Player.component.CommentBox = CommentBox
 
 })(WGo);
