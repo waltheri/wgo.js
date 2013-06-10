@@ -160,7 +160,7 @@ Kifu.infoFormatters = {
 	},
 }
 
-Kifu.infoList = ["black", "white", "AN", "CP", "DT", "EV", "GN", "GC", "ON", "OT", "RE", "RO", "RU", "SO", "TM", "PC"];
+Kifu.infoList = ["black", "white", "AN", "CP", "DT", "EV", "GN", "GC", "ON", "OT", "RE", "RO", "RU", "SO", "TM", "PC", "KM"];
 
 WGo.Kifu = Kifu;
 

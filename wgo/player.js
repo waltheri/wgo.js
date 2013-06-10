@@ -130,7 +130,7 @@ var coordinates = {
 
 // board click callback for edit mode
 var edit_board_click = function(x,y) {
-	if(!this.kifuReader.game.isValid(x, y)) return;
+	if(this.frozen || !this.kifuReader.game.isValid(x, y)) return;
 	
 	this.kifuReader.node.appendChild(new WGo.KNode({
 		move: {
@@ -145,7 +145,7 @@ var edit_board_click = function(x,y) {
 
 // board mousemove callback for edit move - adds highlighting
 var edit_board_mouse_move = function(x,y) {
-	if(this._lastX == x && this._lastY == y) return;
+	if(this.frozen || (this._lastX == x && this._lastY == y)) return;
 	
 	this._lastX = x;
 	this._lastY = y;
@@ -315,6 +315,8 @@ Player.prototype = {
 		this.listeners = {
 			kifuLoaded: [prepare_board.bind(this)],
 			update: [update_board.bind(this)],
+			frozen: [],
+			unfrozen: [],
 		};
 		
 		// add listeners from config object
@@ -472,6 +474,14 @@ Player.prototype = {
 	dispatchEvent: function(evt) {
 		if(!this.listeners[evt.type]) return;
 		for(var l in this.listeners[evt.type]) this.listeners[evt.type][l](evt);
+	},
+	
+	setNotification: function(text) {
+		if(console) console.log(text);
+	},
+	
+	setHelp: function(text) {
+		if(console) console.log(text);
 	},
 	
 	/**
@@ -752,6 +762,14 @@ Player.prototype = {
 		this.view.element.removeEventListener(type,this._wheel_listener);
 		delete this._wheel_listener;
 	},
+	
+	setFrozen: function(frozen) {
+		this.frozen = frozen;
+		this.dispatchEvent({
+			type: this.frozen ? "frozen" : "unfrozen",
+			target: this,
+		});
+	}
 }
 
 Player.component = {};
@@ -1165,7 +1183,14 @@ WGo.permalinks = permalinks;
 //--- i18n support ------------------------------------------------------------------------------------------
 
 WGo.t = function(str) {
-	return WGo.Player.i18n[WGo.lang][str] || str;
+	var loc = WGo.Player.i18n[WGo.lang][str];
+	if(loc) {
+		for(var i = 1; i < arguments.length; i++) {
+			loc = loc.replace("$", arguments[i]);
+		}
+		return loc;
+	}
+	return str;
 }
 
 WGo.lang = "en";

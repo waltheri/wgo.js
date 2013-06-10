@@ -20,7 +20,21 @@ var prepare_dom = function() {
 	
 	this.comments = document.createElement("div");
 	this.comments.className = "wgo-comments-content";
-	this.box.appendChild(this.comments);		 
+	this.box.appendChild(this.comments);
+	
+	this.help = document.createElement("div");
+	this.help.className = "wgo-help";
+	this.help.style.display = "none";
+	this.comments.appendChild(this.help);
+	
+	this.notification = document.createElement("div");
+	this.notification.className = "wgo-notification";
+	this.notification.style.display = "none";
+	this.comments.appendChild(this.notification);
+	
+	this.comment_text = document.createElement("div");
+	this.comment_text.className = "wgo-comment-text"; 
+	this.comments.appendChild(this.comment_text);
 }
 
 var mark = function(move) {
@@ -87,10 +101,40 @@ var CommentBox = WGo.extendClass(WGo.Player.component.Component, function(player
 				this.player.removeEventListener("update", this._update);
 				delete this._update;
 			}
-			this.comments.innerHTML = format_info(e.target.getGameInfo());
+			this.comment_text.innerHTML = format_info(e.target.getGameInfo());
 		}
 	}.bind(this));
-
+	
+	player.setNotification = function(text) {
+		if(text) {
+			this.notification.style.display = "block";
+			this.notification.innerHTML = text;
+			this.is_notification = true;
+		}
+		else {
+			this.notification.style.display = "none";
+			this.is_notification = false;
+		}
+		
+		if(this.is_notification || this.is_help) this.comment_text.style.display = "none";
+		else this.comment_text.style.display = "block";
+		
+	}.bind(this);
+	
+	player.setHelp = function(text) {
+		if(text) {
+			this.help.style.display = "block";
+			this.help.innerHTML = text;
+			this.is_help = true;
+		}
+		else {
+			this.help.style.display = "none";
+			this.is_help = false;
+		}
+		
+		if(this.is_notification || this.is_help) this.comment_text.style.display = "none";
+		else this.comment_text.style.display = "block";
+	}.bind(this);
 });
 
 CommentBox.prototype.setComments = function(e) {
@@ -99,10 +143,10 @@ CommentBox.prototype.setComments = function(e) {
 		msg = format_info(e.target.getGameInfo(), true);
 	}
 	
-	this.comments.innerHTML = msg+this.getCommentText(e.node.comment, e.target.config.formatNicks, e.target.config.formatMoves);
+	this.comment_text.innerHTML = msg+this.getCommentText(e.node.comment, e.target.config.formatNicks, e.target.config.formatMoves);
 	
 	if(e.target.config.formatMoves) {
-		if(this.comments.childNodes && this.comments.childNodes.length) search_nodes(this.comments.childNodes, e.target);
+		if(this.comment_text.childNodes && this.comment_text.childNodes.length) search_nodes(this.comment_text.childNodes, e.target);
 	}
 };
 

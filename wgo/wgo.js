@@ -126,22 +126,6 @@ var Board = function(elem, config) {
 	// add default configuration
 	for(var key in WGo.Board.default) if(this[key] === undefined) this[key] = WGo.Board.default[key];
 	
-	// placement of objects (in 3D array)
-	this.obj_arr = []; 
-	for(var i = 0; i < this.size; i++) {
-		this.obj_arr[i] = [];
-		for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
-	}
-	
-	// other objects, stored in list
-	this.obj_list = []; 
-	
-	// layers
-	this.layers = [];
-	
-	// event listeners, binded to board
-	this.listeners = [];
-	
 	// set section if set
 	this.tx = this.section.left;
 	this.ty = this.section.top;
@@ -657,6 +641,25 @@ Board.prototype = {
 	 */
 	 
 	init: function() {
+		// states
+		this.states = [];
+		
+		// placement of objects (in 3D array)
+		this.obj_arr = []; 
+		for(var i = 0; i < this.size; i++) {
+			this.obj_arr[i] = [];
+			for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+		}
+		
+		// other objects, stored in list
+		this.obj_list = []; 
+		
+		// layers
+		this.layers = [];
+		
+		// event listeners, binded to board
+		this.listeners = [];
+		
 		this.element = document.createElement('div');
 		this.element.className = 'wgo-board';
 		
@@ -949,6 +952,22 @@ Board.prototype = {
 		}
 		return false;
 	},
+	
+	pushState: function() {
+		this.states.push({
+			obj_arr: WGo.clone(this.obj_arr),
+			obj_list: WGo.clone(this.obj_list)
+		});
+	},
+	
+	popState: function() {
+		var st = this.states.pop();
+		
+		this.obj_arr = st.obj_arr;
+		this.obj_list = st.obj_list;
+		
+		this.redraw();
+	}
 }
 
 Board.default = {
@@ -1019,6 +1038,7 @@ Position.prototype = {
 	 */
 
 	get: function(x,y) {
+		if(x < 0 || y < 0 || x >= this.size || y >= this.size) return undefined;
 		return this.schema[x*this.size+y];
 	},
 
@@ -1181,7 +1201,7 @@ Game.prototype = {
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
 	 * @param {(WGo.BLACK|WGo.WHITE)} c color
-	 * @param {boolean} testing - if true, move isn't played. Used by WGo.Game.isValid.
+	 * @param {boolean} noplay - if true, move isn't played. Used by WGo.Game.isValid.
 	 * @return {number} code of error, if move isn't valid. If it is valid, function returns array of captured stones.
 	 * 
 	 * Error codes: 

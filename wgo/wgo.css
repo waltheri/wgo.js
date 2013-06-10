@@ -267,6 +267,19 @@
 	margin: 0.5em 0;
 }
 
+.wgo-help { 
+	background-color: rgba(226, 226, 208, 0.90);
+	padding: 1px 7px;
+	margin-bottom: 5px;
+}
+
+.wgo-notification { 
+	background-color: rgba(16, 16, 16, 0.95);
+	color: white;
+	padding: 1px 7px;
+	margin-bottom: 5px;
+}
+
 .wgo-commentbox .wgo-box-title {	
 	background-image: url("comments.svg");
 	background-repeat: no-repeat;
@@ -639,3 +652,4 @@ input.wgo-permalink {
 .wgo-300 .wgo-button-last {
 	display: none;
 }
+

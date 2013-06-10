@@ -17,6 +17,7 @@ var prepare_dom = function(player) {
 	for(var w in Control.widgets) {
 		widget = new Control.widgets[w].constructor(player, Control.widgets[w].args);
 		widget.appendTo(this.iconBar);
+		this.widgets.push(widget);
 	}
 	
 	//this.menu.appendChild(this.widgets[0].element);
@@ -40,6 +41,16 @@ var butupd_first = function(e) {
 var butupd_last = function(e) {
 	if(!e.node.children.length && !this.disabled) this.disable();
 	else if(e.node.children.length && this.disabled) this.enable();
+}
+
+var but_frozen = function(e) {
+	this._disabled = this.disabled;
+	if(!this.disabled) this.disable();
+}
+
+var but_unfrozen = function(e) {
+	if(!this._disabled) this.enable();
+	delete this._disabled;
 }
 
 /**
@@ -115,14 +126,21 @@ Control.Button = function(player, args, menuItem) {
 		if(!this.disabled) elem.className = elem.className.replace(" wgo-button-active","");
 	});
 	
+	var _this = this;
 	if(args.togglable) {
 		elem.addEventListener("click", function(){
-			if(args.click.call(this, player)) this.select();
-			else this.unselect();
-		}.bind(this));
+			if(_this.disabled) return;
+			
+			if(args.click.call(_this, player)) _this.select();
+			else _this.unselect();
+		});
 	}
 	else {
-		elem.addEventListener("click", args.click.bind(this, player));
+		elem.addEventListener("click", function() {
+			if(_this.disabled) return;
+			
+			args.click.call(_this, player);
+		});
 	}
 	
 	if(args.disabled) this.disable();
@@ -151,10 +169,12 @@ Control.Button.prototype = {
 	},
 	
 	unselect: function() {
+		this.selected = false;
 		this.element.className = this.element.className.replace(" wgo-selected","");
 	},
 	
 	select: function() {
+		this.selected = true;
 		if(this.element.className.search("wgo-selected") == -1) this.element.className += " wgo-selected";
 		console.log(this.element.className);
 	},
@@ -186,6 +206,14 @@ Control.MoveNumber = function(player) {
 	}.bind(move));
 	
 	player.addEventListener("kifuLoaded", function(e) {
+		this.disabled = "";
+	}.bind(move));
+	
+	player.addEventListener("frozen", function(e) {
+		this.disabled = "disabled";
+	}.bind(move));
+	
+	player.addEventListener("unfrozen", function(e) {
 		this.disabled = "";
 	}.bind(move));
 }
@@ -256,6 +284,10 @@ Control.menu = [{
 		togglable: true,
 		click: function(player) { 
 			return player.toggleEditMode()
+		},
+		init: function(player) {
+			player.addEventListener("frozen", but_frozen.bind(this));
+			player.addEventListener("unfrozen", but_unfrozen.bind(this));
 		},
 	}
 }, {
@@ -390,6 +422,8 @@ Control.widgets = [ {
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_first.bind(this));
+					player.addEventListener("frozen", but_frozen.bind(this));
+					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) { 
 					player.first();
@@ -403,6 +437,8 @@ Control.widgets = [ {
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_first.bind(this));
+					player.addEventListener("frozen", but_frozen.bind(this));
+					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) { 
 					var p = WGo.clone(player.kifuReader.path);
@@ -418,6 +454,8 @@ Control.widgets = [ {
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_first.bind(this));
+					player.addEventListener("frozen", but_frozen.bind(this));
+					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) { 
 					player.previous();
@@ -433,6 +471,8 @@ Control.widgets = [ {
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_last.bind(this));
+					player.addEventListener("frozen", but_frozen.bind(this));
+					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) {
 					player.next()
@@ -446,6 +486,8 @@ Control.widgets = [ {
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_last.bind(this));
+					player.addEventListener("frozen", but_frozen.bind(this));
+					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) { 
 					var p = WGo.clone(player.kifuReader.path);
@@ -461,6 +503,8 @@ Control.widgets = [ {
 				disabled: true,
 				init: function(player) {
 					player.addEventListener("update", butupd_last.bind(this));
+					player.addEventListener("frozen", but_frozen.bind(this));
+					player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
 				click: function(player) {
 					player.last()
