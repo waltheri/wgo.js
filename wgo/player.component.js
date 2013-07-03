@@ -30,6 +30,6 @@ Component.prototype = {
 	}
 }
 
-WGo.Player.component.Component = Component;
+WGo.BasicPlayer.component.Component = Component;
 
 })(WGo);

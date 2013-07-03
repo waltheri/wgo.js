@@ -268,7 +268,7 @@
 }
 
 .wgo-help { 
-	background-color: rgba(226, 226, 208, 0.90);
+	background-color: rgba(236, 226, 216, 0.90);
 	padding: 1px 7px;
 	margin-bottom: 5px;
 }
@@ -450,18 +450,22 @@ a.wgo-move-link {
 	border: 1px solid rgba(0,0,0,0.7);
 }
 
-.wgo-button.wgo-disabled {
+.wgo-button.wgo-disabled, .wgo-button[disabled] {
 	opacity: 0.5;
 }
 
-.wgo-button.wgo-disabled:hover {
+.wgo-button.wgo-disabled:hover, .wgo-button[disabled]:hover {
 	border: 1px solid rgba(200,200,200,0.3);
 	background-color: rgba(255,255,255,0.3);
 	box-shadow: none;
 }
 
-.wgo-button.wgo-button-active {
+.wgo-button:active {
 	background-position: 65% 65%;
+}
+
+.wgo-button.wgo-disabled:active, .wgo-button[disabled]:active {
+	background-position: 50% 50%;
 }
 
 .wgo-button-previous {

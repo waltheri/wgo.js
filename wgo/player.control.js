@@ -6,7 +6,7 @@ var compare_widgets = function(a,b) {
 	else return 0;
 }
 
-var prepare_dom = function(player) {
+var prepare_dom = function(bp) {
 
 	this.iconBar = document.createElement("div");
 	this.iconBar.className = "wgo-control-wrapper";
@@ -15,7 +15,7 @@ var prepare_dom = function(player) {
 	var widget;
 	
 	for(var w in Control.widgets) {
-		widget = new Control.widgets[w].constructor(player, Control.widgets[w].args);
+		widget = new Control.widgets[w].constructor(bp, Control.widgets[w].args);
 		widget.appendTo(this.iconBar);
 		this.widgets.push(widget);
 	}
@@ -24,14 +24,16 @@ var prepare_dom = function(player) {
 	//this.menu.appendChild(this.widgets[this.widgets.length-1].element);
 }
 
-var Control = WGo.extendClass(WGo.Player.component.Component, function(player) {
-	this.super(player);
+var Control = WGo.extendClass(WGo.BasicPlayer.component.Component, function(bp) {
+	this.super(bp);
 	
 	this.widgets = [];
 	this.element.className = "wgo-player-control";
 
-	prepare_dom.call(this, player);
+	prepare_dom.call(this, bp);
 });
+
+var control = WGo.control = {};
 
 var butupd_first = function(e) {
 	if(!e.node.parent && !this.disabled) this.disable();
@@ -54,11 +56,64 @@ var but_unfrozen = function(e) {
 }
 
 /**
- * interface WidgetType {
- *   void appendTo(HTMLDomElement)
+ * Control.Widget base class
+ * 
+ * args = {
+ *   name: String, // required
+ *	 init: Function, // other initialization code can be here
+ *	 disabled: BOOLEAN, // default false
  * }
  */
  
+control.Widget = function(bp, args) {
+	this.element = this.element || document.createElement(args.type || "div");
+	this.element.className = "wgo-widget-"+args.name;
+	this.init(bp, args);
+}
+
+control.Widget.prototype = {
+	constructor: control.Widget,
+	
+	init: function(bp, args) {
+		if(!args) return;
+		if(args.disabled) this.disable();
+		if(args.init) args.init.call(this, bp);
+	},
+	
+	appendTo: function(target) {
+		target.appendChild(this.element);
+	},
+	
+	disable: function() {
+		this.disabled = true;
+		if(this.element.className.search("wgo-disabled") == -1) {
+			this.element.className += " wgo-disabled";
+		}
+	},
+	
+	enable: function() {
+		this.disabled = false;
+		this.element.className = this.element.className.replace(" wgo-disabled","");
+		this.element.disabled = "";
+	},
+	
+}
+
+/**
+ * Group of widgets
+ */
+
+control.Group = WGo.extendClass(control.Widget, function(bp, args) {
+	this.element = document.createElement("div");
+	this.element.className = "wgo-ctrlgroup wgo-ctrlgroup-"+args.name;
+	
+	var widget;
+	for(var w in args.widgets) {
+		widget = new args.widgets[w].constructor(bp, args.widgets[w].args);
+		widget.appendTo(this.element);
+	}
+});
+
 /**
  * args = {
  *   title: String, // required
@@ -70,49 +125,48 @@ var but_unfrozen = function(e) {
  *	 disabled: BOOLEAN, // default false
  * }
 */
-Control.Group = function(player, args) {
-	this.element = document.createElement("div");
-	this.element.className = "wgo-ctrlgroup wgo-ctrlgroup-"+args.name;
-	
-	var widget;
-	for(var w in args.widgets) {
-		widget = new args.widgets[w].constructor(player, args.widgets[w].args);
-		widget.appendTo(this.element);
-	}
-}
 
-Control.Group.prototype = {
-	constructor: Control.Group,
-	
-	appendTo: function(target) {
-		target.appendChild(this.element);
-	}
-}
+control.Clickable = WGo.extendClass(control.Widget, function(bp, args) {
+	this.super(bp, args);
+});
 
-Control.Button = function(player, args, menuItem) {
-	if(menuItem) {
-		var elem = this.element = document.createElement("div");
-		elem.className = "wgo-menu-item wgo-menu-item-"+args.name;
+control.Clickable.prototype.init = function(bp, args) {
+	var _this = this;
+	
+	if(args.togglable) {
+		this.element.addEventListener("click", function(){
+			if(_this.disabled) return;
+			
+			if(args.click.call(_this, bp)) _this.select();
+			else _this.unselect();
+		});
 	}
 	else {
-		var elem = this.element = document.createElement("button");
-		elem.className = "wgo-button wgo-button-"+args.name;
+		this.element.addEventListener("click", function() {
+			if(_this.disabled) return;
+			args.click.call(_this, bp);
+		});
 	}
 	
-	var title = WGo.t(args.name);
-	/*
-	if(args.icon) {
-		var img = document.createElement("img");
-		img.src = WGo.DIR+args.icon;
-		img.alt = title;
-		elem.appendChild(img);
-	}
-	else {
-		var img = document.createElement("div");
-		img.className = "wgo-placeholder";
-		elem.appendChild(img);
-	}*/
-	elem.title = title;
+	if(args.disabled) this.disable();
+	if(args.init) args.init.call(this, bp);
+};
+
+control.Clickable.prototype.select = function() {
+	this.selected = true;
+	if(this.element.className.search("wgo-selected") == -1) this.element.className += " wgo-selected";
+	console.log(this.element.className);
+};
+
+control.Clickable.prototype.unselect = function() {
+	this.selected = false;
+	this.element.className = this.element.className.replace(" wgo-selected","");
+};
+
+control.Button = WGo.extendClass(control.Clickable, function(bp, args) {
+	var elem = this.element = document.createElement("button");
+	elem.className = "wgo-button wgo-button-"+args.name;
+	elem.title = WGo.t(args.name);
 	
 	elem.addEventListener("mousedown", function() {
 		if(!this.disabled) elem.className += " wgo-button-active";
@@ -126,186 +180,152 @@ Control.Button = function(player, args, menuItem) {
 		if(!this.disabled) elem.className = elem.className.replace(" wgo-button-active","");
 	});
 	
-	var _this = this;
-	if(args.togglable) {
-		elem.addEventListener("click", function(){
-			if(_this.disabled) return;
-			
-			if(args.click.call(_this, player)) _this.select();
-			else _this.unselect();
-		});
-	}
-	else {
-		elem.addEventListener("click", function() {
-			if(_this.disabled) return;
-			
-			args.click.call(_this, player);
-		});
-	}
+	this.init(bp, args);
+});
+
+control.Button.prototype.disable = function() {
+	control.Button.prototype.super.prototype.disable.call(this);
+	this.element.disabled = "disabled";
+}
 	
-	if(args.disabled) this.disable();
-	if(args.selected) this.select();
-	
-	if(args.init) args.init.call(this, player);
-	
-	if(menuItem) this.element.innerHTML += "<span>"+WGo.t(args.name)+"</span>";
+control.Button.prototype.enable = function() {
+	control.Button.prototype.super.prototype.enable.call(this);
+	this.element.disabled = "";
 }
 
-Control.Button.prototype = {
-	constructor: Control.Button,
+control.MenuItem = WGo.extendClass(control.Clickable, function(bp, args) {
+	var elem = this.element = document.createElement("div");
+	elem.className = "wgo-menu-item wgo-menu-item-"+args.name;
+	elem.title = WGo.t(args.name);
+	elem.innerHTML = elem.title;
 	
-	disable: function() {
-		if(this.element.className.search("wgo-disabled") == -1) {
-			this.element.className += " wgo-disabled";
-		}
-		this.element.disabled = "disabled";
-		this.disabled = true;
-	},
-	
-	enable: function() {
-		this.element.className = this.element.className.replace(" wgo-disabled","");
-		this.element.disabled = "";
-		this.disabled = false;
-	},
-	
-	unselect: function() {
-		this.selected = false;
-		this.element.className = this.element.className.replace(" wgo-selected","");
-	},
-	
-	select: function() {
-		this.selected = true;
-		if(this.element.className.search("wgo-selected") == -1) this.element.className += " wgo-selected";
-		console.log(this.element.className);
-	},
-	
-	appendTo: function(target) {
-		target.appendChild(this.element);
-	}
-}
+	this.init(bp, args);
+});
 
-Control.MoveNumber = function(player) {
+control.MoveNumber = WGo.extendClass(control.Widget, function(bp) {
 	this.element = document.createElement("form");
 	this.element.className = "wgo-player-mn-wrapper";
 	
-	var move = document.createElement("input");
+	var move = this.move = document.createElement("input");
 	move.type = "text";
 	move.value = "0";
 	move.maxlength = 3;
 	move.className = "wgo-player-mn-value";
-	move.disabled = "disabled";
+	//move.disabled = "disabled";
 	this.element.appendChild(move);
-	
-	this.element.onsubmit = move.onchange = function(move) { ;
-		this.goTo(move.value); 
+
+	this.element.onsubmit = move.onchange = function(player) {
+		player.goTo(this.getValue()); 
 		return false; 
-	}.bind(player, move);
+	}.bind(this, bp.player);
 	
-	player.addEventListener("update", function(e) {
-		this.value = e.path.m;
-	}.bind(move));
+	bp.player.addEventListener("update", function(e) {
+		this.setValue(e.path.m);
+	}.bind(this));
 	
-	player.addEventListener("kifuLoaded", function(e) {
-		this.disabled = "";
-	}.bind(move));
-	
-	player.addEventListener("frozen", function(e) {
-		this.disabled = "disabled";
-	}.bind(move));
-	
-	player.addEventListener("unfrozen", function(e) {
-		this.disabled = "";
-	}.bind(move));
-}
+	bp.player.addEventListener("kifuLoaded", this.enable.bind(this));
+	bp.player.addEventListener("frozen", this.disable.bind(this));
+	bp.player.addEventListener("unfrozen", this.enable.bind(this));
+});
 
-Control.MoveNumber.prototype = {
-	constructor: Control.MoveNumber,
-	
-	appendTo: function(target) {
-		target.appendChild(this.element);
-	}
-}
+control.MoveNumber.prototype.disable = function() {
+	control.MoveNumber.prototype.super.prototype.disable.call(this);
+	this.move.disabled = "disabled";
+};
 
-var player_menu = function(player) {
-	if(player._menu_tmp) {
-		delete player._menu_tmp;
+control.MoveNumber.prototype.enable = function() {
+	control.MoveNumber.prototype.super.prototype.enable.call(this);
+	this.move.disabled = "";
+};
+
+control.MoveNumber.prototype.setValue = function(n) {
+	this.move.value = n;
+};
+
+control.MoveNumber.prototype.getValue = function(n) {
+	return this.move.value;
+};
+
+var player_menu = function(bp) {
+	if(bp._menu_tmp) {
+		delete bp._menu_tmp;
 		return;
 	}
-	if(!player.view.menu) {
-		player.view.menu = document.createElement("div");
-		player.view.menu.className = "wgo-player-menu";
-		player.view.menu.style.position = "absolute";
-		player.view.menu.style.display = "none";
-		player.view.element.appendChild(player.view.menu);
+	if(!bp.menu) {
+		bp.menu = document.createElement("div");
+		bp.menu.className = "wgo-player-menu";
+		bp.menu.style.position = "absolute";
+		bp.menu.style.display = "none";
+		bp.element.appendChild(bp.menu);
 		
 		var widget;
 		for(var i in Control.menu) {
-			widget = new Control.menu[i].constructor(player, Control.menu[i].args, true);
-			widget.appendTo(player.view.menu);
+			widget = new Control.menu[i].constructor(bp, Control.menu[i].args, true);
+			widget.appendTo(bp.menu);
 		}
 	}
 	
-	if(player.view.menu.style.display != "none") {
-		player.view.menu.style.display = "none";
+	if(bp.menu.style.display != "none") {
+		bp.menu.style.display = "none";
 		
-		document.removeEventListener("click", player._menu_ev);
-		delete player._menu_ev;
+		document.removeEventListener("click", bp._menu_ev);
+		delete bp._menu_ev;
 		
 		this.unselect();
 		return false;
 	}
 	else {
-		player.view.menu.style.display = "block";
+		bp.menu.style.display = "block";
 		
 		// kinda dirty syntax, but working well
-		if(this.element.parentElement.parentElement.parentElement.parentElement == player.view.regions.bottom.wrapper) {
-			player.view.menu.style.left = this.element.offsetLeft+"px";
-			player.view.menu.style.top = (this.element.offsetTop-player.view.menu.clientHeight+1)+"px";
+		if(this.element.parentElement.parentElement.parentElement.parentElement == bp.regions.bottom.wrapper) {
+			bp.menu.style.left = this.element.offsetLeft+"px";
+			bp.menu.style.top = (this.element.offsetTop-bp.menu.clientHeight+1)+"px";
 		}
 		else {
-			player.view.menu.style.left = this.element.offsetLeft+"px";
-			player.view.menu.style.top = (this.element.offsetTop+this.element.offsetHeight)+"px";
+			bp.menu.style.left = this.element.offsetLeft+"px";
+			bp.menu.style.top = (this.element.offsetTop+this.element.offsetHeight)+"px";
 		}
 			
-		player._menu_ev = player_menu.bind(this, player)
-		player._menu_tmp = true;
+		bp._menu_ev = player_menu.bind(this, bp)
+		bp._menu_tmp = true;
 		
-		document.addEventListener("click", player._menu_ev);
+		document.addEventListener("click", bp._menu_ev);
 
 		return true;
 	}
 }
 
 Control.menu = [{
-	constructor: Control.Button,
+	constructor: control.MenuItem,
 	args: {
 		name: "editmode",
 		icon: "modern-edit4.svg",
 		togglable: true,
-		click: function(player) { 
-			return player.toggleEditMode()
+		click: function(bp) { 
+			return bp.player.toggleEditMode()
 		},
-		init: function(player) {
-			player.addEventListener("frozen", but_frozen.bind(this));
-			player.addEventListener("unfrozen", but_unfrozen.bind(this));
+		init: function(bp) {
+			bp.player.addEventListener("frozen", but_frozen.bind(this));
+			bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 		},
 	}
 }, {
-	constructor: Control.Button,
+	constructor: control.MenuItem,
 	args: {
 		name: "fullscreen",
 		icon: "modern-fullscr4.svg",
 		togglable: true,
-		click: function(player) { 
-			player.toggleFullscreen(); 
+		click: function(bp) { 
+			bp.player.toggleFullscreen(); 
 		},
-		init: function(player) {
+		init: function(bp) {
 			if(document.fullscreenEnabled === false) {
 				this.disable();
 				return;
 			}
 
-			player.addEventListener("fullscreenChange", function(e){
+			bp.player.addEventListener("fullscreenChange", function(e){
 				if(e.on) {
 					e.target.view.width = screen.width;
 					e.target.view.height = screen.height;
@@ -320,20 +340,20 @@ Control.menu = [{
 		}
 	}
 }, {
-	constructor: Control.Button,
+	constructor: control.MenuItem,
 	args: {
 		name: "switch-coo",
 		icon: "modern-coo4.svg",
 		togglable: true,
-		click: function(player) {
-			return player.toggleCoordinates();
+		click: function(bp) {
+			return bp.toggleCoordinates();
 		},
-		init: function(player) {
-			if(player.coordinates) this.select();
+		init: function(bp) {
+			if(bp.coordinates) this.select();
 		}
 	}
-}, {
-	constructor: Control.Button,
+}/*, {
+	constructor: control.MenuItem,
 	args: {
 		name: "print",
 		icon: "modern-print4.svg",
@@ -362,14 +382,14 @@ Control.menu = [{
 			
 		}
 	}
-}, {
-	constructor: Control.Button,
+}*/, {
+	constructor: control.MenuItem,
 	args: {
 		name: "permalink",
 		icon: "modern-perma4.svg",
-		click: function(player) {
-			var link = location.href.split("#")[0]+"#"+player.view.element.id+",p,"+player.kifuReader.path.join(",");
-			player.showMessage('<h1>'+WGo.t('permalink')+'</h1><p><input class="wgo-permalink" type="text" value="'+link+'" onclick="this.select(); event.stopPropagation()"/></p>');
+		click: function(bp) {
+			var link = location.href.split("#")[0]+"#"+bp.element.id+",p,"+bp.player.kifuReader.path.join(",");
+			bp.showMessage('<h1>'+WGo.t('permalink')+'</h1><p><input class="wgo-permalink" type="text" value="'+link+'" onclick="this.select(); event.stopPropagation()"/></p>');
 		},
 	}
 }];
@@ -382,11 +402,11 @@ Control.menu = [{
 */
 
 Control.widgets = [ {
-	constructor: Control.Group,
+	constructor: control.Group,
 	args: {
 		name: "left",
 		widgets: [{
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "menu",
 				//icon: "modern-menu4.svg",
@@ -396,129 +416,129 @@ Control.widgets = [ {
 		}]
 	}
 }, {
-	constructor: Control.Group,
+	constructor: control.Group,
 	args: {
 		name: "right",
 		widgets: [{
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "about",
 				//icon: "modern-info4.svg",
-				click: function(player) {
-					player.showMessage(WGo.about);
+				click: function(bp) {
+					bp.showMessage(WGo.about);
 				},
 			}
 		}]
 	}
 }, {
-	constructor: Control.Group,
+	constructor: control.Group,
 	args: {
 		name: "control",
 		widgets: [{
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "first",
 				//icon: "modern-first4.svg",
 				disabled: true,
-				init: function(player) {
-					player.addEventListener("update", butupd_first.bind(this));
-					player.addEventListener("frozen", but_frozen.bind(this));
-					player.addEventListener("unfrozen", but_unfrozen.bind(this));
+				init: function(bp) {
+					bp.player.addEventListener("update", butupd_first.bind(this));
+					bp.player.addEventListener("frozen", but_frozen.bind(this));
+					bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) { 
-					player.first();
+				click: function(bp) { 
+					bp.player.first();
 				},
 			}
 		}, {
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "multiprev",
 				//icon: "modern-fprev4.svg",
 				disabled: true,
-				init: function(player) {
-					player.addEventListener("update", butupd_first.bind(this));
-					player.addEventListener("frozen", but_frozen.bind(this));
-					player.addEventListener("unfrozen", but_unfrozen.bind(this));
+				init: function(bp) {
+					bp.player.addEventListener("update", butupd_first.bind(this));
+					bp.player.addEventListener("frozen", but_frozen.bind(this));
+					bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) { 
-					var p = WGo.clone(player.kifuReader.path);
+				click: function(bp) { 
+					var p = WGo.clone(bp.player.kifuReader.path);
 					p.m -= 10; 
-					player.goTo(p);
+					bp.player.goTo(p);
 				},
 			}
 		},{
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "previous",
 				//icon: "modern-prev4.svg",
 				disabled: true,
-				init: function(player) {
-					player.addEventListener("update", butupd_first.bind(this));
-					player.addEventListener("frozen", but_frozen.bind(this));
-					player.addEventListener("unfrozen", but_unfrozen.bind(this));
+				init: function(bp) {
+					bp.player.addEventListener("update", butupd_first.bind(this));
+					bp.player.addEventListener("frozen", but_frozen.bind(this));
+					bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) { 
-					player.previous();
+				click: function(bp) { 
+					bp.player.previous();
 				},
 			}
 		}, {
-			constructor: Control.MoveNumber,
+			constructor: control.MoveNumber,
 		}, {
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "next",
 				//icon: "modern-next4.svg",
 				disabled: true,
-				init: function(player) {
-					player.addEventListener("update", butupd_last.bind(this));
-					player.addEventListener("frozen", but_frozen.bind(this));
-					player.addEventListener("unfrozen", but_unfrozen.bind(this));
+				init: function(bp) {
+					bp.player.addEventListener("update", butupd_last.bind(this));
+					bp.player.addEventListener("frozen", but_frozen.bind(this));
+					bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) {
-					player.next()
+				click: function(bp) {
+					bp.player.next();
 				},
 			}
 		}, {
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "multinext",
 				//icon: "modern-fnext4.svg",
 				disabled: true,
-				init: function(player) {
-					player.addEventListener("update", butupd_last.bind(this));
-					player.addEventListener("frozen", but_frozen.bind(this));
-					player.addEventListener("unfrozen", but_unfrozen.bind(this));
+				init: function(bp) {
+					bp.player.addEventListener("update", butupd_last.bind(this));
+					bp.player.addEventListener("frozen", but_frozen.bind(this));
+					bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) { 
-					var p = WGo.clone(player.kifuReader.path);
+				click: function(bp) { 
+					var p = WGo.clone(bp.player.kifuReader.path);
 					p.m += 10; 
-					player.goTo(p);
+					bp.player.goTo(p);
 				},
 			}
 		}, {
-			constructor: Control.Button,
+			constructor: control.Button,
 			args: {
 				name: "last",
 				//icon: "modern-last4.svg",
 				disabled: true,
-				init: function(player) {
-					player.addEventListener("update", butupd_last.bind(this));
-					player.addEventListener("frozen", but_frozen.bind(this));
-					player.addEventListener("unfrozen", but_unfrozen.bind(this));
+				init: function(bp) {
+					bp.player.addEventListener("update", butupd_last.bind(this));
+					bp.player.addEventListener("frozen", but_frozen.bind(this));
+					bp.player.addEventListener("unfrozen", but_unfrozen.bind(this));
 				},
-				click: function(player) {
-					player.last()
+				click: function(bp) {
+					bp.player.last()
 				},
 			}
 		}]
 	}
 }];
 
-WGo.Player.layouts["right_top"].top.push("Control");
-WGo.Player.layouts["one_column"].top.push("Control");
-WGo.Player.layouts["no_comment"].bottom.push("Control");
-WGo.Player.layouts["minimal"].bottom.push("Control");
+WGo.BasicPlayer.layouts["right_top"].top.push("Control");
+WGo.BasicPlayer.layouts["one_column"].top.push("Control");
+WGo.BasicPlayer.layouts["no_comment"].bottom.push("Control");
+WGo.BasicPlayer.layouts["minimal"].bottom.push("Control");
 
-WGo.Player.component.Control = Control;
+WGo.BasicPlayer.component.Control = Control;
 
 })(WGo);

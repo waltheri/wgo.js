@@ -120,6 +120,8 @@ WGo.filterHTML = function(text) {
  */
  
 var Board = function(elem, config) {
+	var config = config || {};
+	
 	// set user configuration
 	for(var key in config) this[key] = config[key];
 	

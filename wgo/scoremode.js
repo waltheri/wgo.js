@@ -191,7 +191,7 @@ ScoreMode.prototype.calculate = function() {
 WGo.ScoreMode = ScoreMode;
 
 WGo.Player.component.Control.menu.push({
-	constructor: WGo.Player.component.Control.Button,
+	constructor: WGo.control.MenuItem,
 	args: {
 		name: "scoremode",
 		togglable: true,
@@ -206,7 +206,7 @@ WGo.Player.component.Control.menu.push({
 			}
 			else {
 				player.setFrozen(true);
-				player.setHelp("<p>Click on stones to mark them dead or alive. You can also set and unset territory points by clicking on them.</p>");
+				player.setHelp("<p>"+WGo.t("help_score")+"</p>");
 				this._score_mode = new WGo.ScoreMode(player.kifuReader.game.position, player.board, player.kifu.info.KM || 0.5, player.setNotification);
 				this._score_mode.start();
 				return true;
@@ -219,5 +219,6 @@ WGo.Player.i18n.en["scoremode"] = "Count score";
 WGo.Player.i18n.en["score"] = "Score";
 WGo.Player.i18n.en["bwin"] = "Black wins by $ points.";
 WGo.Player.i18n.en["wwin"] = "White wins by $ points.";
+WGo.Player.i18n.en["help_score"] = "Click on stones to mark them dead or alive. You can also set and unset territory points by clicking on them. Territories must be completely bordered.";
 
 })(WGo);

@@ -121,15 +121,15 @@ var modifyFontSize = function(color) {
 
 }
 
-var InfoBox = WGo.extendClass(WGo.Player.component.Component, function(player) {
-	this.super(player);
+var InfoBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(bp) {
+	this.super(bp);
 	this.element.className = "wgo-infobox";
 	
 	prepare_dom.call(this);
 
-	player.addEventListener("kifuLoaded", kifu_loaded.bind(this));
+	bp.player.addEventListener("kifuLoaded", kifu_loaded.bind(this));
 	
-	player.addEventListener("update", update.bind(this));
+	bp.player.addEventListener("update", update.bind(this));
 });
 
 InfoBox.prototype.setPlayerTime = function(color, time) {
@@ -138,10 +138,10 @@ InfoBox.prototype.setPlayerTime = function(color, time) {
 	this[color].info.time.val.innerHTML = min+":"+((sec < 10) ? "0"+sec : sec);
 };
 
-WGo.Player.layouts["right_top"].right.push("InfoBox");
-WGo.Player.layouts["one_column"].top.push("InfoBox");
-WGo.Player.layouts["no_comment"].top.push("InfoBox");
+WGo.BasicPlayer.layouts["right_top"].right.push("InfoBox");
+WGo.BasicPlayer.layouts["one_column"].top.push("InfoBox");
+WGo.BasicPlayer.layouts["no_comment"].top.push("InfoBox");
 
-WGo.Player.component.InfoBox = InfoBox;
+WGo.BasicPlayer.component.InfoBox = InfoBox;
 
 })(WGo);

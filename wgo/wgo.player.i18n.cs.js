@@ -39,4 +39,5 @@ WGo.Player.i18n.cs = {
 	"score": "Skóre",
 	"bwin": "Èerný vyhrává o $ bodu.",
 	"wwin": "Bílý vyhrává o  $ bodu.",
+	"help_score": "Kliknutím na kameny je oznaèíte za mrtvé nebo za živé. Také mùžete kliknutím zmìnit stav územních bodù. Území musí být kompletnì ohranièená.",
 }
