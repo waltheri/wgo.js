@@ -1,24 +1,9 @@
 
 (function(WGo) {
 
-// board click callback for edit mode
-var edit_board_click = function(x,y) {
-	if(this.frozen || !this.kifuReader.game.isValid(x, y)) return;
-	
-	this.kifuReader.node.appendChild(new WGo.KNode({
-		move: {
-			x: x, 
-			y: y, 
-			c: this.kifuReader.game.turn
-		}, 
-		edited: true
-	}));
-	this.next(this.kifuReader.node.children.length-1);
-}
-
 // board mousemove callback for edit move - adds highlighting
 var edit_board_mouse_move = function(x,y) {
-	if(this.frozen || (this._lastX == x && this._lastY == y)) return;
+	if(this.player.frozen || (this._lastX == x && this._lastY == y)) return;
 	
 	this._lastX = x;
 	this._lastY = y;
@@ -27,12 +12,12 @@ var edit_board_mouse_move = function(x,y) {
 		this.board.removeObject(this._last_mark);
 	}
 	
-	if(x != -1 && y != -1 && this.kifuReader.game.isValid(x,y)) {
+	if(x != -1 && y != -1 && this.player.kifuReader.game.isValid(x,y)) {
 		this._last_mark = {
 			type: "outline",
 			x: x,
 			y: y, 
-			c: this.kifuReader.game.turn
+			c: this.player.kifuReader.game.turn
 		};
 		this.board.addObject(this._last_mark);
 	}
@@ -66,52 +51,100 @@ var pos_diff = function(old_p, new_p) {
 	}
 }
 
+WGo.Player.Editable = {};
+
 /**
  * Toggle edit mode.
  */
 	
-WGo.Player.prototype.toggleEditMode = function() {
-	this.editMode = !this.editMode;
-	if(this.editMode) {
+WGo.Player.Editable = function(player, board) {
+	this.player = player;
+	this.board = board;
+	this.editMode = false;
+}
+
+WGo.Player.Editable.prototype.set = function(set) {
+	if(!this.editMode && set) {
 		// save original kifu reader
-		this._originalReader = this.kifuReader;
+		this.originalReader = this.player.kifuReader;
 		
 		// create new reader with cloned kifu
-		this.kifuReader = new WGo.KifuReader(this.kifu.clone());
+		this.player.kifuReader = new WGo.KifuReader(this.player.kifu.clone(), this.originalReader.rememberPath);
 		
 		// go to current position
-		this.kifuReader.goTo(this._originalReader.path);
+		this.player.kifuReader.goTo(this.originalReader.path);
 		
 		// register edit listeners
-		this._ev_click = edit_board_click.bind(this);
-		this._ev_move = edit_board_mouse_move.bind(this);
-		this._ev_out = edit_board_mouse_out.bind(this);
+		this._ev_click = this._ev_click || this.play.bind(this);
+		this._ev_move = this._ev_move || edit_board_mouse_move.bind(this);
+		this._ev_out = this._ev_out || edit_board_mouse_out.bind(this);
+		
 		this.board.addEventListener("click", this._ev_click);
 		this.board.addEventListener("mousemove", this._ev_move);
 		this.board.addEventListener("mouseout", this._ev_out);
+		
+		this.editMode = true;
 	}
-	else {
+	else if(this.editMode && !set) {
 		// go to the last original position
-		this._originalReader.goTo(this.kifuReader.path);
+		this.originalReader.goTo(this.player.kifuReader.path);
 		
 		// change object isn't actual - update it, not elegant solution, but simple
-		this._originalReader.change = pos_diff(this.kifuReader.getPosition(), this._originalReader.getPosition());
+		this.originalReader.change = pos_diff(this.player.kifuReader.getPosition(), this.originalReader.getPosition());
 		
 		// update kifu reader
-		this.kifuReader = this._originalReader;
-		this.update(true);
+		this.player.kifuReader = this.originalReader;
+		this.player.update(true);
 		
 		// remove edit listeners
 		this.board.removeEventListener("click", this._ev_click);
 		this.board.removeEventListener("mousemove", this._ev_move);
 		this.board.removeEventListener("mouseout", this._ev_out);
 		
-		delete this._originalReader;
-		delete this._ev_click;
-		delete this._ev_move;
-		delete this._ev_out;
+		this.editMode = false;
 	}
-	return this.editMode;
-};
+}
+
+WGo.Player.Editable.prototype.play = function(x,y) {
+	if(this.player.frozen || !this.player.kifuReader.game.isValid(x, y)) return;
+	
+	this.player.kifuReader.node.appendChild(new WGo.KNode({
+		move: {
+			x: x, 
+			y: y, 
+			c: this.player.kifuReader.game.turn
+		}, 
+		edited: true
+	}));
+	this.player.next(this.player.kifuReader.node.children.length-1);
+}
+
+if(WGo.BasicPlayer && WGo.BasicPlayer.component.Control) {
+	WGo.BasicPlayer.component.Control.menu.push({
+		constructor: WGo.BasicPlayer.control.MenuItem,
+		args: {
+			name: "editmode",
+			togglable: true,
+			click: function(player) { 
+				this._editable = this._editable || new WGo.Player.Editable(player, player.board);
+				this._editable.set(!this._editable.editMode);
+				return this._editable.editMode;
+			},
+			init: function(player) {
+				var _this = this;
+				player.addEventListener("frozen", function(e) {
+					_this._disabled = _this.disabled;
+					if(!_this.disabled) _this.disable();
+				});
+				player.addEventListener("unfrozen", function(e) {
+					if(!_this._disabled) _this.enable();
+					delete _this._disabled;
+				});
+			},
+		}
+	}); 
+}
+
+WGo.i18n.en["editmode"] = "Edit mode";
 
 })(WGo);

@@ -21,6 +21,10 @@
 
 "use strict";
 
+var scripts= document.getElementsByTagName('script');
+var path= scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
+var mydir= path.split('/').slice(0, -1).join('/')+'/';  
+
 /**
  * Main namespace - it initializes WGo in first run and then execute main function. 
  * You must call WGo.init() if you want to use library, without calling WGo.
@@ -29,33 +33,47 @@
 var WGo = {
 	// basic information
 	version: "2.0",
-	about: "<h1>WGo.js 2.0</h1>"
-		  + "<p>WGo.js or simply WGo, is HTML5 framework for purposes of game of go. It contains some libraries that make building web go application easier. There's module operating with game logic, graphical board written in HTML 5, SGF parser and simple go player.</p>"
-		  + "<p>WGo is open source licensed under <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT license</a>. You can use and modify any code from this project.</p>"
-		  + "<p>You can find more information at <a href='http://wgo.waltheri.net'>wgo.waltheri.net</a></p>"
-		  + "<p>Copyright &copy; 2012 Jan Prokop</p>",
 	
 	// constants for colors (rather use WGo.B or WGo.W)
 	B: 1,
 	W: -1,
 
 	// if true errors will be shown in dialog window, otherwise they will be ignored
-	ERROR_REPORT: false,
+	ERROR_REPORT: true,
+	DIR: mydir,
+	
+	// Language of player, you can change this global variable any time. Object WGo.i18n.<your lang> must exist.
+	lang: "en",
+	
+	// Add more terms for each language here 
+	i18n: {
+		en: {
+			"about-wgo": "<h1>WGo.js 2.0</h1>"
+					   + "<p>WGo.js or simply WGo, is HTML5 framework for purposes of game of go. It contains some libraries that make building web go application easier. There's module operating with game logic, graphical board written in HTML 5, SGF parser and simple go player.</p>"
+					   + "<p>WGo is open source licensed under <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT license</a>. You can use and modify any code from this project.</p>"
+					   + "<p>You can find more information at <a href='http://wgo.waltheri.net'>wgo.waltheri.net</a></p>"
+					   + "<p>Copyright &copy; 2012 Jan Prokop</p>"
+		}
+	}
 }
 
 // browser detection - can be handy
 WGo.opera = navigator.userAgent.search(/(opera)(?:.*version)?[ \/]([\w.]+)/i) != -1;
 WGo.webkit = navigator.userAgent.search(/(webkit)[ \/]([\w.]+)/i) != -1;
-WGo.mozilla = navigator.userAgent.search(/(mozilla)(?:.*? rv:([\w.]+))?/i) != -1 && !WGo.webkit;
 WGo.msie = navigator.userAgent.search(/(msie) ([\w.]+)/i) != -1;
+WGo.mozilla = navigator.userAgent.search(/(mozilla)(?:.*? rv:([\w.]+))?/i) != -1 && !WGo.webkit && !WGo.msie;
 
-WGo.t = function(a){ return a; };
-
-var scripts= document.getElementsByTagName('script');
-var path= scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
-var mydir= path.split('/').slice(0, -1).join('/')+'/';  
-
-WGo.DIR = mydir;
+// translating function
+WGo.t = function(str) {
+	var loc = WGo.i18n[WGo.lang][str] || WGo.i18n.en[str];
+	if(loc) {
+		for(var i = 1; i < arguments.length; i++) {
+			loc = loc.replace("$", arguments[i]);
+		}
+		return loc;
+	}
+	return str;
+}
 
 // helping function for class inheritance
 WGo.extendClass = function(parent, child) {
@@ -86,9 +104,10 @@ WGo.clone = function(obj) {
 	else return obj;
 }
 
+// filter html to avoid XSS
 WGo.filterHTML = function(text) {
-	// TODO filter text to avoid XSS
-	return text;
+	if(!text || typeof text != "string") return text;
+	return text.replace("<", "&lt;").replace(">", "&gt;");
 }
 
 //---------------------- WGo.Board -----------------------------------------------------------------------------
@@ -109,6 +128,7 @@ WGo.filterHTML = function(text) {
  * - starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant.
  * - stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant.
  * - shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant.
+ * - background: string - background of the board, it can be either color (#RRGGBB) or url. Empty string means no background. (default: WGo.DIR+"wood1.jpg")
  * - section: {
  *     top: number,
  *     right: number,
@@ -144,14 +164,6 @@ var Board = function(elem, config) {
 	if(this.width && this.height) this.setDimensions(this.width, this.height);
 	else if(this.width) this.setWidth(this.width);
 	else if(this.height) this.setHeight(this.height);
-}
-
-var basic_object_clear = function(args, board) {
-	var xr = board.getX(args.x),
-		yr = board.getY(args.y),
-		sr = board.stoneRadius;
-	this.clearRect(xr-sr-0.5,yr-sr-0.5, 2*sr, 2*sr);
-	this.clearRect(xr-sr-0.5,yr-sr-0.5, 2*sr, 2*sr);
 }
 
 var shadow_handler = {
@@ -277,6 +289,34 @@ Board.drawHandlers = {
 		shadow: shadow_handler,
 	},
 	
+	GLOW: {
+		stone: {
+			draw: function(args, board) {
+				var xr = board.getX(args.x),
+					yr = board.getY(args.y),
+					sr = board.stoneRadius;
+					
+				var radgrad;
+				if(args.c == WGo.W) {
+					radgrad = this.createRadialGradient(xr+4*sr/5,yr+4*sr/5,1,xr+5*sr/5,yr+5*sr/5,8*sr/5);
+					radgrad.addColorStop(0, 'rgb(157,157,157)');
+					radgrad.addColorStop(1, '#fff');
+				}
+				else {
+					radgrad = this.createRadialGradient(xr-4*sr/5,yr-4*sr/5,1,xr-5*sr/5,yr-5*sr/5,7*sr/5);
+					radgrad.addColorStop(0, 'rgb(157,157,157)');
+					radgrad.addColorStop(1, '#000');
+				}
+				
+				this.beginPath();
+				this.fillStyle = radgrad;
+				this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+				this.fill();
+			},
+		},
+		shadow: shadow_handler,
+	},
+	
 	MONO: {
 		stone: {
 			draw: function(args, board) {
@@ -365,7 +405,7 @@ Board.drawHandlers = {
 			draw: function(args, board) {
 				var xr = board.getX(args.x),
 					yr = board.getY(args.y),
-					sr = board.stoneRadius;
+					sr = Math.round(board.stoneRadius);
 					
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
 				this.lineWidth = args.lineWidth || board.lineWidth || 1;
@@ -643,8 +683,6 @@ Board.prototype = {
 	 */
 	 
 	init: function() {
-		// states
-		this.states = [];
 		
 		// placement of objects (in 3D array)
 		this.obj_arr = []; 
@@ -664,6 +702,14 @@ Board.prototype = {
 		
 		this.element = document.createElement('div');
 		this.element.className = 'wgo-board';
+		
+		if(this.background) {
+			if(this.background[0] == "#") this.element.style.backgroundColor = this.background;
+			else {
+				this.element.style.backgroundImage = "url('"+this.background+"')";
+				this.element.style.backgroundSize = "100% 100%";
+			}
+		}
 		
 		this.grid = new Board.GridLayer();
 		this.shadow = new Board.ShadowLayer(this.shadowSize);
@@ -761,6 +807,28 @@ Board.prototype = {
 		this.by = this.size-1-this.section.bottom;
 		
 		this.setDimensions();
+	},
+	
+	/**
+	 * Set board size (eg: 9, 13 or 19), this will clear board's objects.
+	 */
+	 
+	setSize: function(size) {
+		var size = size || 19;
+		
+		if(size != this.size) {
+			this.size = size;
+			
+			this.obj_arr = [];
+			for(var i = 0; i < this.size; i++) {
+				this.obj_arr[i] = [];
+				for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+			}
+		
+			this.bx = this.size-1-this.section.right;
+			this.by = this.size-1-this.section.bottom;
+			this.setDimensions();
+		}
 	},
 	
 	/**
@@ -955,18 +1023,16 @@ Board.prototype = {
 		return false;
 	},
 	
-	pushState: function() {
-		this.states.push({
-			obj_arr: WGo.clone(this.obj_arr),
-			obj_list: WGo.clone(this.obj_list)
-		});
+	getState: function() {
+		return {
+			objects: WGo.clone(this.obj_arr),
+			custom: WGo.clone(this.obj_list)
+		};
 	},
 	
-	popState: function() {
-		var st = this.states.pop();
-		
-		this.obj_arr = st.obj_arr;
-		this.obj_list = st.obj_list;
+	restoreState: function(state) {
+		this.obj_arr = state.objects || this.obj_arr;
+		this.obj_list = state.custom || this.obj_list;
 		
 		this.redraw();
 	}
@@ -1003,7 +1069,8 @@ Board.default = {
 		right: 0,
 		bottom: 0,
 		left: 0,
-	}
+	},
+	background: WGo.DIR+"wood1.jpg"
 }
 
 // save Board
@@ -1082,7 +1149,7 @@ Position.prototype = {
 WGo.Position = Position;
 
 /**
- * Creates instance of game object.
+ * Creates instance of game class.
  *
  * @class 
  * This class implements game logic. It basically analyses given moves and returns capture stones. 
@@ -1202,7 +1269,7 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.BLACK|WGo.WHITE)} c color
+	 * @param {(WGo.B|WGo.W)} c color
 	 * @param {boolean} noplay - if true, move isn't played. Used by WGo.Game.isValid.
 	 * @return {number} code of error, if move isn't valid. If it is valid, function returns array of captured stones.
 	 * 
@@ -1262,11 +1329,11 @@ Game.prototype = {
 	/**
 	 * Play pass.
 	 *
-	 * @param {(WGo.BLACK|WGo.WHITE)} c color
+	 * @param {(WGo.B|WGo.W)} c color
 	 */
 	
 	pass: function(c) {
-		if(!c) this.turn = -c; 
+		if(c) this.turn = -c; 
 		else this.turn = -this.turn;
 		
 		this.pushPosition();
@@ -1278,7 +1345,7 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.BLACK|WGo.WHITE)} c color
+	 * @param {(WGo.B|WGo.W)} c color
 	 * @return {boolean} true if move can be played.
 	 */
 	
@@ -1303,7 +1370,7 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.BLACK|WGo.WHITE)} c color
+	 * @param {(WGo.B|WGo.W)} c color
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
@@ -1336,7 +1403,7 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.BLACK|WGo.WHITE)} c color
+	 * @param {(WGo.B|WGo.W)} c color
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
@@ -1353,7 +1420,7 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @return {(WGo.BLACK|WGo.WHITE|0)} color
+	 * @return {(WGo.B|WGo.W|0)} color
 	 */
 	
 	getStone: function(x,y) {

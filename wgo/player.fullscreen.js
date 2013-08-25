@@ -1,3 +1,5 @@
+// not finished yet
+
 //--- Fullscreen mode ---------------------------------------------------------------------------------------------------
 
 var FSCHANGE = document.onfullscreenchange !== undefined ? "onfullscreenchange" : (
@@ -61,5 +63,37 @@ Player.prototype.toggleFullscreen: function() {
 		fullscreenProcess.call(undefined, this.view.element);
 	}
 };
+
+if(WGo.BasicPlayer && WGo.BasicPlayer.component.Control) {
+	WGo.BasicPlayer.component.Control.menu.push({
+		constructor: control.MenuItem,
+		args: {
+			name: "fullscreen",
+			togglable: true,
+			click: function(bp) { 
+				bp.player.toggleFullscreen(); 
+			},
+			init: function(bp) {
+				if(document.fullscreenEnabled === false) {
+					this.disable();
+					return;
+				}
+
+				bp.player.addEventListener("fullscreenChange", function(e){
+					if(e.on) {
+						e.target.view.width = screen.width;
+						e.target.view.height = screen.height;
+						e.target.view.noresize = true;
+						this.select();
+					}
+					else {
+						e.target.view.noresize = false;
+						this.unselect();
+					}
+				}.bind(this));
+			}
+		}
+	});
+}
 
 //--- /Fullscreen mode ---------------------------------------------------------------------------------------------------

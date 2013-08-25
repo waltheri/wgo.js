@@ -1,0 +1,136 @@
+
+.wgo-player-main {
+	color: rgba(255,255,255,0.9);
+}
+
+.wgo-player-main a {
+	color: rgba(255,255,255,0.9);
+}
+
+.wgo-box-wrapper {
+	background: rgba(32,32,32,0.3);
+	border: 1px solid rgba(48,48,48,0.3);
+}
+
+.wgo-player-wrapper .wgo-box-title::after {
+	box-shadow: 1px 1px 1px 1px rgba(32, 32, 32, 0.3);
+}
+
+.wgo-player-info-box {
+	border: 1px solid rgba(64,64,64,0.3);
+	background-color: rgba(48,48,48,0.3);
+}
+
+.wgo-comments-content {
+	border: 1px solid rgba(64,64,64,0.3);
+	background-color: rgba(48,48,48,0.3);
+}
+
+.wgo-help { 
+	background-color: rgba(236, 226, 216, 0.90);
+	color: black;
+}
+
+.wgo-notification { 
+	background-color: rgba(16, 16, 16, 0.95);
+	color: white;
+}
+
+.wgo-comments-nick {
+	color: rgba(228,228,228,0.8);
+}
+
+a.wgo-move-link { 
+	text-decoration: none; 
+	border-bottom:1px dotted; 
+	color: white;
+}
+
+/* game info table */
+
+.wgo-commentbox .wgo-info-list {
+	display: table;
+	width: 100%;
+}
+
+.wgo-commentbox .wgo-info-title {
+	border-bottom: 2px solid rgba(56, 56, 56, 0.3);
+}
+
+.wgo-commentbox .wgo-info-label, .wgo-commentbox .wgo-info-value {
+	border-bottom: 1px solid rgba(56, 56, 56, 0.3);
+}
+
+.wgo-commentbox .wgo-info-label {
+	color: white;
+}
+
+.wgo-commentbox .wgo-info-value {
+	color: rgba(228,228,228,0.8);
+}
+
+/* button widget */
+
+.wgo-button {
+	border: 1px solid rgba(64,64,64,0.3);
+	background-color: rgba(48,48,48,0.3);
+	color: rgba(240,240,240,0.9);
+}
+
+.wgo-button:not([disabled]):hover, 
+.wgo-player-mn-value:focus {
+	border: 1px solid rgba(96,96,96,0.3);
+	background-color: rgba(64,64,64,0.3);
+	box-shadow: 0 0 20px 0 rgba(100,100,100,0.5);
+}
+
+.wgo-button.wgo-selected {
+	border: 1px solid rgba(96,96,96,0.3);
+	background-color: rgba(64,64,64,0.3);
+}
+
+.wgo-button.wgo-selected:hover {
+}
+
+.wgo-button[disabled]::before, .wgo-player-mn-value[disabled] {
+	color: rgba(160,160,160,0.3);
+}
+
+/* move number widget */
+
+.wgo-player-mn-value  {
+	border: 1px solid rgba(64,64,64,0.3);
+	background-color: rgba(48,48,48,0.3);
+	color: rgba(240,240,240,0.9);
+}
+
+.wgo-player-menu {
+	border: 1px solid rgba(96,96,96,0.3);
+	box-shadow: 0 0 20px 0 rgba(64,64,64,0.5);
+	color: rgba(228,228,228,1);
+}
+
+.wgo-menu-item {
+	background-color: rgba(16,16,16,0.85);
+}
+
+.wgo-menu-item:not(.wgo-disabled):hover {
+	background-color: rgba(32,32,32,0.85);
+}
+
+.wgo-menu-item::before {
+	color: rgba(228,228,228,1);
+}
+
+.wgo-menu-item.wgo-selected::before {
+	content: '\e813';
+}
+
+.wgo-menu-item.wgo-disabled {
+	color: #888;
+	cursor: default;
+}
+
+.wgo-menu-item.wgo-disabled::before {
+	color: #888;
+}

@@ -45,7 +45,7 @@ var territory_reset = function(pos, orig, x, y, margin) {
 
 ScoreMode.prototype.start = function() {
 	this.calculate();
-	this.board.pushState();
+	this.saved_state = this.board.getState();
 	this.displayScore();
 	
 	this._click = (function(x,y) {
@@ -74,8 +74,7 @@ ScoreMode.prototype.start = function() {
 			else if(p == state.WHITE_NEUTRAL) this.position.set(x, y, state.WHITE_CANDIDATE);
 		}
 		
-		this.board.popState();
-		this.board.pushState();
+		this.board.restoreState({objects: WGo.clone(this.saved_state.objects)});
 		this.displayScore();
 	}).bind(this);
 	
@@ -83,7 +82,7 @@ ScoreMode.prototype.start = function() {
 }
 
 ScoreMode.prototype.end = function() {
-	this.board.popState();
+	this.board.restoreState({objects: WGo.clone(this.saved_state.objects)});
 	this.board.removeEventListener("click", this._click);
 }
 
@@ -123,7 +122,7 @@ ScoreMode.prototype.displayScore = function() {
 	this.board.addObject(score.black);
 	this.board.addObject(score.white);
 	
-	var msg = "<p style='font-weight: bold;'>"+WGo.t("score")+"</p>";
+	var msg = "<p style='font-weight: bold;'>"+WGo.t("RE")+"</p>";
 	
 	var sb = score.black.length+score.white_captured.length+this.originalPosition.capCount.black;
 	var sw = score.white.length+score.black_captured.length+this.originalPosition.capCount.white+parseFloat(this.komi);
@@ -131,8 +130,8 @@ ScoreMode.prototype.displayScore = function() {
 	msg += "<p>"+WGo.t("black")+": "+score.black.length+" + "+(score.white_captured.length+this.originalPosition.capCount.black)+" = "+sb+"</br>";
 	msg += WGo.t("white")+": "+score.white.length+" + "+(score.black_captured.length+this.originalPosition.capCount.white)+" + "+this.komi+" = "+sw+"</p>";
 	
-	if(sb > sw) msg += "<p>"+WGo.t("bwin", sb-sw)+"</p>";
-	else msg += "<p>"+WGo.t("wwin", sw-sb)+"</p>";
+	if(sb > sw) msg += "<p style='font-weight: bold;'>"+WGo.t("bwin", sb-sw)+"</p>";
+	else msg += "<p style='font-weight: bold;'>"+WGo.t("wwin", sw-sb)+"</p>";
 	
 	this.output(msg);
 }
@@ -190,35 +189,37 @@ ScoreMode.prototype.calculate = function() {
 
 WGo.ScoreMode = ScoreMode;
 
-WGo.Player.component.Control.menu.push({
-	constructor: WGo.control.MenuItem,
-	args: {
-		name: "scoremode",
-		togglable: true,
-		click: function(player) { 
-			if(this.selected) {
-				player.setFrozen(false);
-				this._score_mode.end();
-				delete this._score_mode;
-				player.setNotification();
-				player.setHelp();
-				return false;
-			}
-			else {
-				player.setFrozen(true);
-				player.setHelp("<p>"+WGo.t("help_score")+"</p>");
-				this._score_mode = new WGo.ScoreMode(player.kifuReader.game.position, player.board, player.kifu.info.KM || 0.5, player.setNotification);
-				this._score_mode.start();
-				return true;
-			}
-		},
-	}
-});
+if(WGo.BasicPlayer && WGo.BasicPlayer.component.Control) {
+	WGo.BasicPlayer.component.Control.menu.push({
+		constructor: WGo.BasicPlayer.control.MenuItem,
+		args: {
+			name: "scoremode",
+			togglable: true,
+			click: function(player) { 
+				if(this.selected) {
+					player.setFrozen(false);
+					this._score_mode.end();
+					delete this._score_mode;
+					player.notification();
+					player.help();
+					return false;
+				}
+				else {
+					player.setFrozen(true);
+					player.help("<p>"+WGo.t("help_score")+"</p>");
+					this._score_mode = new WGo.ScoreMode(player.kifuReader.game.position, player.board, player.kifu.info.KM || 0.5, player.notification);
+					this._score_mode.start();
+					return true;
+				}
+			},
+		}
+	});
+}
 
-WGo.Player.i18n.en["scoremode"] = "Count score";
-WGo.Player.i18n.en["score"] = "Score";
-WGo.Player.i18n.en["bwin"] = "Black wins by $ points.";
-WGo.Player.i18n.en["wwin"] = "White wins by $ points.";
-WGo.Player.i18n.en["help_score"] = "Click on stones to mark them dead or alive. You can also set and unset territory points by clicking on them. Territories must be completely bordered.";
+WGo.i18n.en["scoremode"] = "Count score";
+WGo.i18n.en["score"] = "Score";
+WGo.i18n.en["bwin"] = "Black wins by $ points.";
+WGo.i18n.en["wwin"] = "White wins by $ points.";
+WGo.i18n.en["help_score"] = "Click on stones to mark them dead or alive. You can also set and unset territory points by clicking on them. Territories must be completely bordered.";
 
 })(WGo);

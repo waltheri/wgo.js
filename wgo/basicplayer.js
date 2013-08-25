@@ -1,6 +1,8 @@
 
 (function(WGo){
 
+"use strict";
+
 // player counter - for creating unique ids
 var pl_count = 0;
 
@@ -34,7 +36,7 @@ var BPgenerateDom = function() {
 	this.regions = {};
 	
 	/*
-	DOM structure:
+	pseudo DOM structure:
 	<main>
 		<left></left>
 		<center>
@@ -75,7 +77,10 @@ var getCurrentLayout = function() {
 }
 
 var appendComponents = function(area) {
-	var components = this.currentLayout.layout[area];
+	var components;
+	
+	if(this.currentLayout.layout) components = this.currentLayout.layout[area];
+	else components = this.currentLayout[area];
 	
 	if(components) {
 		this.regions[area].element.style.display = "block";
@@ -112,68 +117,109 @@ var manageComponents = function() {
 	}
 }
 
-var BasicPlayer = WGo.extendClass(WGo.PlayerTemplate, function(elem, config) {
+/**
+ * Main object of player, it binds all magic together and produces visible player.
+ * It inherits some functionality from WGo.PlayerView, but full html structure is done here.
+ *
+ * Layout of player can be set. It can be even dynamic according to screen resolution. 
+ * There are 5 areas - left, right, top and bottom, and there is special region for board.
+ * You can put BasicPlayer.Component objects to these regions. Basic components are: 
+ *  - BasicPlayer.CommentBox - box with comments and game informations
+ *  - BasicPlayer.InfoBox - box with information about players
+ *  - BasicPlayer.Control - buttons and staff for control
+ *
+ * Possible configurations:
+ *  - sgf: sgf string (default: undefined)
+ *  - json: kifu stored in json/jgo (default: undefined)
+ *  - sgfFile: sgf file path (default: undefined)
+ *  - board: configuration object of board (default: {})
+ *  - enableWheel: allow player to be controlled by mouse wheel (default: true)
+ *  - lockScroll: disable window scrolling while hovering player (default: true)
+ *  - enableKeys: allow player to be controlled by arrow keys (default: true)
+ *  - kifuLoaded: extra Player's kifuLoaded event listener (default: undefined)
+ *  - update: extra Player's update event listener (default: undefined)
+ *  - frozen: extra Player's frozen event listener (default: undefined)
+ *  - unfrozen: extra Player's unfrozen event listener (default: undefined)
+ *  - layout: layout object. Look below how to define your own layout (default: BasicPlayer.dynamicLayout)
+ *
+ * You also must specify main DOMElement of player. 
+ */
+
+var BasicPlayer = WGo.extendClass(WGo.Player, function(elem, config) {
 	this.config = config;
 	
-	// add default configuration
+	// add default configuration of BasicPlayer
 	for(var key in BasicPlayer.default) if(this.config[key] === undefined && BasicPlayer.default[key] !== undefined) this.config[key] = BasicPlayer.default[key];
-	
-	this.player = new WGo.Player({
-		kifuLoaded: this.config.kifuLoaded,
-		update: this.config.update,
-	});
+	// add default configuration of Player class
+	for(var key in WGo.Player.default) if(this.config[key] === undefined && WGo.Player.default[key] !== undefined) this.config[key] = WGo.Player.default[key];
 	
 	this.element = elem
 	this.element.innerHTML = "";
-	this.element.className += " wgo-player-main";
-	this.element.id = "wgo_"+(pl_count++);
+	this.classes = (this.element.className ? this.element.className+" " : "")+"wgo-player-main" ;
+	this.element.className = this.classes;
+	if(!this.element.id) this.element.id = "wgo_"+(pl_count++);
 	
 	BPgenerateDom.call(this);
 	
 	this.board = new WGo.Board(this.dom.board, this.config.board);
 	
+	this.init();
+	
 	this.components = {};
 	
 	window.addEventListener("resize", function() {
 		if(!this.noresize) {
-			this.element.style.position = "absolute";
-	
-			var css = window.getComputedStyle(this.element.parentNode);
-			this.width = parseInt(css.width);
-			this.height = parseInt(css.height);
-			this.maxHeight = parseInt(css.maxHeight);
-			
-			this.element.style.position = "static";
+			this.updateDimensions();
 		}
-		this.updateDimensions();
+		
 	}.bind(this));
 	
-	var css = window.getComputedStyle(this.element);
-	this.width = parseInt(css.width);
-	this.height = parseInt(css.height);
-	this.maxHeight = parseInt(css.maxHeight);
 	this.updateDimensions();
 	
-	this.init();
+	this.initGame();
 });
 
+/**
+ * Append player to different element.
+ */
+ 
 BasicPlayer.prototype.appendTo = function(elem) {
-	var css = window.getComputedStyle(elem);
-
-	this.width = parseInt(css.width);
-	this.height = parseInt(css.height);
-	this.maxHeight = parseInt(css.maxHeight);
-	
 	elem.appendChild(this.element);
 	this.updateDimensions();
 }
+
+/**
+ * Set right dimensions of all elements.
+ */
 	
 BasicPlayer.prototype.updateDimensions = function() {
+	var css = window.getComputedStyle(this.element);
+	
+	var els = [];
+	while(this.element.firstChild) {
+		els.push(this.element.firstChild);
+		this.element.removeChild(this.element.firstChild);
+	}
+	
+	var tmp_w = parseInt(css.width);
+	var tmp_h = parseInt(css.height);
+	var tmp_mh = parseInt(css.maxHeight) || 0;
+
+	for(var i = 0; i < els.length; i++) {
+		this.element.appendChild(els[i]);
+	}
+
+	if(tmp_w == this.width && tmp_h == this.height && tmp_mh == this.maxHeight) return;
+	
+	this.width = tmp_w;
+	this.height = tmp_h;
+	this.maxHeight = tmp_mh;
+
 	this.currentLayout = getCurrentLayout.call(this);
 
 	if(this.currentLayout && this.lastLayout != this.currentLayout) {
-		if(this.currentLayout.className) this.element.className = "wgo-player-main "+this.currentLayout.className;
-		else this.element.className = "wgo-player-main";
+		if(this.currentLayout.className) this.element.className = this.classes+" "+this.currentLayout.className;
+		else this.element.className = this.classes;
 		manageComponents.call(this);
 		this.lastLayout = this.currentLayout;
 	}
@@ -181,9 +227,9 @@ BasicPlayer.prototype.updateDimensions = function() {
 	//var bw = this.width - this.regions.left.element.clientWidth - this.regions.right.element.clientWidth;
 	var bw = this.dom.board.clientWidth;
 	var bh = this.height || this.maxHeight;
-	
+
 	if(bh) {
-		bh -= this.regions.top.element.clientHeight + this.regions.bottom.element.clientHeight;
+		bh -= this.regions.top.element.offsetHeight + this.regions.bottom.element.offsetHeight;
 	}
 	
 	if(bh && bh < bw) {
@@ -204,8 +250,8 @@ BasicPlayer.prototype.updateDimensions = function() {
 		this.dom.board.style.paddingTop = "0";
 	}
 	
-	this.regions.left.element.style.height = this.dom.center.clientHeight+"px";
-	this.regions.right.element.style.height = this.dom.center.clientHeight+"px";
+	this.regions.left.element.style.height = this.dom.center.offsetHeight+"px";
+	this.regions.right.element.style.height = this.dom.center.offsetHeight+"px";
 
 	for(var i in this.components) {
 		if(this.components[i].updateDimensions) this.components[i].updateDimensions();
@@ -222,8 +268,8 @@ BasicPlayer.prototype.updateDimensions = function() {
 
 BasicPlayer.prototype.showMessage = function(text, closeCallback, permanent) {
 	this.info_overlay = document.createElement("div");
-	this.info_overlay.style.width = this.element.clientWidth+"px";
-	this.info_overlay.style.height = this.element.clientHeight+"px";
+	this.info_overlay.style.width = this.element.offsetWidth+"px";
+	this.info_overlay.style.height = this.element.offsetHeight+"px";
 	this.info_overlay.className = "wgo-info-overlay";
 	this.element.appendChild(this.info_overlay);
 	
@@ -233,7 +279,7 @@ BasicPlayer.prototype.showMessage = function(text, closeCallback, permanent) {
 	
 	var close_info = document.createElement("div");
 	close_info.className = "wgo-info-close";
-	if(!permanent) close_info.innerHTML = "click anywhere to close this window";
+	if(!permanent) close_info.innerHTML = WGo.t("BP:closemsg");
 	
 	info_message.appendChild(close_info);
 	
@@ -249,6 +295,8 @@ BasicPlayer.prototype.showMessage = function(text, closeCallback, permanent) {
 			this.hideMessage();
 		}.bind(this));
 	}
+	
+	this.setFrozen(true);
 }
 
 /**
@@ -257,14 +305,36 @@ BasicPlayer.prototype.showMessage = function(text, closeCallback, permanent) {
  
 BasicPlayer.prototype.hideMessage = function() {
 	this.element.removeChild(this.info_overlay);
+	this.setFrozen(false);
 }
+
+/**
+ * Error handling
+ */
+
+BasicPlayer.prototype.error = function(err) {
+	if(!WGo.ERROR_REPORT) throw err;
+	
+	var url = "#";
+	
+	switch(err.name) {
+		case "InvalidMoveError": 
+			this.showMessage("<h1>"+err.name+"</h1><p>"+err.message+"</p><p>If this message isn't correct, please report it by clicking <a href=\""+url+"\">here</a>, otherwise contact maintainer of this site.</p>");
+		break;
+		case "FileError":
+			this.showMessage("<h1>"+err.name+"</h1><p>"+err.message+"</p><p>Please contact maintainer of this site. Note: it is possible to read files only from this host.</p>");
+		break;
+		default:
+			this.showMessage("<h1>"+err.name+"</h1><p>"+err.message+"</p><pre>"+err.stacktrace+"</pre><p>Please contact maintainer of this site. You can also report it <a href=\""+url+"\">here</a>.</p>");
+	}
+} 
 
 BasicPlayer.component = {};
 
 /**
  * Preset layouts
- * They have defined regions as arrays, which can contain components. Each component specifies where it should be.
- * User can create custom layout. TODO: write better description
+ * They have defined regions as arrays, which can contain components. For each of these layouts each component specifies where it is placed.
+ * You can create your own layout in same manners, but you must specify components manually.
  */
  
 BasicPlayer.layouts = {
@@ -305,9 +375,9 @@ BasicPlayer.layouts = {
  *  - maxHeight - maximal height of player in px
  *  - custom - function which is called in template context, must return true or false
  *
- * Player template evaluates layouts step by step and first layout that matches the conditions is applied.
+ * Player's template evaluates layouts step by step and first layout that matches the conditions is applied.
  *
- * Look below at the default dynamic layout. Layout is tested after every window resize.
+ * Look below at the default dynamic layout. Layouts are tested after every window resize.
  */
 
 BasicPlayer.dynamicLayout = [
@@ -316,7 +386,7 @@ BasicPlayer.dynamicLayout = [
 			minWidth: 650,
 		},
 		layout: BasicPlayer.layouts["right_top"], 
-		className: "wgo-twocols",
+		className: "wgo-twocols wgo-large",
 	},
 	{
 		conditions: {
@@ -324,44 +394,29 @@ BasicPlayer.dynamicLayout = [
 			minHeight: 600,
 		},
 		layout: BasicPlayer.layouts["one_column"],
-	},
-	{
-		conditions: {
-			minWidth: 450,
-			minHeight: 400,
-		},
-		layout: BasicPlayer.layouts["no_comment"],
+		className: "wgo-medium"
 	},
 	{
 		conditions: {
 			minWidth: 350,
 		},
-		layout: BasicPlayer.layouts["minimal"],
-		className: "wgo-400", 
+		layout: BasicPlayer.layouts["no_comment"],
+		className: "wgo-small"
 	},
-	{	// if conditions object id omitted, layout is applied 
-		layout: BasicPlayer.layouts["minimal"],
-		className: "wgo-400 wgo-300", 
+	{	// if conditions object is omitted, layout is applied 
+		layout: BasicPlayer.layouts["no_comment"],
+		className: "wgo-xsmall",
 	},
 ];
 
 // default settings, they are merged with user settings in constructor.
 BasicPlayer.default = {
 	layout: BasicPlayer.dynamicLayout,
-	board: {},
-	sgf: undefined,
-	sgfFile: undefined,
-	kifuLoaded: undefined,
-	update: undefined,
-	permalinks: true,
-	enableWheel: true,
-	lockScroll: true,
-	enableKeys: true,
-	formatNicks:true,
-	formatMoves:true,
 }
 
-//--- Handling <div> with data attributes -----------------------------------------------------------------
+WGo.i18n.en["BP:closemsg"] = "click anywhere to close this window";
+
+//--- Handling <div> with HTML5 data attributes -----------------------------------------------------------------
 
 BasicPlayer.attributes = {
 	"data-wgo": function(value) {
@@ -384,9 +439,39 @@ BasicPlayer.attributes = {
 		this.update = new Function(value);
 	},
 	
+	"data-wgo-onfrozen": function(value) {
+		this.frozen = new Function(value);
+	},
+	
+	"data-wgo-onunfrozen": function(value) {
+		this.unfrozen = new Function(value);
+	},
+	
 	"data-wgo-layout": function(value) {
 		this.layout = eval("({"+value+"})");
-	}	
+	},
+	
+	"data-wgo-enablewheel": function(value) {
+		if(value.toLowerCase() == "false") this.enableWheel = false;
+	},
+	
+	"data-wgo-lockscroll": function(value) {
+		if(value.toLowerCase() == "false") this.lockScroll = false;
+	},
+	
+	"data-wgo-enablekeys": function(value) {
+		if(value.toLowerCase() == "false") this.enableKeys = false;
+	},
+	
+	"data-wgo-rememberpath": function(value) {
+		if(value.toLowerCase() == "false") this.rememberPath = false;
+	},
+	
+	"data-wgo-move": function(value) {
+		var m = parseInt(value);
+		if(m) this.move = m;
+		else this.move = eval("({"+value+"})");
+	},
 }
 
 var player_from_tag = function(elem) {
@@ -400,13 +485,12 @@ var player_from_tag = function(elem) {
 	}
 
 	pl = new BasicPlayer(elem, config);
-	
-	window.__pl__ = pl;
+	elem._wgo_player = pl;
 }
 
 WGo.BasicPlayer = BasicPlayer;
 
-window.addEventListener("DOMContentLoaded", function() {
+window.addEventListener("load", function() {
 	var pl_elems = document.querySelectorAll("[data-wgo]");
 	
 	for(var i = 0; i < pl_elems.length; i++) {

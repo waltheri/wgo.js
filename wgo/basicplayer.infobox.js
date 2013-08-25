@@ -1,5 +1,7 @@
 (function() {
 
+"use strict";
+
 var prepare_dom = function() {
 	prepare_dom_box.call(this,"white");
 	prepare_dom_box.call(this,"black");
@@ -12,33 +14,10 @@ var prepare_dom_box = function(type) {
 	var t = this[type];
 	t.box = document.createElement("div");
 	t.box.className = "wgo-box-wrapper wgo-player-wrapper wgo-"+type;
-	
-	/*var name_wrapper;
-	name_wrapper = document.createElement("div");
-	name_wrapper.className = "wgo-player-name-wrapper";
-	t.box.appendChild(name_wrapper);
-	
-	var name_color;
-	name_color = document.createElement("div");
-	name_color.className = "wgo-player-name-img";
-	name_color.innerHTML = "<div></div>";
-	
-	t.name = document.createElement("div");
-	t.name.className = "wgo-player-name-cell";
-	
-	name_wrapper.appendChild(t.name);
-	name_wrapper.appendChild(name_color);*/
 
 	t.name = document.createElement("div");
 	t.name.className = "wgo-box-title";
 	t.name.innerHTML = type;
-	
-	/*var name_color;
-	name_color = document.createElement("div");
-	name_color.className = "wgo-player-name-img wgo-box-img";
-	name_color.innerHTML = "<div></div>";
-	
-	t.box.appendChild(name_color);*/
 	t.box.appendChild(t.name);
 	
 	var info_wrapper;
@@ -53,24 +32,26 @@ var prepare_dom_box = function(type) {
 	t.info.caps.val.innerHTML = "0";
 	t.info.time = prepare_dom_info("time");
 	t.info.time.val.innerHTML = "--:--";
-	info_wrapper.appendChild(t.info.rank.box);
-	info_wrapper.appendChild(t.info.caps.box);
-	info_wrapper.appendChild(t.info.time.box);
+	info_wrapper.appendChild(t.info.rank.wrapper);
+	info_wrapper.appendChild(t.info.caps.wrapper);
+	info_wrapper.appendChild(t.info.time.wrapper);
 }
 
 var prepare_dom_info = function(type) {
 	var res = {};
+	res.wrapper = document.createElement("div");
+	res.wrapper.className = "wgo-player-info-box-wrapper";
+	
 	res.box = document.createElement("div");
 	res.box.className = "wgo-player-info-box";
+	res.wrapper.appendChild(res.box);
 	
-	var title = document.createElement("span");
-	title.className = "wgo-player-info-title";
-	title.innerHTML = WGo.t(type);
-	res.box.appendChild(title);
+	res.title = document.createElement("div");
+	res.title.className = "wgo-player-info-title";
+	res.title.innerHTML = WGo.t(type);
+	res.box.appendChild(res.title);
 	
-	res.box.innerHTML += "<br/>";
-	
-	res.val = document.createElement("span");
+	res.val = document.createElement("div");
 	res.val.className = "wgo-player-info-value";
 	res.box.appendChild(res.val);
 	
@@ -108,6 +89,43 @@ var kifu_loaded = function(e) {
 		this.black.info.time.val.innerHTML = "--:--";
 		this.white.info.time.val.innerHTML = "--:--";
 	}
+	
+	this.updateDimensions();
+}
+
+var modify_font_size = function(elem) {
+	var css, max, size;
+	
+	if(elem.style.fontSize) {
+		var size = parseInt(elem.style.fontSize);
+		elem.style.fontSize = "";
+		css = window.getComputedStyle(elem);
+		max = parseInt(css.fontSize);
+		elem.style.fontSize = size+"px";
+	}
+	else {	
+		css = window.getComputedStyle(elem);
+		max = size = parseInt(css.fontSize);
+	}
+	
+	if(size == max && elem.scrollHeight <= elem.offsetHeight) return;
+	else if(elem.scrollHeight > elem.offsetHeight) {
+		size -= 2;
+		while(elem.scrollHeight > elem.offsetHeight && size > 1) {
+			elem.style.fontSize = size+"px";
+			size -= 2;
+		}
+	}
+	else if(size < max) {
+		size += 2;
+		while(elem.scrollHeight <= elem.offsetHeight && size <= max) {
+			elem.style.fontSize = size+"px";
+			size += 2;
+		}
+		if(elem.scrollHeight > elem.offsetHeight) {
+			elem.style.fontSize = (size-4)+"px";
+		}
+	}
 }
 
 var update = function(e) {
@@ -117,19 +135,19 @@ var update = function(e) {
 	if(e.position.capCount.white !== undefined) this.white.info.caps.val.innerHTML = e.position.capCount.white;
 }
 
-var modifyFontSize = function(color) {
+/**
+ * Implements box with basic informations about go players.
+ */
 
-}
-
-var InfoBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(bp) {
-	this.super(bp);
+var InfoBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(player) {
+	this.super(player);
 	this.element.className = "wgo-infobox";
 	
 	prepare_dom.call(this);
 
-	bp.player.addEventListener("kifuLoaded", kifu_loaded.bind(this));
-	
-	bp.player.addEventListener("update", update.bind(this));
+	player.addEventListener("kifuLoaded", kifu_loaded.bind(this));
+	player.addEventListener("update", update.bind(this));
+
 });
 
 InfoBox.prototype.setPlayerTime = function(color, time) {
@@ -138,9 +156,20 @@ InfoBox.prototype.setPlayerTime = function(color, time) {
 	this[color].info.time.val.innerHTML = min+":"+((sec < 10) ? "0"+sec : sec);
 };
 
-WGo.BasicPlayer.layouts["right_top"].right.push("InfoBox");
-WGo.BasicPlayer.layouts["one_column"].top.push("InfoBox");
-WGo.BasicPlayer.layouts["no_comment"].top.push("InfoBox");
+InfoBox.prototype.updateDimensions = function() {
+	modify_font_size(this.black.name);
+	modify_font_size(this.white.name);
+};
+
+var bp_layouts = WGo.BasicPlayer.layouts;
+bp_layouts["right_top"].right.push("InfoBox");
+bp_layouts["right"].right.push("InfoBox");
+bp_layouts["one_column"].top.push("InfoBox");
+bp_layouts["no_comment"].top.push("InfoBox");
+
+WGo.i18n.en["rank"] = "Rank";
+WGo.i18n.en["caps"] = "Caps";
+WGo.i18n.en["time"] = "Time";
 
 WGo.BasicPlayer.component.InfoBox = InfoBox;
 

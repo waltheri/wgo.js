@@ -7,7 +7,7 @@ var to_num = function(str, i) {
 	return str.charCodeAt(i)-97;
 }
 
-var sgf_palyer_info = function(type, black, kifu, node, value, ident) {
+var sgf_player_info = function(type, black, kifu, node, value, ident) {
 	var c = ident == black ? "black" : "white";
 	kifu.info[c] = kifu.info[c] || {};
 	kifu.info[c][type] = value[0];
@@ -83,9 +83,9 @@ properties["SZ"] = function(kifu, node, value) {
 }
 	
 // Game info properties
-properties["BR"] = properties["WR"] = sgf_palyer_info.bind(this, "rank", "BR");
-properties["PB"] = properties["PW"] = sgf_palyer_info.bind(this, "name", "PB");
-properties["BT"] = properties["WT"] = sgf_palyer_info.bind(this, "team", "BT");
+properties["BR"] = properties["WR"] = sgf_player_info.bind(this, "rank", "BR");
+properties["PB"] = properties["PW"] = sgf_player_info.bind(this, "name", "PB");
+properties["BT"] = properties["WT"] = sgf_player_info.bind(this, "team", "BT");
 properties["TM"] =  function(kifu, node, value, ident) {
 	kifu.info[ident] = value[0];
 	node.BL = value[0];
@@ -97,7 +97,7 @@ var reg_node = /[A-Z]+\s*((\[\])|(\[(.|\s)*?([^\\]\])))+/g;
 var reg_ident = /[A-Z]+/;
 var reg_props = /(\[\])|(\[(.|\s)*?([^\\]\]))/g;
 
-// parse SGF string, return kifu json
+// parse SGF string, return WGo.Kifu object
 WGo.SGF.parse = function(str) { 
 
 	var stack = [],
@@ -107,7 +107,7 @@ WGo.SGF.parse = function(str) {
 		
 	// make sequence of elements and process it
 	sequence = str.match(reg_seq);
-	//console.log(sequence);
+	
 	for(var i in sequence) {
 		// push stack, if new variant
 		if(sequence[i] == "(") stack.push(node);
@@ -115,13 +115,15 @@ WGo.SGF.parse = function(str) {
 		// pop stack at the end of variant
 		else if(sequence[i] == ")") node = stack.pop();
 		
-		// reading node (string starting with ;)
+		// reading node (string starting with ';')
 		else {
 			// create node or use root
+			if(node) kifu.nodeCount++;
 			node = node ? node.appendChild(new WGo.KNode()) : kifu.root;
 			
 			// make array of properties
 			props = sequence[i].match(reg_node);
+			kifu.propertyCount += props.length;
 			
 			// insert all properties to node
 			for(var j in props) {

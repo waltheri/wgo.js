@@ -1,5 +1,7 @@
 (function(WGo, undefined){
 
+"use strict";
+
 var prepare_dom = function() {
 	this.box = document.createElement("div");
 	this.box.className = "wgo-box-wrapper wgo-comments-wrapper";
@@ -8,14 +10,6 @@ var prepare_dom = function() {
 	this.comments_title = document.createElement("div");
 	this.comments_title.className = "wgo-box-title";
 	this.comments_title.innerHTML = WGo.t("comments");
-	
-	/*
-	var name_color;
-	name_color = document.createElement("div");
-	name_color.className = "wgo-comment-img wgo-box-img";
-	name_color.innerHTML = "<div></div>";
-	
-	this.box.appendChild(name_color);*/
 	this.box.appendChild(this.comments_title);
 	
 	this.comments = document.createElement("div");
@@ -45,23 +39,24 @@ var mark = function(move) {
 	if(x > 7) x--;
 	y = (move.charCodeAt(1)-'0'.charCodeAt(0));
 	if(move.length > 2) y = y*10+(move.charCodeAt(2)-'0'.charCodeAt(0));
-	y = this.player.kifuReader.game.size-y;
+	y = this.kifuReader.game.size-y;
 
 	this._tmp_mark = {type:'MA', x:x, y:y};
 	this.board.addObject(this._tmp_mark);
 }
+
 var unmark = function() {
 	this.board.removeObject(this._tmp_mark);
 	delete this._tmp_mark;
 }
 
-var search_nodes = function(nodes, bp) {
+var search_nodes = function(nodes, player) {
 	for(var i in nodes) {
 		if(nodes[i].className && nodes[i].className == "wgo-move-link") {
-			nodes[i].addEventListener("mouseover", mark.bind(bp, nodes[i].innerHTML));
-			nodes[i].addEventListener("mouseout", unmark.bind(bp));
+			nodes[i].addEventListener("mouseover", mark.bind(player, nodes[i].innerHTML));
+			nodes[i].addEventListener("mouseout", unmark.bind(player));
 		}
-		else if(nodes[i].childNodes && nodes[i].childNodes.length) search_nodes(nodes[i].childNodes, bp);
+		else if(nodes[i].childNodes && nodes[i].childNodes.length) search_nodes(nodes[i].childNodes, player);
 	}
 }	
 
@@ -75,15 +70,19 @@ var format_info = function(info, title) {
 	return ret;
 }
 
-var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(bp) {
-	this.super(bp);
-	this.bp = bp;
+/**
+ * Implements box for comments and game informations.
+ */
+
+var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(player) {
+	this.super(player);
+	this.player = player;
 	
 	this.element.className = "wgo-commentbox";
 	
 	prepare_dom.call(this);
 	
-	bp.player.addEventListener("kifuLoaded", function(e) {
+	player.addEventListener("kifuLoaded", function(e) {
 		if(e.kifu.hasComments()) {
 			this.comments_title.innerHTML = WGo.t("comments");
 			this.element.className = "wgo-commentbox";
@@ -92,21 +91,21 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(b
 				this.setComments(e);
 			}.bind(this);
 			
-			bp.player.addEventListener("update", this._update);
+			player.addEventListener("update", this._update);
 		}
 		else {
 			this.comments_title.innerHTML = WGo.t("gameinfo");
 			this.element.className = "wgo-commentbox wgo-gameinfo";
 			
 			if(this._update) {
-				bp.player.removeEventListener("update", this._update);
+				player.removeEventListener("update", this._update);
 				delete this._update;
 			}
 			this.comment_text.innerHTML = format_info(e.target.getGameInfo());
 		}
 	}.bind(this));
 	
-	bp.setNotification = function(text) {
+	player.notification = function(text) {
 		if(text) {
 			this.notification.style.display = "block";
 			this.notification.innerHTML = text;
@@ -122,7 +121,7 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(b
 		
 	}.bind(this);
 	
-	bp.setHelp = function(text) {
+	player.help = function(text) {
 		if(text) {
 			this.help.style.display = "block";
 			this.help.innerHTML = text;
@@ -139,15 +138,17 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(b
 });
 
 CommentBox.prototype.setComments = function(e) {
+	if(this.player._tmp_mark) unmark.call(this.player);
+
 	var msg = "";
 	if(!e.node.parent) {
 		msg = format_info(e.target.getGameInfo(), true);
 	}
 	
-	this.comment_text.innerHTML = msg+this.getCommentText(e.node.comment, e.target.config.formatNicks, e.target.config.formatMoves);
-	
-	if(e.target.config.formatMoves) {
-		if(this.comment_text.childNodes && this.comment_text.childNodes.length) search_nodes(this.comment_text.childNodes, this.bp);
+	this.comment_text.innerHTML = msg+this.getCommentText(e.node.comment, this.player.config.formatNicks, this.player.config.formatMoves);
+
+	if(this.player.config.formatMoves) {
+		if(this.comment_text.childNodes && this.comment_text.childNodes.length) search_nodes(this.comment_text.childNodes, this.player);
 	}
 };
 
@@ -163,8 +164,30 @@ CommentBox.prototype.getCommentText = function(comment, formatNicks, formatMoves
 	return "";
 };
 
+/**
+ * Adding 2 configuration to BasicPlayer:
+ *
+ * - formatNicks: tries to highlight nicknames in comments (default: true)
+ * - formatMoves: tries to highlight coordinates in comments (default: true)
+ */
+ 
+WGo.BasicPlayer.default.formatNicks = true;
+WGo.BasicPlayer.default.formatMoves = true;
+
+WGo.BasicPlayer.attributes["data-wgo-formatnicks"] = function(value) {
+	if(value.toLowerCase() == "false") this.formatNicks = false;
+}
+	
+WGo.BasicPlayer.attributes["data-wgo-formatmoves"] = function(value) {
+	if(value.toLowerCase() == "false") this.formatMoves = false;
+}
+
 WGo.BasicPlayer.layouts["right_top"].right.push("CommentBox");
+WGo.BasicPlayer.layouts["right"].right.push("CommentBox");
 WGo.BasicPlayer.layouts["one_column"].bottom.push("CommentBox");
+
+WGo.i18n.en["comments"] = "Comments";
+WGo.i18n.en["gameinfo"] = "Game info";
 
 WGo.BasicPlayer.component.CommentBox = CommentBox
 
