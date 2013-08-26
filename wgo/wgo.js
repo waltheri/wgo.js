@@ -1,5 +1,5 @@
 ﻿/*!
- * Copyright (c) 2012 Jan Prokop
+ * Copyright (c) 2013 Jan Prokop
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this 
  * software and associated documentation files (the "Software"), to deal in the Software 
@@ -45,15 +45,9 @@ var WGo = {
 	// Language of player, you can change this global variable any time. Object WGo.i18n.<your lang> must exist.
 	lang: "en",
 	
-	// Add more terms for each language here 
+	// Add terms for each language here 
 	i18n: {
-		en: {
-			"about-wgo": "<h1>WGo.js 2.0</h1>"
-					   + "<p>WGo.js or simply WGo, is HTML5 framework for purposes of game of go. It contains some libraries that make building web go application easier. There's module operating with game logic, graphical board written in HTML 5, SGF parser and simple go player.</p>"
-					   + "<p>WGo is open source licensed under <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT license</a>. You can use and modify any code from this project.</p>"
-					   + "<p>You can find more information at <a href='http://wgo.waltheri.net'>wgo.waltheri.net</a></p>"
-					   + "<p>Copyright &copy; 2012 Jan Prokop</p>"
-		}
+		en: {}
 	}
 }
 
@@ -1530,7 +1524,7 @@ Game.prototype = {
 WGo.Game = Game;
 
 // register WGo
-window.WGo = window.碁 = WGo; 
+window.WGo = WGo; 
 
 })(window);
  

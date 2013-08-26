@@ -3,7 +3,7 @@ WGo.i18n.cs = {
 	"about": "O WGo",
 	"first": "Na začátek",
 	"multiprev": "10 tahů zpět",
-	"prev": "Zpět",
+	"previous": "Zpět",
 	"next": "Další",
 	"multinext": "10 tahů vpřed",
 	"last": "Na konec",

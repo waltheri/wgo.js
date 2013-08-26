@@ -405,7 +405,7 @@ Control.widgets = [ {
 			args: {
 				name: "about",
 				click: function(player) {
-					player.showMessage(WGo.t("about-wgo"));
+					player.showMessage(WGo.t("about-text"));
 				},
 			}
 		}]
@@ -523,7 +523,7 @@ var player_terms = {
 	"about": "About",
 	"first": "First",
 	"multiprev": "10 moves back",
-	"prev": "Previous",
+	"previous": "Previous",
 	"next": "Next",
 	"multinext": "10 moves forward",
 	"last": "Last",
