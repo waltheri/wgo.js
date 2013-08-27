@@ -122,13 +122,8 @@ a.wgo-move-link {
 	color: rgba(228,228,228,1);
 }
 
-.wgo-menu-item.wgo-selected::before {
-	content: '\e813';
-}
-
 .wgo-menu-item.wgo-disabled {
 	color: #888;
-	cursor: default;
 }
 
 .wgo-menu-item.wgo-disabled::before {

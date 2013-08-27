@@ -220,9 +220,10 @@ Board.drawHandlers = {
 				
 				// set stone texture
 				if(args.c == WGo.W) {
-					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,2,xr-sr/5,yr-sr/5,4*sr/5);
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,sr/3,xr-sr/5,yr-sr/5,5*sr/5);
 					radgrad.addColorStop(0, '#fff');
-					radgrad.addColorStop(1, '#d4d4d4');
+					//radgrad.addColorStop(1, '#d4d4d4');
+					radgrad.addColorStop(1, '#aaa');
 				}
 				else {
 					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,1,xr-sr/5,yr-sr/5,4*sr/5);
@@ -268,7 +269,7 @@ Board.drawHandlers = {
 				this.beginPath();
 				this.lineWidth = sr/6;
 				
-				if(args.c == WGo.WHITE) {
+				if(args.c == WGo.W) {
 					this.strokeStyle = '#999';
 					this.arc(xr+sr/8, yr+sr/8, sr/2, 0, Math.PI/2, false);
 				}
@@ -292,13 +293,13 @@ Board.drawHandlers = {
 					
 				var radgrad;
 				if(args.c == WGo.W) {
-					radgrad = this.createRadialGradient(xr+4*sr/5,yr+4*sr/5,1,xr+5*sr/5,yr+5*sr/5,8*sr/5);
-					radgrad.addColorStop(0, 'rgb(157,157,157)');
-					radgrad.addColorStop(1, '#fff');
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,sr/3,xr-sr/5,yr-sr/5,8*sr/5);
+					radgrad.addColorStop(0, '#fff');
+					radgrad.addColorStop(1, '#666');
 				}
 				else {
-					radgrad = this.createRadialGradient(xr-4*sr/5,yr-4*sr/5,1,xr-5*sr/5,yr-5*sr/5,7*sr/5);
-					radgrad.addColorStop(0, 'rgb(157,157,157)');
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,1,xr-sr/5,yr-sr/5,3*sr/5);
+					radgrad.addColorStop(0, '#555');
 					radgrad.addColorStop(1, '#000');
 				}
 				
@@ -701,7 +702,7 @@ Board.prototype = {
 			if(this.background[0] == "#") this.element.style.backgroundColor = this.background;
 			else {
 				this.element.style.backgroundImage = "url('"+this.background+"')";
-				this.element.style.backgroundSize = "100% 100%";
+				/*this.element.style.backgroundRepeat = "repeat";*/
 			}
 		}
 		
