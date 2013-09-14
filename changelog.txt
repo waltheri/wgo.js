@@ -1,0 +1,10 @@
+WGo.js CHANGE LOG
+
+New in WGo 2.01
+
+#006 - added object Board.coordinates that renders coordinate labels
+#005 - method WGo.Game.prototype.pushPosition now sets variable "turn" according to position
+#004 - (bugfix) method WGo.Board.prototype.redraw didn't redraw custom layers
+#003 - added method WGo.Position.prototype.compare for comparing positions
+#002 - (bugfix) parameter "size" of WGo.Position and WGo.Board constructors could not be ommited
+#001 - modified markers

@@ -17,6 +17,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
  
+/* WGo.js 2.01 */
+ 
 (function(window, undefined) {
 
 "use strict";
@@ -32,7 +34,7 @@ var mydir= path.split('/').slice(0, -1).join('/')+'/';
  
 var WGo = {
 	// basic information
-	version: "2.0",
+	version: "2.01",
 	
 	// constants for colors (rather use WGo.B or WGo.W)
 	B: 1,
@@ -174,8 +176,8 @@ var shadow_handler = {
 }
 
 var get_markup_color = function(board, x, y) {
-	if(board.obj_arr[x][y][0].c == WGo.B) return "white"; 
-	return "black";
+	if(board.obj_arr[x][y][0].c == WGo.B) return "rgba(255,255,255,0.8)"; 
+	return "rgba(0,0,0,0.8)";
 }
 
 var redraw_layer = function(board, layer) {
@@ -359,9 +361,7 @@ Board.drawHandlers = {
 					sr = board.stoneRadius,
 					font = args.font || board.font || "";
 				
-				if(board.obj_arr[args.x][args.y][0].c == WGo.W) this.fillStyle = "black";
-				else if(board.obj_arr[args.x][args.y][0].c == WGo.B) this.fillStyle = "white";
-				else this.fillStyle = "#1C1C1C";
+				this.fillStyle = args.c || get_markup_color(board, args.x, args.y);
 				
 				if(args.text.length == 1) this.font = Math.round(sr*1.5)+"px "+font;
 				else if(args.text.length == 2) this.font = Math.round(sr*1.2)+"px "+font;
@@ -508,6 +508,39 @@ Board.drawHandlers = {
 			}
 		}
 	},
+}
+
+Board.coordinates = {
+	grid: {
+		draw: function(args, board) {
+			var ch, t, xright, xleft, ytop, ybottom;
+			
+			this.fillStyle = "rgba(0,0,0,0.7)";
+			this.textBaseline="middle";
+			this.textAlign="center";
+			this.font = board.stoneRadius+"px "+(board.font || "");
+			
+			xright = board.getX(-0.75);
+			xleft = board.getX(board.size-0.25);
+			ytop = board.getY(-0.75);
+			ybottom = board.getY(board.size-0.25);
+			
+			for(var i = 0; i < board.size; i++) {
+				ch = i+"A".charCodeAt(0);
+				if(ch >= "I".charCodeAt(0)) ch++;
+				
+				t = board.getY(i);
+				this.fillText(board.size-i, xright, t);
+				this.fillText(board.size-i, xleft, t);
+				
+				t = board.getX(i);
+				this.fillText(String.fromCharCode(ch), t, ytop);
+				this.fillText(String.fromCharCode(ch), t, ybottom);
+			}
+			
+			this.fillStyle = "black";
+		}
+	}
 }
 
 Board.CanvasLayer = function() {
@@ -831,15 +864,20 @@ Board.prototype = {
 	 */
 	
 	redraw: function() {
-		this.grid.clear();
-		this.stone.clear();
-		this.shadow.clear();
-		this.grid.draw(this);
+		// redraw layers
+		for(var i = 0; i < this.layers.length; i++) {
+			this.layers[i].clear(this);
+			this.layers[i].draw(this);
+		}
+		
+		// redraw field objects
 		for(var i = 0; i < this.size; i++) {
 			for(var j = 0; j < this.size; j++) {
 				drawField.call(this, i, j);
 			}
 		}
+		
+		// redraw custom objects
 		for(var key in this.obj_list) {
 			var handler = this.obj_list[key].handler;
 			
@@ -1038,7 +1076,7 @@ Board.default = {
 	width: 0,
 	height: 0,
 	font: "Calibri",
-	lineWidth: 1,
+	lineWidth: 2,
 	starPoints: {
 		19:[{x:3, y:3 },
 			{x:9, y:3 },
@@ -1083,9 +1121,9 @@ WGo.Board = Board;
  */
 
 var Position = function(size) {
-	this.size = size;
+	this.size = size || 19;
 	this.schema = [];
-	for(var i = 0; i < size*size; i++) {
+	for(var i = 0; i < this.size*this.size; i++) {
 		this.schema[i] = 0;
 	}
 }
@@ -1139,6 +1177,34 @@ Position.prototype = {
 		clone.schema = this.schema.slice(0);
 		return clone;
 	},
+	
+	/**
+	 * Compares this position with another position and return change object
+	 *
+	 * @param {WGo.Position} position to compare to.
+	 * @return {object} change object with structure: {add:[], remove:[]}
+	 */
+	
+	compare: function(position) {
+		var add = [], remove = [];
+		
+		for(var i = 0; i < this.size*this.size; i++) {
+			if(this.schema[i] && !position.schema[i]) remove.push({
+				x: Math.floor(i/this.size),
+				y: i%this.size
+			});
+			else if(this.schema[i] != position.schema[i]) add.push({
+				x: Math.floor(i/this.size),
+				y: i%this.size,
+				c: position.schema[i]
+			});
+		}
+		
+		return {
+			add: add,
+			remove: remove
+		}
+	}
 }
 
 WGo.Position = Position;
@@ -1163,7 +1229,7 @@ var Game = function(size, repeat) {
 	this.size = size || 19;
 	this.repeating = repeat === undefined ? "KO" : repeat; // possible values: KO, ALL or nothing
 	this.stack = [];
-	this.stack[0] = new Position(size);
+	this.stack[0] = new Position(this.size);
 	this.stack[0].capCount = {black:0, white:0};
 	this.turn = WGo.B;
 	
@@ -1442,6 +1508,7 @@ Game.prototype = {
 			pos.color = this.position.color;
 		}
 		this.stack.push(pos);
+		if(pos.color) this.turn = -pos.color;
 		return this;
 	},
 	
