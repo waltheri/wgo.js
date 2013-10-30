@@ -75,7 +75,7 @@ var update_board = function(e) {
 	// add variantion letters
 	if(e.node.children.length > 1) {
 		for(var i = 0; i < e.node.children.length; i++) {
-			if(e.node.children[i].move)	add.push({
+			if(e.node.children[i].move && !e.node.children[i].move.pass)	add.push({
 				type: "LB",
 				text: String.fromCharCode(65+i),
 				x: e.node.children[i].move.x,
