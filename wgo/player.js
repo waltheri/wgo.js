@@ -327,12 +327,11 @@ Player.prototype = {
 			}
 		}*/
 		
+		// update player - initial position in kifu doesn't have to be an empty board
+		this.update("init");
+		
 		if(path) {
 			this.goTo(path);
-		}
-		else {
-			// update player - initial position in kifu doesn't have to be an empty board
-			this.update("init");
 		}
 		
 		/*if(this.kifu.nodeCount === 0) this.error("");
