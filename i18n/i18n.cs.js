@@ -33,8 +33,8 @@ WGo.i18n.cs = {
 	"fullscreen": "Celá obrazovka",
 	"print": "Vytisknout kifu",
 	"permalink": "Permanentní odkaz",
-	
 	"BP:closemsg": "Klikněte kamkoli pro zavření okna.",
+	
 	// score
 	"scoremode": "Spočítat skóre",
 	"score": "Skóre",
