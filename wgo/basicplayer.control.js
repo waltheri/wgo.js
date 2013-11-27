@@ -303,7 +303,8 @@ var player_menu = function(player) {
 		player.menu.className = "wgo-player-menu";
 		player.menu.style.position = "absolute";
 		player.menu.style.display = "none";
-		player.element.appendChild(player.menu);
+		
+		this.element.parentElement.appendChild(player.menu);
 		
 		var widget;
 		for(var i in Control.menu) {
@@ -325,15 +326,8 @@ var player_menu = function(player) {
 	else {
 		player.menu.style.display = "block";
 		
-		var top = 0;
-		var left = 0; 
-		var obj = this.element;
-		
-		while (obj && obj.tagName != 'BODY') {
-			top += obj.offsetTop;
-			left += obj.offsetLeft;
-			obj = obj.offsetParent;
-		}
+		var top = this.element.offsetTop;
+		var left = this.element.offsetLeft;
 		
 		// kinda dirty syntax, but working well
 		if(this.element.parentElement.parentElement.parentElement.parentElement == player.regions.bottom.wrapper) {

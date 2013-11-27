@@ -594,6 +594,7 @@ a.wgo-move-link {
 	box-shadow: 0 0 20px 0 rgba(127,127,127,0.5);
 	font-weight: bold;
 	color: #292929;
+	text-align: left;
 }
 
 .wgo-menu-item {
