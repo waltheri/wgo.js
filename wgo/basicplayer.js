@@ -85,6 +85,8 @@ var appendComponents = function(area) {
 	if(components) {
 		this.regions[area].element.style.display = "block";
 		
+		if(components.constructor != Array) components = [components];
+		
 		for(var i in components) {
 			if(!this.components[components[i]]) this.components[components[i]] = new BasicPlayer.component[components[i]](this);
 			
