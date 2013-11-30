@@ -236,7 +236,7 @@ Board.drawHandlers = {
 				// paint stone
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 			}
 		},
@@ -265,7 +265,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 				
 				this.beginPath();
@@ -307,7 +307,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 			},
 		},
@@ -326,7 +326,7 @@ Board.drawHandlers = {
 				else this.fillStyle = "black";			
 				
 				this.beginPath();
-				this.arc(xr, yr, sr-lw, 0, 2*Math.PI, true);
+				this.arc(xr, yr, Math.max(0, sr-lw), 0, 2*Math.PI, true);
 				this.fill();
 				
 				this.lineWidth = lw;
