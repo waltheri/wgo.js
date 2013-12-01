@@ -170,7 +170,7 @@ var shadow_handler = {
 		
 		this.beginPath();
 		this.fillStyle = 'rgba(32,32,32,0.5)';
-		this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+		this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 		this.fill();
 	}
 }
