@@ -731,8 +731,8 @@ Board.GridLayer.prototype.draw = function(board) {
 	var tmp;
 
 	this.context.beginPath();
-	this.context.lineWidth = Math.min(1, board.stoneRadius/20);
-	this.context.strokeStyle = "#000";
+	this.context.lineWidth = 1;
+	this.context.strokeStyle = "rgba(0,0,0,"+Math.min(1, board.stoneRadius/15)+")";
 	
 	var tx = Math.round(board.left),
 		ty = Math.round(board.top),
