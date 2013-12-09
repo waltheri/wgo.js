@@ -592,12 +592,10 @@ Player.prototype = {
 	 
 	setKeys: function(b) {
 		if(b) {
-			if(WGo.mozilla)	document.onkeypress = key_lis.bind(this);
-			else document.onkeydown = key_lis.bind(this);
+			document.onkeydown = key_lis.bind(this);
 		}
 		else {
-			if(WGo.mozilla)	document.onkeypress = null;
-			else document.onkeydown = null;
+			document.onkeydown = null;
 		}
 	},
 	
@@ -608,11 +606,11 @@ Player.prototype = {
 	setWheel: function(b) {
 		if(!this._wheel_listener && b) {
 			this._wheel_listener = wheel_lis.bind(this);
-			var type = WGo.mozilla ? "DOMMouseScroll" : "mousewheel";
+			var type = (document.onmousewheel !== undefined) ? "mousewheel" : "DOMMouseScroll";
 			this.element.addEventListener(type, this._wheel_listener);
 		}
 		else if(this._wheel_listener && !b) {
-			var type = WGo.mozilla ? "DOMMouseScroll" : "mousewheel";
+			var type = (document.onmousewheel !== undefined) ? "mousewheel" : "DOMMouseScroll";
 			this.element.removeEventListener(type, this._wheel_listener);
 			delete this._wheel_listener;
 		}
