@@ -205,6 +205,62 @@ var redraw_layer = function(board, layer) {
 	}
 }
 
+// shell stone helping functions
+
+var shell_seed;
+
+var draw_shell_line = function(ctx, x, y, radius, start_angle, end_angle, factor, thickness) {
+	ctx.strokeStyle = "rgba(64,64,64,0.2)";
+
+	ctx.lineWidth = (radius/30)*thickness;
+	ctx.beginPath();
+	
+	radius -= Math.max(1, ctx.lineWidth);
+	
+	var x1 = x + radius*Math.cos(start_angle*Math.PI);
+	var y1 = y + radius*Math.sin(start_angle*Math.PI);
+	var x2 = x + radius*Math.cos(end_angle*Math.PI);
+	var y2 = y + radius*Math.sin(end_angle*Math.PI);
+	
+	var m, angle, x, diff_x, diff_y;
+	if(x2 > x1) {
+		m = (y2-y1)/(x2-x1);
+		angle = Math.atan(m);
+	}
+	else if(x2 == x1) {
+		angle = Math.PI/2;
+	}
+	else {
+		m = (y2-y1)/(x2-x1);
+		angle = Math.atan(m)-Math.PI;
+	}
+
+	var c = factor*radius;
+	diff_x = Math.sin(angle) * c;
+	diff_y = Math.cos(angle) * c;
+
+	var bx1 = x1 + diff_x;
+	var by1 = y1 - diff_y;
+	
+	var bx2 = x2 + diff_x;
+	var by2 = y2 - diff_y;
+	
+	ctx.moveTo(x1,y1);
+	ctx.bezierCurveTo(bx1, by1, bx2, by2, x2, y2);
+	ctx.stroke();
+}
+
+var draw_shell = function(arg) {
+	var from_angle = arg.angle;
+	var to_angle = arg.angle;
+	
+	for(var i = 0; i < arg.lines.length; i++) {
+		from_angle += arg.lines[i];
+		to_angle -= arg.lines[i];
+		draw_shell_line(arg.ctx, arg.x, arg.y, arg.radius, from_angle, to_angle, arg.factor, arg.thickness);
+	}
+}
+
 // drawing handlers
 
 Board.drawHandlers = {
@@ -310,6 +366,109 @@ Board.drawHandlers = {
 				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 			},
+		},
+		shadow: shadow_handler,
+	},
+	
+	SHELL: {
+		stone: {
+			draw: function(args, board) {
+				var xr,
+					yr,
+					sr = board.stoneRadius;
+				
+				shell_seed = shell_seed || Math.ceil(Math.random()*9999999);
+				
+				xr = board.getX(args.x);
+				yr = board.getY(args.y);
+					
+				var radgrad;
+
+				if(args.c == WGo.W) {
+					radgrad = "#aaa";
+				}
+				else {
+					radgrad = "#000";
+				}
+				
+				this.beginPath();
+				this.fillStyle = radgrad;
+				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+				this.fill();
+				
+				// do shell magic here
+				if(args.c == WGo.W) {
+					// do shell magic here
+					var type = shell_seed%(3+args.x*board.size+args.y)%3;
+					var z = board.size*board.size+args.x*board.size+args.y;
+					var angle = (2/z)*(shell_seed%z);
+
+					if(type == 0) {
+						draw_shell({
+							ctx: this,
+							x: xr,
+							y: yr,
+							radius: sr,
+							angle: angle,
+							lines: [0.10, 0.12, 0.11, 0.10, 0.09, 0.09, 0.09, 0.09],
+							factor: 0.25,
+							thickness: 1.75
+						});
+					}
+					else if(type == 1) {
+						draw_shell({
+							ctx: this,
+							x: xr,
+							y: yr,
+							radius: sr,
+							angle: angle,
+							lines: [0.10, 0.09, 0.08, 0.07, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06],
+							factor: 0.2,
+							thickness: 1.5
+						});
+					}
+					else {
+						draw_shell({
+							ctx: this,
+							x: xr,
+							y: yr,
+							radius: sr,
+							angle: angle,
+							lines: [0.12, 0.14, 0.13, 0.12, 0.12, 0.12],
+							factor: 0.3,
+							thickness: 2
+						});
+					}
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,sr/3,xr-sr/5,yr-sr/5,5*sr/5);
+					radgrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+					radgrad.addColorStop(1, 'rgba(255,255,255,0)');
+					
+					// add radial gradient //
+					this.beginPath();
+					this.fillStyle = radgrad;
+					this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+					this.fill();
+				}
+				else {
+					radgrad = this.createRadialGradient(xr+0.4*sr, yr+0.4*sr, 0, xr+0.5*sr, yr+0.5*sr, sr);
+					radgrad.addColorStop(0, 'rgba(32,32,32,1)');
+					radgrad.addColorStop(1, 'rgba(0,0,0,0)');
+					
+					this.beginPath();
+					this.fillStyle = radgrad;
+					this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+					this.fill();
+				
+					radgrad = this.createRadialGradient(xr-0.4*sr, yr-0.4*sr, 1, xr-0.5*sr, yr-0.5*sr, 1.5*sr);
+					radgrad.addColorStop(0, 'rgba(64,64,64,1)');
+					radgrad.addColorStop(1, 'rgba(0,0,0,0)');
+					
+					this.beginPath();
+					this.fillStyle = radgrad;
+					this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+					this.fill();
+				}
+			}
 		},
 		shadow: shadow_handler,
 	},
