@@ -122,7 +122,7 @@ WGo.SGF.parse = function(str) {
 			node = node ? node.appendChild(new WGo.KNode()) : kifu.root;
 			
 			// make array of properties
-			props = sequence[i].match(reg_node);
+			props = sequence[i].match(reg_node) || [];
 			kifu.propertyCount += props.length;
 			
 			// insert all properties to node
