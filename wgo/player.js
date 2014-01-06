@@ -58,13 +58,12 @@ var update_board = function(e) {
 	
 	// init array for new objects
 	var add = [];
-
+	
+	this.notification();
+	
 	// add current move marker
 	if(e.node.move) {
-		if(e.node.move.pass) this.setMessage({
-			text: WGo.t((e.node.move.c == WGo.B ? "b" : "w")+"pass"),
-			type: "notification"
-		});
+		if(e.node.move.pass) this.notification(WGo.t((e.node.move.c == WGo.B ? "b" : "w")+"pass"));
 		else add.push({
 			type: "CR",
 			x: e.node.move.x, 
@@ -143,6 +142,8 @@ var wheel_lis = function(e) {
 
 // keyboard click callback, for replaying a game
 var key_lis = function(e) {
+	if(document.querySelector(":focus")) return true;
+	
 	switch(e.keyCode) {
 		case 39: this.next(); break;
 		case 37: this.previous(); break;
@@ -631,7 +632,7 @@ Player.prototype = {
 		}
 		this.coordinates = b;
 	},
-	
+
 }
 
 Player.default = {
