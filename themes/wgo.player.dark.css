@@ -71,34 +71,34 @@ a.wgo-move-link {
 
 /* button widget */
 
-.wgo-button {
+button.wgo-button {
 	border: 1px solid rgba(64,64,64,0.3);
 	background-color: rgba(48,48,48,0.3);
 	color: rgba(240,240,240,0.9);
 }
 
-.wgo-button:not([disabled]):hover, 
-.wgo-player-mn-value:focus {
+button.wgo-button:not([disabled]):hover, 
+input[type="text"].wgo-player-mn-value:focus {
 	border: 1px solid rgba(96,96,96,0.3);
 	background-color: rgba(64,64,64,0.3);
 	box-shadow: 0 0 20px 0 rgba(100,100,100,0.5);
 }
 
-.wgo-button.wgo-selected {
+button.wgo-button.wgo-selected {
 	border: 1px solid rgba(96,96,96,0.3);
 	background-color: rgba(64,64,64,0.3);
 }
 
-.wgo-button.wgo-selected:hover {
+button.wgo-button.wgo-selected:hover {
 }
 
-.wgo-button[disabled]::before, .wgo-player-mn-value[disabled] {
+button.wgo-button[disabled]::before, input[type="text"].wgo-player-mn-value[disabled] {
 	color: rgba(160,160,160,0.3);
 }
 
 /* move number widget */
 
-.wgo-player-mn-value  {
+input[type="text"].wgo-player-mn-value  {
 	border: 1px solid rgba(64,64,64,0.3);
 	background-color: rgba(48,48,48,0.3);
 	color: rgba(240,240,240,0.9);
