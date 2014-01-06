@@ -475,8 +475,8 @@ var exec_previous = function() {
 	
 	this.game.popPosition();
 	
-	this.path.m--;
 	if(this.path[this.path.m] !== undefined) delete this.path[this.path.m];
+	this.path.m--;
 	
 	return true;
 }
