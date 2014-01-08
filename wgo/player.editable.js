@@ -69,7 +69,7 @@ WGo.Player.Editable.prototype.set = function(set) {
 		this.originalReader = this.player.kifuReader;
 		
 		// create new reader with cloned kifu
-		this.player.kifuReader = new WGo.KifuReader(this.player.kifu.clone(), this.originalReader.rememberPath);
+		this.player.kifuReader = new WGo.KifuReader(this.player.kifu.clone(), this.originalReader.rememberPath, this.originalReader.allow_illegal, this.originalReader.allow_illegal);
 		
 		// go to current position
 		this.player.kifuReader.goTo(this.originalReader.path);
