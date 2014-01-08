@@ -1385,16 +1385,21 @@ WGo.Position = Position;
  * and it can effectively restore old positions.</p>
  *
  * @param {number} size of the board
- * @param {"KO"|"ALL"|"NONE"} repeat (optional, default is "KO") - how to handle repeated position:
- * 
+ * @param {"KO"|"ALL"|"NONE"} checkRepeat (optional, default is "KO") - how to handle repeated position:
  * KO - ko is properly handled - position cannot be same like previous position
  * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
  * NONE - position can be repeated
+ *
+ * @param {boolean} allowRewrite (optional, default is false) - allow to play moves, which were already played:
+ * @param {boolean} allowSuicide (optional, default is false) - allow to play suicides, stones are immediately captured
  */
 
-var Game = function(size, repeat) {
+var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
 	this.size = size || 19;
-	this.repeating = repeat === undefined ? "KO" : repeat; // possible values: KO, ALL or nothing
+	this.repeating = checkRepeat === undefined ? "KO" : checkRepeat; // possible values: KO, ALL or nothing
+	this.allow_rewrite = allowRewrite || false;
+	this.allow_suicide = allowSuicide || false;
+	
 	this.stack = [];
 	this.stack[0] = new Position(this.size);
 	this.stack[0].capCount = {black:0, white:0};
@@ -1511,7 +1516,7 @@ Game.prototype = {
 	play: function(x,y,c,noplay) {
 		//check coordinates validity
 		if(!this.isOnBoard(x,y)) return 1;
-		if(this.position.get(x,y) != 0) return 2;
+		if(!this.allow_rewrite && this.position.get(x,y) != 0) return 2;
 		
 		// clone position
 		if(!c) c = this.turn; 
@@ -1520,12 +1525,19 @@ Game.prototype = {
 		new_pos.set(x,y,c);
 		
 		// check capturing
+		var cap_color = c;
 		var captured = check_capturing(new_pos, x-1, y, -c).concat(check_capturing(new_pos, x+1, y, -c), check_capturing(new_pos, x, y-1, -c), check_capturing(new_pos, x, y+1, -c));
 		
 		// check suicide
 		if(!captured.length) {
 			var testing = new Position(this.size);
-			if(check_liberties(new_pos, testing, x, y, c)) return 3;
+			if(check_liberties(new_pos, testing, x, y, c)) {
+				if(this.allow_suicide) {
+					cap_color = -c;
+					do_capture(new_pos, captured, x, y, c);
+				}
+				else return 3;
+			}
 		}
 		
 		// check history
@@ -1541,7 +1553,7 @@ Game.prototype = {
 			black: this.position.capCount.black, 
 			white: this.position.capCount.white
 		};
-		if(c == WGo.B) new_pos.capCount.black += captured.length;
+		if(cap_color == WGo.B) new_pos.capCount.black += captured.length;
 		else new_pos.capCount.white += captured.length;
 		
 		// save position

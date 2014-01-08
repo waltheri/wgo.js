@@ -310,7 +310,7 @@ Player.prototype = {
 		this.kifu = kifu;
 
 		// kifu is replayed by KifuReader, it manipulates a Kifu object and gets all changes
-		this.kifuReader = new WGo.KifuReader(this.kifu, this.config.rememberPath);
+		this.kifuReader = new WGo.KifuReader(this.kifu, this.config.rememberPath, this.config.allowIllegalMoves);
 		
 		// fire kifu loaded event
 		this.dispatchEvent({
@@ -648,6 +648,7 @@ Player.default = {
 	update: undefined,
 	frozen: undefined,
 	unfrozen: undefined,
+	allowIllegalMoves: false
 }
 
 WGo.Player = Player;

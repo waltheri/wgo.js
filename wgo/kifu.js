@@ -372,12 +372,14 @@ var pos_diff = function(old_p, new_p) {
  * KifuReader object is capable of reading a kifu nodes and executing them. It contains Game object with actual position.
  * Variable change contains last changes of position.
  * If parameter rememberPath is set, KifuReader will remember last selected child of all nodes.
+ * If parameter allowIllegalMoves is set, illegal moves will be played instead of throwing an exception
  */
 
-var KifuReader = function(kifu, rememberPath) {
+var KifuReader = function(kifu, rememberPath, allowIllegalMoves) {
 	this.kifu = kifu;
 	this.node = this.kifu.root;
-	this.game = new WGo.Game(this.kifu.size);
+	this.allow_illegal = allowIllegalMoves || false;
+	this.game = new WGo.Game(this.kifu.size, this.allow_illegal ? "NONE" : "KO", this.allow_illegal , this.allow_illegal);
 	this.path = {m:0};
 
 	this.change = exec_node(this.game, this.node, true);
@@ -419,6 +421,15 @@ var exec_node = function(game, node, first) {
 		else {
 			var res = game.play(node.move.x, node.move.y, node.move.c);
 			if(typeof res == "number") throw new InvalidMoveError(res, node);
+			// we must check whether to add move (it can be suicide)
+			for(var i in res) {
+				if(res[i].x == node.move.x && res[i].y == node.move.y) {
+					return {
+						add: [],
+						remove: res
+					}
+				}
+			}
 			return {
 				add: [node.move],
 				remove: res
@@ -584,6 +595,23 @@ KifuReader.prototype = {
 	
 	getPosition: function() {
 		return this.game.getPosition();
+	},
+	
+	/**
+	 * Allow or disallow illegal moves to be played
+	 */
+	 
+	allowIllegalMoves: function(b) {
+		if(b) {
+			this.game.allow_rewrite = true;
+			this.game.allow_suicide = true;
+			this.repeating = "NONE";
+		}
+		else {
+			this.game.allow_rewrite = false;
+			this.game.allow_suicide = false;
+			this.repeating = "KO";
+		}
 	}
 }
 

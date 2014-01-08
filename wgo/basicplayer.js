@@ -469,6 +469,10 @@ BasicPlayer.attributes = {
 		if(value.toLowerCase() == "false") this.rememberPath = false;
 	},
 	
+	"data-wgo-allowillegal": function(value) {
+		if(value.toLowerCase() != "false") this.allowIllegalMoves = true;
+	},
+	
 	"data-wgo-move": function(value) {
 		var m = parseInt(value);
 		if(m) this.move = m;
