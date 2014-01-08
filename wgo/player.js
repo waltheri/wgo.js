@@ -219,7 +219,7 @@ var Player = function(config) {
 	this.config = config;
 	
 	// add default configuration
-	for(var key in PlayerView.default) if(this.config[key] === undefined && PlayerView.default[key] !== undefined) this.config[key] = PlayerView.default[key];
+	for(var key in Player.default) if(this.config[key] === undefined && Player.default[key] !== undefined) this.config[key] = Player.default[key];
 	
 	this.element = document.createElement("div");
 	this.board = new WGo.Board(this.element, this.config.board);
