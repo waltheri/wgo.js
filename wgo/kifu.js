@@ -320,6 +320,9 @@ KNode.prototype = {
 	 */
 	
 	insertAfter: function(node) {
+		for(var child in this.children) {
+			this.children[child].parent = node;
+		}
 		node.children = node.children.concat(this.children);
 		node.parent = this;
 		this.children = [node];
@@ -591,7 +594,12 @@ var InvalidMoveError = function(code, node) {
 	this.name = "InvalidMoveError";
     this.message = "Invalid move in kifu detected. ";
 	
-	if(node.move && node.move.c !== undefined && node.move.x !== undefined && node.move.y !== undefined) this.message += "Trying to play "+(node.move.c == WGo.WHITE ? "white" : "black")+" move on "+String.fromCharCode(node.move.x+65)+""+(19-node.move.y);
+	if(node.move && node.move.c !== undefined && node.move.x !== undefined && node.move.y !== undefined) {
+		var letter = node.move.x;
+		if(node.move.x > 7) letter++;
+		letter = String.fromCharCode(letter+65);
+		this.message += "Trying to play "+(node.move.c == WGo.WHITE ? "white" : "black")+" move on "+String.fromCharCode(node.move.x+65)+""+(19-node.move.y);
+	}
 	else this.message += "Move object doesn't contain arbitrary attributes.";
 	
 	if(code) {
@@ -604,6 +612,7 @@ var InvalidMoveError = function(code, node) {
 			break;
 			case 3:
 				this.message += ", but this move is a suicide.";
+			break;
 			case 4:
 				this.message += ", but this position already occured.";
 			break;
