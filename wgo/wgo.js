@@ -119,6 +119,7 @@ WGo.filterHTML = function(text) {
  * - height: number - height of the board (default: 0)
  * - font: string - font of board writings (default: "Calibri")
  * - lineWidth: number - line width of board drawings
+ * - autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this option rewrites 'lineWidth' /and it will keep markups sharp/ (default: false)
  * - starPoints: Object - star points coordinates, defined for various board sizes. Look at Board.default for more info.
  * - stoneHandler: Board.DrawHandler - stone drawing handler (default: Board.drawHandlers.NORMAL)
  * - starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant.
@@ -178,6 +179,10 @@ var shadow_handler = {
 var get_markup_color = function(board, x, y) {
 	if(board.obj_arr[x][y][0].c == WGo.B) return "rgba(255,255,255,0.8)"; 
 	return "rgba(0,0,0,0.8)";
+}
+
+var is_here_stone = function(board, x, y) {
+	return (board.obj_arr[x][y][0] && board.obj_arr[x][y][0].c == WGo.W || board.obj_arr[x][y][0].c == WGo.B);
 }
 
 var redraw_layer = function(board, layer) {
@@ -537,7 +542,7 @@ Board.drawHandlers = {
 		// modifies grid layer too
 		grid: {
 			draw: function(args, board) {
-				if(!board.obj_arr[args.x][args.y][0].c && !args._nodraw) {
+				if(!is_here_stone(board, args.x, args.y) && !args._nodraw) {
 					var xr = board.getX(args.x),
 						yr = board.getY(args.y),
 						sr = board.stoneRadius;
@@ -545,7 +550,7 @@ Board.drawHandlers = {
 				}
 			},
 			clear: function(args, board) {
-				if(!board.obj_arr[args.x][args.y][0].c)  {
+				if(!is_here_stone(board, args.x, args.y))  {
 					args._nodraw = true;
 					redraw_layer(board, "grid");
 					delete args._nodraw;
@@ -597,7 +602,7 @@ Board.drawHandlers = {
 					sr = board.stoneRadius;
 				
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = (args.lineWidth || board.lineWidth || 1) * 2;
+				this.lineWidth = (args.lineWidth || board.lineWidth || 1) * 2 - 1;
 				this.beginPath();
 				this.moveTo(Math.round(xr-sr/2), Math.round(yr-sr/2));
 				this.lineTo(Math.round(xr+sr/2), Math.round(yr+sr/2));
@@ -649,7 +654,8 @@ Board.drawHandlers = {
 	outline: {
 		stone: {
 			draw: function(args, board) {
-				this.globalAlpha = 0.3;
+				if(args.alpha) this.globalAlpha = args.alpha;
+				else this.globalAlpha = 0.3;
 				if(args.stoneStyle) Board.drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
 				else board.stoneHandler.stone.draw.call(this, args, board);
 				this.globalAlpha = 1;
@@ -854,6 +860,7 @@ var updateDim = function() {
 	this.element.style.height = this.height+"px";
 	
 	this.stoneRadius = this.stoneSize*Math.min(this.fieldWidth, this.fieldHeight)/2;
+	if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
 	
 	for(var key in this.layers) {
 		this.layers[key].setDimensions(this.width, this.height); 
@@ -1235,7 +1242,8 @@ Board.default = {
 	width: 0,
 	height: 0,
 	font: "Calibri",
-	lineWidth: 2,
+	lineWidth: 1,
+	autoLineWidth: false,
 	starPoints: {
 		19:[{x:3, y:3 },
 			{x:9, y:3 },

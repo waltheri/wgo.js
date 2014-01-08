@@ -48,10 +48,8 @@ var loadFromUrl = WGo.loadFromUrl = function(url, callback) {
 
 // basic updating function - handles board changes
 var update_board = function(e) {
-	if(!e.change) return;
-	
 	// update board's position
-	this.board.update(e.change);
+	if(e.change) this.board.update(e.change);
 	
 	// remove old markers from the board
 	if(this.temp_marks) this.board.removeObject(this.temp_marks);
@@ -78,7 +76,8 @@ var update_board = function(e) {
 				type: "LB",
 				text: String.fromCharCode(65+i),
 				x: e.node.children[i].move.x,
-				y: e.node.children[i].move.y
+				y: e.node.children[i].move.y,
+				c: "rgba(0,32,128,0.8)"
 			});
 		}
 	}
