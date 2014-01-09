@@ -443,7 +443,7 @@ var exec_node = function(game, node, first) {
 		
 		for(var i in node.setup) {
 			if(node.setup[i].c) {
-				game.addStone(node.setup[i].x, node.setup[i].y, node.setup[i].c);
+				game.setStone(node.setup[i].x, node.setup[i].y, node.setup[i].c);
 				add.push(node.setup[i]);
 			}
 			else {
