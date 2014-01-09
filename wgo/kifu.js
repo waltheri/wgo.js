@@ -382,8 +382,8 @@ var KifuReader = function(kifu, rememberPath, allowIllegalMoves) {
 	this.game = new WGo.Game(this.kifu.size, this.allow_illegal ? "NONE" : "KO", this.allow_illegal , this.allow_illegal);
 	this.path = {m:0};
 
-	this.change = exec_node(this.game, this.node, true);
 	if(this.kifu.info["HA"] && this.kifu.info["HA"] > 1) this.game.turn = WGo.W;
+	this.change = exec_node(this.game, this.node, true);
 	
 	if(rememberPath) this.rememberPath = true;
 	else this.rememberPath = false;
@@ -413,6 +413,7 @@ var concat_changes = function(ch_orig, ch_new) {
 var exec_node = function(game, node, first) {
 	if(node.parent) node.parent._last_selected = node.parent.children.indexOf(node);
 	
+	// handle moves nodes
 	if(node.move != undefined) {
 		if(node.move.pass) {
 			game.pass(node.move.c);
@@ -436,23 +437,25 @@ var exec_node = function(game, node, first) {
 			}
 		}
 	}
-	else if(node.setup != undefined) {
+	// handle other(setup) nodes
+	else {
 		if(!first) game.pushPosition();
 		
 		var add = [], remove = [];
 		
-		for(var i in node.setup) {
-			if(node.setup[i].c) {
-				game.setStone(node.setup[i].x, node.setup[i].y, node.setup[i].c);
-				add.push(node.setup[i]);
-			}
-			else {
-				game.removeStone(node.setup[i].x, node.setup[i].y);
-				remove.push(node.setup[i]);
+		if(node.setup != undefined) {
+			for(var i in node.setup) {
+				if(node.setup[i].c) {
+					game.setStone(node.setup[i].x, node.setup[i].y, node.setup[i].c);
+					add.push(node.setup[i]);
+				}
+				else {
+					game.removeStone(node.setup[i].x, node.setup[i].y);
+					remove.push(node.setup[i]);
+				}
 			}
 		}
 		
-		// TODO: check & test handling of turns 
 		if(node.turn) game.turn = node.turn;
 		
 		return {
@@ -460,10 +463,6 @@ var exec_node = function(game, node, first) {
 			remove: remove
 		};
 	}
-	else if(!first) {
-		game.pushPosition();
-	}
-	return {add:[], remove:[]};
 }
 
 var exec_next = function(i) {
@@ -488,6 +487,7 @@ var exec_previous = function() {
 	this.node = this.node.parent;
 	
 	this.game.popPosition();
+	if(this.node.turn) this.game.turn = this.node.turn;
 	
 	if(this.path[this.path.m] !== undefined) delete this.path[this.path.m];
 	this.path.m--;
@@ -503,8 +503,8 @@ var exec_first = function() {
 	
 	this.path = {m: 0};
 	
-	this.change = exec_node(this.game, this.node, true);
 	if(this.kifu.info["HA"] && this.kifu.info["HA"] > 1) this.game.turn = WGo.W;
+	this.change = exec_node(this.game, this.node, true);
 }
 
 KifuReader.prototype = {

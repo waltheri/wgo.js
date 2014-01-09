@@ -48,7 +48,7 @@ properties["AE"] = function(kifu, node, value) {
 	}
 }
 properties["PL"] = function(kifu, node, value) {
-	node.turn = value[0] == "b" ? WGo.B : WGo.W;
+	node.turn = (value[0] == "b" || value[0] == "B") ? WGo.B : WGo.W;
 }
 	
 // Node annotation properties
