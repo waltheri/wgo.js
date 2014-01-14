@@ -103,7 +103,7 @@ WGo.clone = function(obj) {
 // filter html to avoid XSS
 WGo.filterHTML = function(text) {
 	if(!text || typeof text != "string") return text;
-	return text.replace("<", "&lt;").replace(">", "&gt;");
+	return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 //---------------------- WGo.Board -----------------------------------------------------------------------------
@@ -1573,11 +1573,15 @@ Game.prototype = {
 	 */
 	
 	pass: function(c) {
-		if(c) this.turn = -c; 
-		else this.turn = -this.turn;
-		
 		this.pushPosition();
-		this.position.color = -this.position.color;
+		if(c) {
+			this.position.color = c;
+			this.turn = -c; 
+		}
+		else {
+			this.position.color = this.turn;
+			this.turn = -this.turn;
+		}
 	},
 	
 	/**
