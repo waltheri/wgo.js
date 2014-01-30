@@ -1,0 +1,187 @@
+<h1>Board tutorial</h1>
+<p>In this tutorial I try to clarify how to work with WGo.Board. We will make simple board "editor", with ability to add and remove objects like stones, squares and triangles.</p>
+<h3>Step one - basic HTML</h3>
+<p>Before you go any further you must <a href="/download">download</a> WGo.js files and put them into your directory. Then we can start making HTML skelet of our application.</p>
+<pre class="prettyprint linenums">
+&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;My page&lt;/title&gt;
+    &lt;script type="text/javascript" src="wgo/wgo.js"&gt;&lt;/script&gt; &lt;!-- linking WGo javascript --&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;!-- Dropdown menu for selecting tool --&gt;
+    &lt;select id="tool" style="display: block; margin-bottom: 10px;"&gt;
+      &lt;option value="black" selected&gt;Black stone&lt;/option&gt;
+      &lt;option value="white"&gt;White stone&lt;/option&gt;
+      &lt;option value="SQ"&gt;Square&lt;/option&gt;
+      &lt;option value="TR"&gt;Triangle&lt;/option&gt;
+      &lt;option value="CR"&gt;Circle&lt;/option&gt;
+      &lt;option value="remove"&gt;Remove&lt;/option&gt;
+    &lt;/select&gt;
+    &lt;div id="board"&gt;
+      &lt;!-- board will go here --&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+<p>You can see result <a href="board/1">here</a></p>
+
+<h3>Step two - displaying a board</h3>
+<p>For rendering a board we add javascript to our document which must be executed after target DOM element is loaded. Otherwise it won't work. We can use either <code>onLoad</code> event or put javascript at the end of the file.</p>
+<pre class="prettyprint linenums">
+var board = new WGo.Board(document.getElementById("board"), {
+    width: 600,
+});
+</pre>
+<p>However we would like to see only a part of the board, so we call constructor with parameter section.</p>
+<pre class="prettyprint linenums">
+var board = new WGo.Board(document.getElementById("board"), {
+    width: 600,
+    section: {
+        top: 12,
+        left: 6,
+        right: 0,
+        bottom: 0
+    }
+});
+</pre>
+<p>You can see result <a href="board/2">here</a></p>
+
+<h3>Step three - adding and removing objects</h3>
+<p>Now comes a little bit harder part. In this step we make possible adding desired objects on the board by mouse clicking. For that we use board's method <code>addEventListener</code>.</p>
+
+<pre class="prettyprint linenums">
+var tool = document.getElementById("tool"); // get the &lt;select&gt; element
+
+board.addEventListener("click", function(x, y) {
+    if(tool.value == "black") {
+        board.addObject({
+            x: x,
+            y: y,
+            c: WGo.B
+        });
+    }
+    else if(tool.value == "white") {
+        board.addObject({
+            x: x,
+            y: y,
+            c: WGo.W
+        });
+    }
+    else if(tool.value == "remove") {
+        board.removeObjectsAt(x, y);
+    }
+    else {
+        board.addObject({
+            x: x,
+            y: y,
+            type: tool.value
+        });
+    }
+});
+</pre>
+<p>You can see result of this step <a href="board/3">here</a></p>
+
+<h3>Step four - adding own objects</h3>
+<p>How about we want some special object, let's say an airplane. Firstly we must add an option to the select list.</p>
+<pre class="prettyprint linenums">
+&lt;option value="plane"&gt;Airplane&lt;/option&gt;
+</pre>
+<p>And then we must create a <code>WGo.Board.DrawHandler</code> which will be able to draw our airplane.</p>
+<pre class="prettyprint linenums">
+var plane = {
+    // draw on stone layer
+    stone: {
+        // draw function is called in context of CanvasRenderingContext2D, so we can paint immediately using this
+        draw: function(args, board) {
+            var xr = board.getX(args.x), // get absolute x coordinate of intersection
+                yr = board.getY(args.y), // get absolute y coordinate of intersection
+                sr = board.stoneRadius; // get field radius in px
+            
+            // if there is a black stone, draw white plane
+            if(board.obj_arr[args.x][args.y][0].c == WGo.B) this.strokeStyle = "white"; 
+            else this.strokeStyle = "black";
+            
+            this.lineWidth = 3;
+            
+            this.beginPath();
+            
+            this.moveTo(xr - sr*0.8, yr);
+            this.lineTo(xr + sr*0.5, yr);
+            this.lineTo(xr + sr*0.8, yr - sr*0.25);
+            this.moveTo(xr - sr*0.4, yr);
+            this.lineTo(xr + sr*0.3, yr - sr*0.6);
+            this.moveTo(xr - sr*0.4, yr);
+            this.lineTo(xr + sr*0.3, yr + sr*0.6);
+            
+            this.stroke();
+        }
+    },
+}
+</pre>
+<p>In the end we mustn't forget to alter board's click listener.</p>
+
+<pre class="prettyprint linenums">
+...
+else if(tool.value == "plane") {
+    board.addObject({
+        x: x,
+        y: y,
+        type: plane
+    });
+}
+...
+</pre>
+<p>As usual the result is <a href="board/4">here</a></p>
+
+<h3>Step five - adding coordinates</h3>
+<p>Last step of our tutorial is displaying coordinates (labels like A1, A2 ...) around the board. Coordinates are not bind with any single field so we cannot use <code>addObject</code> method. For this kind of drawing there is method <code>addCustomObject</code>. Everything else is similar to adding normal objects - we create <code>WGo.Board.DrawHandler</code> and then we assign it to the board.</p>
+<pre class="prettyprint linenums">
+var coordinates = {
+    // draw on grid layer
+    grid: {
+        draw: function(args, board) {
+            var ch, t, xright, xleft, ytop, ybottom;
+            
+            this.fillStyle = "rgba(0,0,0,0.7)";
+            this.textBaseline="middle";
+            this.textAlign="center";
+            this.font = board.stoneRadius+"px "+(board.font || "");
+            
+            xright = board.getX(-0.75);
+            xleft = board.getX(board.size-0.25);
+            ytop = board.getY(-0.75);
+            ybottom = board.getY(board.size-0.25);
+            
+            for(var i = 0; i < board.size; i++) {
+                ch = i+"A".charCodeAt(0);
+                if(ch >= "I".charCodeAt(0)) ch++;
+                
+                t = board.getY(i);
+                this.fillText(board.size-i, xright, t);
+                this.fillText(board.size-i, xleft, t);
+                
+                t = board.getX(i);
+                this.fillText(String.fromCharCode(ch), t, ytop);
+                this.fillText(String.fromCharCode(ch), t, ybottom);
+            }
+            
+            this.fillStyle = "black";
+		}
+    }
+}
+board.addCustomObject(coordinates);
+</pre>
+<p>However this is not enough. As you can see coordinate's labels occupy more space than board's margins offer, so we must extend board's margins. Fortunately we can easily adjust board visible section, so we just modify the constructor.</p>
+<pre class="prettyprint linenums">
+var board = new WGo.Board(document.getElementById("board"), {
+    width: 600,
+    section: {
+        top: 12,
+        left: 6,
+        right: -0.5,
+        bottom: -0.5
+    }
+});
+</pre>
+<p>This will enlarge right and bottom margin of the board by half field. The final result with all source codes is <a href="board/5">here</a></p>

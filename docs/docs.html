@@ -1,0 +1,927 @@
+<h1>WGo.js API reference</h1>
+
+<form class="form-search pull-right">
+  <input type="text" id="doc_search" class="input-medium search-query" placeholder="Search API">
+</form>
+
+<div id="doc_search_result">
+</div>
+
+<div id="doc_items">
+
+<h3>Global constants</h3>
+
+<div class="doc-item">
+<h4>WGo.version</h4>
+<p>Actual version of WGo player</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.about</h4>
+<p>Information text about WGo</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.B</h4>
+<p>Constant for black color.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.W</h4>
+<p>Constant for white color.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.DIR</h4>
+<p>Directory of WGo.js file.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.opera</h4>
+<p>True if current browser is Opera.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.webkit</h4>
+<p>True if current browser is Webkit browser.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.mozila</h4>
+<p>True if current browser is Firefox.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.msie</h4>
+<p>True if current browser is IE.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.lang</h4>
+<p>Language of the WGo. Default is <code>en</code>. You can change this variable, but <code>WGo.i18n[WGo.lang]</code> should exist.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.i18n</h4>
+<p>Object with terms. Its structure is like this: <code>{en: {key1: term1, ... , keyN: termN}}</code>. All output texts should be saved in this object in order to be translated. If you want to add support of your language you can extend this object.</p>
+<hr/>
+</div>
+
+<h3>Global properties</h3>
+
+<div class="doc-item">
+<h4>WGo.ERROR_REPORT <span class="badge badge-info">boolean</span></h4>
+<p>If set true users will see all errors, otherwise they stay hidden. Actually it does nothing in standalone WGo.js, however WGo.js Player use this constant. Default: true.</p>
+</div>
+
+<h3>Global functions</h3>
+
+<div class="doc-item">
+<h4>WGo.extendClass(parent, child)</h4>
+<p>Helper function for class inheritance.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>parent</strong> <span class="badge badge-info">Function</span><br/>
+	Constructor of parent class.
+  </li>
+  <li>
+    <strong>child</strong> <span class="badge badge-info">Function</span><br/>
+    Constructor of child class - this class inherits methods from parent class.
+  </li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">Function</span> Child constructor.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.clone(obj)</h4>
+<p>Helper function for deep copy of simple JSON-like objects.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>obj</strong> <span class="badge badge-info">Object</span><br/>
+	Object to be cloned.
+  </li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">Object</span> Clone of the object.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.filterHTML(html)</h4>
+<p>Escapes html tags in text. To avoid XSS.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>html</strong> <span class="badge badge-info">string</span><br/>
+	HTML text to be filtered.
+  </li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">string</span> Safe text.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>WGo.t(key[, arg1, ..., argN])</h4>
+<p>Function for output. It returns appropriate term in currently active language.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>key</strong> <span class="badge badge-info">String</span><br/>
+	Key of the term.
+  </li>
+  <li>
+    <strong>args</strong> <span class="badge badge-info">String</span><br/>
+	Additional arguments. If specified, characters <code>$</code> in target term will be replaced by arguments. First <code>$</code> is replaced with <code>arg1</code>, second <code>$</code> with <code>arg2</code> etc.
+  </li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">string</span> Appropriate term. At first variable <code>WGo.i18n[WGo.lang][key]</code> is checked, then <code>WGo.i18n.en[key]</code>. If both variables are undefined it returns argument <code>key</code>.
+<hr/>
+</div>
+
+<h2>WGo.Board</h2>
+<p>WGo.Board is a class that produces HTML5 canvas go board. Through its interface you can add and remove objects like stones on the board.</p>
+<p>Board consists of 3 canvas layers. Bottom layer contains a grid, second layer is for stone's shadows and finally the topmost layer is for stones and other objects. However you can add your own layer for your own purposes, just extend <code>Board.CanvasLayer</code> class.</p>
+<div class="alert alert-info">In the documentation I use 2 coordinates system: 
+<ul><li><strong>relative coordinates</strong> - they serve for location of fields. On common board of size 19 coordinates 0:0 means top left field (A19 in common notation), 18:0 means top right field (T19), 0:18 is bottom left field (A1) and 18:18 is bottom right filed (T1).</li><li><strong>absolute coordinates</strong> - for locating single pixels on canvas. Coordinates 0:0 are coordinates of left and topmost pixel of board's canvases.</li></ul></div>
+<h3>Constructor</h3>
+
+<div class="doc-item">
+<h4 id="wgo.board">WGo.Board(element, config)</h4>
+<p>Constructor - creates instance of WGo.Board class.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>element</strong> <span class="badge badge-info">HTMLElement</span><br/>
+	Target HTML element for the board.
+  </li>
+  <li>
+    <strong>config</strong> <span class="badge badge-info">Object</span><br/>
+      Configuration object of the board. It is simple JSON with structure: <code>{key1: value1, ..., keyN: valueN}</code>. All configurations are optional. Possible configurations are:
+      <ul>
+	    <li><strong>size</strong> <span class="badge">number</span> Size of the board (default: 19)</li>
+        <li><strong>width</strong> <span class="badge">number</span> Width of the board (default: 0)</li>
+        <li><strong>height</strong> <span class="badge">number</span> Height of the board (default: 0)</li>
+        <li><strong>font</strong> <span class="badge">string</span> Font of board writings (default: "Calibri")</li>
+        <li><strong>lineWidth</strong> <span class="badge">number</span> Line width of board drawings (default: 1)</li>
+        <li><strong>starPoints</strong> <span class="badge">Object</span> Star points coordinates, defined for various board sizes. Look in source code at Board.default for object structure.</li>
+        <li><strong>stoneHandler</strong> <span class="badge">WGo.Board.DrawHandler</span> Stone drawing handler (default: <code>WGo.Board.DrawHandlers.NORMAL</code>)</li>
+        <li><strong>starSize</strong> <span class="badge">number</span> Size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant.</li>
+        <li><strong>stoneSize</strong> <span class="badge">number</span> Size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant.</li>
+        <li><strong>shadowSize</strong> <span class="badge">number</span> Size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant.</li>
+		<li><strong>section</strong> <span class="badge">Object</span> It defines a section of board to be displayed. You can set a number of rows (or cols) to be skipped on each side. Numbers can be negative, in that case there will be more empty space. In default all values are zeros. Object has structure: <code>{top: number, right: number, bottom: number, left: number}</code></li>
+	    <li><strong>background</strong> <span class="badge">string</span> Background of the board, it can be either color (#RRGGBB) or path to image. Empty string means no background will be applied. (default: <code>WGo.DIR+"wood1.jpg"</code>)</li>
+		
+	  </ul>
+  </li>
+</ul>
+<hr/>
+</div>
+
+<h3>Public properties</h3>
+
+<div class="alert alert-info">
+These properties can be changed without calling any method. However you will probably need to redraw board after any changes. In this documentation I use variable <em>board</em> as instance of WGo.Board class.
+</div>
+
+<div class="doc-item">
+<h4>board.font <span class="badge badge-info">string</span></h4>
+<p>Font used in board drawings.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.lineWidth <span class="badge badge-info">number</span></h4>
+<p>Line width use in some objects (eg circle marker).</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.stoneHandler <span class="badge badge-info">WGo.Board.DrawHandler</span></h4>
+<p>Draw handler used for stones.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.starSize <span class="badge badge-info">number</span></h4>
+<p>Final size of star points in pixels is computed according to field size, however it is multiplied with this constant.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.stoneSize <span class="badge badge-info">number</span></h4>
+<p>Final size of stones (and other common objects) in pixels is computed according to field size, however it is multiplied with this constant. It shouldn't be greater than 1.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.shadowSize <span class="badge badge-info">number</span></h4>
+<p>Final size of shadows in pixels is computed according to field size, however it is multiplied with this constant. It shouldn't be greater than 1.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.stoneRadius <span class="badge badge-info">number</span></h4>
+<p>Size of stone radius in pixels. It shouldn't be changed.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.element <span class="badge badge-info">HTMLElement</span></h4>
+<p>Main HTML element of the board. You shouldn't change it, however you can alter it - for example change style.</p>
+<hr/>
+</div>
+
+<h3>Public methods</h3>
+
+<div class="doc-item">
+<h4>board.init()</h4>
+<p>Initialization method, it is called in constructor. You shouldn't call it, but you can alter it.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.setWidth(width)</h4>
+<p>Sets new width of board and redraws it, height is computed to keep correct aspect ratio.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>width</strong> <span class="badge badge-info">number</span><br/> New width of board.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.setHeight(height)</h4>
+<p>Sets new height of board and redraws it, width is computed to keep correct aspect ratio.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>height</strong> <span class="badge badge-info">number</span><br/> New height of board.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.setDimensions(width, height)</h4>
+<p>Sets both dimensions, aspect ratio is not kept.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>width</strong> <span class="badge badge-info">number</span><br/> New width of board.</li>
+  <li><strong>height</strong> <span class="badge badge-info">number</span><br/> New height of board.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.setSection(section)</h4>
+<p>Sets section of the board to be displayed.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>section</strong> <span class="badge badge-info">Object</span> You can set a number of rows (or cols) to be skipped on each side. Numbers can be negative, in that case there will be more empty space. In default all values are zeros. Object has structure: <code>{top: number, right: number, bottom: number, left: number}</code></li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.setSize(size)</h4>
+<p>Sets size of the board. Most common values are 19, 13 and 9. All objects on the board's fields will be removed.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>size</strong> <span class="badge badge-info">number</span> New size of the board.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.getSection()</h4>
+<p>Returns currently visible section of the board.</p>
+<h5>Return</h5>
+<p><span class="badge badge-info">Object</span> Section of the board.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.redraw()</h4>
+<p>Redraws board and every object on it.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.getX(x)</h4>
+<p>Returns absolute coordinates of column.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/> Relative x coordinate. It should be not negative number less than board's size. Normally 0-18.</li>
+</ul>
+<h5>Return</h5>
+<p><span class="badge badge-info">number</span> X coordinate in pixels.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.getY(y)</h4>
+<p>Returns absolute coordinates of row.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/> Relative y coordinate. It should be not negative number less than board's size. Normally 0-18.</li>
+</ul>
+<h5>Return</h5>
+<p><span class="badge badge-info">number</span> Y coordinate in pixels.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.addLayer(layer, weight)</h4>
+<p>Adds layer to the board. It is meant to be only for canvas layers.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>layer</strong> <span class="badge badge-info">WGo.Board.CanvasLayer</span><br/> Layer to be added.</li>
+  <li><strong>weight</strong> <span class="badge badge-info">number</span><br/> Layers with bigger weights are on top.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.removeLayer(layer)</h4>
+<p>Removes layer from the board.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>layer</strong> <span class="badge badge-info">WGo.Board.CanvasLayer</span><br/> Layer to be removed.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.addObject(object)</h4>
+<p>Adds object on given coordinates of the board. Object should occupy only one board's field, otherwise they won't be properly painted. This method is meant for stones and markers.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>object</strong> <span class="badge badge-info">Object</span> <span class="badge badge-info">Array</span><br/> 
+  Object or array objects to be added. Object has this structure <code>{x: number, y: number, type: WGo.Board.DrawHandler|string|undefined}</code>. X and Y coordinates are required, you must use relative coordinates. Object's type can be <span class="badge">WGo.Board.DrawHandler</span> or name of predefined handler, in that case <code>WGo.Board.DrawHandlers[name]</code> must be valid handler. If you omit object's type, default stone handler will be used. Object can have additional paarmeters which are passed to draw handler.</li>
+</ul>
+<h5>Example</h5>
+<p>Adding a black stone with label.</p>
+<pre class="prettyprint linenums">
+board.addObject([
+    {x: 3, y: 3, c: WGo.B},
+    {x: 3, y: 3, type: "LB", text: "A"}
+]);
+</pre>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.removeObject(object)</h4>
+<p>Removes object from the board.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>object</strong> <span class="badge badge-info">Object</span> <span class="badge badge-info">Array</span><br/> 
+  Object or array objects to be removed. Objects should be specified by coordinates and type.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.removeObjectsAt(x, y)</h4>
+<p>Remove all objects on given coordinates.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/> Relative x coordinate. It should be not negative number less than board's size. Normally 0-18.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/> Relative y coordinate. It should be not negative number less than board's size. Normally 0-18.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.removeAllObjects()</h4>
+<p>Remove all objects on the board. This method won't remove custom objects.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.addCustomObject(handler, args)</h4>
+<p>Adds custom object on the board.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>handler</strong> <span class="badge badge-info">WGo.Board.DrawHandler</span><br/> 
+  Draw handler for object being added.</li>
+  <li><strong>args</strong> <span class="badge badge-info">Object</span><br/> 
+  Configuration object which is passed to draw handler.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.removeCustomObject(handler, args)</h4>
+<p>Removes custom object from the board.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>handler</strong> <span class="badge badge-info">WGo.Board.DrawHandler</span><br/> 
+  Draw handler for object being removed.</li>
+  <li><strong>args</strong> <span class="badge badge-info">Object</span><br/> 
+  Configuration object which is passed to draw handler.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.addEventListener(name, callback)</h4>
+<p>Adds event listener to the board. It should be mouse event listener. It is attached to board's main HTML element.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>name</strong> <span class="badge badge-info">String</span><br/> 
+  Type of event listener. For example: click, mousemove, mouseout etc.</li>
+  <li><strong>callback</strong> <span class="badge badge-info">Function</span><br/> 
+  Function to be called when event is triggered. It is called in this way: <code>callback(x, y, event)</code> where x and y are relative board's coordinates of mouse pointer and event is original event object.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.addEventListener(name, callback)</h4>
+<p>Removes event listener from the board.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>name</strong> <span class="badge badge-info">String</span><br/> 
+  Type of event listener. For example: click, mousemove, mouseout etc.</li>
+  <li><strong>callback</strong> <span class="badge badge-info">Function</span><br/> 
+  Listener's callback to be removed.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.getState()</h4>
+<p>Get current board state (all objects on the board). It actually returns deep copy of the state.</p>
+<h5>Return</h5>
+<p><span class="badge badge-info">Object</span> State object of the board. It is composed of two objects: <code>{objects: Array, custom: Array}</code>, in variable <em>objects</em> they are stored normal objects, in array <em>custom</em> they are stored custom objects.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>board.restoreState(state)</h4>
+<p>Restores state from board's state object and redraws board.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>state</strong> <span class="badge badge-info">Object</span><br/> 
+  State object of the board you can retrieve from <code>board.getState()</code>. It may contain only one component (<em>objects</em> or <em>custom</em>), in that case the omitted component won't be affected.
+  </li>
+</ul>
+<hr/>
+<hr/>
+</div>
+
+<h2>WGo.Board.CanvasLayer</h2>
+<p>This class creates HTML5 canvas element.</p>
+<h3>Constructor</h3>
+
+<div class="doc-item">
+<h4>WGo.Board.CanvasLayer()</h4>
+<p>Constructor - creates instance of WGo.Board.CanvasLayer class.</p>
+<hr/>
+</div>
+
+
+<h3>Public properties</h3>
+
+<div class="doc-item">
+<h4>canvasLayer.element <span class="badge badge-info">HTMLCanvasElement</span></h4>
+<p>HTML canvas element of the layer. You shouldn't change it, however you can work with it.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>canvasLayer.context <span class="badge badge-info">CanvasRenderingContext2D</span></h4>
+<p>Canvas context used for drawing.</p>
+<hr/>
+</div>
+
+<h3>Public methods</h3>
+
+<div class="doc-item">
+<h4>canvasLayer.setDimensions(width, height)</h4>
+<p>Sets dimensions of the canvas.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>width</strong> <span class="badge badge-info">number</span><br/> New width of the canvas.</li>
+  <li><strong>height</strong> <span class="badge badge-info">number</span><br/> New height of the canvas.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>canvasLayer.draw(board)</h4>
+<p>Draws something on the canvas. This method is called by board at the beginnig of drawing. CanvasLayer itself draw nothing.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>board</strong> <span class="badge badge-info">WGo.Board</span><br/> Board the canvas is part of.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>canvasLayer.clear()</h4>
+<p>Clears the canvas.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h2>WGo.Board.GridLayer <span class="badge badge-success">inherits from WGo.Board.CanvasLayer</span></h2>
+<p>This canvas layer serves for board's grid. It makes sure the grid is properly painted.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h2>WGo.Board.ShadowLayer <span class="badge badge-success">inherits from WGo.Board.CanvasLayer</span></h2>
+<p>This canvas layer serves for stone's shadows. It assures correct transformation of shadows.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h2>WGo.Board.DrawHandler</h2>
+<p>Actually this is not a class but interface. Objects that implement this interface can be used for painting on any board's layer.</p>
+<p>DrawHandler object has this structure: <code>{stone: DrawObject, shadow: DrawObject, grid: DrawObject}</code>. All properties are optional. Property 'stone' is for painting on stone layer, property 'shadow' is for painting on shadow layer and finally property 'grid' is for painting on grid layer. </p>
+<p>DrawObject defines the drawing, it has this interface: <code>{draw: Function, clear: Function}</code>.
+<ul>
+  <li><strong>draw</strong> - this function should make drawing on the layer. It has these arguments: <strong>args</strong> <span class="badge">Object</span> arguments of drawing, <strong>board</strong> <span class="badge">WGo.Board</span> full board object. This function is required.</li>
+  <li><strong>clear</strong> - this function should clear drawing produced by draw function. It has the same arguments as function above. If this function is ommited, default clearing function is used instead. It clears exactly one field specified in <strong>args</strong>.</li>
+</ul>
+Both functions are called in <span class="badge">CanvasRenderingContext2D</span> context of given layer.
+</p>
+<h4>Example:</h4>
+<p>DrawHandler of default stone.</p>
+<pre class="prettyprint linenums">
+var stone = {
+    // draw handler for stone layer
+    stone: {
+        // drawing function - args object contain info about drawing object, board is main board object
+        // this function is called from canvas2D context
+        draw: function(args, board) {
+            var xr = board.getX(args.x),
+                yr = board.getY(args.y),
+                sr = board.stoneRadius,
+                radgrad;
+            
+            // set stone texture
+            if(args.c == WGo.W) {
+                radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,2,xr-sr/5,yr-sr/5,4*sr/5);
+                radgrad.addColorStop(0, '#fff');
+                radgrad.addColorStop(1, '#d4d4d4');
+            }
+            else {
+                radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,1,xr-sr/5,yr-sr/5,4*sr/5);
+                radgrad.addColorStop(0, '#666');
+                radgrad.addColorStop(1, '#000');
+            }
+            
+            // paint stone
+            this.beginPath();
+            this.fillStyle = radgrad;
+            this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+            this.fill();
+        }
+    },
+	
+    // adding shadow handler
+    shadow: {
+        draw: function(args, board) {
+            var xr = board.getX(args.x),
+                yr = board.getY(args.y),
+                sr = board.stoneRadius;
+            
+            this.beginPath();
+            this.fillStyle = 'rgba(32,32,32,0.5)';
+            this.arc(xr-0.5, yr-0.5, sr-0.5, 0, 2*Math.PI, true);
+            this.fill();
+        }
+    }
+};
+</pre>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h2>WGo.Board.drawHandlers</h2>
+<p>Static object with predefined draw handlers. It contains these items:</p>
+<ul>
+  <li><strong>NORMAL</strong> - default stone</li>
+  <li><strong>PAINTED</strong> - painted stone</li>
+  <li><strong>GlOW</strong> - glowing stone</li>
+  <li><strong>MONO</strong> - monochromatic stone</li>
+  <li><strong>CR</strong> - circle marker</li>
+  <li><strong>LB</strong> - lable marker (lable is specified by parameter <em>text</em>)</li>
+  <li><strong>SQ</strong> - square marker</li>
+  <li><strong>TR</strong> - triangle</li>
+  <li><strong>MA</strong> - X marker</li>
+  <li><strong>SL</strong> - filled square marker</li>
+  <li><strong>outline</strong> - it draws outline of object specified in parameter <em>stoneStyle</em></li>
+  <li><strong>mini</strong> - it draws a miniature of object specified in parameter <em>stoneStyle</em></li>
+</ul>
+<hr/>
+</div>
+
+<h2>WGo.Position</h2>
+<p>Simple helper class for storing game's position. Class was initially created for storing stone's colors: <code>WGo.W|WGo.B|0</code>, however it can be used for storing any values.</p>
+<h3>Constructor</h3>
+
+<div class="doc-item">
+<h4>WGo.Position([size])</h4>
+<p>Constructor - creates an empty position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>size</strong> <span class="badge badge-info">number</span><br/>
+	Size of the position. Only square positions are supported. If omitted size will be 19.
+  </li>
+</ul>
+<hr/>
+</div>
+
+<h3>Public properties</h3>
+
+<div class="doc-item">
+<h4>position.size <span class="badge badge-info">number</span></h4>
+<p>Size of the position. It cannot be changed.</p>
+<hr/>
+</div>
+
+<h3>Public methods</h3>
+
+<div class="doc-item">
+<h4>position.get(x, y)</h4>
+<p>Returns specified field of position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of field.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of field.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">mixed</span> Value of field. Empty fields return 0.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>position.set(x, y, value)</h4>
+<p>Sets new value of specified field of position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of field.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of field.</li>
+  <li><strong>value</strong> <span class="badge badge-info">mixed</span><br/>New value of field.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>position.clear()</h4>
+<p>Clears the whole position by filling each field with 0.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>position.clone()</h4>
+<p>Creates shallow copy of the position.</p>
+<h5>Return</h5>
+<span class="badge badge-info">WGo.Position</span> Cloned position.
+<hr/>
+</div>
+
+<h2>WGo.Game</h2>
+<p>This class implements game logic. It basically analyses and saves given moves and returns captured stones. WGo.Game also stores every position from the beginning, so it has ability to check repeating positions and it can effectively restore old positions.</p>
+<h3>Constructor</h3>
+
+<div class="doc-item">
+<h4>WGo.Game([size[, repeat]])</h4>
+<p>Constructor - creates an Game's class instance.</p>
+<h5>Arguments</h5>
+<ul>
+  <li>
+    <strong>size</strong> <span class="badge badge-info">number</span><br/>
+	Size for the game. If omitted size will be 19.
+  </li>
+  <li>
+	<strong>repeat</strong> <span class="badge badge-info">string</span><br/>
+	Defines how to handle repeated position. Supported options are:
+	<ul>
+	  <li><strong>KO</strong> - ko is properly handled - new position cannot be same as previous position.</li>
+	  <li><strong>ALL</strong> - same position cannot be repeated at all - e.g. it forbids triple ko.</li>
+	  <li><strong>NONE</strong> - positions can be repeated.</li>
+	</ul>
+  </li>
+</ul>
+<hr/>
+</div>
+
+<h3>Public properties</h3>
+
+<div class="doc-item">
+<h4>game.size <span class="badge badge-info">number</span></h4>
+<p>Size of the game. It cannot be changed.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.repeating <span class="badge badge-info">string</span></h4>
+<p>Defines how to handle repeated position. More info in the constructor.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.turn <span class="badge badge-info">WGo.B|WGo.W</span></h4>
+<p>What color should be played next.</p>
+<hr/>
+</div>
+
+<h3>Public methods</h3>
+
+<div class="doc-item">
+<h4>game.getPosition()</h4>
+<p>Returns current position - the position on the top of the stack.</p>
+<h5>Return</h5>
+<span class="badge badge-info">WGo.Position</span> Current position object.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.play(x, y[, color[, noplay]])</h4>
+<p>Plays a move. It also creates a new position and puts it on the top of the stack.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of move.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of move.</li>
+  <li><strong>color</strong> <span class="badge badge-info">WGo.B|WGo.W</span><br/>Color of move. If omitted, inversed color of the last move is used.</li>
+  <li><strong>noplay</strong> <span class="badge badge-info">boolean</span><br/>If true, move isn't played neither saved. Used internally.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">Array</span> <span class="badge badge-info">number</span>
+If move is valid method returns array of captured stones saved as objects: <code>{x: number, y: number}</code>. If move is invalid method returns error code:
+<ul>
+	<li><strong>1</strong> - given coordinates are not on board.</li>
+	<li><strong>2</strong> - on given coordinates already is a stone.</li>
+	<li><strong>3</strong> - suicide (currently they are forbbiden).</li>
+	<li><strong>4</strong> - repeated position.</li>
+</ul>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.pass([color])</h4>
+<p>Plays a pass. It also clones a position and puts it on the top of the stack.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>color</strong> <span class="badge badge-info">WGo.B|WGo.W</span><br/>Color of passing player. If omitted, inversed color of the last move is used.</li>
+</ul>
+</div>
+
+<div class="doc-item">
+<h4>game.isValid(x, y[, color])</h4>
+<p>Checks validity of given move</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of move.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of move.</li>
+  <li><strong>color</strong> <span class="badge badge-info">WGo.B|WGo.W</span><br/>Color of move. If omitted, inversed color of the last move is used.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">boolean</span> True if move is valid and can be played.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.isOnBoard(x, y)</h4>
+<p>Checks if given coordinates lie on the board</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">boolean</span> True if coordinates lie on the board.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.addStone(x, y, color)</h4>
+<p>Adds stone into the current position. If field isn't empty, stone won't be added. It can be used for setting of position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of stone.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of stone.</li>
+  <li><strong>color</strong> <span class="badge badge-info">WGo.B|WGo.W</span><br/>Color of stone.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">boolean</span> True if stone is successfully added.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.removeStone(x, y, color)</h4>
+<p>Removes stone from the current position. It can be used for setting of position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of stone.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of stone.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">boolean</span> True if stone was removed.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.setStone(x, y, color)</h4>
+<p>Sets stone in the current position. It can be used for setting of position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of stone.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of stone.</li>
+  <li><strong>color</strong> <span class="badge badge-info">WGo.B|WGo.W</span><br/>Color of stone.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">boolean</span> True if stone is successfully set.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.getStone(x, y)</h4>
+<p>Returns stone on given position.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>x</strong> <span class="badge badge-info">number</span><br/>X coordinate of stone.</li>
+  <li><strong>y</strong> <span class="badge badge-info">number</span><br/>Y coordinate of stone.</li>
+</ul>
+<h5>Return</h5>
+<span class="badge badge-info">WGo.B|WGo.W|0</span> Stone's color. 0 means an empty field.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.pushPosition([position])</h4>
+<p>Adds given position on the top of the stack.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>position</strong> <span class="badge badge-info">WGo.Position</span><br/>Position to be added. If argument is omitted, current position is cloned and used instead.</li>
+</ul>
+<div class="alert alert-info">
+In positions there are counts of captured stones stored in this form <code>position.capCount = {black: number, white: number}</code>, so if you are creating your own position you should add this property to the position object.
+</div>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.popPosition()</h4>
+<p>Removes position from the top of the stack.</p>
+<h5>Return</h5>
+<span class="badge badge-info">WGo.Position</span> Removed position.
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.firstPosition()</h4>
+<p>Removes all positions.</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.getCaptureCount(color)</h4>
+<p>Returns actual number of captured stones of given player.</p>
+<h5>Arguments</h5>
+<ul>
+  <li><strong>color</strong> <span class="badge badge-info">WGo.B|WGo.W</span> Color of the player.</li>
+</ul>
+<h5>Return</h5>
+<p>
+<span class="badge badge-info">number</span> Count of captured stones.
+</p>
+<hr/>
+</div>
+
+<div class="doc-item">
+<h4>game.validatePosition(color)</h4>
+<p>Validate actual position. Position is tested from 0:0 to size-1:size-1 field by field. If there are some moves, that should be captured, they will be removed. You can use this, after insertion of more stones.</p>
+<h5>Return</h5>
+<p>
+<span class="badge badge-info">Array</span> Array of removed stones in form: <code>{x: number, y: number}</code>.
+</p>
+<hr/>
+</div>
+
+</div>
+
+<script>
+referenceSearchInit();
+</script>
+

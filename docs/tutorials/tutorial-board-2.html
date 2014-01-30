@@ -1,0 +1,32 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Board tutorial - step 2</title>
+    <script type="text/javascript" src="/wgo/wgo.js"></script> <!-- linking WGo javascript -->
+  </head>
+  <body>
+    <!-- Dropdown menu for selecting tool -->
+    <select id="tool" style="display: block; margin-bottom: 10px;">
+      <option value="black" selected>Black stone</option>
+      <option value="white">White stone</option>
+      <option value="SQ">Square</option>
+      <option value="TR">Triangle</option>
+      <option value="CR">Circle</option>
+      <option value="remove">Remove</option>
+    </select>
+    <div id="board">
+      <!-- board will go here -->
+    </div>
+	<script>
+	var board = new WGo.Board(document.getElementById("board"), {
+		width: 600,
+		section: {
+			top: 12,
+			left: 6,
+			right: 0,
+			bottom: 0,
+		}
+	});
+	</script>
+  </body>
+</html>

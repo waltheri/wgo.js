@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Board tutorial - step 5</title>
+    <script type="text/javascript" src="/wgo/wgo.js"></script> <!-- linking WGo javascript -->
+  </head>
+  <body>
+    <!-- Dropdown menu for selecting tool -->
+    <select id="tool" style="display: block; margin-bottom: 10px;">
+      <option value="black" selected>Black stone</option>
+      <option value="white">White stone</option>
+      <option value="SQ">Square</option>
+      <option value="TR">Triangle</option>
+      <option value="CR">Circle</option>
+      <option value="plane">Airplane</option>
+	  <option value="remove">Remove</option>
+    </select>
+    <div id="board">
+      <!-- board will go here -->
+    </div>
+	<script>
+	var board = new WGo.Board(document.getElementById("board"), {
+		width: 600,
+		section: {
+			top: 12,
+			left: 6,
+			right: -0.5,
+			bottom: -0.5,
+		}
+	});
+	var tool = document.getElementById("tool"); // get the &lt;select&gt; element
+	
+	// WGo.Board.DrawHandler which draws airplanes
+	var plane = {
+		// draw on stone layer
+		stone: {
+			// draw function is called in context of CanvasRenderingContext2D, so we can paint immediately using this
+			draw: function(args, board) {
+				var xr = board.getX(args.x), // get absolute x coordinate of intersection
+					yr = board.getY(args.y), // get absolute y coordinate of intersection
+					sr = board.stoneRadius; // get field radius in px
+				
+				// if there is a black stone, draw white plane
+				if(board.obj_arr[args.x][args.y][0].c == WGo.B) this.strokeStyle = "white"; 
+				else this.strokeStyle = "black";
+				
+				this.lineWidth = 3;
+				
+				this.beginPath();
+				
+				this.moveTo(xr - sr*0.8, yr);
+				this.lineTo(xr + sr*0.5, yr);
+				this.lineTo(xr + sr*0.8, yr - sr*0.25);
+				this.moveTo(xr - sr*0.4, yr);
+				this.lineTo(xr + sr*0.3, yr - sr*0.6);
+				this.moveTo(xr - sr*0.4, yr);
+				this.lineTo(xr + sr*0.3, yr + sr*0.6);
+				
+				this.stroke();
+			}
+		},
+	}
+	
+	// WGo.Board.DrawHandler which draws coordinates
+	var coordinates = {
+		// draw on grid layer
+		grid: {
+			draw: function(args, board) {
+				var ch, t, xright, xleft, ytop, ybottom;
+				
+				this.fillStyle = "rgba(0,0,0,0.7)";
+				this.textBaseline="middle";
+				this.textAlign="center";
+				this.font = board.stoneRadius+"px "+(board.font || "");
+				
+				xright = board.getX(-0.75);
+				xleft = board.getX(board.size-0.25);
+				ytop = board.getY(-0.75);
+				ybottom = board.getY(board.size-0.25);
+				
+				for(var i = 0; i < board.size; i++) {
+					ch = i+"A".charCodeAt(0);
+					if(ch >= "I".charCodeAt(0)) ch++;
+					
+					t = board.getY(i);
+					this.fillText(board.size-i, xright, t);
+					this.fillText(board.size-i, xleft, t);
+					
+					t = board.getX(i);
+					this.fillText(String.fromCharCode(ch), t, ytop);
+					this.fillText(String.fromCharCode(ch), t, ybottom);
+				}
+				
+				this.fillStyle = "black";
+			}
+		}
+	}
+	
+	board.addCustomObject(coordinates);
+	
+	board.addEventListener("click", function(x, y) {
+		if(tool.value == "black") {
+			board.addObject({
+				x: x,
+				y: y,
+				c: WGo.B
+			});
+		}
+		else if(tool.value == "white") {
+			board.addObject({
+				x: x,
+				y: y,
+				c: WGo.W
+			});
+		}
+		else if(tool.value == "remove") {
+			board.removeObjectsAt(x, y);
+		}
+		else if(tool.value == "plane") {
+			board.addObject({
+				x: x,
+				y: y,
+				type: plane
+			});
+		}
+		else {
+			board.addObject({
+				x: x,
+				y: y,
+				type: tool.value
+			});
+		}
+	});
+	</script>
+  </body>
+</html>

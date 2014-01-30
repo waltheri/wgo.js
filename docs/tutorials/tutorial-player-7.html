@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+	<title>WGo.js Player example</title>
+	<script type="text/javascript" src="/wgo/wgo.js"></script>
+	<script type="text/javascript" src="/wgo/kifu.js"></script>
+	<script type="text/javascript" src="/wgo/sgfparser.js"></script>
+	<script type="text/javascript" src="/wgo/player.js"></script>
+	<script type="text/javascript" src="/wgo/basicplayer.js"></script>
+	<script type="text/javascript" src="/wgo/basicplayer.component.js"></script>
+	<script type="text/javascript" src="/wgo/basicplayer.infobox.js"></script>
+	<script type="text/javascript" src="/wgo/basicplayer.commentbox.js"></script>
+	<script type="text/javascript" src="/wgo/basicplayer.control.js"></script>
+	<script type="text/javascript" src="/wgo/player.editable.js"></script>
+	<script type="text/javascript" src="/wgo/scoremode.js"></script>
+	<script type="text/javascript" src="/wgo/player.permalink.js"></script>
+	<link type="text/css" href="/wgo/wgo.player.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div data-wgo="/wgo/game.sgf" data-wgo-onkifuload="document.getElementById('info').innerHTML += '&gt; Loaded kifu: '+arguments[0].kifu.info.black.name+' vs. '+arguments[0].kifu.info.white.name+'\n'" data-wgo-onupdate="if(arguments[0].node.move) document.getElementById('info').innerHTML += '&gt; '+(arguments[0].node.move.c == WGo.B ? 'Black' : 'White')+'\'s move at: '+arguments[0].node.move.x+'x'+arguments[0].node.move.y+'\n'" data-wgo-onfrozen="document.getElementById('info').innerHTML += '&gt; Player is now frozen.\n'"  data-wgo-onunfrozen="document.getElementById('info').innerHTML += '&gt; Player is no longer frozen.\n'" style="width: 700px">
+      Sorry, your browser doesn't support WGo.js. Download SGF <a href="/wgo/game.sgf">directly</a>.
+    </div>
+	<pre id="info"></pre>
+  </body>
+</html>

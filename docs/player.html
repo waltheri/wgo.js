@@ -1,0 +1,503 @@
+<h1>SGF Player</h1>
+<p>
+WGo.js Player is the most significant component of the library. It is an application for viewing and replaying go game records that can be embedded into any website. Basically it does the same job as Eidogo or GOswf but trying to be better.
+</p>
+<div class="row-fluid">
+  <div class="span8">
+    <h3>Features</h3>
+    <ul>
+      <li>No needs of third party software like Flash Player or Java.</li>
+      <li>Works on mobile devices.</li>
+      <li>Easy theming through css.</li>
+      <li>Many possible layouts.</li>
+      <li>Responsive - player can have any dimensions, and they can be changed any time.</li>
+      <li>Replaying games using mouse wheel</li>
+      <li>Permanent links</li>
+      <li>Highlighting of coordinates mentioned in comments</li>
+      <li>Score mode</li>
+      <li>Extendable - you can add new functionality to a player.</li>
+      <li>Internationalization</li>
+    </ul>
+  </div>
+  <div class="span4">
+    <h3>Demo</h3>
+    <ul>
+      <li><a href="/demo/player/1">Basic player</a></li>
+      <li><a href="/demo/player/2">Player in Bootstrap</a></li>
+      <li><a href="/demo/player/3">Dark Theme</a></li>
+      <li><a href="/demo/player/4">Different board size</a></li>
+      <li><a href="/demo/player/5">Different layout</a></li>
+    </ul>
+  </div>
+</div>
+<h3>Quick example</h3>
+Working with the player is quite awesome. Download WGo.js files and link them into your document, then you will just need HTML to display player.
+<pre class="prettyprint linenums">
+&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;My page&lt;/title&gt;
+    &lt;script type="text/javascript" src="wgo/wgo.min.js"&gt;&lt;/script&gt;
+    &lt;script type="text/javascript" src="wgo/wgo.player.min.js"&gt;&lt;/script&gt;
+    &lt;link type="text/css" href="wgo/wgo.player.css" rel="stylesheet" /&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div data-wgo="game.sgf" style="width: 700px"&gt;
+      Sorry, your browser doesn't support WGo.js. Download SGF &lt;a href="game.sgf"&gt;directly&lt;/a&gt;.
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
+<h2>Getting started</h2>
+<h3>Installation</h3>
+<p>Basic installation of WGo.js Player is shown in example above. Both files (<em>wgo.min.js</em> and <em>wgo.player.min.js</em>) must be included in that order. You can download them <a href="/download">here</a>. However these script tags can be placed anywhere in the document. You can also add language .js file to display the player in different language. In <em>wgo.player.css</em> is defined player's look.</p>
+<h3>Embedding a player</h3>
+<p>There are 2 options of inserting SGF player into a website. You can use pure HTML or javascript. Javascript is more convenient for advanced tasks. I will show you both ways.</p>
+
+<div class="row-fluid">
+  <div class="span6"><h4>HTML</h4>
+    <p>Player will be triggered in an element when you specify attribute <code>data-wgo</code>. Then you can use other <code>data-wgo-*</code> attributes to configurate the player. Dimensions, margins etc. are set exclusively by CSS.</p>
+    <pre class="prettyprint linenums">
+&lt;!-- Activating a player using HTML --&gt;
+&lt;div data-wgo="game.sgf" style="width: 700px"&gt;
+  Sorry, your browser doesn't support WGo.js. Download SGF &lt;a href="game.sgf"&gt;directly&lt;/a&gt;.
+&lt;/div&gt;</pre>
+  </div>
+  <div class="span6">
+    <h4>Javascript</h4>
+    <p>Embedding a player directly with javascript is less elegant, but you can set any configuration freely, for example by javascript function. You can also save player's instance for further manipulation.</p>
+    <pre class="prettyprint linenums">
+&lt;!-- Activating a player using javascript --&gt;
+&lt;div id="player" style="width: 700px"&gt;&lt;/div&gt;
+&lt;script type="text/javascript"&gt;
+var elem = document.getElementById("player");
+var player = new WGo.BasicPlayer(elem, {
+    sgfFile: "game.sgf"
+});
+&lt;/script&gt;</pre>
+  </div>
+</div>
+<p class="text-right"><a href="/tutorials/player/1">View the example</a></p>
+
+<div class="alert alert-info">Text inside <code>&ltdiv&gt</code> tag will appear, if user's browser doesn't support WGo.js. You can write any message here.</div>
+
+<p>Configuration is slightly different for HTML and javascript. In HTML you simply use attributes, in javascript settings are passed in second argument of <code>WGo.BasicPlayer</code> constructor. In that case you will use <a href="http://en.wikipedia.org/wiki/JSON" target="_blank">JSON object</a>. It is simple variable that can contain one or more values.
+Values have form <code>key: value</code> and they are split with comma. This table shows brief summary of all possible configurations:</p>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+	  <th>Javascript</th>
+	  <th>HTML</th>
+	  <th>Description</th>
+	</tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>sgf</td>
+      <td>-</td>
+      <td>SGF as a text string.</td>
+    </tr>
+	<tr>
+      <td>sgfFile</td>
+      <td>-</td>
+      <td>Path of SGF file to be viewed.</td>
+    </tr>
+	<tr>
+      <td>json</td>
+      <td>-</td>
+      <td>Kifu stored in JSON format.</td>
+    </tr>
+	<tr>
+      <td>-</td>
+      <td>data-wgo</td>
+      <td>SGF string or path of SGF file to be viewed.</td>
+    </tr>
+	<tr>
+      <td>move</td>
+      <td>data-wgo-move</td>
+      <td>Move number, path object or function returning a path.</td>
+    </tr>
+	<tr>
+      <td>board</td>
+      <td>data-wgo-board</td>
+      <td>Configuration object of the board.</td>
+    </tr>
+	<tr>
+      <td>layout</td>
+      <td>data-wgo-layout</td>
+      <td>Layout of the player.</td>
+    </tr>
+	<tr>
+      <td>enableWheel</td>
+      <td>data-wgo-enablewheel</td>
+      <td>Enables mouse wheel to replay game.</td>
+    </tr>
+	<tr>
+      <td>lockScroll</td>
+      <td>data-wgo-lockscroll</td>
+      <td>Locks page scroll when replaying game with mouse wheel.</td>
+    </tr>
+	<tr>
+      <td>enableKeys</td>
+      <td>data-wgo-enablekeys</td>
+      <td>Enables arrow keys to replay game.</td>
+    </tr>
+	<tr>
+      <td>rememberPath</td>
+      <td>data-wgo-rememberpath</td>
+      <td>Remembers last selected variations.</td>
+    </tr>
+	<tr>
+      <td>formatNicks</td>
+      <td>data-wgo-formatnicks</td>
+      <td>Highlight nicknames in comments.</td>
+    </tr>
+	<tr>
+      <td>formatMoves</td>
+      <td>data-wgo-formatmoves</td>
+      <td>Highlight coordinates (like A1, A2 etc) in comments.</td>
+    </tr>
+	<tr>
+      <td>kifuLoaded</td>
+      <td>data-wgo-onkifuload</td>
+      <td>Callback, that is executed after kifu is loaded.</td>
+    </tr>
+	<tr>
+      <td>update</td>
+      <td>data-wgo-onupdate</td>
+      <td>Callback, that is executed after every game's update.</td>
+    </tr>
+	<tr>
+      <td>frozen</td>
+      <td>data-wgo-onfrozen</td>
+      <td>Callback, that is executed when player starts being frozen.</td>
+    </tr>
+	<tr>
+      <td>unfrozen</td>
+      <td>data-wgo-onunfrozen</td>
+      <td>Callback, that is executed when player ends being frozen.</td>
+    </tr>
+  <tbody>
+</table>
+
+<h2>Configure your player</h2>
+<p>In this section we will discuss all settings in detail.</p>
+<h3>Loading a SGF</h3>
+<p>As I mentioned earlier for loading a kifu there are configurations <code>sgfFile</code> and <code>sgf</code> or attribute <code>data-wgo</code>. Example of opening SGF file you can see above. If you want to replay SGF from string you will use this syntax:</p>
+
+<h4>HTML</h4>
+<pre class="prettyprint linenums">
+&lt;div data-wgo="(;PB[Black]PW[White]RE[B+R];B[qd];W[dd];B[pq];W[dq];B[fc])">&lt;/div&gt;
+</pre>
+
+<h4>Javascript</h4>
+<pre class="prettyprint linenums">
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "(;PB[Black]PW[White]RE[B+R];B[qd];W[dd];B[pq];W[dq];B[fc])"
+});
+</pre>
+
+<p class="text-right"><a href="/tutorials/player/2">View the example</a></p>
+
+<div class="alert alert-info">Javascript doesn't allow accessing files from other hosts. It means if your site is on domain www.example.com, SGF files also must be on this domain. However it is possible to use PHP script which makes a bridge between your host and foreign host. You can find it in <a href="/download">download</a> section. Then you must refer on this bridge: <code>data-wgo="bridge.php?url=http://www.example.com/game.sgf"</code></div>
+<div class="alert alert-warning">JSON game record format is still experimetal and its structure can be changed, so I won't describe it yet.</div>
+
+<h3>Loading kifu at specified position</h3>
+<p>You can open SGF game with other than initial position, so board won't be empty, but there will be also first <em>n</em> moves. For this behaviour just set configuration <em>move</em>.</p>
+
+<div class="row-fluid">
+  <div class="span6"><h4>HTML</h4>
+    <pre class="prettyprint linenums">
+&lt;!-- This example opens game.sgf at position 50. --&gt;
+&lt;div data-wgo="game.sgf" data-wgo-move="50">&lt;/div&gt;
+</pre>
+  </div>
+  <div class="span6">
+    <h4>Javascript</h4>
+    <pre class="prettyprint linenums">
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "game.sgf",
+    move: 50
+});
+</pre>
+  </div>
+</div>
+
+<p class="text-right"><a href="/tutorials/player/3">View the example</a></p>
+
+<p>However in special cases, when there is more variantions, it may be necessary to use path object. It has property <code>m</code> with final move number and one property for each fork, which says what variantion to choose. It can look like this: <code>{m: 100, 50: 0, 75: 1}</code> - this will show first 100 moves, in move 50 the first variantion is chosen in move 75 second variation. Usage in HTML:</p>
+
+<pre class="prettyprint linenums">
+&lt;div data-wgo="game.sgf" data-wgo-move="m: 100, 50: 0, 75: 1">&lt;/div&gt;
+</pre>
+
+<div class="alert alert-info">In default WGo Player checks URL fragment (part of URL after #). If there is a path object, the kifu will be loaded at given position. This allows to create permanent links. If you want fragment to be ignored, just set <code>data-wgo-move="0"</code>.</div>
+
+<h3>Customizing the board</h3>
+<p>Player's board can be customized via attribute <em>board</em>. Its value is passed as a configuration object of <code>WGo.Board</code> constructor. Look at <a href="/documentation#wgo.board">board</a> object for all possible settings. Don't set parameters <em>width</em>, <em>height</em> and <em>size</em>, they are automatically computed so your values would be ignored. Some examples of board's customizing:</p>
+
+<div class="row-fluid">
+  <div class="span6"><h4>HTML</h4>
+    <pre class="prettyprint linenums">
+&lt;!-- Board with special stones and thicker lines. --&gt;
+&lt;div data-wgo="game.sgf" data-wgo-board="stoneHandler: WGo.Board.drawHandlers.MONO, lineWidth: 2">&lt;/div&gt;
+</pre>
+  </div>
+  <div class="span6">
+    <h4>Javascript</h4>
+    <pre class="prettyprint linenums">
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "game.sgf",
+    board: {
+        stoneHandler: WGo.Board.drawHandlers.MONO, 
+        lineWidth: 2
+    }
+});
+</pre>
+  </div>
+</div>
+
+<p class="text-right"><a href="/tutorials/player/4">View the example</a></p>
+
+<h3>Layout of the player</h3>
+
+<p>WGo Player is composed from components. The main and required component is the board. Other components are optional and you can place them wherever around the board. In basic player there are these components available:</p>
+<ul>
+  <li><strong>InfoBox</strong> - box with basic information about players.</li>
+  <li><strong>CommentBox</strong> - box for comments and information about the game.</li>
+  <li><strong>Control</strong> - panel with control buttons.</li>
+</ul>
+<p>Although theming of player is accomplished with CSS, you need to specify placement of components in HTML (or javascript). For that there are four regions: <strong>top</strong>, <strong>right</strong>, <strong>bottom</strong> and <strong>left</strong>. There is illustration of regions:</p>
+<table class="layout-table">
+  <tr>
+    <td rowspan="3" class="layout-vertical">left</td>
+    <td class="layout-horizontal">top</td>
+    <td rowspan="3" class="layout-vertical">right</td>
+  </tr>
+  <tr>
+    <td>board</td>
+  </tr>
+  <tr>
+    <td class="layout-horizontal">bottom</td>
+  </tr>
+</table>
+<p>Layout is set by JSON object. However there are 2 kinds of layout objects - static layout object and dynamic layout object.</p>
+
+<h4>Static layout object</h4>
+<p>This object specifies unchanging layout. It has simple structure: <code>{top: array, right: array, bottom: array, left: array}</code>. Each region array contains names of components which should be in that region. You can ommit any region.</p>
+<h5>Example</h5>
+<pre class="prettyprint linenums">
+// These are predefined static layouts
+WGo.BasicPlayer.layouts.one_column = {
+    top: ["InfoBox", "Control"],
+    bottom: ["CommentBox"]
+};
+WGo.BasicPlayer.layouts.no_comment = {
+    top: ["InfoBox"],
+    bottom: ["Control"]
+};
+WGo.BasicPlayer.layouts.right_top = {
+    top: ["Control"],
+    right: ["InfoBox", "CommentBox"]
+};
+WGo.BasicPlayer.layouts.right = {
+    right: ["InfoBox", "Control", "CommentBox"]
+};
+WGo.BasicPlayer.minimal = {
+    bottom: ["Control"]
+};
+</pre>
+<h4>Dynamic layout object</h4>
+<p>Basically it contains more static layouts which are triggered, when given conditions are matching. Dynamic layout object is an array of objects with this structure: <code>{conditions: list_of_conditions, layout: static_layout, className: string}</code>. Parameter <code>list_of_conditions</code> is an array with conditions. First static layout with matching conditions is applied. Possible conditions are:</p>
+<ul>
+  <li><strong>minWidth</strong> <span class="badge">number</span> matches if width of the player in px is bigger or equal.</li>
+  <li><strong>maxWidth</strong> <span class="badge">number</span> matches if width of the player in px is smaller.</li>
+  <li><strong>minHeight</strong> <span class="badge">number</span> matches if height of the player in px is bigger or equal.</li>
+  <li><strong>maxHeight</strong> <span class="badge">number</span> matches if height of the player in px is smaller.</li>
+  <li><strong>custom</strong> <span class="badge">function</span> matches if given function returns true. It is called in player's context.</li>
+</ul>
+<p>All conditions have to match for application of given layout. If you ommit conditions, layout will be also applied. You can also specify additional class names for the player in <code>className</code> parameter.</p>
+<h5>Example</h5>
+<pre class="prettyprint linenums">
+// This is default layout of WGo Player
+BasicPlayer.dynamicLayout = [{
+  conditions: {
+    minWidth: 650,
+  },
+  layout: BasicPlayer.layouts["right_top"], 
+  className: "wgo-twocols wgo-large",
+}, {
+  conditions: {
+    minWidth: 550,
+    minHeight: 600,
+  },
+  layout: BasicPlayer.layouts["one_column"],
+  className: "wgo-medium"
+}, {
+  conditions: {
+    minWidth: 350,
+  },
+  layout: BasicPlayer.layouts["no_comment"],
+  className: "wgo-small"
+}, {
+  layout: BasicPlayer.layouts["no_comment"],
+  className: "wgo-xsmall",
+}];
+</pre>
+<div class="alert alert-info">Dynamic layouts are necessary for responsiveness. If your player has static dimensions it is useless to use dynamic layout.</div>
+
+<h4>Setting the layout</h4>
+<p>In HTML you can only set static layout with <code>data-wgo-layout</code> attribute. If you want to customize dynamic layout you need to use javascript and property <code>layout</code>.</p>
+
+<div class="row-fluid">
+  <div class="span6"><h4>HTML</h4>
+    <pre class="prettyprint linenums">
+&lt;!-- Different layout of the player. --&gt;
+&lt;div data-wgo="game.sgf" data-wgo-layout="left: ['InfoBox', 'CommentBox'], bottom: ['Control']">&lt;/div&gt;
+</pre>
+  </div>
+  <div class="span6">
+    <h4>Javascript</h4>
+    <pre class="prettyprint linenums">
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "game.sgf",
+    layout: { // you can use static or dynamic layout
+        left: ['InfoBox', 'CommentBox'], 
+        bottom: ['Control']
+    }
+});
+</pre>
+  </div>
+</div>
+
+<p class="text-right"><a href="/tutorials/player/5">View the example</a></p>
+
+<div class="alert alert-warning">Dimensions of regions or components are not handled automatically, you will probably need to set widths of regions and heights of components in CSS for each layout.</div>
+
+<h3>Mouse and keyboard input</h3>
+<p>WGo Player can be controlled by arrow keys and mouse wheel in default. However you can turn off this behaviour if you set attributes <code>data-wgo-enablewheel</code> and <code>data-wgo-enablekeys</code> or properties <code>enableWheel</code> and <code>enableKeys</code> to <code>false</code>. Of course you can disable only wheel or only keys.</p>
+
+<div class="row-fluid">
+  <div class="span6"><h4>HTML</h4>
+    <pre class="prettyprint linenums">
+&lt;!-- Player with disabled mouse wheel and arrow keys. --&gt;
+&lt;div data-wgo="game.sgf" data-wgo-enablewheel="false" data-wgo-enablekeys="false">&lt;/div&gt;
+</pre>
+  </div>
+  <div class="span6">
+    <h4>Javascript</h4>
+    <pre class="prettyprint linenums">
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "game.sgf",
+    enableWheel: false,
+    enableKeys: false 
+});
+</pre>
+  </div>
+</div>
+
+<p class="text-right"><a href="/tutorials/player/6">View the example</a></p>
+
+<p>Normally when you control player with mouse wheel, window scrolling is locked. You can suppress this if you set attribute <code>data-wgo-lockscroll</code> or property <code>lockScroll</code> to <code>false</code>. In that case the window will be scrolled no matter what.</p>
+
+<h3>Formatting of comments</h3>
+<p>WGo Player has ability to format comment text. It can highlight nicknames (string at the beginnig of a line followed by a colon) and coordinates (strings like A1). Moreover when you hover coordinates, mark will be displayed on the board at corresponding position. If you dislike these features set attributes <code>data-wgo-formatnicks</code> and <code>data-wgo-formatmoves</code> or properties <code>formatNicks</code> and <code>formatMoves</code> to <code>false</code>. If you don't know how, look at example above.</p>
+
+<div class="alert alert-info">For your information all HTML tags in comments are stripped for security reasons.</div>
+
+<h3>Player's events</h3>
+<p>WGo Player dispatches several types of events and you can attach listeneres to them. Listener is a function which is called when given event occures. Function is an executable javascript code, so if you don't know javascript, this section won't be much useful for you. You can listen any of these events:</p>
+<ul>
+  <li>
+    <strong>kifuLoaded</strong> - dispatched when new kifu is fully loaded and ready for replaying. Function is called with one argument, event object with these properties:
+    <ul>
+	  <li><strong>type</strong> - name of event.</li>
+	  <li><strong>target</strong> - current player object.</li>
+	  <li><strong>kifu</strong> - kifu object.</li>
+	</ul>
+  </li>
+  <li><strong>update</strong> - dispatched after every change of game's position. Function is called with one argument, event object with these properties:
+    <ul>
+	  <li><strong>type</strong> - name of event.</li>
+	  <li><strong>target</strong> - current player object.</li>
+	  <li><strong>op</strong> - operation which triggered the event ("next", "previous", etc...).</li>
+	  <li><strong>node</strong> - current node object.</li>
+	  <li><strong>position</strong> - current position object.</li>
+	  <li><strong>path</strong> - current path object.</li>
+	  <li><strong>change</strong> - object containg last changes.</li>
+	</ul>
+  </li>
+  <li><strong>frozen</strong> - dispatched when the player freezes. In frozen state you can't replay kifu. Function is called with one argument, event object with these properties:
+    <ul>
+	  <li><strong>type</strong> - name of event.</li>
+	  <li><strong>target</strong> - current player object.</li>
+    </ul>
+  </li>
+  <li><strong>unfrozen</strong> - dispatched when the player stops being frozen. Function is called with one argument, event object with these properties:
+    <ul>
+	  <li><strong>type</strong> - name of event.</li>
+	  <li><strong>target</strong> - current player object.</li>
+	</ul>
+  </li>
+</ul>
+
+<div class="alert alert-info">At this point I won't discuss particular properties of event objects in detail. However you can use <code>console.log()</code> or something to discover their structure.</div>
+
+<p>If you are using javascript to embed the player, set properties of configuration object with same names as events. In HTML there are attributes: <code>data-wgo-onkifuload</code>, <code>data-wgo-onupdate</code>, <code>data-wgo-onfrozen</code> and <code>data-wgo-onunfrozen</code>.</p>
+
+<h4>HTML</h4>
+<pre class="prettyprint linenums">
+&lt;!-- Player reacting on events. --&gt;
+&lt;div data-wgo="game.sgf"  data-wgo-onkifuload="document.getElementById('info').innerHTML += '&amp;gt; Loaded kifu: '+arguments[0].kifu.info.black.name+' vs. '+arguments[0].kifu.info.white.name+'\n'" data-wgo-onupdate="if(arguments[0].node.move) document.getElementById('info').innerHTML += '&amp;gt; '+(arguments[0].node.move.c == WGo.B ? 'Black' : 'White')+'\'s move at: '+arguments[0].node.move.x+'x'+arguments[0].node.move.y+'\n'" data-wgo-onfrozen="document.getElementById('info').innerHTML += '&amp;gt; Player is now frozen.\n'"  data-wgo-onunfrozen="document.getElementById('info').innerHTML += '&amp;gt; Player is no longer frozen.\n'">&lt;/div&gt;
+&lt;pre id="info">&lt;/pre&gt;
+</pre>
+
+<h4>Javascript</h4>
+<pre class="prettyprint linenums">
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "game.sgf",
+    kifuLoaded: function(e) {
+        elem2.innerHTML += '&gt; Loaded kifu: '+e.kifu.info.black.name+' vs. '+e.kifu.info.white.name+'\n';
+    },
+    update: function(e) {
+        if(e.node.move) elem2.innerHTML += '&gt; '+(e.node.move.c == WGo.B ? 'Black' : 'White')+'\'s move at: '+e.node.move.x+'x'+e.node.move.y+'\n';
+    },
+    frozen: function(e) {
+        elem2.innerHTML += '&gt; Player is now frozen.\n';
+    },
+    unfrozen: function(e) {
+        elem2.innerHTML += '&gt; Player is no longer frozen.\n';
+    }
+});
+</pre>
+
+<p class="text-right"><a href="/tutorials/player/7">View the example</a></p>
+
+<h2>Theming</h2>
+<p>All theming is done with CSS. You can set dimensions of the player and any component. You can also change colors, icons and almost anything else. Just create your own CSS file, altering the basic look, and include it after other WGo files.</p><p>You can also find some alternative themes in <a href="/download">download</a> section. For example look at <a href="/demo/player/3">Dark theme</a>.</p>
+
+<h2>Internationalization</h2>
+<p>WGo Player can be translated into any language. If translation already exists, you just include language file after other WGo javascript files.</p>
+<h4>Example of player in czech</h4>
+<pre class="prettyprint linenums">
+&lt;!DOCTYPE HTML&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;My page&lt;title&gt;
+    &lt;script type="text/javascript" src="wgo/wgo.min.js"&gt;&lt;/script&gt;
+    &lt;script type="text/javascript" src="wgo/wgo.player.min.js"&gt;&lt;/script&gt;
+    &lt;script type="text/javascript" src="wgo/i18n.cs.js"&gt;&lt;/script&gt;
+    &lt;link type="text/css" href="wgo/wgo.player.css" rel="stylesheet" /&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    &lt;div data-wgo="game.sgf" style="width: 700px"&gt;
+      Váš prohlížeč není podporován.
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</pre>
+<p>In <a href="/download">download</a> section you can find all translations. If translation into your language doesn't exist, you can create it. You must copy english language file (i18n.en.js) and replace all english strings with your strings. Then include this new file into your document. You can also send this file to me (thebestgoplayer<script>document.write("@");</script>gmail.com) and I will publish it.</p>
+
+<h2>API Reference</h2>
+<p>API documentation hasn't been written yet. If you are interested in WGo Player you can explore source codes. They are fairly commented.</p>
