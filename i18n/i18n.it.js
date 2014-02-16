@@ -13,6 +13,7 @@ WGo.i18n[WGo.lang] = {
 	"HA": "Handicap",
 	"AN": "Note",
 	"CP": "Copyright",
+	"ON": "Fuseki",
 	"OT": "Tempo supplementare",
 	"TM": "Tempo base",
 	"RE": "Risultato",
