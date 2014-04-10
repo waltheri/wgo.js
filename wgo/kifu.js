@@ -199,7 +199,7 @@ Kifu.infoFormatters = {
  * List of game information properties
  */
 
-Kifu.infoList = ["black", "white", "AN", "CP", "DT", "EV", "GN", "GC", "ON", "OT", "RE", "RO", "RU", "SO", "TM", "PC", "KM"];
+Kifu.infoList = ["black", "white", "AN", "CP", "DT", "EV", "GN", "GC", "HA", "ON", "OT", "RE", "RO", "RU", "SO", "TM", "US","PC", "KM"];
 
 WGo.Kifu = Kifu;
 

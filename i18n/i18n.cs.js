@@ -19,6 +19,7 @@ WGo.i18n.cs = {
 	"HA": "Handicap",
 	"AN": "Anotace",
 	"CP": "Copyright",
+	"ON": "Fuseki",
 	"OT": "Přesčas",
 	"TM": "Základní čas",
 	"RE": "Výsledek",

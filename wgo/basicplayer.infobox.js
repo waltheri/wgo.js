@@ -62,19 +62,19 @@ var kifu_loaded = function(e) {
 	var info = e.kifu.info || {};
 	
 	if(info.black) {
-		this.black.name.innerHTML = WGo.filterHTML(info.black.name) || WGo.t("Black");
+		this.black.name.innerHTML = WGo.filterHTML(info.black.name) || WGo.t("black");
 		this.black.info.rank.val.innerHTML = WGo.filterHTML(info.black.rank) || "-";
 	}
 	else {
-		this.black.name.innerHTML = WGo.t("Black");
+		this.black.name.innerHTML = WGo.t("black");
 		this.black.info.rank.val.innerHTML = "-";
 	}
 	if(info.white) {
-		this.white.name.innerHTML = WGo.filterHTML(info.white.name) || WGo.t("White");
+		this.white.name.innerHTML = WGo.filterHTML(info.white.name) || WGo.t("white");
 		this.white.info.rank.val.innerHTML = WGo.filterHTML(info.white.rank) || "-";
 	}
 	else {
-		this.white.name.innerHTML = WGo.t("White");
+		this.white.name.innerHTML = WGo.t("white");
 		this.white.info.rank.val.innerHTML = "-";
 	}
 	
