@@ -1,4 +1,4 @@
-WGo.i18n.cz = {
+WGo.i18n.cs = {
 	// basic
 	"about": "O WGo",
 	"first": "Na začátek",
@@ -44,4 +44,4 @@ WGo.i18n.cz = {
 	"help_score": "Kliknutím na kameny je označíte za mrtvé nebo za živé. Také můžete kliknutím změnit stav územních bodů. Území musí být kompletně ohraničená.",
 }
 
-WGo.lang = "cz";
+WGo.lang = "cs";
