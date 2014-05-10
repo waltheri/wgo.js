@@ -1,6 +1,6 @@
 // Chinese Translation - Simplified Chinese
 
-WGo.lang = "cn";
+WGo.lang = "zh";
 
 WGo.i18n[WGo.lang] = {
 	"about-text": "<h1>WGo.js Player 2.0</h1>"
