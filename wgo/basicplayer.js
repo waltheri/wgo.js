@@ -478,6 +478,10 @@ BasicPlayer.attributes = {
 		if(m) this.move = m;
 		else this.move = eval("({"+value+"})");
 	},
+
+	"data-wgo-mark-last-move": function(value) {
+		if(value.toLowerCase() == "false") this.markLastMove = false;
+	},
 }
 
 var player_from_tag = function(elem) {
