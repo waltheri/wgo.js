@@ -479,7 +479,7 @@ BasicPlayer.attributes = {
 		else this.move = eval("({"+value+"})");
 	},
 
-	"data-wgo-mark-last-move": function(value) {
+	"data-wgo-marklastmove": function(value) {
 		if(value.toLowerCase() == "false") this.markLastMove = false;
 	},
 
