@@ -2,8 +2,8 @@ WGo.lang = "de"; // set language code
 
 WGo.i18n[WGo.lang] = {
 	"about-text": "<h1>WGo.js Player 2.0</h1>"
-				+ "<p>WGo.js Player ist eine Erweiterung von WGo.js, HTML5 Bibliothek für das Go-Spiel. Sie erlaubt dir, Go-Spiele nachzuspielen und außerdem viel Funktionen wie z.B. Spiele auszuzählen. Es ist außerdem so gestaltet, dass es leicht zu erweitern ist.</p>"
-				+ "<p>WGo.js is Open Source lizensiert unter der <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT Lizenz</a>. Du kannst den Code dieses Projektes nutzen und bearbeiten.</p>"
+				+ "<p>WGo.js Player ist eine Erweiterung von WGo.js, einer HTML5-Bibliothek für das Go-Spiel. Sie erlaubt es dir, Go-Partien nachzuspielen und liefert außerdem viele Funktionen wie z.B. das Auszählen von Partien. Die Bibliothek ist außerdem so gestaltet, dass sie leicht zu erweitern ist.</p>"
+				+ "<p>WGo.js ist Open Source unter der <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT Lizenz</a> lizensiert. Du kannst den Code dieses Projektes nutzen und bearbeiten.</p>"
 				+ "<p>Weitere Informationen findest du auf <a href='http://wgo.waltheri.net/player' target='_blank'>wgo.waltheri.net/player</a></p>"
 				+ "<p>Copyright &copy; 2013 Jan Prokop</p>",
 	"black": "Schwarz",
@@ -14,7 +14,7 @@ WGo.i18n[WGo.lang] = {
 	"AN": "Notizen",
 	"CP": "Copyright",
 	"GC": "Spielkommentare",
-	"GN": "Name des Spiels",
+	"GN": "Partie",
 	"ON": "Fuseki",
 	"OT": "Verlängerung",
 	"TM": "Bedenkzeit",
@@ -23,7 +23,7 @@ WGo.i18n[WGo.lang] = {
 	"RU": "Regeln",
 	"US": "Schreiber",
 	"PC": "Ort",
-	"EV": "Veranstaltung",
+	"EV": "Ereignis",
 	"SO": "Quelle",
 	"none": "keine",
 	"minute": "Minute",
@@ -48,7 +48,7 @@ WGo.i18n[WGo.lang] = {
 	"switch-coo": "Koordinaten anzeigen",
 	"menu": "Menü",
 	"comments": "Kommentare",
-	"gameinfo": "Spiel Info",
+	"gameinfo": "Partieinfo",
 	"editmode": "Bearbeitungsmodus",
 	"permalink": "Permanenter Link",
 	"scoremode": "Zähle die Punkte",
