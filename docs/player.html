@@ -62,6 +62,7 @@ Working with the player is quite awesome. Download WGo.js files and link them in
 &lt;div data-wgo="game.sgf" style="width: 700px"&gt;
   Sorry, your browser doesn't support WGo.js. Download SGF &lt;a href="game.sgf"&gt;directly&lt;/a&gt;.
 &lt;/div&gt;</pre>
+    <p>To create a read-only diagram you can use the attribute <code>data-wgo-diagram</code> instead. This will disable all controls and renders only the board. This is a shortcut for specifying an empty layout and disable the wheel and key input and does not mark the last move made with a circle.</p>
   </div>
   <div class="span6">
     <h4>Javascript</h4>
@@ -112,6 +113,11 @@ Values have form <code>key: value</code> and they are split with comma. This tab
       <td>-</td>
       <td>data-wgo</td>
       <td>SGF string or path of SGF file to be viewed.</td>
+    </tr>
+  <tr>
+      <td>-</td>
+      <td>data-wgo-diagram</td>
+      <td>Like <i>data-wgo</i> but disables all controls and renders a static diagram.</td>
     </tr>
 	<tr>
       <td>move</td>
@@ -177,6 +183,11 @@ Values have form <code>key: value</code> and they are split with comma. This tab
       <td>unfrozen</td>
       <td>data-wgo-onunfrozen</td>
       <td>Callback, that is executed when player ends being frozen.</td>
+    </tr>
+  <tr>
+      <td>markLastMove</td>
+      <td>data-wgo-marklastmove</td>
+      <td>Displays a circle in the last move made if true (default: true).</td>
     </tr>
   <tbody>
 </table>
