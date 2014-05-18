@@ -34,7 +34,7 @@ var mydir= path.split('/').slice(0, -1).join('/')+'/';
  
 var WGo = {
 	// basic information
-	version: "2.01",
+	version: "2.1",
 	
 	// constants for colors (rather use WGo.B or WGo.W)
 	B: 1,
@@ -117,14 +117,14 @@ WGo.filterHTML = function(text) {
  * - size: number - size of the board (default: 19)
  * - width: number - width of the board (default: 0)
  * - height: number - height of the board (default: 0)
- * - font: string - font of board writings (default: "Calibri")
- * - lineWidth: number - line width of board drawings
- * - autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this option rewrites 'lineWidth' /and it will keep markups sharp/ (default: false)
+ * - font: string - font of board writings (!deprecated)
+ * - lineWidth: number - line width of board drawings (!deprecated)
+ * - autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this option rewrites 'lineWidth' /and it will keep markups sharp/ (!deprecated)
  * - starPoints: Object - star points coordinates, defined for various board sizes. Look at Board.default for more info.
- * - stoneHandler: Board.DrawHandler - stone drawing handler (default: Board.drawHandlers.NORMAL)
- * - starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant.
- * - stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant.
- * - shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant.
+ * - stoneHandler: Board.DrawHandler - stone drawing handler (default: Board.drawHandlers.SHELL)
+ * - starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant. (!deprecated)
+ * - stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant. (!deprecated)
+ * - shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant. (!deprecated)
  * - background: string - background of the board, it can be either color (#RRGGBB) or url. Empty string means no background. (default: WGo.DIR+"wood1.jpg")
  * - section: {
  *     top: number,
@@ -134,6 +134,9 @@ WGo.filterHTML = function(text) {
  *   }
  *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side. 
  *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
+ * - theme: Object - theme object, which defines all graphical attributes of the board. Default theme object is "WGo.Board.themes.default". For old look you may use "WGo.Board.themes.old".
+ *
+ * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only if you set property 'theme' to 'WGo.Board.themes.old'.
  */
  
 var Board = function(elem, config) {
@@ -144,6 +147,9 @@ var Board = function(elem, config) {
 	
 	// add default configuration
 	for(var key in WGo.Board.default) if(this[key] === undefined) this[key] = WGo.Board.default[key];
+	
+	// add default theme variables
+	for(var key in Board.themes.default) if(this.theme[key] === undefined) this.theme[key] = Board.themes.default[key];
 	
 	// set section if set
 	this.tx = this.section.left;
@@ -163,6 +169,73 @@ var Board = function(elem, config) {
 	else if(this.height) this.setHeight(this.height);
 }
 
+// New experimental board theme system - it can be changed in future, if it will appear to be unsuitable.
+Board.themes = {};
+
+Board.themes.old = {
+	shadowColor: "rgba(32,32,32,0.5)",	
+	shadowSize: function(board){
+		return board.shadowSize;
+	},
+	markupBlackColor: "rgba(255,255,255,0.8)",
+	markupWhiteColor: "rgba(0,0,0,0.8)",
+	markupNoneColor: "rgba(0,0,0,0.8)",
+	markupLinesWidth: function(board) {
+		return board.autoLineWidth ? board.stoneRadius/7 : board.lineWidth;
+	},
+	gridLinesWidth: 1,
+	gridLinesColor: function(board) {
+		return "rgba(0,0,0,"+Math.min(1, board.stoneRadius/15)+")";
+	}, 
+	starColor: "#000",
+	starSize: function(board) {
+		return board.starSize*((board.width/300)+1);
+	},
+	stoneSize: function(board) {
+		return board.stoneSize*Math.min(board.fieldWidth, board.fieldHeight)/2;
+	},
+	coordinatesColor: "rgba(0,0,0,0.7)",
+	font: function(board) {
+		return board.font;
+	},
+	linesShift: 0.5
+}
+
+/** 
+ * Object containing default graphical properties of a board.
+ * A value of all properties can be even static value or function, returning final value.
+ * Theme object doesn't set board and stone textures - they are set separately.
+ */ 
+ 
+Board.themes.default = {
+	shadowColor: "rgba(62,32,32,0.5)",
+	shadowSize: 1,
+	markupBlackColor: "rgba(255,255,255,0.9)",
+	markupWhiteColor: "rgba(0,0,0,0.7)",
+	markupNoneColor: "rgba(0,0,0,0.7)",
+	markupLinesWidth: function(board) {
+		return board.stoneRadius/8;
+	},
+	gridLinesWidth: function(board) {
+		return board.stoneRadius/15;
+	},
+	gridLinesColor: "#654525",
+	starColor: "#531",
+	starSize: function(board) {
+		return (board.stoneRadius/8)+1;
+	},
+	stoneSize: function(board) {
+		return Math.min(board.fieldWidth, board.fieldHeight)/2;
+	},
+	coordinatesColor: "#531",
+	font: "calibri",
+	linesShift: 0.25
+}
+
+var theme_variable = function(key, board) {
+	return typeof board.theme[key] == "function" ? board.theme[key](board) : board.theme[key];
+}
+
 var shadow_handler = {
 	draw: function(args, board) {
 		var xr = board.getX(args.x),
@@ -170,15 +243,16 @@ var shadow_handler = {
 			sr = board.stoneRadius;
 		
 		this.beginPath();
-		this.fillStyle = 'rgba(32,32,32,0.5)';
-		this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+		this.fillStyle = theme_variable("shadowColor", board);
+		this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 		this.fill();
 	}
 }
 
 var get_markup_color = function(board, x, y) {
-	if(board.obj_arr[x][y][0].c == WGo.B) return "rgba(255,255,255,0.8)"; 
-	return "rgba(0,0,0,0.8)";
+	if(board.obj_arr[x][y][0].c == WGo.B) return theme_variable("markupBlackColor", board);
+	else if(board.obj_arr[x][y][0].c == WGo.W) return theme_variable("markupWhiteColor", board);
+	return theme_variable("markupNoneColor", board);
 }
 
 var is_here_stone = function(board, x, y) {
@@ -285,7 +359,6 @@ Board.drawHandlers = {
 				if(args.c == WGo.W) {
 					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,sr/3,xr-sr/5,yr-sr/5,5*sr/5);
 					radgrad.addColorStop(0, '#fff');
-					//radgrad.addColorStop(1, '#d4d4d4');
 					radgrad.addColorStop(1, '#aaa');
 				}
 				else {
@@ -297,7 +370,7 @@ Board.drawHandlers = {
 				// paint stone
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 				this.fill();
 			}
 		},
@@ -326,7 +399,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 				this.fill();
 				
 				this.beginPath();
@@ -368,7 +441,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 				this.fill();
 			},
 		},
@@ -398,7 +471,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 				this.fill();
 				
 				// do shell magic here
@@ -451,7 +524,7 @@ Board.drawHandlers = {
 					// add radial gradient //
 					this.beginPath();
 					this.fillStyle = radgrad;
-					this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 					this.fill();
 				}
 				else {
@@ -461,7 +534,7 @@ Board.drawHandlers = {
 					
 					this.beginPath();
 					this.fillStyle = radgrad;
-					this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 					this.fill();
 				
 					radgrad = this.createRadialGradient(xr-0.4*sr, yr-0.4*sr, 1, xr-0.5*sr, yr-0.5*sr, 1.5*sr);
@@ -470,7 +543,7 @@ Board.drawHandlers = {
 					
 					this.beginPath();
 					this.fillStyle = radgrad;
-					this.arc(xr-0.5, yr-0.5, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
+					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
 					this.fill();
 				}
 			}
@@ -484,7 +557,7 @@ Board.drawHandlers = {
 				var xr = board.getX(args.x),
 					yr = board.getY(args.y),
 					sr = board.stoneRadius,
-					lw = board.lineWidth || 1;
+					lw = theme_variable("markupLinesWidth", board) || 1;
 					
 				if(args.c == WGo.W) this.fillStyle = "white";
 				else this.fillStyle = "black";			
@@ -508,9 +581,9 @@ Board.drawHandlers = {
 					sr = board.stoneRadius;
 					
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = args.lineWidth || board.lineWidth || 1;
+				this.lineWidth = args.lineWidth || theme_variable("markupLinesWidth", board) || 1;
 				this.beginPath();
-				this.arc(xr-0.5, yr-0.5, sr/2, 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, sr/2, 0, 2*Math.PI, true);
 				this.stroke();
 			},
 		},
@@ -523,7 +596,7 @@ Board.drawHandlers = {
 				var xr = board.getX(args.x),
 					yr = board.getY(args.y),
 					sr = board.stoneRadius,
-					font = args.font || board.font || "";
+					font = args.font || theme_variable("font", board) || "";
 				
 				this.fillStyle = args.c || get_markup_color(board, args.x, args.y);
 				
@@ -567,9 +640,9 @@ Board.drawHandlers = {
 					sr = Math.round(board.stoneRadius);
 					
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = args.lineWidth || board.lineWidth || 1;
+				this.lineWidth = args.lineWidth || theme_variable("markupLinesWidth", board) || 1;
 				this.beginPath();
-				this.rect(Math.round(xr-sr/2)-0.5, Math.round(yr-sr/2)-0.5, sr, sr);
+				this.rect(Math.round(xr-sr/2)-board.ls, Math.round(yr-sr/2)-board.ls, sr, sr);
 				this.stroke();
 			}
 		}
@@ -583,11 +656,11 @@ Board.drawHandlers = {
 					sr = board.stoneRadius;
 					
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = args.lineWidth || board.lineWidth || 1;
+				this.lineWidth = args.lineWidth || theme_variable("markupLinesWidth", board) || 1;
 				this.beginPath();
-				this.moveTo(xr-0.5, yr-0.5-Math.round(sr/2));
-				this.lineTo(Math.round(xr-sr/2)-0.5, Math.round(yr+sr/3)+0.5);
-				this.lineTo(Math.round(xr+sr/2)+0.5, Math.round(yr+sr/3)+0.5);
+				this.moveTo(xr-board.ls, yr-board.ls-Math.round(sr/2));
+				this.lineTo(Math.round(xr-sr/2)-board.ls, Math.round(yr+sr/3)+board.ls);
+				this.lineTo(Math.round(xr+sr/2)+board.ls, Math.round(yr+sr/3)+board.ls);
 				this.closePath();
 				this.stroke();
 			}
@@ -602,13 +675,15 @@ Board.drawHandlers = {
 					sr = board.stoneRadius;
 				
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = (args.lineWidth || board.lineWidth || 1) * 2 - 1;
+				this.lineCap="round";
+				this.lineWidth = (args.lineWidth || theme_variable("markupLinesWidth", board) || 1) * 2 - 1;
 				this.beginPath();
 				this.moveTo(Math.round(xr-sr/2), Math.round(yr-sr/2));
 				this.lineTo(Math.round(xr+sr/2), Math.round(yr+sr/2));
 				this.moveTo(Math.round(xr+sr/2)-1, Math.round(yr-sr/2));
 				this.lineTo(Math.round(xr-sr/2)-1, Math.round(yr+sr/2));
 				this.stroke();
+				this.lineCap="butt";
 			}
 		}
 	},
@@ -636,7 +711,7 @@ Board.drawHandlers = {
 					sr = board.stoneRadius;
 					
 				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = (args.lineWidth || board.lineWidth || 1)*2;
+				this.lineWidth = (args.lineWidth || theme_variable("markupLinesWidth", board) || 1)*2;
 				this.beginPath();
 				this.arc(xr-sr/3, yr-sr/3, sr/6, 0, 2*Math.PI, true);
 				this.stroke();
@@ -680,7 +755,7 @@ Board.coordinates = {
 		draw: function(args, board) {
 			var ch, t, xright, xleft, ytop, ybottom;
 			
-			this.fillStyle = "rgba(0,0,0,0.7)";
+			this.fillStyle = theme_variable("coordinatesColor", board);
 			this.textBaseline="middle";
 			this.textAlign="center";
 			this.font = board.stoneRadius+"px "+(board.font || "");
@@ -737,22 +812,22 @@ Board.GridLayer.prototype.draw = function(board) {
 	var tmp;
 
 	this.context.beginPath();
-	this.context.lineWidth = 1;
-	this.context.strokeStyle = "rgba(0,0,0,"+Math.min(1, board.stoneRadius/15)+")";
+	this.context.lineWidth = theme_variable("gridLinesWidth", board);
+	this.context.strokeStyle = theme_variable("gridLinesColor", board);
 	
 	var tx = Math.round(board.left),
 		ty = Math.round(board.top),
 		bw = Math.round(board.fieldWidth*(board.size-1)),
 		bh = Math.round(board.fieldHeight*(board.size-1));
 	
-	this.context.strokeRect(tx-0.5, ty-0.5, bw, bh);
+	this.context.strokeRect(tx-board.ls, ty-board.ls, bw, bh);
 
 	for(var i = 1; i < board.size-1; i++) {
-		tmp = Math.round(board.getX(i))-0.5;
+		tmp = Math.round(board.getX(i))-board.ls;
 		this.context.moveTo(tmp, ty);
 		this.context.lineTo(tmp, ty+bh);
 		
-		tmp = Math.round(board.getY(i))-0.5;
+		tmp = Math.round(board.getY(i))-board.ls;
 		this.context.moveTo(tx, tmp);
 		this.context.lineTo(tx+bw, tmp);
 	}
@@ -760,12 +835,12 @@ Board.GridLayer.prototype.draw = function(board) {
 	this.context.stroke();
 	
 	// draw stars
-	this.context.fillStyle = "#000";
+	this.context.fillStyle = theme_variable("starColor", board);
 	
 	if(board.starPoints[board.size]) {
 		for(var key in board.starPoints[board.size]) {
 			this.context.beginPath();
-			this.context.arc(board.getX(board.starPoints[board.size][key].x)-0.5, board.getY(board.starPoints[board.size][key].y)-0.5, board.starSize*((board.width/300)+1), 0, 2*Math.PI,true);
+			this.context.arc(board.getX(board.starPoints[board.size][key].x)-board.ls, board.getY(board.starPoints[board.size][key].y)-board.ls, theme_variable("starSize", board), 0, 2*Math.PI,true);
 			this.context.fill();
 		}
 	}
@@ -785,8 +860,8 @@ var default_field_clear = function(args, board) {
 	var xr = board.getX(args.x),
 		yr = board.getY(args.y),
 		sr = board.stoneRadius;
-	this.clearRect(xr-sr-0.5,yr-sr-0.5, 2*sr, 2*sr);
-	this.clearRect(xr-sr-0.5,yr-sr-0.5, 2*sr, 2*sr);
+	this.clearRect(xr-sr-board.ls,yr-sr-board.ls, 2*sr, 2*sr);
+	this.clearRect(xr-sr-board.ls,yr-sr-board.ls, 2*sr, 2*sr);
 }
 
 // Private methods of WGo.Board
@@ -859,8 +934,9 @@ var updateDim = function() {
 	this.element.style.width = this.width+"px";
 	this.element.style.height = this.height+"px";
 	
-	this.stoneRadius = this.stoneSize*Math.min(this.fieldWidth, this.fieldHeight)/2;
-	if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
+	this.stoneRadius = theme_variable("stoneSize", this);
+	//if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
+	this.ls = theme_variable("linesShift", this);
 	
 	for(var key in this.layers) {
 		this.layers[key].setDimensions(this.width, this.height); 
@@ -906,7 +982,7 @@ Board.prototype = {
 		}
 		
 		this.grid = new Board.GridLayer();
-		this.shadow = new Board.ShadowLayer(this.shadowSize);
+		this.shadow = new Board.ShadowLayer(theme_variable("shadowSize", this));
 		this.stone = new Board.CanvasLayer();
 		
 		this.addLayer(this.grid, 100);
@@ -1241,9 +1317,9 @@ Board.default = {
 	size: 19,
 	width: 0,
 	height: 0,
-	font: "Calibri",
-	lineWidth: 1,
-	autoLineWidth: false,
+	font: "Calibri", // deprecated
+	lineWidth: 1, // deprecated
+	autoLineWidth: false, // deprecated
 	starPoints: {
 		19:[{x:3, y:3 },
 			{x:9, y:3 },
@@ -1260,17 +1336,18 @@ Board.default = {
 			{x:9, y:9}],
 		9:[{x:4, y:4}],
 	},
-	stoneHandler: Board.drawHandlers.NORMAL,
-	starSize: 1,
-	shadowSize: 1,
-	stoneSize: 1,
+	stoneHandler: Board.drawHandlers.SHELL,
+	starSize: 1, // deprecated
+	shadowSize: 1, // deprecated
+	stoneSize: 1, // deprecated
 	section: {
 		top: 0,
 		right: 0,
 		bottom: 0,
 		left: 0,
 	},
-	background: WGo.DIR+"wood1.jpg"
+	background: WGo.DIR+"wood1.jpg",
+	theme: {}
 }
 
 // save Board
