@@ -165,7 +165,7 @@ var board_click_default = function(x,y) {
 }
 
 // coordinates drawing handler - adds coordinates on the board
-var coordinates = {
+/*var coordinates = {
 	grid: {
 		draw: function(args, board) {
 			var ch, t, xright, xleft, ytop, ybottom;
@@ -196,7 +196,7 @@ var coordinates = {
 			this.fillStyle = "black";
 		}
 	}
-}
+}*/
 
 /**
  * We can say this class is abstract, stand alone it doesn't do anything. 
@@ -624,11 +624,11 @@ Player.prototype = {
 	setCoordinates: function(b) {
 		if(!this.coordinates && b) {
 			this.board.setSection(-0.5, -0.5, -0.5, -0.5);
-			this.board.addCustomObject(coordinates);
+			this.board.addCustomObject(WGo.Board.coordinates);
 		}
 		else if(this.coordinates && !b) {
 			this.board.setSection(0, 0, 0, 0);
-			this.board.removeCustomObject(coordinates);
+			this.board.removeCustomObject(WGo.Board.coordinates);
 		}
 		this.coordinates = b;
 	},
