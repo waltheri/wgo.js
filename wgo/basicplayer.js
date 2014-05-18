@@ -491,7 +491,7 @@ BasicPlayer.attributes = {
 			this.markLastMove = false;
 			this.enableKeys = false;
 			this.enableWheel = false;
-			this.layout = eval("({top: [], right: [], left: [], bottom: []})");
+			this.layout = {top: [], right: [], left: [], bottom: []};
 		}
 	}
 }
