@@ -60,7 +60,7 @@ var update_board = function(e) {
 	this.notification();
 	
 	// add current move marker
-	if(e.node.move) {
+	if(e.node.move && this.config.markLastMove) {
 		if(e.node.move.pass) this.notification(WGo.t((e.node.move.c == WGo.B ? "b" : "w")+"pass"));
 		else add.push({
 			type: "CR",
@@ -211,6 +211,7 @@ var coordinates = {
  *  - enableWheel: allow player to be controlled by mouse wheel (default: true)
  *  - lockScroll: disable window scrolling while hovering player (default: true),
  *  - enableKeys: allow player to be controlled by arrow keys (default: true),
+ *  - markLastMove: marks the last move with a circle (default: true),
  *
  * @param {object} config object if form: {key1: value1, key2: value2, ...}
  */
@@ -648,7 +649,8 @@ Player.default = {
 	update: undefined,
 	frozen: undefined,
 	unfrozen: undefined,
-	allowIllegalMoves: false
+	allowIllegalMoves: false,
+	markLastMove: true,
 }
 
 WGo.Player = Player;

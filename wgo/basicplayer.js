@@ -478,6 +478,22 @@ BasicPlayer.attributes = {
 		if(m) this.move = m;
 		else this.move = eval("({"+value+"})");
 	},
+
+	"data-wgo-marklastmove": function(value) {
+		if(value.toLowerCase() == "false") this.markLastMove = false;
+	},
+
+	"data-wgo-diagram": function(value) {
+		if(value) {
+			if(value[0] == "(") this.sgf = value;
+			else this.sgfFile = value;
+
+			this.markLastMove = false;
+			this.enableKeys = false;
+			this.enableWheel = false;
+			this.layout = eval("({top: [], right: [], left: [], bottom: []})");
+		}
+	}
 }
 
 var player_from_tag = function(elem) {
@@ -497,8 +513,8 @@ var player_from_tag = function(elem) {
 WGo.BasicPlayer = BasicPlayer;
 
 window.addEventListener("load", function() {
-	var pl_elems = document.querySelectorAll("[data-wgo]");
-	
+	var pl_elems = document.querySelectorAll("[data-wgo],[data-wgo-diagram]");
+
 	for(var i = 0; i < pl_elems.length; i++) {
 		player_from_tag(pl_elems[i]);
 	}
