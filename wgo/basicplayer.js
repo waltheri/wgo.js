@@ -121,7 +121,7 @@ var manageComponents = function() {
 
 /**
  * Main object of player, it binds all magic together and produces visible player.
- * It inherits some functionality from WGo.PlayerView, but full html structure is done here.
+ * It inherits some functionality from WGo.Player, but full html structure is done here.
  *
  * Layout of player can be set. It can be even dynamic according to screen resolution. 
  * There are 5 areas - left, right, top and bottom, and there is special region for board.
