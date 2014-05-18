@@ -1,4 +1,5 @@
 ﻿
+
 /** 
  * This extension handles go game records(kifu). In WGo kifu is stored in JSON. Kifu structure example:
  *
@@ -214,7 +215,7 @@ var no_add = function(arr, obj, key) {
 }
 
 var no_remove = function(arr, obj) {
-	if(!arr) remove;
+	if(!arr) return;
 	for(var i = 0; i < arr.length; i++) {
 		if(arr[i].x == obj.x && arr[i].y == obj.y) {
 			arr.splice(i,1);
@@ -584,7 +585,7 @@ KifuReader.prototype = {
 	
 	previousFork: function() {
 		var old_pos = this.game.getPosition();
-		while(exec_previous.call(this) && this.node.children.length == 1);
+		while(exec_previous.call(this) && this.node.children.length == 1){};
 		this.change = pos_diff(old_pos, this.game.getPosition());
 		return this;
 	},
