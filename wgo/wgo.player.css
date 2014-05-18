@@ -82,6 +82,13 @@
 
 .wgo-board {
 	margin: 0 auto;
+    background-color: #CEB053;
+    border-top: #F0E7A7 solid 1px;
+    border-right: #D1A974 solid 1px;
+    border-left: #CCB467 solid 1px;
+    border-bottom: #665926 solid 3px;
+    /*border-right: #665926 solid 3px;*/
+    border-radius: 3px;
 }
 
 /*--- /Board --------------------------------------------------------------------------*/
