@@ -359,7 +359,7 @@ Player.prototype = {
 	 * Load go kifu from JSON object.
 	 */
 	
-	loadJSON: function(json) {
+	loadJSON: function(json, path) {
 		try {
 			this.loadKifu(WGo.Kifu.fromJGO(json), path);
 		}
