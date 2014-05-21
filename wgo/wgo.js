@@ -174,7 +174,9 @@ Board.themes = {};
 
 Board.themes.old = {
 	shadowColor: "rgba(32,32,32,0.5)",	
-	shadowSize: function(board){
+	shadowTransparentColor: "rgba(32,32,32,0)",
+	shadowBlur: 0,
+	shadowSize: function(board) {
 		return board.shadowSize;
 	},
 	markupBlackColor: "rgba(255,255,255,0.8)",
@@ -209,6 +211,10 @@ Board.themes.old = {
  
 Board.themes.default = {
 	shadowColor: "rgba(62,32,32,0.5)",
+	shadowTransparentColor: "rgba(62,32,32,0)",
+	shadowBlur: function(board){
+		return board.stoneRadius*0.1;
+	},
 	shadowSize: 1,
 	markupBlackColor: "rgba(255,255,255,0.9)",
 	markupWhiteColor: "rgba(0,0,0,0.7)",
@@ -243,9 +249,24 @@ var shadow_handler = {
 			sr = board.stoneRadius;
 		
 		this.beginPath();
-		this.fillStyle = theme_variable("shadowColor", board);
-		this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+		
+		var blur = theme_variable("shadowBlur", board);
+		var radius = Math.max(0, sr-0.5);
+		var gradient = this.createRadialGradient(xr-board.ls, yr-board.ls, radius-1-blur, xr-board.ls, yr-board.ls, radius+blur);
+		
+		gradient.addColorStop(0, theme_variable("shadowColor", board));
+		gradient.addColorStop(1, theme_variable("shadowTransparentColor", board));
+		
+		this.fillStyle = gradient;
+		
+		this.arc(xr-board.ls, yr-board.ls, radius+blur, 0, 2*Math.PI, true);
 		this.fill();
+	},
+	clear: function(args, board) {
+		var xr = board.getX(args.x),
+			yr = board.getY(args.y),
+			sr = board.stoneRadius;
+		this.clearRect(xr-1.1*sr-board.ls,yr-1.1*sr-board.ls, 2.2*sr, 2.2*sr);
 	}
 }
 
@@ -272,7 +293,7 @@ var redraw_layer = function(board, layer) {
 				else if(typeof board.obj_arr[x][y][key].type == "string") handler = Board.drawHandlers[board.obj_arr[x][y][key].type];
 				else handler = board.obj_arr[x][y][key].type;
 		
-				if(handler[layer]) handler[layer].draw.call(board[layer].context, board.obj_arr[x][y][key], board);
+				if(handler[layer]) handler[layer].draw.call(board[layer].getContext(board.obj_arr[x][y][key]), board.obj_arr[x][y][key], board);
 			}
 		}
 	}
@@ -280,7 +301,7 @@ var redraw_layer = function(board, layer) {
 	for(var key in board.obj_list) {
 		var handler = board.obj_list[key].handler;
 		
-		if(handler[layer]) handler[layer].draw.call(board[layer].context, board.obj_list[key].args, board);
+		if(handler[layer]) handler[layer].draw.call(board[layer].getContext(board.obj_list[key].args), board);
 	}
 }
 
@@ -370,7 +391,7 @@ Board.drawHandlers = {
 				// paint stone
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 			}
 		},
@@ -399,7 +420,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 				
 				this.beginPath();
@@ -441,7 +462,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 			},
 		},
@@ -471,7 +492,7 @@ Board.drawHandlers = {
 				
 				this.beginPath();
 				this.fillStyle = radgrad;
-				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+				this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 				this.fill();
 				
 				// do shell magic here
@@ -524,7 +545,7 @@ Board.drawHandlers = {
 					// add radial gradient //
 					this.beginPath();
 					this.fillStyle = radgrad;
-					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 					this.fill();
 				}
 				else {
@@ -534,7 +555,7 @@ Board.drawHandlers = {
 					
 					this.beginPath();
 					this.fillStyle = radgrad;
-					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 					this.fill();
 				
 					radgrad = this.createRadialGradient(xr-0.4*sr, yr-0.4*sr, 1, xr-0.5*sr, yr-0.5*sr, 1.5*sr);
@@ -543,7 +564,7 @@ Board.drawHandlers = {
 					
 					this.beginPath();
 					this.fillStyle = radgrad;
-					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-board.ls), 0, 2*Math.PI, true);
+					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 					this.fill();
 				}
 			}
@@ -796,6 +817,20 @@ Board.CanvasLayer.prototype = {
 		this.element.height = height;
 	},
 	
+	appendTo: function(element, weight) {
+		this.element.style.position = 'absolute';
+		this.element.style.zIndex = weight;
+		element.appendChild(this.element);
+	},
+	
+	removeFrom: function(element) {
+		element.removeChild(this.element);
+	},
+	
+	getContext: function() {
+		return this.context;
+	},
+	
 	draw: function(board) {	},
 	
 	clear: function() {
@@ -846,22 +881,89 @@ Board.GridLayer.prototype.draw = function(board) {
 	}
 }
 
-Board.ShadowLayer = WGo.extendClass(Board.CanvasLayer, function(shadowSize) {
-	this.super.call(this);
-	this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
+/**
+ * Layer that is composed from more canvases. The proper canvas is selected according to drawn object.
+ * In default there are 4 canvases and they are used for board objects like stones. This allows overlapping of objects.
+ */
+Board.MultipleCanvasLayer = WGo.extendClass(Board.CanvasLayer, function() {
+	this.init(4);
 });
+
+Board.MultipleCanvasLayer.prototype.init = function(n) {
+	var tmp;
+	
+	this.layers = n;
+	
+	this.elements = [];
+	this.contexts = [];
+	
+	for(var i = 0; i < n; i++) {
+		tmp = document.createElement('canvas');
+		this.elements.push(tmp);
+		this.contexts.push(tmp.getContext('2d'));
+	}
+}
+
+Board.MultipleCanvasLayer.prototype.appendTo = function(element, weight) {
+	for(var i = 0; i < this.layers; i++) {
+		this.elements[i].style.position = 'absolute';
+		this.elements[i].style.zIndex = weight;
+		element.appendChild(this.elements[i]);
+	}
+}
+
+Board.MultipleCanvasLayer.prototype.removeFrom = function(element) {
+	for(var i = 0; i < this.layers; i++) {
+		element.removeChild(this.elements[i]);
+	}
+}
+
+Board.MultipleCanvasLayer.prototype.getContext = function(args) {
+	if(args.x%2) {
+		return (args.y%2) ? this.contexts[0] : this.contexts[1];
+	}
+	else {
+		return (args.y%2) ? this.contexts[2] : this.contexts[3];
+	}
+	//return ((args.x%2) && (args.y%2) || !(args.x%2) && !(args.y%2)) ? this.context_odd : this.context_even;
+}
+
+Board.MultipleCanvasLayer.prototype.clear = function(element, weight) {
+	for(var i = 0; i < this.layers; i++) {
+		this.contexts[i].clearRect(0,0,this.elements[i].width,this.elements[i].height);
+	}
+}
+
+Board.MultipleCanvasLayer.prototype.setDimensions = function(width, height) {
+	for(var i = 0; i < this.layers; i++) {
+		this.elements[i].width = width;
+		this.elements[i].height = height;
+	}
+}
+
+Board.ShadowLayer = WGo.extendClass(Board.MultipleCanvasLayer, function(board, shadowSize, shadowBlur) {
+	this.init(2);
+	this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
+	this.board = board;
+});
+
+Board.ShadowLayer.prototype.getContext = function(args) {
+	return ((args.x%2) && (args.y%2) || !(args.x%2) && !(args.y%2)) ? this.contexts[0] : this.contexts[1];
+}
 
 Board.ShadowLayer.prototype.setDimensions = function(width, height) {
 	this.super.prototype.setDimensions.call(this, width, height);
-	this.context.setTransform(1,0,0,1,Math.round(this.shadowSize*width/300),Math.round(this.shadowSize*height/300));
+	
+	for(var i = 0; i < this.layers; i++) {
+		this.contexts[i].setTransform(1,0,0,1,Math.round(this.shadowSize*this.board.stoneRadius/7),Math.round(this.shadowSize*this.board.stoneRadius/7));
+	}	
 }
 
 var default_field_clear = function(args, board) {
 	var xr = board.getX(args.x),
 		yr = board.getY(args.y),
 		sr = board.stoneRadius;
-	this.clearRect(xr-sr-board.ls,yr-sr-board.ls, 2*sr, 2*sr);
-	this.clearRect(xr-sr-board.ls,yr-sr-board.ls, 2*sr, 2*sr);
+	this.clearRect(xr-2*sr-board.ls,yr-2*sr-board.ls, 4*sr, 4*sr);
 }
 
 // Private methods of WGo.Board
@@ -890,8 +992,8 @@ var clearField = function(x,y) {
 		else handler = this.obj_arr[x][y][key].type;
 		
 		for(var layer in handler) {
-			if(handler[layer].clear) handler[layer].clear.call(this[layer].context, this.obj_arr[x][y][key], this);
-			else default_field_clear.call(this[layer].context, this.obj_arr[x][y][key], this);
+			if(handler[layer].clear) handler[layer].clear.call(this[layer].getContext(this.obj_arr[x][y][key]), this.obj_arr[x][y][key], this);
+			else default_field_clear.call(this[layer].getContext(this.obj_arr[x][y][key]), this.obj_arr[x][y][key], this);
 		}
 	}
 }
@@ -904,7 +1006,7 @@ var drawField = function(x,y) {
 		else handler = this.obj_arr[x][y][key].type;
 		
 		for(var layer in handler) {
-			handler[layer].draw.call(this[layer].context, this.obj_arr[x][y][key], this);
+			handler[layer].draw.call(this[layer].getContext(this.obj_arr[x][y][key]), this.obj_arr[x][y][key], this);
 		}
 	}
 }
@@ -982,8 +1084,8 @@ Board.prototype = {
 		}
 		
 		this.grid = new Board.GridLayer();
-		this.shadow = new Board.ShadowLayer(theme_variable("shadowSize", this));
-		this.stone = new Board.CanvasLayer();
+		this.shadow = new Board.ShadowLayer(this, theme_variable("shadowSize", this));
+		this.stone = new Board.MultipleCanvasLayer();
 		
 		this.addLayer(this.grid, 100);
 		this.addLayer(this.shadow, 200);
@@ -1124,7 +1226,7 @@ Board.prototype = {
 			var handler = this.obj_list[key].handler;
 			
 			for(var layer in handler) {
-				handler[layer].draw.call(this[layer].context, this.obj_list[key].args, this);
+				handler[layer].draw.call(this[layer].getContext(this.obj_list[key].args), this.obj_list[key].args, this);
 			}
 		}
 	},
@@ -1157,10 +1259,8 @@ Board.prototype = {
 	 */
 	
 	addLayer: function(layer, weight) {
-		layer.element.style.position = 'absolute';
-		layer.element.style.zIndex = weight;
+		layer.appendTo(this.element, weight);
 		layer.setDimensions(this.width, this.height);
-		this.element.appendChild(layer.element);
 		this.layers.push(layer);
 	},
 	
@@ -1174,7 +1274,7 @@ Board.prototype = {
 		var i = this.layers.indexOf(layer);
 		if(i >= 0) {
 			this.layers.splice(i,1);
-			this.element.removeChild(layer.element);
+			layer.removeFrom(this.element);
 		}
 	},
 	
