@@ -1161,9 +1161,9 @@ Board.prototype = {
 	 */
 	
 	setDimensions: function(width, height) {
-		this.width = width || this.width;
+		this.width = width || parseInt(this.element.style.width, 10);
 		this.width *= this.pixelRatio;
-		this.height = height || this.height;
+		this.height = height || parseInt(this.element.style.height, 10);
 		this.height *= this.pixelRatio;
 		
 		this.fieldWidth = calcFieldWidth.call(this);
