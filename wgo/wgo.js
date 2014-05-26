@@ -17,7 +17,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
  
-/* WGo.js 2.01 */
+/* WGo.js 2.3.1 */
  
 (function(window, undefined) {
 
@@ -34,7 +34,7 @@ var mydir= path.split('/').slice(0, -1).join('/')+'/';
  
 var WGo = {
 	// basic information
-	version: "2.1",
+	version: "2.3.1",
 	
 	// constants for colors (rather use WGo.B or WGo.W)
 	B: 1,
@@ -301,7 +301,7 @@ var redraw_layer = function(board, layer) {
 	for(var key in board.obj_list) {
 		var handler = board.obj_list[key].handler;
 		
-		if(handler[layer]) handler[layer].draw.call(board[layer].getContext(board.obj_list[key].args), board);
+		if(handler[layer]) handler[layer].draw.call(board[layer].getContext(board.obj_list[key].args), board.obj_list[key].args, board);
 	}
 }
 
