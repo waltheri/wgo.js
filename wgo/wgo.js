@@ -164,6 +164,10 @@ var Board = function(elem, config) {
 	elem.appendChild(this.element);
 	
 	// set initial dimensions
+
+	// set the pixel ratio for HDPI (e.g. Retina) screens
+	this.pixelRatio = window.devicePixelRatio || 1;
+
 	if(this.width && this.height) this.setDimensions(this.width, this.height);
 	else if(this.width) this.setWidth(this.width);
 	else if(this.height) this.setHeight(this.height);
@@ -806,7 +810,13 @@ Board.coordinates = {
 
 Board.CanvasLayer = function() {
 	this.element = document.createElement('canvas');
-	this.context = this.element.getContext('2d')
+	this.context = this.element.getContext('2d');
+
+	// Adjust pixel ratio for HDPI screens (e.g. Retina)
+	this.pixelRatio = window.devicePixelRatio || 1;
+	if (this.pixelRatio > 1) {
+		this.context.scale(this.pixelRatio, this.pixelRatio);
+	}
 }
 
 Board.CanvasLayer.prototype = {
@@ -814,7 +824,9 @@ Board.CanvasLayer.prototype = {
 	
 	setDimensions: function(width, height) {
 		this.element.width = width;
+		this.element.style.width = (width / this.pixelRatio) + 'px';
 		this.element.height = height;
+		this.element.style.height = (height / this.pixelRatio) + 'px';
 	},
 	
 	appendTo: function(element, weight) {
@@ -890,17 +902,26 @@ Board.MultipleCanvasLayer = WGo.extendClass(Board.CanvasLayer, function() {
 });
 
 Board.MultipleCanvasLayer.prototype.init = function(n) {
-	var tmp;
+	var tmp, tmpContext;
 	
 	this.layers = n;
 	
 	this.elements = [];
 	this.contexts = [];
+
+	// Adjust pixel ratio for HDPI screens (e.g. Retina)
+	this.pixelRatio = window.devicePixelRatio || 1;
 	
 	for(var i = 0; i < n; i++) {
 		tmp = document.createElement('canvas');
+		tmpContext = tmp.getContext('2d');
+
+		if (this.pixelRatio > 1) {
+			tmpContext.scale(this.pixelRatio, this.pixelRatio);
+		}
+
 		this.elements.push(tmp);
-		this.contexts.push(tmp.getContext('2d'));
+		this.contexts.push(tmpContext);
 	}
 }
 
@@ -937,7 +958,9 @@ Board.MultipleCanvasLayer.prototype.clear = function(element, weight) {
 Board.MultipleCanvasLayer.prototype.setDimensions = function(width, height) {
 	for(var i = 0; i < this.layers; i++) {
 		this.elements[i].width = width;
+		this.elements[i].style.width = (width / this.pixelRatio) + 'px';
 		this.elements[i].height = height;
+		this.elements[i].style.height = (height / this.pixelRatio) + 'px';
 	}
 }
 
@@ -1012,29 +1035,42 @@ var drawField = function(x,y) {
 }
 
 var getMousePos = function(e) {
-    var top = 0, 
+	var top = 0, 
 		left = 0, 
 		obj = this.grid.element,
 		x, y;
     
 	while (obj && obj.tagName != 'BODY') {
-        top += obj.offsetTop;
-        left += obj.offsetLeft;
-        obj = obj.offsetParent;
-    }
+		top += obj.offsetTop;
+		left += obj.offsetLeft;
+		obj = obj.offsetParent;
+	}
 	
-	x = Math.round((e.pageX-left-this.left)/this.fieldWidth);
-	y = Math.round((e.pageY-top-this.top)/this.fieldHeight);
+	// Calculate the x, y coordinates from mouse position,
+	// taking into account that the board may be scaled for
+	// the sake of pixel density.
+	
+	x = e.pageX * this.pixelRatio;
+	x -= left * this.pixelRatio;
+	x -= this.left;
+	x /= this.fieldWidth;
+	x = Math.round(x);
 
-    return {
-        x: x >= this.size ? -1 : x,
-        y: y >= this.size ? -1 : y
-    };
+	y = e.pageY * this.pixelRatio;
+	y -= top * this.pixelRatio;
+	y -= this.top;
+	y /= this.fieldHeight;
+	y = Math.round(y);
+
+	return {
+		x: x >= this.size ? -1 : x,
+		y: y >= this.size ? -1 : y
+	};
 }
 
 var updateDim = function() {
-	this.element.style.width = this.width+"px";
-	this.element.style.height = this.height+"px";
+	this.element.style.width = (this.width / this.pixelRatio) + "px";
+	this.element.style.height = (this.height / this.pixelRatio) + "px";
 	
 	this.stoneRadius = theme_variable("stoneSize", this);
 	//if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
@@ -1100,6 +1136,7 @@ Board.prototype = {
 	
 	setWidth: function(width) {
 		this.width = width;
+		this.width *= this.pixelRatio;
 		this.fieldHeight = this.fieldWidth = calcFieldWidth.call(this);
 		this.left = calcLeftMargin.call(this);
 		
@@ -1118,6 +1155,7 @@ Board.prototype = {
 	
 	setHeight: function(height) {
 		this.height = height;
+		this.height *= this.pixelRatio;
 		this.fieldWidth = this.fieldHeight = calcFieldHeight.call(this);
 		this.top = calcTopMargin.call(this);
 		
@@ -1136,8 +1174,10 @@ Board.prototype = {
 	 */
 	
 	setDimensions: function(width, height) {
-		this.width = width || this.width;
-		this.height = height || this.height;
+		this.width = width || parseInt(this.element.style.width, 10);
+		this.width *= this.pixelRatio;
+		this.height = height || parseInt(this.element.style.height, 10);
+		this.height *= this.pixelRatio;
 		
 		this.fieldWidth = calcFieldWidth.call(this);
 		this.fieldHeight = calcFieldHeight.call(this);
