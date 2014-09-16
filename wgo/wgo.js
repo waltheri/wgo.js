@@ -1035,33 +1035,20 @@ var drawField = function(x,y) {
 }
 
 var getMousePos = function(e) {
-	var top = 0, 
-		left = 0, 
-		obj = this.grid.element,
-		x, y;
-    
-	while (obj && obj.tagName != 'BODY') {
-		top += obj.offsetTop;
-		left += obj.offsetLeft;
-		obj = obj.offsetParent;
-	}
+	// new hopefully better translation of coordinates
 	
-	// Calculate the x, y coordinates from mouse position,
-	// taking into account that the board may be scaled for
-	// the sake of pixel density.
+	var x, y;
 	
-	x = e.pageX * this.pixelRatio;
-	x -= left * this.pixelRatio;
+	x = e.layerX * this.pixelRatio;
 	x -= this.left;
 	x /= this.fieldWidth;
 	x = Math.round(x);
-
-	y = e.pageY * this.pixelRatio;
-	y -= top * this.pixelRatio;
+	
+	y = e.layerY * this.pixelRatio;
 	y -= this.top;
 	y /= this.fieldHeight;
 	y = Math.round(y);
-
+	
 	return {
 		x: x >= this.size ? -1 : x,
 		y: y >= this.size ? -1 : y
@@ -1110,6 +1097,7 @@ Board.prototype = {
 		
 		this.element = document.createElement('div');
 		this.element.className = 'wgo-board';
+		this.element.style.position = 'relative';
 		
 		if(this.background) {
 			if(this.background[0] == "#") this.element.style.backgroundColor = this.background;

@@ -1,0 +1,86 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>WGo - Test 6</title>
+	<script type="text/javascript" src="../wgo/wgo.js"></script>
+	<script type="text/javascript" src="../wgo/kifu.js"></script>
+	<script type="text/javascript" src="../wgo/sgfparser.js"></script>
+	<script type="text/javascript" src="../wgo/player.js"></script>
+	<script type="text/javascript" src="../wgo/basicplayer.js"></script>
+	<script type="text/javascript" src="../wgo/basicplayer.component.js"></script>
+	<script type="text/javascript" src="../wgo/basicplayer.infobox.js"></script>
+	<script type="text/javascript" src="../wgo/basicplayer.commentbox.js"></script>
+	<script type="text/javascript" src="../wgo/basicplayer.control.js"></script>
+	<script type="text/javascript" src="../wgo/player.editable.js"></script>
+	<script type="text/javascript" src="../wgo/scoremode.js"></script>
+	<script type="text/javascript" src="../wgo/player.permalink.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="../wgo/wgo.player.css" />
+	<style>.player { width: 500px; }</style>
+</head>
+<body>
+<h1 style="font-family: Consolas">Test of complicated layout</h1>
+<div style="overflow: auto; height: 700px;">
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  <div class="player" id="player">
+  Your browser doesn't support WGo Player. Use some modern browser like IE9, Google Chrome or Mozilla Firefox.
+  </div>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+  lorem ipsum...<br>
+</div>
+
+<script type="text/javascript">
+var elem = document.getElementById("player");
+var player = new WGo.BasicPlayer(elem, {
+    sgf: "(;GM[1]FF[4]CA[UTF-8]AP[CGoban:3]ST[2]RU[Japanese]SZ[19]HA[9]KM[0.00]PW[Tom]PB[Jack]AB[dd][jd][pd][dj][jj][pj][dp][jp][pp];W[qf];B[qe];W[pf];B[nc];W[pm];B[mp];W[mj];B[og];W[of];B[mg];W[oi];B[pi];W[ph];B[oh];W[pg];B[ni];W[oj];B[nj];W[ok];B[nk];W[nl];B[ol];W[pk];B[ml];W[nm])",
+	move: 20,
+});
+/*player.board.addEventListener("click", function(x,y,e){
+	console.log("client: "+e.clientX+" x "+e.clientY);
+	console.log("page: "+e.pageX+" x "+e.pageY);
+	console.log("offset: "+e.offsetX+" x "+e.offsetY);
+	console.log("screen: "+e.screenX+" x "+e.screenY);
+	console.log("layer: "+e.layerX+" x "+e.layerY);
+	console.log("-: "+e.x+" x "+e.y);
+	console.log("board: "+x+" x "+y);
+	console.log(e);
+});*/
+</script>
+
+</body>
+</html>

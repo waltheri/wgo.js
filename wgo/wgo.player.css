@@ -33,6 +33,7 @@
 	height: 100%;
 	line-height: normal;
 	font-size: 16px;
+	position: relative;
 }
 
 .wgo-player-main:after {
