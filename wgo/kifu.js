@@ -78,6 +78,96 @@ var recursive_save2 = function(gameTree, node) {
 	}
 }
 
+var sgf_escape = function(text) {
+	if(typeof text == "string") return text.replace(/\\/g, "\\\\").replace(/]/g, "\\]");
+	else return text;
+}
+
+var a_char = 'a'.charCodeAt(0);
+
+var sgf_coordinates = function(x, y) {
+	return String.fromCharCode(a_char+x)+String.fromCharCode(a_char+y);
+}
+
+var sgf_write_group = function(prop, values, output) {
+	if(!values.length) return;
+	
+	output.sgf += prop;
+	for(var i in values) {
+		output.sgf += "["+values[i]+"]";
+	}
+}
+
+var sgf_write_node = function(node, output) {
+	// move
+	if(node.move) {
+		var move = "";
+		if(!node.pass) move = sgf_coordinates(node.move.x, node.move.y);
+		
+		if(node.move.c == WGo.B) output.sgf += "B["+move+"]";
+		else output.sgf += "W["+move+"]";
+	}
+	
+	// setup
+	if(node.setup) {
+		var AB = [];
+		var AW = [];
+		var AE = [];
+		
+		for(var i in node.setup) {
+			if(node.setup[i].c == WGo.B) AB.push(sgf_coordinates(node.setup[i].x, node.setup[i].y));
+			else if(node.setup[i].c == WGo.W) AW.push(sgf_coordinates(node.setup[i].x, node.setup[i].y));
+			else AE.push(sgf_coordinates(node.setup[i].x, node.setup[i].y));
+		}
+		
+		sgf_write_group("AB", AB, output);
+		sgf_write_group("AW", AW, output);
+		sgf_write_group("AE", AE, output);
+	}
+	
+	// markup
+	if(node.markup) {
+		var markup = {};
+		
+		for(var i in node.markup) {
+			markup[node.markup[i].type] = markup[node.markup[i].type] || [];
+			if(node.markup[i].type == "LB") markup["LB"].push(sgf_coordinates(node.markup[i].x, node.markup[i].y)+":"+sgf_escape(node.markup[i].text));
+			else markup[node.markup[i].type].push(sgf_coordinates(node.markup[i].x, node.markup[i].y));
+		}
+		
+		for(var key in markup) {
+			sgf_write_group(key, markup[key], output);
+		}
+	}
+	
+	// other
+	var props = node.getProperties();
+	
+	for(var key in props) {
+		if(typeof props[key] == "object") continue;
+		
+		if(key == "turn") output.sgf += "PL["+(props[key] == WGo.B ? "B" : "W")+"]";
+		else if(key == "comment") output.sgf += "C["+sgf_escape(props[key])+"]";
+		else output.sgf += key+"["+sgf_escape(props[key])+"]";
+	}
+	
+	if(node.children.length == 1) {
+		output.sgf += "\n;";
+		sgf_write_node(node.children[0], output);
+	}
+	else if(node.children.length > 1) {
+		for(var key in node.children) {
+			sgf_write_variantion(node.children[key], output);
+		}
+	}
+}
+
+var sgf_write_variantion = function(node, output) {
+	output.sgf += "(\n;";
+	sgf_write_node(node, output);
+	output.sgf += "\n)";
+}
+
 /**
  * Kifu class - for storing go game record and easy manipulation with it
  */
@@ -137,7 +227,44 @@ Kifu.fromJGO = function(arg) {
  */
 
 Kifu.prototype.toSgf = function() {
-	// not implemented yet
+	var output = {sgf: "(\n;"};
+	
+	var root_props = {};
+	
+	// other info
+	for(var key in this.info) {
+		if(key == "black") {
+			if(this.info.black.name) root_props.PB = sgf_escape(this.info.black.name);
+			if(this.info.black.rank) root_props.BR = sgf_escape(this.info.black.rank);
+			if(this.info.black.team) root_props.BT = sgf_escape(this.info.black.team);
+		}
+		else if(key == "white") {
+			if(this.info.white.name) root_props.PW = sgf_escape(this.info.white.name);
+			if(this.info.white.rank) root_props.WR = sgf_escape(this.info.white.rank);
+			if(this.info.white.team) root_props.WT = sgf_escape(this.info.white.team);
+		}
+		else root_props[key] = sgf_escape(this.info[key]);
+	}
+	
+	// board size
+	if(this.size) root_props.SZ = this.size;
+	
+	// add missing info
+	if(!root_props.AP) root_props.AP = "WGo.js:2";
+	if(!root_props.FF) root_props.FF = "4";
+	if(!root_props.GM) root_props.GM = "1";
+	if(!root_props.CA) root_props.CA = "UTF-8";
+	
+	// write root
+	for(var key in root_props) {
+		if(root_props[key]) output.sgf += key+"["+root_props[key]+"]";
+	}
+	
+	sgf_write_node(this.root, output);
+	
+	output.sgf += ")";
+	
+	return output.sgf;
 }
 
 /**
