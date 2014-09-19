@@ -474,7 +474,7 @@ KNode.prototype = {
 	getProperties: function() {
 		var props = {};
 		for(var key in this) {
-			if(this.hasOwnProperty(key) && key != "children" && key != "parent") props[key] = this[key];
+			if(this.hasOwnProperty(key) && key != "children" && key != "parent" && key[0] != "_") props[key] = this[key];
 		}
 		return props;
 	}
