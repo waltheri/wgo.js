@@ -1,0 +1,62 @@
+// This file serves as template for translations
+// You can just replace english strings with translated strings.
+
+WGo.lang = "vi"; // set language code
+
+WGo.i18n[WGo.lang] = {
+	"about-text": "<h1>WGo.js Player 2.0</h1>"
+				+ "<p>WGo.js Player là phần mở rộng của WGo.js, thư việc HTML5 với sử dụng cho Cờ Vây. Nó cho phép xem lại bản ghi cờ vây và nó có rất nhiều tính năng như là tính điểm. Nó được thiết kế để dễ dàng mở rộng.</p>"
+				+ "<p>WGo.js được sử dụng theo giấy phép mã nguồn mở <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>Giấy phép MIT</a>. Bạn có thể sử dụng và chỉnh sửa bất kỳ phần nào của dự án.</p>"
+				+ "<p>Bạn có thể tìm hiểu thêm tại <a href='http://wgo.waltheri.net/player' target='_blank'>wgo.waltheri.net/player</a></p>"
+				+ "<p>Bản quyền &copy; 2013 Jan Prokop</p>",
+	"black": "Đen",
+	"white": "Trắng",
+	"DT": "Ngày",
+	"KM": "Komi",
+	"HA": "Chấp",
+	"AN": "Chú thích",
+	"CP": "Bản quyền",
+	"GC": "Bình luận",
+	"GN": "Tên trò chơi",
+	"ON": "Fuseki",
+	"OT": "Ngoài giờ",
+	"TM": "Thời gian cơ bản",
+	"RE": "Kết quả",
+	"RO": "Hiệp",
+	"RU": "Luật",
+	"US": "Bản ghi",
+	"PC": "Đặt",
+	"EV": "Sự kiện",
+	"SO": "Nguồn",
+	"none": "không",
+	"minute": "phút",
+	"minutes": "phút",
+	"second": "giây",
+	"seconds": "giây",
+	"bpass": "Đen đã bỏ qua.",
+	"wpass": "Trắng đã bỏ qua.",
+	"show": "hiện",
+	"res-show-tip": "Bấm để hiện kết quả.",
+	"BP:closemsg": "bấm bất kỳ nơi nào để đóng cửa sổ này",
+	"rank": "Xếp hạng",
+	"caps": "Caps",
+	"time": "Thời gian",
+	"about": "Giới thiệu",
+	"first": "Đầu",
+	"multiprev": "10 nước trước",
+	"previous": "Trước",
+	"next": "Sau",
+	"multinext": "10 nước sau",
+	"last": "Cuối",
+	"switch-coo": "Hiện tọa độ",
+	"menu": "Trình đơn",
+	"comments": "Bình luận",
+	"gameinfo": "Thông tin",
+	"editmode": "Chế độ chỉnh sửa",
+	"permalink": "Liên kết trực tiếp",
+	"scoremode": "Tính điểm",
+	"score": "Điểm",
+	"bwin": "Đen thắng với $ điểm.",
+	"wwin": "Trắng thắng với $ điểm.",
+	"help_score": "Bấm vào nhóm quân để thay đổi sống hoặc chết. Bạn có thể cài đặt hoặc bỏ vùng điểm bằng cách bấm vào nó. Vùng phải được bao kín hoàn toàn.",
+}
