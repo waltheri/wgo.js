@@ -792,9 +792,8 @@ Board.coordinates = {
 			
 			for(var i = 0; i < board.size; i++) {
 				ch = i+"A".charCodeAt(0);
-				if(ch >= "I".charCodeAt(0)) ch++;
 				
-				t = board.getY(i);
+				t = board.getY(board.size-1-i);
 				this.fillText(board.size-i, xright, t);
 				this.fillText(board.size-i, xleft, t);
 				
