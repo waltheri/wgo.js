@@ -426,7 +426,9 @@ Player.prototype = {
  	 */
 
 	notification: function(text) {
-		if(console) console.log(text);
+		if (console && text) {
+			console.log(text);
+		}
 	},
 
 	/**
