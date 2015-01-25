@@ -56,65 +56,80 @@ WGo.Player.Editable = {};
 /**
  * Toggle edit mode.
  */
-	
+
 WGo.Player.Editable = function(player, board) {
 	this.player = player;
 	this.board = board;
 	this.editMode = false;
 }
 
-WGo.Player.Editable.prototype.set = function(set) {
+WGo.Player.Editable.prototype.set = function(set, reset) {
+	// In reset mode, the player always begins edit mode with a fresh version of
+	// the original kifu, and doesn't save any of the variations or changes once
+	// it leaves edit mode
+	if (typeof reset === 'undefined') {
+		reset = true;
+	}
+
 	if(!this.editMode && set) {
 		// save original kifu reader
 		this.originalReader = this.player.kifuReader;
-		
+
+		var referenceKifu = (reset) ? this.player.kifu.clone() : this.player.kifuReader.kifu.clone();
+
 		// create new reader with cloned kifu
-		this.player.kifuReader = new WGo.KifuReader(this.player.kifu.clone(), this.originalReader.rememberPath, this.originalReader.allow_illegal, this.originalReader.allow_illegal);
-		
+		this.player.kifuReader = new WGo.KifuReader(referenceKifu, this.originalReader.rememberPath, this.originalReader.allow_illegal, this.originalReader.allow_illegal);
+
 		// go to current position
 		this.player.kifuReader.goTo(this.originalReader.path);
-		
+
 		// register edit listeners
 		this._ev_click = this._ev_click || this.play.bind(this);
 		this._ev_move = this._ev_move || edit_board_mouse_move.bind(this);
 		this._ev_out = this._ev_out || edit_board_mouse_out.bind(this);
-		
+
 		this.board.addEventListener("click", this._ev_click);
 		this.board.addEventListener("mousemove", this._ev_move);
 		this.board.addEventListener("mouseout", this._ev_out);
-		
+
 		this.editMode = true;
 	}
 	else if(this.editMode && !set) {
-		// go to the last original position
-		this.originalReader.goTo(this.player.kifuReader.path);
-		
-		// change object isn't actual - update it, not elegant solution, but simple
-		this.originalReader.change = pos_diff(this.player.kifuReader.getPosition(), this.originalReader.getPosition());
-		
-		// update kifu reader
-		this.player.kifuReader = this.originalReader;
+
+		if (reset) {
+			// go to the last original position
+			this.originalReader.goTo(this.player.kifuReader.path);
+
+			// change object isn't actual - update it, not elegant solution, but simple
+			this.originalReader.change = pos_diff(this.player.kifuReader.getPosition(), this.originalReader.getPosition());
+
+			// update kifu reader
+			this.player.kifuReader = this.originalReader;
+		} else {
+			// Go to the last original position
+			this.player.kifuReader.goTo(this.originalReader.path);
+		}
+
 		this.player.update(true);
-		
+
 		// remove edit listeners
 		this.board.removeEventListener("click", this._ev_click);
 		this.board.removeEventListener("mousemove", this._ev_move);
 		this.board.removeEventListener("mouseout", this._ev_out);
-		
+
 		this.editMode = false;
 	}
 }
 
 WGo.Player.Editable.prototype.play = function(x,y) {
 	if(this.player.frozen || !this.player.kifuReader.game.isValid(x, y)) return;
-	
+
 	this.player.kifuReader.node.appendChild(new WGo.KNode({
 		move: {
-			x: x, 
-			y: y, 
+			x: x,
+			y: y,
 			c: this.player.kifuReader.game.turn
-		}, 
-		edited: true
+		}
 	}));
 	this.player.next(this.player.kifuReader.node.children.length-1);
 }
