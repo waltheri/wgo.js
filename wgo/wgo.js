@@ -243,7 +243,13 @@ Board.themes.default = {
 }
 
 var theme_variable = function(key, board) {
-	return typeof board.theme[key] == "function" ? board.theme[key](board) : board.theme[key];
+	if (!board || typeof board.theme[key] === "undefined") {
+		return undefined;
+	} else if (typeof board.theme[key] === "function") {
+		return board.theme[key](board);
+	} else {
+		return board.theme[key];
+	}
 }
 
 var shadow_handler = {
@@ -779,30 +785,63 @@ Board.coordinates = {
 	grid: {
 		draw: function(args, board) {
 			var ch, t, xright, xleft, ytop, ybottom;
-			
+
+			var coordinatesBackground = theme_variable('coordinatesBackgroundColor', board);
+
+			if (coordinatesBackground) {
+				// Draw a background behind the coordinates
+				this.beginPath();
+				this.moveTo(0, 0);
+				this.lineTo(0, board.height);
+				this.lineTo(board.width, board.height);
+				this.lineTo(board.width, 0);
+				this.lineTo(0, 0);
+				this.closePath();
+
+				this.rect(
+					board.fieldWidth,
+					board.fieldHeight,
+					Math.round(board.width - (board.fieldWidth * 2)),
+					Math.round(board.height - (board.fieldHeight * 2))
+				);
+
+				this.fillStyle = theme_variable('coordinatesBackgroundColor', board);
+				this.fill();
+
+				this.clip();
+				this.save();
+
+				this.restore();
+
+				xright = board.getX(-1.25);
+				xleft = board.getX(board.size + 0.25);
+				ytop = board.getY(-1.25);
+				ybottom = board.getY(board.size + 0.25);
+			} else {
+				xright = board.getX(-0.75);
+				xleft = board.getX(board.size-0.25);
+				ytop = board.getY(-0.75);
+				ybottom = board.getY(board.size-0.25);
+			}
+
 			this.fillStyle = theme_variable("coordinatesColor", board);
 			this.textBaseline="middle";
 			this.textAlign="center";
 			this.font = board.stoneRadius+"px "+(board.font || "");
-			
-			xright = board.getX(-0.75);
-			xleft = board.getX(board.size-0.25);
-			ytop = board.getY(-0.75);
-			ybottom = board.getY(board.size-0.25);
-			
+
 			for(var i = 0; i < board.size; i++) {
 				ch = i+"A".charCodeAt(0);
 				if(ch >= "I".charCodeAt(0)) ch++;
-				
+
 				t = board.getY(i);
 				this.fillText(board.size-i, xright, t);
 				this.fillText(board.size-i, xleft, t);
-				
+
 				t = board.getX(i);
 				this.fillText(String.fromCharCode(ch), t, ytop);
 				this.fillText(String.fromCharCode(ch), t, ybottom);
 			}
-			
+
 			this.fillStyle = "black";
 		}
 	}
