@@ -18,7 +18,7 @@ WGo.FileError = FileError;
 
 // ajax function for loading of files
 var loadFromUrl = WGo.loadFromUrl = function(url, callback) {
-	
+
 	var xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
 		if (xmlhttp.readyState == 4) {
@@ -35,36 +35,36 @@ var loadFromUrl = WGo.loadFromUrl = function(url, callback) {
 			}
 		}
 	}
-	
+
 	try {
 		xmlhttp.open("GET", url, true);
-		xmlhttp.send();	
+		xmlhttp.send();
 	}
 	catch(err) {
 		throw new FileError(url, 2);
 	}
-	
+
 }
 
 // basic updating function - handles board changes
 var update_board = function(e) {
 	// update board's position
 	if(e.change) this.board.update(e.change);
-	
+
 	// remove old markers from the board
 	if(this.temp_marks) this.board.removeObject(this.temp_marks);
-	
+
 	// init array for new objects
 	var add = [];
-	
+
 	this.notification();
-	
+
 	// add current move marker
 	if(e.node.move && this.config.markLastMove) {
 		if(e.node.move.pass) this.notification(WGo.t((e.node.move.c == WGo.B ? "b" : "w")+"pass"));
 		else add.push({
 			type: "CR",
-			x: e.node.move.x, 
+			x: e.node.move.x,
 			y: e.node.move.y
 		});
 	}
@@ -94,7 +94,7 @@ var update_board = function(e) {
 		}
 		add = add.concat(e.node.markup);
 	}
-	
+
 	// add new markers on the board
 	this.temp_marks = add;
 	this.board.addObject(add);
@@ -104,15 +104,15 @@ var update_board = function(e) {
 var prepare_board = function(e) {
 	// set board size
 	this.board.setSize(e.kifu.size);
-	
+
 	// remove old objects
 	this.board.removeAllObjects();
-	
+
 	// activate wheel
 	if(this.config.enableWheel) this.setWheel(true);
 }
 
-// detecting scrolling of element - e.g. when we are scrolling text in comment box, we want to be aware. 
+// detecting scrolling of element - e.g. when we are scrolling text in comment box, we want to be aware.
 var detect_scrolling = function(node, bp) {
 	if(node == bp.element || node == bp.element) return false;
 	else if(node._wgo_scrollable || (node.scrollHeight > node.offsetHeight)) return true;
@@ -122,10 +122,10 @@ var detect_scrolling = function(node, bp) {
 // mouse wheel event callback, for replaying a game
 var wheel_lis = function(e) {
 	var delta = e.wheelDelta || e.detail*(-1);
-	
+
 	// if there is scrolling in progress within an element, don't change position
 	if(detect_scrolling(e.target, this)) return true;
-	
+
 	if(delta < 0) {
 		this.next();
 		if(this.config.lockScroll && e.preventDefault) e.preventDefault();
@@ -142,7 +142,7 @@ var wheel_lis = function(e) {
 // keyboard click callback, for replaying a game
 var key_lis = function(e) {
 	if(document.querySelector(":focus")) return true;
-	
+
 	switch(e.keyCode) {
 		case 39: this.next(); break;
 		case 37: this.previous(); break;
@@ -169,37 +169,37 @@ var board_click_default = function(x,y) {
 	grid: {
 		draw: function(args, board) {
 			var ch, t, xright, xleft, ytop, ybottom;
-			
+
 			this.fillStyle = "rgba(0,0,0,0.7)";
 			this.textBaseline="middle";
 			this.textAlign="center";
 			this.font = board.stoneRadius+"px "+(board.font || "");
-			
+
 			xright = board.getX(-0.75);
 			xleft = board.getX(board.size-0.25);
 			ytop = board.getY(-0.75);
 			ybottom = board.getY(board.size-0.25);
-			
+
 			for(var i = 0; i < board.size; i++) {
 				ch = i+"A".charCodeAt(0);
 				if(ch >= "I".charCodeAt(0)) ch++;
-				
+
 				t = board.getY(i);
 				this.fillText(board.size-i, xright, t);
 				this.fillText(board.size-i, xleft, t);
-				
+
 				t = board.getX(i);
 				this.fillText(String.fromCharCode(ch), t, ytop);
 				this.fillText(String.fromCharCode(ch), t, ybottom);
 			}
-			
+
 			this.fillStyle = "black";
 		}
 	}
 }*/
 
 /**
- * We can say this class is abstract, stand alone it doesn't do anything. 
+ * We can say this class is abstract, stand alone it doesn't do anything.
  * However it is useful skelet for building actual player's GUI. Extend this class to create custom player template.
  * It controls board and inputs from mouse and keyboard, but everything can be overriden.
  *
@@ -218,31 +218,31 @@ var board_click_default = function(x,y) {
 
 var Player = function(config) {
 	this.config = config;
-	
+
 	// add default configuration
 	for(var key in Player.default) if(this.config[key] === undefined && Player.default[key] !== undefined) this.config[key] = Player.default[key];
-	
+
 	this.element = document.createElement("div");
 	this.board = new WGo.Board(this.element, this.config.board);
-	
+
 	this.init();
 	this.initGame();
 }
 
 Player.prototype = {
 	constructor: Player,
-	
+
 	/**
-	 * Init player. If you want to call this method PlayerView object must have these properties: 
+	 * Init player. If you want to call this method PlayerView object must have these properties:
 	 *  - player - WGo.Player object
 	 *  - board - WGo.Board object (or other board renderer)
 	 *  - element - main DOMElement of player
 	 */
-	 
+
 	init: function() {
 		// declare kifu
 		this.kifu = null;
-		
+
 		// creating listeners
 		this.listeners = {
 			kifuLoaded: [prepare_board.bind(this)],
@@ -250,18 +250,18 @@ Player.prototype = {
 			frozen: [],
 			unfrozen: [],
 		};
-		
+
 		if(this.config.kifuLoaded) this.addEventListener("kifuLoaded", this.config.kifuLoaded);
 		if(this.config.update) this.addEventListener("update", this.config.update);
 		if(this.config.frozen) this.addEventListener("frozen", this.config.frozen);
 		if(this.config.unfrozen) this.addEventListener("unfrozen", this.config.unfrozen);
-		
+
 		this.board.addEventListener("click", board_click_default.bind(this));
 		this.element.addEventListener("click", this.focus.bind(this));
-		
+
 		this.focus();
 	},
-	
+
 	initGame: function() {
 		// try to load game passed in configuration
 		if(this.config.sgf) {
@@ -275,16 +275,16 @@ Player.prototype = {
 		}
 
 	},
-	
+
 	/**
 	 * Create update event and dispatch it. It is called after position's changed.
 	 *
 	 * @param {string} op an operation that produced update (e.g. next, previous...)
 	 */
-	
+
 	update: function(op) {
 		if(!this.kifuReader || !this.kifuReader.change) return;
-		
+
 		var ev = {
 			type: "update",
 			op: op,
@@ -294,32 +294,32 @@ Player.prototype = {
 			path: this.kifuReader.path,
 			change: this.kifuReader.change,
 		}
-		
+
 		//if(!this.kifuReader.node.parent) ev.msg = this.getGameInfo();
 
 		this.dispatchEvent(ev);
 	},
-	
+
 	/**
 	 * Prepare kifu for replaying. Event 'kifuLoaded' is triggered.
 	 *
 	 * @param {WGo.Kifu} kifu object
 	 * @param {Array} path array
 	 */
-	
+
 	loadKifu: function(kifu, path) {
 		this.kifu = kifu;
 
 		// kifu is replayed by KifuReader, it manipulates a Kifu object and gets all changes
 		this.kifuReader = new WGo.KifuReader(this.kifu, this.config.rememberPath, this.config.allowIllegalMoves);
-		
+
 		// fire kifu loaded event
 		this.dispatchEvent({
 			type: "kifuLoaded",
 			target: this,
 			kifu: this.kifu,
 		});
-		
+
 		// handle permalink
 		/*if(this.config.permalinks) {
 			if(!permalinks.active) init_permalinks();
@@ -327,25 +327,25 @@ Player.prototype = {
 				handle_hash(this);
 			}
 		}*/
-		
+
 		// update player - initial position in kifu doesn't have to be an empty board
 		this.update("init");
-		
+
 		if(path) {
 			this.goTo(path);
 		}
-		
+
 		/*if(this.kifu.nodeCount === 0) this.error("");
 		else if(this.kifu.propertyCount === 0)*/
 
 	},
-	
+
 	/**
 	 * Load go kifu from sgf string.
 	 *
 	 * @param {string} sgf
 	 */
-	 
+
 	loadSgf: function(sgf, path) {
 		try {
 			this.loadKifu(WGo.Kifu.fromSgf(sgf), path);
@@ -354,11 +354,11 @@ Player.prototype = {
 			this.error(err);
 		}
 	},
-	
+
 	/**
 	 * Load go kifu from JSON object.
 	 */
-	
+
 	loadJSON: function(json, path) {
 		try {
 			this.loadKifu(WGo.Kifu.fromJGO(json), path);
@@ -367,11 +367,11 @@ Player.prototype = {
 			this.error(err);
 		}
 	},
-	
+
 	/**
-	 * Load kifu from sgf file specified with path. AJAX is used to load sgf content. 
+	 * Load kifu from sgf file specified with path. AJAX is used to load sgf content.
 	 */
-	
+
 	loadSgfFromFile: function(file_path, game_path) {
 		var _this = this;
 		try {
@@ -383,7 +383,7 @@ Player.prototype = {
 			this.error(err);
 		}
 	},
-	
+
 	/**
 	 * Implementation of EventTarget interface, though it's a little bit simplified.
 	 * You need to save listener if you would like to remove it later.
@@ -396,67 +396,69 @@ Player.prototype = {
 		this.listeners[type] = this.listeners[type] || [];
 		this.listeners[type].push(listener);
 	},
-	
+
 	/**
 	 * Remove event listener previously added with addEventListener.
 	 *
 	 * @param {string} type of listeners
 	 * @param {Function} listener function
 	 */
-	
+
 	removeEventListener: function(type, listener) {
 		if(!this.listeners[type]) return;
 		var i = this.listeners[type].indexOf(listener);
 		if(i != -1) this.listeners[type].splice(i,1);
 	},
-	
+
 	/**
 	 * Dispatch an event. In default there are two events: "kifuLoaded" and "update"
-	 * 
+	 *
 	 * @param {string} evt event
 	 */
-	 
+
 	dispatchEvent: function(evt) {
 		if(!this.listeners[evt.type]) return;
 		for(var l in this.listeners[evt.type]) this.listeners[evt.type][l](evt);
 	},
-	
+
 	/**
 	 * Output function for notifications.
  	 */
-	
+
 	notification: function(text) {
-		if(console) console.log(text);
+		if (console && text) {
+			console.log(text);
+		}
 	},
-	
+
 	/**
 	 * Output function for helps.
  	 */
-	
+
 	help: function(text) {
 		if(console) console.log(text);
 	},
-	
+
 	/**
 	 * Output function for errors. TODO: reporting of errors - by cross domain AJAX
 	 */
-	
+
 	error: function(err) {
 		if(!WGo.ERROR_REPORT) throw err;
-		
+
 		if(console) console.log(err);
-	
+
 	},
-	
+
 	/**
 	 * Play next move.
-	 * 
+	 *
 	 * @param {number} i if there is more option, you can specify it by index
 	 */
-	
+
 	next: function(i) {
 		if(this.frozen || !this.kifu) return;
-		
+
 		try {
 			this.kifuReader.next(i);
 			this.update();
@@ -465,14 +467,14 @@ Player.prototype = {
 			this.error(err);
 		}
 	},
-	
+
 	/**
 	 * Get previous position.
 	 */
-	
+
 	previous: function() {
 		if(this.frozen || !this.kifu) return;
-		
+
 		try{
 			this.kifuReader.previous();
 			this.update();
@@ -485,10 +487,10 @@ Player.prototype = {
 	/**
 	 * Play all moves and get last position.
 	 */
-	
+
 	last: function() {
 		if(this.frozen || !this.kifu) return;
-		
+
 		try {
 			this.kifuReader.last();
 			this.update();
@@ -497,14 +499,14 @@ Player.prototype = {
 			this.error(err);
 		}
 	},
-	
+
 	/**
 	 * Get a first position.
 	 */
-	
+
 	first: function() {
 		if(this.frozen || !this.kifu) return;
-		
+
 		try {
 			this.kifuReader.first();
 			this.update();
@@ -516,21 +518,21 @@ Player.prototype = {
 
 	/**
 	 * Go to a specified move.
-	 * 
+	 *
 	 * @param {number|Array} move number of move, or path array
 	 */
-	
+
 	goTo: function(move) {
 		if(this.frozen || !this.kifu) return;
 		var path;
 		if(typeof move == "function") move = move.call(this);
-		
+
 		if(typeof move == "number") {
 			path = WGo.clone(this.kifuReader.path);
 			path.m = move || 0;
 		}
 		else path = move;
-		
+
 		try {
 			this.kifuReader.goTo(path);
 			this.update();
@@ -539,13 +541,13 @@ Player.prototype = {
 			this.error(err);
 		}
 	},
-	
+
 	/**
 	 * Get information about actual game(kifu)
 	 *
 	 * @return {Object} game info
 	 */
-	 
+
 	getGameInfo: function() {
 		if(!this.kifu) return null;
 		var info = {};
@@ -558,11 +560,11 @@ Player.prototype = {
 		}
 		return info;
 	},
-	
+
 	/**
 	 * Freeze or onfreeze player. In frozen state methods: next, previous etc. don't work.
 	 */
-	
+
 	setFrozen: function(frozen) {
 		this.frozen = frozen;
 		this.dispatchEvent({
@@ -570,27 +572,27 @@ Player.prototype = {
 			target: this,
 		});
 	},
-	
+
 	/**
 	 * Append player to given element.
 	 */
-	
+
 	appendTo: function(elem) {
 		elem.appendChild(this.element);
 	},
-	
+
 	/**
 	 * Get focus on the player
 	 */
-	
+
 	focus: function() {
 		if(this.config.enableKeys) this.setKeys(true);
 	},
-	
+
 	/**
 	 * Set controlling of player by arrow keys.
 	 */
-	 
+
 	setKeys: function(b) {
 		if(b) {
 			document.onkeydown = key_lis.bind(this);
@@ -599,11 +601,11 @@ Player.prototype = {
 			document.onkeydown = null;
 		}
 	},
-	
+
 	/**
 	 * Set controlling of player by mouse wheel.
 	 */
-	
+
 	setWheel: function(b) {
 		if(!this._wheel_listener && b) {
 			this._wheel_listener = wheel_lis.bind(this);
@@ -615,12 +617,12 @@ Player.prototype = {
 			this.element.removeEventListener(type, this._wheel_listener);
 			delete this._wheel_listener;
 		}
-	}, 
-	
+	},
+
 	/**
 	 * Toggle coordinates around the board.
 	 */
-	 
+
 	setCoordinates: function(b) {
 		if(!this.coordinates && b) {
 			this.board.setSection(-0.5, -0.5, -0.5, -0.5);
@@ -660,7 +662,7 @@ WGo.Player = Player;
 /**
  * For another language support, extend this object with similiar object.
  */
- 
+
 var player_terms = {
 	"about-text": "<h1>WGo.js Player 2.0</h1>"
 				+ "<p>WGo.js Player is extension of WGo.js, HTML5 library for purposes of game of go. It allows to replay go game records and it has many features like score counting. It is also designed to be easily extendable.</p>"
