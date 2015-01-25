@@ -238,6 +238,7 @@ Board.themes.default = {
 		return Math.min(board.fieldWidth, board.fieldHeight)/2;
 	},
 	coordinatesColor: "#531",
+	variationColor: "rgba(0,32,128,0.8)",
 	font: "calibri",
 	linesShift: 0.25
 }

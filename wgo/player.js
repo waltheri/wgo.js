@@ -68,8 +68,8 @@ var update_board = function(e) {
 			y: e.node.move.y
 		});
 	}
-	
-	// add variantion letters
+
+	// add variation letters
 	if(e.node.children.length > 1) {
 		for(var i = 0; i < e.node.children.length; i++) {
 			if(e.node.children[i].move && !e.node.children[i].move.pass)	add.push({
@@ -77,11 +77,11 @@ var update_board = function(e) {
 				text: String.fromCharCode(65+i),
 				x: e.node.children[i].move.x,
 				y: e.node.children[i].move.y,
-				c: "rgba(0,32,128,0.8)"
+				c: this.board.theme.variationColor || "rgba(0,32,128,0.8)"
 			});
 		}
 	}
-	
+
 	// add other markup
 	if(e.node.markup) {
 		for(var i in e.node.markup) {
