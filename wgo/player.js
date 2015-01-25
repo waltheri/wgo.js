@@ -141,9 +141,11 @@ var wheel_lis = function(e) {
 
 // keyboard click callback, for replaying a game
 var key_lis = function(e) {
-	if(document.querySelector(":focus")) return true;
-
-	switch(e.keyCode) {
+	// disable game replay, when there is focus on some form text field
+	var focusedElements = document.querySelector("input:focus, textarea:focus");
+	if(focusedElements) return true;
+	
+	switch(e.keyCode){
 		case 39: this.next(); break;
 		case 37: this.previous(); break;
 		//case 40: this.selectAlternativeVariation(); break;
