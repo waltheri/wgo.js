@@ -627,7 +627,13 @@ Player.prototype = {
 
 	setCoordinates: function(b) {
 		if(!this.coordinates && b) {
-			this.board.setSection(-0.5, -0.5, -0.5, -0.5);
+			if (this.board.theme.coordinatesBackgroundColor) {
+				// Give coordinates more space is there's a background color behind them
+				// to separate them from the board
+				this.board.setSection(-1, -1, -1, -1);
+			} else {
+				this.board.setSection(-0.5, -0.5, -0.5, -0.5);
+			}
 			this.board.addCustomObject(WGo.Board.coordinates);
 		}
 		else if(this.coordinates && !b) {
