@@ -293,12 +293,13 @@ var redraw_layer = function(board, layer) {
 	
 	for(var x = 0; x < board.size; x++) {
 		for(var y = 0; y < board.size; y++) {
-			for(var key in board.obj_arr[x][y]) {
-				if(!board.obj_arr[x][y][key].type) handler = board.stoneHandler;
-				else if(typeof board.obj_arr[x][y][key].type == "string") handler = Board.drawHandlers[board.obj_arr[x][y][key].type];
-				else handler = board.obj_arr[x][y][key].type;
+			for(var z = 0; z < board.obj_arr[x][y].length; z++) {
+				var obj = board.obj_arr[x][y][z];
+				if(!obj.type) handler = board.stoneHandler;
+				else if(typeof obj.type == "string") handler = Board.drawHandlers[obj.type];
+				else handler = obj.type;
 		
-				if(handler[layer]) handler[layer].draw.call(board[layer].getContext(board.obj_arr[x][y][key]), board.obj_arr[x][y][key], board);
+				if(handler[layer]) handler[layer].draw.call(board[layer].getContext(obj), obj, board);
 			}
 		}
 	}
@@ -1010,27 +1011,29 @@ var calcFieldHeight = function() {
 
 var clearField = function(x,y) {
 	var handler;
-	for(var key in this.obj_arr[x][y]) {
-		if(!this.obj_arr[x][y][key].type) handler = this.stoneHandler;
-		else if(typeof this.obj_arr[x][y][key].type == "string") handler = Board.drawHandlers[this.obj_arr[x][y][key].type];
-		else handler = this.obj_arr[x][y][key].type;
+	for(var z = 0; z < this.obj_arr[x][y].length; z++) {
+		var obj = this.obj_arr[x][y][z];
+		if(!obj.type) handler = this.stoneHandler;
+		else if(typeof obj.type == "string") handler = Board.drawHandlers[obj.type];
+		else handler = obj.type;
 		
 		for(var layer in handler) {
-			if(handler[layer].clear) handler[layer].clear.call(this[layer].getContext(this.obj_arr[x][y][key]), this.obj_arr[x][y][key], this);
-			else default_field_clear.call(this[layer].getContext(this.obj_arr[x][y][key]), this.obj_arr[x][y][key], this);
+			if(handler[layer].clear) handler[layer].clear.call(this[layer].getContext(obj), obj, this);
+			else default_field_clear.call(this[layer].getContext(obj), obj, this);
 		}
 	}
 }
 
 var drawField = function(x,y) {
 	var handler;
-	for(var key in this.obj_arr[x][y]) {
-		if(!this.obj_arr[x][y][key].type) handler = this.stoneHandler;
-		else if(typeof this.obj_arr[x][y][key].type == "string") handler = Board.drawHandlers[this.obj_arr[x][y][key].type];
-		else handler = this.obj_arr[x][y][key].type;
+	for(var z = 0; z < this.obj_arr[x][y].length; z++) {
+		var obj = this.obj_arr[x][y][z];
+		if(!obj.type) handler = this.stoneHandler;
+		else if(typeof obj.type == "string") handler = Board.drawHandlers[obj.type];
+		else handler = obj.type;
 		
 		for(var layer in handler) {
-			handler[layer].draw.call(this[layer].getContext(this.obj_arr[x][y][key]), this.obj_arr[x][y][key], this);
+			handler[layer].draw.call(this[layer].getContext(obj), obj, this);
 		}
 	}
 }
@@ -1321,7 +1324,7 @@ Board.prototype = {
 	addObject: function(obj) {
 		// handling multiple objects
 		if(obj.constructor == Array) {
-			for(var key in obj) this.addObject(obj[key]);
+			for(var i = 0; i < obj.length; i++) this.addObject(obj[i]);
 			return;
 		}
 		
@@ -1329,17 +1332,18 @@ Board.prototype = {
 		clearField.call(this, obj.x, obj.y);
 		
 		// if object of this type is on the board, replace it
-		for(var key in this.obj_arr[obj.x][obj.y]) {
-			if(this.obj_arr[obj.x][obj.y][key].type == obj.type) {
-				this.obj_arr[obj.x][obj.y][key] = obj;
+		var layers = this.obj_arr[obj.x][obj.y];
+		for(var z = 0; z < layers.length; z++) {
+			if(layers[z].type == obj.type) {
+				layers[z] = obj;
 				drawField.call(this, obj.x, obj.y);
 				return;
 			}
 		}	
 		
 		// if object is a stone, add it at the beginning, otherwise at the end
-		if(!obj.type) this.obj_arr[obj.x][obj.y].unshift(obj);
-		else this.obj_arr[obj.x][obj.y].push(obj);
+		if(!obj.type) layers.unshift(obj);
+		else layers.push(obj);
 		
 		// draw all objects
 		drawField.call(this, obj.x, obj.y);
