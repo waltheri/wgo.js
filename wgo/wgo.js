@@ -1064,8 +1064,8 @@ var updateDim = function() {
 	//if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
 	this.ls = theme_variable("linesShift", this);
 	
-	for(var key in this.layers) {
-		this.layers[key].setDimensions(this.width, this.height); 
+	for(var i = 0; i < this.layers.length; i++) {
+		this.layers[i].setDimensions(this.width, this.height); 
 	}
 }
 
