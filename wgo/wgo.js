@@ -304,10 +304,11 @@ var redraw_layer = function(board, layer) {
 		}
 	}
 	
-	for(var key in board.obj_list) {
-		var handler = board.obj_list[key].handler;
+	for(var i = 0; i < board.obj_list.length; i++) {
+		var obj = board.obj_list[i];
+		var handler = obj.handler;
 		
-		if(handler[layer]) handler[layer].draw.call(board[layer].getContext(board.obj_list[key].args), board.obj_list[key].args, board);
+		if(handler[layer]) handler[layer].draw.call(board[layer].getContext(obj.args), obj.args, board);
 	}
 }
 
@@ -1254,11 +1255,12 @@ Board.prototype = {
 		}
 		
 		// redraw custom objects
-		for(var key in this.obj_list) {
-			var handler = this.obj_list[key].handler;
+		for(var i = 0; i < this.obj_list.length; i++) {
+			var obj = this.obj_list[i];
+			var handler = obj.handler;
 			
 			for(var layer in handler) {
-				handler[layer].draw.call(this[layer].getContext(this.obj_list[key].args), this.obj_list[key].args, this);
+				handler[layer].draw.call(this[layer].getContext(obj.args), obj.args, this);
 			}
 		}
 	},
@@ -1311,13 +1313,14 @@ Board.prototype = {
 	},
 	
 	update: function(changes) {
+		var i;
 		if(changes.remove && changes.remove == "all") this.removeAllObjects();
 		else if(changes.remove) {
-			for(var key in changes.remove) this.removeObject(changes.remove[key]);
+			for(i = 0; i < changes.remove.length; i++) this.removeObject(changes.remove[i]);
 		}
 		
 		if(changes.add) {
-			for(var key in changes.add) this.addObject(changes.add[key]);
+			for(i = 0; i < changes.add.length; i++) this.addObject(changes.add[i]);
 		}
 	},
 	
@@ -1352,7 +1355,7 @@ Board.prototype = {
 	removeObject: function(obj) {
 		// handling multiple objects
 		if(obj.constructor == Array) {
-			for(var key in obj) this.removeObject(obj[key]);
+			for(var n = 0; n < obj.length; n++) this.removeObject(obj[n]);
 			return;
 		}
 		
@@ -1395,9 +1398,10 @@ Board.prototype = {
 	},
 	
 	removeCustomObject: function(handler, args) {
-		for(var key in this.obj_list) {
-			if(this.obj_list[key].handler == handler && this.obj_list[key].args == args) {
-				delete this.obj_list[key];
+		for(var i = 0; i < this.obj_list.length; i++) {
+			var obj = this.obj_list[i];
+			if(obj.handler == handler && obj.args == args) {
+				this.obj_list.splice(i, 1);
 				this.redraw();
 				return true;
 			}
@@ -1421,10 +1425,11 @@ Board.prototype = {
 	},
 	
 	removeEventListener: function(type, callback) {
-		for(var key in this.listeners) {
-			if(this.listeners[key].type == type && this.listeners[key].callback == callback) {
-				this.element.removeEventListener(this.listeners[key].type, this.listeners[key], true);
-				delete this.listeners[key];
+		for(var i = 0; i < this.listeners.length; i++) {
+			var listener = this.listeners[i];
+			if(listener.type == type && listener.callback == callback) {
+				this.element.removeEventListener(listener.type, listener, true);
+				this.listeners.splice(i, 1);
 				return true;
 			}
 		}
