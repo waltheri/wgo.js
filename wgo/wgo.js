@@ -1622,7 +1622,7 @@ var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
 	
 	Object.defineProperty(this, "position", {
 		get : function(){ return this.stack[this.stack.length-1]; },
-		set : function(pos){ this[this.stack.length-1] = pos; }
+		set : function(pos){ this.stack[this.stack.length-1] = pos; }
 	});					  
 }
 
