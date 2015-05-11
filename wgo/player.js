@@ -70,7 +70,7 @@ var update_board = function(e) {
 	}
 
 	// add variation letters
-	if(e.node.children.length > 1) {
+	if(e.node.children.length > 1 && this.config.displayVariations) {
 		for(var i = 0; i < e.node.children.length; i++) {
 			if(e.node.children[i].move && !e.node.children[i].move.pass)	add.push({
 				type: "LB",
@@ -655,6 +655,7 @@ Player.default = {
 	unfrozen: undefined,
 	allowIllegalMoves: false,
 	markLastMove: true,
+	displayVariations: true
 }
 
 WGo.Player = Player;
