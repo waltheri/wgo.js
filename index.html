@@ -39,6 +39,35 @@ Unfortunately it won't work on Internet Explorer 8 and lower, because of absence
 
 <p>You can find more info here: <a href="http://wgo.waltheri.net/">http://wgo.waltheri.net/</a></p>
 
+<div class="highlight highlight-javascript"><pre><span class="pl-c">// Test of javascript code</span>
+
+<span class="pl-c">/**</span>
+<span class="pl-c"> * Main namespace - it initializes WGo in first run and then execute main function. </span>
+<span class="pl-c"> * You must call WGo.init() if you want to use library, without calling WGo.</span>
+<span class="pl-c"> */</span>
+
+<span class="pl-k">var</span> WGo <span class="pl-k">=</span> {
+    <span class="pl-c">// basic information</span>
+    version<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>2.3.1<span class="pl-pds">"</span></span>,
+
+    <span class="pl-c">// constants for colors (rather use WGo.B or WGo.W)</span>
+    B<span class="pl-k">:</span> <span class="pl-c1">1</span>,
+    W<span class="pl-k">:</span> <span class="pl-k">-</span><span class="pl-c1">1</span>,
+
+    <span class="pl-c">// if true errors will be shown in dialog window, otherwise they will be ignored</span>
+    ERROR_REPORT<span class="pl-k">:</span> <span class="pl-c1">true</span>,
+    DIR<span class="pl-k">:</span> mydir,
+
+    <span class="pl-c">// Language of player, you can change this global variable any time. Object WGo.i18n.&lt;your lang&gt; must exist.</span>
+    lang<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">"</span>en<span class="pl-pds">"</span></span>,
+
+    <span class="pl-c">// Add terms for each language here </span>
+    i18n<span class="pl-k">:</span> {
+        en<span class="pl-k">:</span> {}
+    }
+}
+</pre></div>
+
       <footer class="site-footer">
         <span class="site-footer-owner"><a href="https://github.com/waltheri/wgo.js">Wgo.js</a> is maintained by <a href="https://github.com/waltheri">waltheri</a>.</span>
 
