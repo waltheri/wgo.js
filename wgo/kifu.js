@@ -103,66 +103,66 @@ var sgf_write_node = function(node, output) {
 	if(node.move) {
 		var move = "";
 		if(!node.pass) move = sgf_coordinates(node.move.x, node.move.y);
-		
+
 		if(node.move.c == WGo.B) output.sgf += "B["+move+"]";
 		else output.sgf += "W["+move+"]";
 	}
-	
+
 	// setup
 	if(node.setup) {
 		var AB = [];
 		var AW = [];
 		var AE = [];
-		
+
 		for(var i in node.setup) {
 			if(node.setup[i].c == WGo.B) AB.push(sgf_coordinates(node.setup[i].x, node.setup[i].y));
 			else if(node.setup[i].c == WGo.W) AW.push(sgf_coordinates(node.setup[i].x, node.setup[i].y));
 			else AE.push(sgf_coordinates(node.setup[i].x, node.setup[i].y));
 		}
-		
+
 		sgf_write_group("AB", AB, output);
 		sgf_write_group("AW", AW, output);
 		sgf_write_group("AE", AE, output);
 	}
-	
+
 	// markup
 	if(node.markup) {
 		var markup = {};
-		
+
 		for(var i in node.markup) {
 			markup[node.markup[i].type] = markup[node.markup[i].type] || [];
 			if(node.markup[i].type == "LB") markup["LB"].push(sgf_coordinates(node.markup[i].x, node.markup[i].y)+":"+sgf_escape(node.markup[i].text));
 			else markup[node.markup[i].type].push(sgf_coordinates(node.markup[i].x, node.markup[i].y));
 		}
-		
+
 		for(var key in markup) {
 			sgf_write_group(key, markup[key], output);
 		}
 	}
-	
+
 	// other
 	var props = node.getProperties();
-	
+
 	for(var key in props) {
 		if(typeof props[key] == "object") continue;
-		
+
 		if(key == "turn") output.sgf += "PL["+(props[key] == WGo.B ? "B" : "W")+"]";
 		else if(key == "comment") output.sgf += "C["+sgf_escape(props[key])+"]";
 		else output.sgf += key+"["+sgf_escape(props[key])+"]";
 	}
-	
+
 	if(node.children.length == 1) {
 		output.sgf += "\n;";
 		sgf_write_node(node.children[0], output);
 	}
 	else if(node.children.length > 1) {
 		for(var key in node.children) {
-			sgf_write_variantion(node.children[key], output);
+			sgf_write_variation(node.children[key], output);
 		}
 	}
 }
 
-var sgf_write_variantion = function(node, output) {
+var sgf_write_variation = function(node, output) {
 	output.sgf += "(\n;";
 	sgf_write_node(node, output);
 	output.sgf += "\n)";
