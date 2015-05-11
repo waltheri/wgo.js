@@ -114,7 +114,7 @@ WGo.Player.Editable.prototype.play = function(x,y) {
 			y: y, 
 			c: this.player.kifuReader.game.turn
 		}, 
-		edited: true
+		_edited: true
 	}));
 	this.player.next(this.player.kifuReader.node.children.length-1);
 }
