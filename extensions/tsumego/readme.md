@@ -2,6 +2,8 @@
 
 This extension allows you to insert a tsumego block into the website. However for now it is just a draft, so it could be buggy.
 
+![Tsumego block screenshot](/extensions/tsumego/screenshot.png?raw=true)
+
 ## Installation
 
 You need import all WGo javascript files (or minified versions) and files `tsumego.js` and `tsumego.css`.
