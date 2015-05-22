@@ -92,10 +92,10 @@ properties["TM"] =  function(kifu, node, value, ident) {
 	node.WL = value[0];
 }
 
-var reg_seq = /\(|\)|(;(\s*[A-Z]+\s*((\[\])|(\[(.|\s)*?([^\\]\])))+)*)/g;
-var reg_node = /[A-Z]+\s*((\[\])|(\[(.|\s)*?([^\\]\])))+/g;
+var reg_seq = /\(|\)|(;(\s*[A-Za-z]+\s*((\[\])|(\[(.|\s)*?(([^\\]|[^\\]\\\\)\])))+)*)/g;
+var reg_node = /[A-Z]+\s*((\[\])|(\[(.|\s)*?(([^\\]|[^\\]\\\\)\])))+/g;
 var reg_ident = /[A-Z]+/;
-var reg_props = /(\[\])|(\[(.|\s)*?([^\\]\]))/g;
+var reg_props = /(\[\])|(\[(.|\s)*?(([^\\]|[^\\]\\\\)\]))/g;
 
 // parse SGF string, return WGo.Kifu object
 WGo.SGF.parse = function(str) { 
