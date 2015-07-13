@@ -388,7 +388,7 @@ Board.drawHandlers = {
 					radgrad.addColorStop(1, '#aaa');
 				}
 				else {
-					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,1,xr-sr/5,yr-sr/5,4*sr/5);
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,0,xr-sr/5,yr-sr/5,4*sr/5);
 					radgrad.addColorStop(0, '#666');
 					radgrad.addColorStop(1, '#000');
 				}
@@ -413,12 +413,12 @@ Board.drawHandlers = {
 					radgrad;
 					
 				if(args.c == WGo.W) {
-					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,2,xr-sr/5,yr-sr/5,4*sr/5);
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,0,xr-sr/5,yr-sr/5,4*sr/5);
 					radgrad.addColorStop(0, '#fff');
 					radgrad.addColorStop(1, '#ddd');
 				}
 				else {
-					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,1,xr-sr/5,yr-sr/5,4*sr/5);
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,0,xr-sr/5,yr-sr/5,4*sr/5);
 					radgrad.addColorStop(0, '#111');
 					radgrad.addColorStop(1, '#000');				
 				}
@@ -460,7 +460,7 @@ Board.drawHandlers = {
 					radgrad.addColorStop(1, '#666');
 				}
 				else {
-					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,1,xr-sr/5,yr-sr/5,3*sr/5);
+					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,0,xr-sr/5,yr-sr/5,3*sr/5);
 					radgrad.addColorStop(0, '#555');
 					radgrad.addColorStop(1, '#000');
 				}
@@ -563,7 +563,7 @@ Board.drawHandlers = {
 					this.arc(xr-board.ls, yr-board.ls, Math.max(0, sr-0.5), 0, 2*Math.PI, true);
 					this.fill();
 				
-					radgrad = this.createRadialGradient(xr-0.4*sr, yr-0.4*sr, 1, xr-0.5*sr, yr-0.5*sr, 1.5*sr);
+					radgrad = this.createRadialGradient(xr-0.4*sr, yr-0.4*sr, 0, xr-0.5*sr, yr-0.5*sr, 1.5*sr);
 					radgrad.addColorStop(0, 'rgba(64,64,64,1)');
 					radgrad.addColorStop(1, 'rgba(0,0,0,0)');
 					
