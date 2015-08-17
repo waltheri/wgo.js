@@ -115,10 +115,6 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(p
 			this.notification.style.display = "none";
 			this.is_notification = false;
 		}
-		
-		if(this.is_notification || this.is_help) this.comment_text.style.display = "none";
-		else this.comment_text.style.display = "block";
-		
 	}.bind(this);
 	
 	player.help = function(text) {
@@ -131,9 +127,6 @@ var CommentBox = WGo.extendClass(WGo.BasicPlayer.component.Component, function(p
 			this.help.style.display = "none";
 			this.is_help = false;
 		}
-		
-		if(this.is_notification || this.is_help) this.comment_text.style.display = "none";
-		else this.comment_text.style.display = "block";
 	}.bind(this);
 });
 
