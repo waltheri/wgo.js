@@ -102,7 +102,7 @@ var sgf_write_node = function(node, output) {
 	// move
 	if(node.move) {
 		var move = "";
-		if(!node.pass) move = sgf_coordinates(node.move.x, node.move.y);
+		if(!node.move.pass) move = sgf_coordinates(node.move.x, node.move.y);
 		
 		if(node.move.c == WGo.B) output.sgf += "B["+move+"]";
 		else output.sgf += "W["+move+"]";
