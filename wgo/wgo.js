@@ -1337,25 +1337,31 @@ Board.prototype = {
 			return;
 		}
 		
-		// clear all objects on object's coordinates
-		clearField.call(this, obj.x, obj.y);
-		
-		// if object of this type is on the board, replace it
-		var layers = this.obj_arr[obj.x][obj.y];
-		for(var z = 0; z < layers.length; z++) {
-			if(layers[z].type == obj.type) {
-				layers[z] = obj;
-				drawField.call(this, obj.x, obj.y);
-				return;
-			}
-		}	
-		
-		// if object is a stone, add it at the beginning, otherwise at the end
-		if(!obj.type) layers.unshift(obj);
-		else layers.push(obj);
-		
-		// draw all objects
-		drawField.call(this, obj.x, obj.y);
+		try {
+			// clear all objects on object's coordinates
+			clearField.call(this, obj.x, obj.y);
+			
+			// if object of this type is on the board, replace it
+			var layers = this.obj_arr[obj.x][obj.y];
+			for(var z = 0; z < layers.length; z++) {
+				if(layers[z].type == obj.type) {
+					layers[z] = obj;
+					drawField.call(this, obj.x, obj.y);
+					return;
+				}
+			}	
+			
+			// if object is a stone, add it at the beginning, otherwise at the end
+			if(!obj.type) layers.unshift(obj);
+			else layers.push(obj);
+			
+			// draw all objects
+			drawField.call(this, obj.x, obj.y);
+		}
+		catch(err) {
+			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
+			console.log("WGo board failed to render. Error: "+err.message);
+		}
 	},
 	
 	removeObject: function(obj) {
@@ -1365,21 +1371,27 @@ Board.prototype = {
 			return;
 		}
 		
-		var i;
-		for(var j = 0; j < this.obj_arr[obj.x][obj.y].length; j++) {
-			if(this.obj_arr[obj.x][obj.y][j].type == obj.type) {
-				i = j;
-				break;
+		try {
+			var i;
+			for(var j = 0; j < this.obj_arr[obj.x][obj.y].length; j++) {
+				if(this.obj_arr[obj.x][obj.y][j].type == obj.type) {
+					i = j;
+					break;
+				}
 			}
+			if(i === undefined) return;
+			
+			// clear all objects on object's coordinates
+			clearField.call(this, obj.x, obj.y);
+			
+			this.obj_arr[obj.x][obj.y].splice(i,1);
+			
+			drawField.call(this, obj.x, obj.y);
 		}
-		if(i === undefined) return;
-		
-		// clear all objects on object's coordinates
-		clearField.call(this, obj.x, obj.y);
-		
-		this.obj_arr[obj.x][obj.y].splice(i,1);
-		
-		drawField.call(this, obj.x, obj.y);
+		catch(err) {
+			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
+			console.log("WGo board failed to render. Error: "+err.message);
+		}
 	},
 
 	removeObjectsAt: function(x, y) {
