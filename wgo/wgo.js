@@ -1241,27 +1241,33 @@ Board.prototype = {
 	 */
 	
 	redraw: function() {
-		// redraw layers
-		for(var i = 0; i < this.layers.length; i++) {
-			this.layers[i].clear(this);
-			this.layers[i].draw(this);
-		}
-		
-		// redraw field objects
-		for(var i = 0; i < this.size; i++) {
-			for(var j = 0; j < this.size; j++) {
-				drawField.call(this, i, j);
+		try {
+			// redraw layers
+			for(var i = 0; i < this.layers.length; i++) {
+				this.layers[i].clear(this);
+				this.layers[i].draw(this);
 			}
-		}
-		
-		// redraw custom objects
-		for(var i = 0; i < this.obj_list.length; i++) {
-			var obj = this.obj_list[i];
-			var handler = obj.handler;
 			
-			for(var layer in handler) {
-				handler[layer].draw.call(this[layer].getContext(obj.args), obj.args, this);
+			// redraw field objects
+			for(var i = 0; i < this.size; i++) {
+				for(var j = 0; j < this.size; j++) {
+					drawField.call(this, i, j);
+				}
 			}
+			
+			// redraw custom objects
+			for(var i = 0; i < this.obj_list.length; i++) {
+				var obj = this.obj_list[i];
+				var handler = obj.handler;
+				
+				for(var layer in handler) {
+					handler[layer].draw.call(this[layer].getContext(obj.args), obj.args, this);
+				}
+			}
+		}
+		catch(err) {
+			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
+			console.log("WGo board failed to render. Error: "+err.message);
 		}
 	},
 	
