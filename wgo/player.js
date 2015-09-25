@@ -115,7 +115,7 @@ var prepare_board = function(e) {
 // detecting scrolling of element - e.g. when we are scrolling text in comment box, we want to be aware.
 var detect_scrolling = function(node, bp) {
 	if(node == bp.element || node == bp.element) return false;
-	else if(node._wgo_scrollable || (node.scrollHeight > node.offsetHeight)) return true;
+	else if(node._wgo_scrollable || (node.scrollHeight > node.offsetHeight && window.getComputedStyle(node).overflow == "auto")) return true;
 	else return detect_scrolling(node.parentNode, bp);
 }
 
