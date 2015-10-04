@@ -4,7 +4,7 @@
     },
 	"plugins": ["plugins/markdown"],
 	"opts": {
-		"destination": "docs",
+		"destination": "gh-pages",
 		"readme": "readme.md"
 	},
 	"templates": {

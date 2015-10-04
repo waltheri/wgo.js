@@ -25,3 +25,7 @@ If you edit any source file you will probably want to rebuild main script and it
 ```
 npm run build
 ```
+
+### Documentation ###
+
+Full documentation can be found [here](http://waltheri.github.io/wgo.js/)

@@ -22,11 +22,30 @@ module.exports = function(grunt) {
 					banner: "/*! WGo.js library, MIT license, wgo.waltheri.net */",
 				}
 			}
+		},
+		jsdoc: {
+			dist: {
+				options: {
+					configure: "conf.json",
+					destination: "gh-pages"
+				}
+			}
+		},
+		githubPages: {
+			target: {
+				options: {
+					commitMessage: 'Documentation update'
+				},
+				src: 'gh-pages'
+			}
 		}
 	});
 
 	grunt.loadNpmTasks('grunt-browserify');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-github-pages');
+	grunt.loadNpmTasks('grunt-jsdoc');
 
 	grunt.registerTask('default', ['browserify', 'uglify']);
+	grunt.registerTask('docs', ['jsdoc', 'githubPages']);
 };
