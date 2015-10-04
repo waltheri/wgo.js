@@ -1,0 +1,19 @@
+{
+    "source": {
+        "include": "src"
+    },
+	"plugins": ["plugins/markdown"],
+	"opts": {
+		"destination": "docs",
+		"readme": "readme.md"
+	},
+	"templates": {
+		"default": {
+			"staticFiles": {
+				"include": ["docs-src"],
+				"exclude": ["docs-src/layout.tmpl"]
+			},
+			"layoutFile": "docs-src/layout.tmpl"
+		}
+	}
+}
