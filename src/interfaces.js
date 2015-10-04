@@ -38,7 +38,7 @@
 /**
  * Interface for graphical Go board. Any board class has to implement this interface to be used in the player.
  *
- * @interface Board
+ * @interface
  * @alias WGo.Board
  * @param {HTMLElement} [elem] - HTML Element to put board in
  * @param {Object} [config] - Configuration object for the board

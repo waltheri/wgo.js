@@ -31,6 +31,21 @@ module.exports = function(grunt) {
 				}
 			}
 		},
+		'string-replace': {
+			docs: {
+				files: {
+				  'gh-pages/index.html': 'gh-pages/index.html',
+				},
+				options: {
+					replacements: [
+						{
+							pattern: '<h1 class="page-title">Home</h1>',
+							replacement: ''
+						}
+					]
+				}
+			}
+		},
 		githubPages: {
 			target: {
 				options: {
@@ -45,7 +60,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-github-pages');
 	grunt.loadNpmTasks('grunt-jsdoc');
+	grunt.loadNpmTasks('grunt-string-replace');
 
 	grunt.registerTask('default', ['browserify', 'uglify']);
-	grunt.registerTask('docs', ['jsdoc', 'githubPages']);
+	grunt.registerTask('docs-prepare', ['jsdoc', 'string-replace']);
+	grunt.registerTask('docs', ['docs-prepare', 'githubPages']);
 };
