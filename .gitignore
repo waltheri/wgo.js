@@ -218,3 +218,5 @@ pip-log.txt
 # Google Closure Compiler
 ##############
 compiler/
+node_modules/
+gh-pages/
