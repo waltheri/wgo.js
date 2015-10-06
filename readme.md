@@ -1,6 +1,6 @@
 # Welcome in WGo.js 3.0.0-alpha #
 
-This branch is a preparation for WGo.js library of version 3. Currently it contains WGo.Board and WGo.Game modules from the master branch (v2) but ready to be rewritten from the scratch ;-)
+This branch is a preparation for WGo.js library of version 3. Currently it contains `WGo.Board` and `WGo.Game` modules from the master branch (v2) but ready to be rewritten from the scratch ;-)
 
 ![WGo](https://raw.githubusercontent.com/waltheri/wgo.js/dev/docs-src/wgo.png)
 

@@ -26,7 +26,7 @@ module.exports = function(grunt) {
 		jsdoc: {
 			dist: {
 				options: {
-					configure: "conf.json",
+					configure: "docs-src/conf.json",
 					destination: "gh-pages"
 				}
 			}

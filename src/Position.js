@@ -2,7 +2,9 @@
  * Contains implementation of go position class.
  * @module Position
  */
- 
+
+var WGo = require("./WGo");
+
 /**
  * Creates instance of position object.
  *
@@ -14,25 +16,45 @@
 
 var Position = function(size) {
 	/** 
-	 * @property {number} size Size of the board.
+	 * Size of the board.
+	 *
+	 * @type {number}
 	 * @constant 
 	 */
 	 
 	this.size = size || 19;
 	
-	/** @property {Array.<Array.<(WGo.B|WGo.W|WGo.E)>>} grid - Two dimensional array containing stones of the position. */
+	/** 
+	 * Two dimensional array containing stones of the position.
+	 *
+	 * @type {Array.<Array.<(WGo.B|WGo.W|WGo.E)>>}
+	 */
+	 
 	this.grid = [];
+	
 	for(var i = 0; i < this.size*this.size; i++) {
-		this.grid[i] = 0;
+		this.grid[i] = WGo.E;
 	}
 	
-	/** @property {{black: number, white: number}} capCount - Contains numbers of stones that both players captured. */
+	/** 
+	 * Contains numbers of stones that both players captured.
+	 *
+	 * @type {Object}
+	 * @property {number} black - Count of white stones captured by **black**.
+	 * @property {number} white - Count of black stones captured by **white**.
+	 */
+	 
 	this.capCount = {
 		black: 0,
 		white: 0
 	}
 	
-	/** @property {(WGo.B|WGo.W)} turn - Who plays next move. */
+	/** 
+	 * Who plays next move.
+	 *
+	 * @type {(WGo.B|WGo.W)}
+	 */
+	 
 	this.turn = WGo.B;
 }
 
