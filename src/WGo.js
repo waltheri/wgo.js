@@ -85,7 +85,14 @@ WGo.clone = function(obj) {
 	else return obj;
 }
 
-// filter html to avoid XSS
+/**
+ * Filters html tags from the string to avoid XSS. Characters `<` and `>` are transformed to their entities. 
+ * You can use this function when you display foreign texts.
+ *
+ * @param {string} text - text to filter
+ * @return {string} Filtered text 
+ */
+ 
 WGo.filterHTML = function(text) {
 	if(!text || typeof text != "string") return text;
 	return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
