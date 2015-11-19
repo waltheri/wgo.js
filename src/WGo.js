@@ -1,9 +1,5 @@
 ﻿// WGo global object with helpers
 
-var scripts = document.getElementsByTagName('script');
-var path = scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
-var mydir = path.split('/').slice(0, -1).join('/')+'/';  
-
 /**
  * Main namespace - it initializes WGo in first run and then execute main function. 
  * You must call WGo.init() if you want to use library, without calling WGo.
@@ -27,7 +23,6 @@ var WGo = {
 
 	// if true errors will be shown in dialog window, otherwise they will be ignored
 	ERROR_REPORT: true,
-	DIR: mydir,
 	
 	// Language of player, you can change this global variable any time. Object WGo.i18n.<your lang> must exist.
 	lang: "en",
@@ -38,11 +33,19 @@ var WGo = {
 	}
 }
 
-// browser detection - can be handy
-WGo.opera = navigator.userAgent.search(/(opera)(?:.*version)?[ \/]([\w.]+)/i) != -1;
-WGo.webkit = navigator.userAgent.search(/(webkit)[ \/]([\w.]+)/i) != -1;
-WGo.msie = navigator.userAgent.search(/(msie) ([\w.]+)/i) != -1;
-WGo.mozilla = navigator.userAgent.search(/(mozilla)(?:.*? rv:([\w.]+))?/i) != -1 && !WGo.webkit && !WGo.msie;
+if(global["document"]) {
+	var scripts = document.getElementsByTagName('script');
+	var path = scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
+	WGo.DIR = path.split('/').slice(0, -1).join('/')+'/';  
+}
+
+if(global["navigator"]) {
+	// browser detection - can be handy
+	WGo.opera = navigator.userAgent.search(/(opera)(?:.*version)?[ \/]([\w.]+)/i) != -1;
+	WGo.webkit = navigator.userAgent.search(/(webkit)[ \/]([\w.]+)/i) != -1;
+	WGo.msie = navigator.userAgent.search(/(msie) ([\w.]+)/i) != -1;
+	WGo.mozilla = navigator.userAgent.search(/(mozilla)(?:.*? rv:([\w.]+))?/i) != -1 && !WGo.webkit && !WGo.msie;
+}
 
 // translating function
 WGo.t = function(str) {
