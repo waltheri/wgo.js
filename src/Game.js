@@ -29,10 +29,8 @@ var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
 	this.allow_rewrite = allowRewrite || false;
 	this.allow_suicide = allowSuicide || false;
 	
-	this.stack = [];
-	this.stack[0] = new Position(this.size);
-	this.stack[0].capCount = {black:0, white:0};
-	this.turn = WGo.B;
+	this.stack = [new Position(this.size)];
+	//this.turn = WGo.B;
 	
 	Object.defineProperty(this, "position", {
 		get : function(){ return this.stack[this.stack.length-1]; },
@@ -41,51 +39,53 @@ var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
 }
 
 // function for stone capturing
-var do_capture = function(position, captured, x, y, c) {
+var capture = function(position, capturedStones, x, y, c) {
 	if(x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x,y) == c) {
 		position.set(x,y,0);
-		captured.push({x:x, y:y});
+		capturedStones.push({x:x, y:y});
 
-		do_capture(position, captured, x, y-1, c);
-		do_capture(position, captured, x, y+1, c);
-		do_capture(position, captured, x-1, y, c);
-		do_capture(position, captured, x+1, y, c);
+		capture(position, capturedStones, x, y-1, c);
+		capture(position, capturedStones, x, y+1, c);
+		capture(position, capturedStones, x-1, y, c);
+		capture(position, capturedStones, x+1, y, c);
 	}
 }
 
 // looking at liberties
-var check_liberties = function(position, testing, x, y, c) {
+var hasLiberties = function(position, alreadyTested, x, y, c) {
 	// out of the board there aren't liberties
-	if(x < 0 || x >= position.size || y < 0 || y >= position.size) return true;
+	if(x < 0 || x >= position.size || y < 0 || y >= position.size) return false;
+	
 	// however empty field means liberty
-	if(position.get(x,y) == 0) return false;
-	// already tested field or stone of enemy isn't giving us a liberty.
-	if(testing.get(x,y) == true || position.get(x,y) == -c) return true;
+	if(position.get(x,y) == WGo.E) return true;
+	
+	// already tested field or stone of enemy isn't a liberty.
+	if(alreadyTested.get(x,y) == true || position.get(x,y) == -c) return false;
 	
 	// set this field as tested
-	testing.set(x,y,true);
+	alreadyTested.set(x,y,true);
 	
-	// in this case we are checking our stone, if we get 4 trues, it has no liberty
-	return 	check_liberties(position, testing, x, y-1, c) && 
-			check_liberties(position, testing, x, y+1, c) &&
-			check_liberties(position, testing, x-1, y, c) &&
-			check_liberties(position, testing, x+1, y, c);
+	// in this case we are checking our stone, if we get 4 false, it has no liberty
+	return 	hasLiberties(position, alreadyTested, x, y-1, c) ||
+			hasLiberties(position, alreadyTested, x, y+1, c) ||
+			hasLiberties(position, alreadyTested, x-1, y, c) ||
+			hasLiberties(position, alreadyTested, x+1, y, c);
 }
 
 // analysing function - modifies original position, if there are some capturing, and returns array of captured stones
-var check_capturing = function(position, x, y, c) {
-	var captured = [];
+var captureIfPossible = function(position, x, y, c) {
+	var capturedStones = [];
 	// is there a stone possible to capture?
 	if(x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x,y) == c) {
 		// create testing map
-		var testing = new Position(position.size);
+		var alreadyTested = new Position(position.size);
 		// if it has zero liberties capture it
-		if(check_liberties(position, testing, x, y, c)) {
+		if(!hasLiberties(position, alreadyTested, x, y, c)) {
 			// capture stones from game
-			do_capture(position, captured, x, y, c);
+			capture(position, capturedStones, x, y, c);
 		}
 	}
-	return captured;
+	return capturedStones;
 }
 
 // analysing history
@@ -100,7 +100,7 @@ var checkHistory = function(position, x, y) {
 		if(this.stack[i].get(x,y) == position.get(x,y)) {
 			flag = true;
 			for(var j = 0; j < this.size*this.size; j++) {
-				if(this.stack[i].schema[j] != position.schema[j]) {
+				if(this.stack[i].grid[j] != position.grid[j]) {
 					flag = false; 
 					break;
 				}
@@ -142,56 +142,51 @@ Game.prototype = {
 	 * 4 - repeated position
 	 */
 	
-	play: function(x,y,c,noplay) {
+	play: function(x, y, c, noplay) {
 		//check coordinates validity
-		if(!this.isOnBoard(x,y)) return 1;
-		if(!this.allow_rewrite && this.position.get(x,y) != 0) return 2;
+		if(!this.isOnBoard(x,y)) return Game.MOVE_OUT_OF_BOARD;
+		if(!this.allow_rewrite && this.position.get(x,y) != 0) return Game.FIELD_OCCUPIED;
 		
 		// clone position
-		if(!c) c = this.turn; 
+		var c = c || this.position.turn; 
 		
-		var new_pos = this.position.clone();	
-		new_pos.set(x,y,c);
+		var newPosition = this.position.clone();	
+		newPosition.set(x,y,c);
 		
 		// check capturing
-		var cap_color = c;
-		var captured = check_capturing(new_pos, x-1, y, -c).concat(check_capturing(new_pos, x+1, y, -c), check_capturing(new_pos, x, y-1, -c), check_capturing(new_pos, x, y+1, -c));
+		var capturesColor = c;
+		var capturedStones = captureIfPossible(newPosition, x-1, y, -c).concat(captureIfPossible(newPosition, x+1, y, -c), captureIfPossible(newPosition, x, y-1, -c), captureIfPossible(newPosition, x, y+1, -c));
 		
 		// check suicide
-		if(!captured.length) {
+		if(!capturedStones.length) {
 			var testing = new Position(this.size);
-			if(check_liberties(new_pos, testing, x, y, c)) {
+			if(!hasLiberties(newPosition, testing, x, y, c)) {
 				if(this.allow_suicide) {
-					cap_color = -c;
-					do_capture(new_pos, captured, x, y, c);
+					capturesColor = -c;
+					capture(newPosition, capturedStones, x, y, c);
 				}
-				else return 3;
+				else return Game.MOVE_SUICIDE;
 			}
 		}
 		
 		// check history
-		if(this.repeating && !checkHistory.call(this, new_pos, x, y)) {
-			return 4;
+		if(this.repeating && !checkHistory.call(this, newPosition, x, y)) {
+			return Game.POSITION_REPEATED;
 		}
 		
 		if(noplay) return false;
 		
+		// reverse turn
+		newPosition.turn = -c;
+		
 		// update position info
-		new_pos.color = c;
-		new_pos.capCount = {
-			black: this.position.capCount.black, 
-			white: this.position.capCount.white
-		};
-		if(cap_color == WGo.B) new_pos.capCount.black += captured.length;
-		else new_pos.capCount.white += captured.length;
+		if(capturesColor == WGo.B) newPosition.capCount.black += capturedStones.length;
+		else newPosition.capCount.white += capturedStones.length;
 		
 		// save position
-		this.pushPosition(new_pos);
+		this.pushPosition(newPosition);
 		
-		// reverse turn
-		this.turn = -c;
-		
-		return captured;
+		return capturedStones;
 		
 	},
 	
@@ -202,15 +197,10 @@ Game.prototype = {
 	 */
 	
 	pass: function(c) {
+		var c = c || this.position.turn; 
+		
 		this.pushPosition();
-		if(c) {
-			this.position.color = c;
-			this.turn = -c; 
-		}
-		else {
-			this.position.color = this.turn;
-			this.turn = -this.turn;
-		}
+		this.position.turn = -c;
 	},
 	
 	/**
@@ -222,8 +212,8 @@ Game.prototype = {
 	 * @return {boolean} true if move can be played.
 	 */
 	
-	isValid: function(x,y,c) {
-		return typeof this.play(x,y,c,true) != "number";
+	isValid: function(x, y, c) {
+		return typeof this.play(x, y, c, true) != "number";
 	},
 	
 	/**
@@ -234,7 +224,7 @@ Game.prototype = {
 	 * @return {boolean} true if move is on board.
 	 */
 	
-	isOnBoard: function(x,y) {
+	isOnBoard: function(x, y) {
 		return x >= 0 && y >= 0 && x < this.size && y < this.size;
 	},
 	
@@ -243,13 +233,13 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.B|WGo.W)} c color
+	 * @param {(WGo.B|WGo.W|WGo.E)} c color
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
-	addStone: function(x,y,c) {
-		if(this.isOnBoard(x,y) && this.position.get(x,y) == 0) {
-			this.position.set(x,y,c || 0);
+	addStone: function(x, y, c) {
+		if(this.isOnBoard(x, y) && this.position.get(x, y) == WGo.E) {
+			this.position.set(x, y, c || WGo.E);
 			return true;
 		}
 		return false;
@@ -263,9 +253,9 @@ Game.prototype = {
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
-	removeStone: function(x,y) {
-		if(this.isOnBoard(x,y) && this.position.get(x,y) != 0) {
-			this.position.set(x,y,0);
+	removeStone: function(x, y) {
+		if(this.isOnBoard(x, y) && this.position.get(x, y) != WGo.E) {
+			this.position.set(x, y, WGo.E);
 			return true;
 		}
 		return false;
@@ -276,13 +266,13 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.B|WGo.W)} c color
+	 * @param {(WGo.B|WGo.W)} [c] color
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
-	setStone: function(x,y,c) {
+	setStone: function(x, y, c) {
 		if(this.isOnBoard(x,y)) {
-			this.position.set(x,y,c || 0);
+			this.position.set(x, y, c || WGo.E);
 			return true;
 		}
 		return false;
@@ -293,14 +283,14 @@ Game.prototype = {
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @return {(WGo.B|WGo.W|null)} color
+	 * @return {(WGo.B|WGo.W|WGo.E|null)} color
 	 */
 	
-	getStone: function(x,y) {
-		if(this.isOnBoard(x,y)) {
-			return this.position.get(x,y);
+	getStone: function(x, y) {
+		if(this.isOnBoard(x, y)) {
+			return this.position.get(x, y);
 		}
-		return 0;
+		return null;
 	},
 	
 	/**
@@ -311,16 +301,8 @@ Game.prototype = {
 	 */
 	
 	pushPosition: function(pos) {
-		if(!pos) {
-			var pos = this.position.clone();
-			pos.capCount = {
-				black: this.position.capCount.black,
-				white: this.position.capCount.white
-			};
-			pos.color = this.position.color;
-		}
+		var pos = pos || this.position.clone();
 		this.stack.push(pos);
-		if(pos.color) this.turn = -pos.color;
 		return this;
 	},
 	
@@ -329,14 +311,8 @@ Game.prototype = {
 	 */
 	
 	popPosition: function() {
-		var old = null;
-		if(this.stack.length > 0) {
-			old = this.stack.pop();
-			
-			if(this.stack.length == 0) this.turn = WGo.B;
-			else if(this.position.color) this.turn = -this.position.color;
-			else this.turn = -this.turn;
-		}
+		var old;
+		if(this.stack.length > 0) old = this.stack.pop();
 		return old;
 	},
 	
@@ -346,9 +322,7 @@ Game.prototype = {
 	
 	firstPosition: function() {
 		this.stack = [];
-		this.stack[0] = new Position(this.size);
-		this.stack[0].capCount = {black:0, white:0};
-		this.turn = WGo.B;
+		this.pushPosition(new Position(this.size));
 		return this;
 	},
 	
@@ -374,31 +348,34 @@ Game.prototype = {
 		var c, p,
 		    white = 0, 
 			black = 0,
-		    captured = [],
-		    new_pos = this.position.clone();
+		    capturedStones = [],
+		    newPosition = this.position.clone();
 		
 		for(var x = 0; x < this.size; x++) {
 			for(var y = 0; y < this.size; y++) {
 				c = this.position.get(x,y);
 				if(c) {
-					p = captured.length;
-					captured = captured.concat(check_capturing(new_pos, x-1, y, -c),
-											   check_capturing(new_pos, x+1, y, -c),
-											   check_capturing(new_pos, x, y-1, -c),
-											   check_capturing(new_pos, x, y+1, -c));
+					p = capturedStones.length;
+					capturedStones = capturedStones.concat(captureIfPossible(newPosition, x-1, y, -c), captureIfPossible(newPosition, x+1, y, -c), captureIfPossible(newPosition, x, y-1, -c), captureIfPossible(newPosition, x, y+1, -c));
 								
-					if(c == WGo.B) black += captured-p;
-					else white += captured-p;
+					if(c == WGo.B) black += capturedStones.length-p;
+					else white += capturedStones.length-p;
 				}
 			}
 		}
 		this.position.capCount.black += black;
 		this.position.capCount.white += white;
-		this.position.schema = new_pos.schema;
+		this.position.grid = newPosition.grid;
 		
-		return captured;
+		return capturedStones;
 	},
 };
+
+// Error codes returned by method Game#play()
+Game.MOVE_OUT_OF_BOARD = 1;
+Game.FIELD_OCCUPIED = 2;
+Game.MOVE_SUICIDE = 3;
+Game.POSITION_REPEATED = 4;
 
 // save Game
 module.exports = Game;

@@ -23,6 +23,7 @@
   },
   "homepage": "http://waltheri.github.io/wgo.js",
   "devDependencies": {
+    "chai": "^3.4.1",
     "grunt": "^0.4.5",
     "grunt-browserify": "^4.0.1",
     "grunt-contrib-uglify": "^0.9.2",

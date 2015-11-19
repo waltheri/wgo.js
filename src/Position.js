@@ -88,11 +88,11 @@ Position.prototype = {
 	},
 
 	/**
-	 * Clears the whole position (every value is set to 0).
+	 * Clears the whole position (every value is set to WGo.E).
 	 */
 
 	clear: function() {
-		for(var i = 0; i < this.size*this.size; i++) this.grid[i] = 0;
+		for(var i = 0; i < this.size*this.size; i++) this.grid[i] = WGo.E;
 		return this;
 	},
 
@@ -107,7 +107,8 @@ Position.prototype = {
 		var clone = new Position(this.size);
 		clone.grid = this.grid.slice(0);
 		clone.capCount.black = this.capCount.black;
-		clone.capCount.black = this.capCount.black;
+		clone.capCount.white = this.capCount.white;
+		clone.turn = this.turn;
 		return clone;
 	},
 	
