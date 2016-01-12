@@ -33,7 +33,7 @@ WGo.i18n[WGo.lang] = {
 	"res-show-tip": "Clica per mostrar el resultat.",
 	"BP:closemsg": "Clica a qualsevol lloc per tancar aquesta finestra.",
 	"rank": "Categoria",
-	"caps": "Caps",
+	"caps": "Capturades",
 	"time": "Temps",
 	"about": "About",
 	"first": "Primera",
