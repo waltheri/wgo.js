@@ -301,6 +301,8 @@ var shadow_handler_photographic = {
 		var xr = board.getX(args.x),
 			yr = board.getY(args.y),
 			sr = board.stoneRadius;
+		var lsX = 1.0;
+		var lsY = -5.0;
 		this.clearRect(xr-1.1*sr-lsX,yr-1.1*sr-lsY, 2.2*sr, 2.2*sr);
 	}
 }
