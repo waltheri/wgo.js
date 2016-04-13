@@ -286,7 +286,7 @@ var shadow_handler_photographic = {
 		var lsX = 1.0;
 		var lsY = -5.0;
 		var blur = 5.0;
-		var radius = Math.max(0, sr*0.85-0.5);
+		var radius = Math.max(0, (sr-0.5)*0.85);
 		var gradient = this.createRadialGradient(xr-lsX, yr-lsY, radius-1-blur, xr-lsX, yr-lsY, radius+blur);
 
 		gradient.addColorStop(0, theme_variable("shadowColor", board));
@@ -488,6 +488,15 @@ Board.drawHandlers = {
 					yr = board.getY(args.y),
 					sr = board.stoneRadius;
 
+				var whiteCount = board.whiteStoneGraphic.length;
+				var blackCount = board.blackStoneGraphic.length;
+
+				if(typeof this.photoSeed === 'undefined') {
+					this.photoSeed = Math.ceil(Math.random()*1e10);
+				}
+
+				var randNum = ((args.x + args.y * board.size) * this.photoSeed) % 99991;
+
 				var redraw = function() {
 					board.redraw();
 				};
@@ -509,7 +518,7 @@ Board.drawHandlers = {
 						// This prevents 'missing stones' and similar graphical errors
 						// especially on slower internet connections.
 						this.whiteStone.onload = redraw;
-						this.whiteStone.src = board.whiteStoneGraphic;
+						this.whiteStone.src = board.whiteStoneGraphic[randNum%whiteCount];
 					}
 
 					if(isOkay(this.whiteStone)) {
@@ -524,7 +533,7 @@ Board.drawHandlers = {
 					if(this.blackStone == undefined) {
 						this.blackStone = new Image();
 						this.blackStone.onload = redraw;
-						this.blackStone.src = board.blackStoneGraphic;
+						this.blackStone.src = board.blackStoneGraphic[randNum%blackCount];
 					}
 
 					if(isOkay(this.blackStone)) {
@@ -1603,9 +1612,33 @@ Board.default = {
 		bottom: 0,
 		left: 0,
 	},
+	//background: WGo.DIR+"wood_512.jpg", // Mobile friendly, low resolution
 	background: WGo.DIR+"wood_1024.jpg",
-	whiteStoneGraphic: WGo.DIR+"white_128.png",
-	blackStoneGraphic: WGo.DIR+"black_128.png",
+
+	//whiteStoneGraphic: [ WGo.DIR+"white_128.png" ], // Single image only, hires
+	//blackStoneGraphic: [ WGo.DIR+"black_128.png" ], // Single image only, hires
+
+	//whiteStoneGraphic: [ WGo.DIR+"white_64.png" ], // Single image only, lowres
+	//blackStoneGraphic: [ WGo.DIR+"black_64.png" ], // Single image only, lowres
+
+	whiteStoneGraphic: [  WGo.DIR + "stones/white00_128.png",
+												WGo.DIR + "stones/white01_128.png",
+												WGo.DIR + "stones/white02_128.png",
+												WGo.DIR + "stones/white03_128.png",
+												WGo.DIR + "stones/white04_128.png",
+												WGo.DIR + "stones/white05_128.png",
+												WGo.DIR + "stones/white06_128.png",
+												WGo.DIR + "stones/white07_128.png",
+												WGo.DIR + "stones/white08_128.png",
+												WGo.DIR + "stones/white09_128.png",
+												WGo.DIR + "stones/white10_128.png"
+										 ],
+	blackStoneGraphic: [ 	WGo.DIR + "stones/black00_128.png",
+												WGo.DIR + "stones/black01_128.png",
+												WGo.DIR + "stones/black02_128.png",
+												WGo.DIR + "stones/black03_128.png"
+										 ],
+
 	theme: {}
 }
 
