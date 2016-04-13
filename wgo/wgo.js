@@ -456,7 +456,18 @@ Board.drawHandlers = {
 					yr = board.getY(args.y),
 					sr = board.stoneRadius;
 
-				var redraw = function(){ board.redraw(); };
+				var redraw = function() {
+					board.redraw();
+				};
+
+				// see https://stereochro.me/ideas/detecting-broken-images-js
+				var isOkay = function(img) {
+	 				if (!img.complete) { return false; }
+					if (typeof img.naturalWidth != "undefined" && img.naturalWidth == 0) {
+						return false;
+					}
+					return true;
+				};
 
 				if(args.c == WGo.W) {
 					if(this.whiteStone == undefined) {
@@ -468,7 +479,14 @@ Board.drawHandlers = {
 						this.whiteStone.onload = redraw;
 						this.whiteStone.src = board.whiteStoneGraphic;
 					}
-					this.drawImage(this.whiteStone, xr - sr, yr - sr, 2*sr, 2*sr);
+
+					if(isOkay(this.whiteStone)) {
+						this.drawImage(this.whiteStone, xr - sr, yr - sr, 2*sr, 2*sr);
+					}
+					else {
+						// Fall back to SHELL handler if there was a problem loading the image
+						Board.drawHandlers.SHELL.stone.draw.call(this, args, board);
+					}
 				}
 				else {
 					if(this.blackStone == undefined) {
@@ -476,7 +494,13 @@ Board.drawHandlers = {
 						this.blackStone.onload = redraw;
 						this.blackStone.src = board.blackStoneGraphic;
 					}
-					this.drawImage(this.blackStone, xr - sr, yr - sr, 2*sr, 2*sr);
+
+					if(isOkay(this.blackStone)) {
+						this.drawImage(this.blackStone, xr - sr, yr - sr, 2*sr, 2*sr);
+					}
+					else {
+						Board.drawHandlers.SHELL.stone.draw.call(this, args, board);
+					}
 				}
 			}
 		},
