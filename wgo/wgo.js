@@ -1143,6 +1143,11 @@ Board.prototype = {
 			else {
 				this.element.style.backgroundImage = "url('"+this.background+"')";
 				/*this.element.style.backgroundRepeat = "repeat";*/
+				if(this.stoneHandler == Board.drawHandlers.REALISTIC){
+					// The photographed wood images do not repeat and are the size of an actual
+					// Go-Board. Therefore scale to fit.
+					this.element.style.backgroundSize = "100%";
+				}
 			}
 		}
 
@@ -1531,7 +1536,7 @@ Board.default = {
     21:[{x: 3, y: 3}, {x:10, y: 3}, {x:17, y: 3}, {x: 3, y:10}, {x:10, y:10},
         {x:17, y:10}, {x: 3, y:17}, {x:10, y:17}, {x:17, y:17}],
   },
-	stoneHandler: Board.drawHandlers.SHELL,
+	stoneHandler: Board.drawHandlers.REALISTIC,
 	starSize: 1, // deprecated
 	shadowSize: 1, // deprecated
 	stoneSize: 1, // deprecated
@@ -1541,7 +1546,9 @@ Board.default = {
 		bottom: 0,
 		left: 0,
 	},
-	background: WGo.DIR+"wood1.jpg",
+	background: WGo.DIR+"wood_1024.jpg",
+	whiteStoneGraphic: WGo.DIR+"white_128.png",
+	blackStoneGraphic: WGo.DIR+"black_128.png",
 	theme: {}
 }
 
