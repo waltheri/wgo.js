@@ -275,6 +275,36 @@ var shadow_handler = {
 	}
 }
 
+var shadow_handler_photographic = {
+	draw: function(args, board) {
+		var xr = board.getX(args.x),
+			yr = board.getY(args.y),
+			sr = board.stoneRadius;
+
+		this.beginPath();
+
+		var lsX = 1.0;
+		var lsY = -5.0;
+		var blur = 5.0;
+		var radius = Math.max(0, sr*0.85-0.5);
+		var gradient = this.createRadialGradient(xr-lsX, yr-lsY, radius-1-blur, xr-lsX, yr-lsY, radius+blur);
+
+		gradient.addColorStop(0, theme_variable("shadowColor", board));
+		gradient.addColorStop(1, theme_variable("shadowTransparentColor", board));
+
+		this.fillStyle = gradient;
+
+		this.arc(xr-lsX, yr-lsY, radius+blur, 0, 2*Math.PI, true);
+		this.fill();
+	},
+	clear: function(args, board) {
+		var xr = board.getX(args.x),
+			yr = board.getY(args.y),
+			sr = board.stoneRadius;
+		this.clearRect(xr-1.1*sr-lsX,yr-1.1*sr-lsY, 2.2*sr, 2.2*sr);
+	}
+}
+
 var get_markup_color = function(board, x, y) {
 	if(board.obj_arr[x][y][0].c == WGo.B) return theme_variable("markupBlackColor", board);
 	else if(board.obj_arr[x][y][0].c == WGo.W) return theme_variable("markupWhiteColor", board);
@@ -504,6 +534,7 @@ Board.drawHandlers = {
 				}
 			}
 		},
+		shadow: shadow_handler_photographic,
 	},
 
 	GLOW: {
