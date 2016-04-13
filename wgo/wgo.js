@@ -456,28 +456,28 @@ Board.drawHandlers = {
 					yr = board.getY(args.y),
 					sr = board.stoneRadius;
 
-				var redraw = function(){board.redraw()};
+				var redraw = function(){ board.redraw(); };
 
-        if(args.c == WGo.W) {
+				if(args.c == WGo.W) {
 					if(this.whiteStone == undefined) {
-            // The image has not been loaded yet
+						// The image has not been loaded yet
 						this.whiteStone = new Image();
-            // Redraw the whole board after the image has been loaded
-            // This prevents 'missing stones' and similar graphical errors
-            // especially on slower internet connections.
+						// Redraw the whole board after the image has been loaded
+						// This prevents 'missing stones' and similar graphical errors
+						// especially on slower internet connections.
 						this.whiteStone.onload = redraw;
 						this.whiteStone.src = board.whiteStoneGraphic;
 					}
-          this.drawImage(this.whiteStone, xr - sr, yr - sr, 2*sr, 2*sr);
-        }
-        else {
+					this.drawImage(this.whiteStone, xr - sr, yr - sr, 2*sr, 2*sr);
+				}
+				else {
 					if(this.blackStone == undefined) {
 						this.blackStone = new Image();
 						this.blackStone.onload = redraw;
 						this.blackStone.src = board.blackStoneGraphic;
 					}
-          this.drawImage(this.blackStone, xr - sr, yr - sr, 2*sr, 2*sr);
-        }
+					this.drawImage(this.blackStone, xr - sr, yr - sr, 2*sr, 2*sr);
+				}
 			}
 		},
 	},
