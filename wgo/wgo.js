@@ -503,6 +503,7 @@ Board.drawHandlers = {
 
 				// see https://stereochro.me/ideas/detecting-broken-images-js
 				var isOkay = function(img) {
+					if (typeof img === 'string') { return false; }
 	 				if (!img.complete) { return false; }
 					if (typeof img.naturalWidth != "undefined" && img.naturalWidth == 0) {
 						return false;
@@ -511,33 +512,39 @@ Board.drawHandlers = {
 				};
 
 				if(args.c == WGo.W) {
-					if(this.whiteStone == undefined) {
+					var idx = randNum % whiteCount;
+					if(typeof board.whiteStoneGraphic[idx] === 'string')
+					{
 						// The image has not been loaded yet
-						this.whiteStone = new Image();
+						var stoneGraphic = new Image();
 						// Redraw the whole board after the image has been loaded
 						// This prevents 'missing stones' and similar graphical errors
 						// especially on slower internet connections.
-						this.whiteStone.onload = redraw;
-						this.whiteStone.src = board.whiteStoneGraphic[randNum%whiteCount];
+					  stoneGraphic.onload = redraw;
+						stoneGraphic.src = board.whiteStoneGraphic[idx];
+						board.whiteStoneGraphic[idx] = stoneGraphic;
 					}
 
-					if(isOkay(this.whiteStone)) {
-						this.drawImage(this.whiteStone, xr - sr, yr - sr, 2*sr, 2*sr);
+					if(isOkay(board.whiteStoneGraphic[idx])) {
+						this.drawImage(board.whiteStoneGraphic[idx], xr - sr, yr - sr, 2*sr, 2*sr);
 					}
 					else {
 						// Fall back to SHELL handler if there was a problem loading the image
 						Board.drawHandlers.SHELL.stone.draw.call(this, args, board);
 					}
 				}
-				else {
-					if(this.blackStone == undefined) {
-						this.blackStone = new Image();
-						this.blackStone.onload = redraw;
-						this.blackStone.src = board.blackStoneGraphic[randNum%blackCount];
+				else { // args.c == WGo.B
+					var idx = randNum % blackCount;
+					if(typeof board.blackStoneGraphic[idx] === 'string')
+					{
+						var stoneGraphic = new Image();
+					  stoneGraphic.onload = redraw;
+						stoneGraphic.src = board.blackStoneGraphic[idx];
+						board.blackStoneGraphic[idx] = stoneGraphic;
 					}
 
-					if(isOkay(this.blackStone)) {
-						this.drawImage(this.blackStone, xr - sr, yr - sr, 2*sr, 2*sr);
+					if(isOkay(board.blackStoneGraphic[idx])) {
+						this.drawImage(board.blackStoneGraphic[idx], xr - sr, yr - sr, 2*sr, 2*sr);
 					}
 					else {
 						Board.drawHandlers.SHELL.stone.draw.call(this, args, board);
