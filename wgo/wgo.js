@@ -275,17 +275,18 @@ var shadow_handler = {
 	}
 }
 
-var shadow_handler_photographic = {
+// Shadow handler for the 'REALISITC' rendering mode
+var shadow_handler_realistic = {
 	draw: function(args, board) {
 		var xr = board.getX(args.x),
 			yr = board.getY(args.y),
-			sr = board.stoneRadius;
+			sr = board.stoneRadius,
+			lsX = 1.0,
+			lsY = -5.0,
+			blur = 5.0;
 
 		this.beginPath();
 
-		var lsX = 1.0;
-		var lsY = -5.0;
-		var blur = 5.0;
 		var radius = Math.max(0, (sr-0.5)*0.85);
 		var gradient = this.createRadialGradient(xr-lsX, yr-lsY, radius-1-blur, xr-lsX, yr-lsY, radius+blur);
 
@@ -300,9 +301,11 @@ var shadow_handler_photographic = {
 	clear: function(args, board) {
 		var xr = board.getX(args.x),
 			yr = board.getY(args.y),
-			sr = board.stoneRadius;
-		var lsX = 1.0;
-		var lsY = -5.0;
+			sr = board.stoneRadius,
+			lsX = 1.0,
+			lsY = -5.0,
+			blur = 5.0;
+
 		this.clearRect(xr-1.1*sr-lsX,yr-1.1*sr-lsY, 2.2*sr, 2.2*sr);
 	}
 }
@@ -480,7 +483,7 @@ Board.drawHandlers = {
 		shadow: shadow_handler,
 	},
 
-  // handler for image based stones
+	// handler for image based stones
 	REALISTIC: {
 		stone: {
 			draw: function(args, board) {
@@ -491,16 +494,15 @@ Board.drawHandlers = {
 				var whiteCount = board.whiteStoneGraphic.length;
 				var blackCount = board.blackStoneGraphic.length;
 
-				if(typeof this.photoSeed === 'undefined') {
-					this.photoSeed = Math.ceil(Math.random()*1e10);
+				if(typeof this.randIndex === 'undefined') {
+					this.randIndex = Math.ceil(Math.random()*1e5);
 				}
-
-				var randNum = ((args.x + args.y * board.size) * this.photoSeed) % 99991;
 
 				var redraw = function() {
 					board.redraw();
 				};
 
+				// Check if image has been loaded properly
 				// see https://stereochro.me/ideas/detecting-broken-images-js
 				var isOkay = function(img) {
 					if (typeof img === 'string') { return false; }
@@ -512,12 +514,12 @@ Board.drawHandlers = {
 				};
 
 				if(args.c == WGo.W) {
-					var idx = randNum % whiteCount;
+					var idx = this.randIndex % whiteCount;
 					if(typeof board.whiteStoneGraphic[idx] === 'string')
 					{
 						// The image has not been loaded yet
 						var stoneGraphic = new Image();
-						// Redraw the whole board after the image has been loaded
+						// Redraw the whole board after the image has been loaded.
 						// This prevents 'missing stones' and similar graphical errors
 						// especially on slower internet connections.
 					  stoneGraphic.onload = redraw;
@@ -534,7 +536,7 @@ Board.drawHandlers = {
 					}
 				}
 				else { // args.c == WGo.B
-					var idx = randNum % blackCount;
+					var idx = this.randIndex % blackCount;
 					if(typeof board.blackStoneGraphic[idx] === 'string')
 					{
 						var stoneGraphic = new Image();
@@ -552,7 +554,7 @@ Board.drawHandlers = {
 				}
 			}
 		},
-		shadow: shadow_handler_photographic,
+		shadow: shadow_handler_realistic,
 	},
 
 	GLOW: {
@@ -1609,7 +1611,8 @@ Board.default = {
     21:[{x: 3, y: 3}, {x:10, y: 3}, {x:17, y: 3}, {x: 3, y:10}, {x:10, y:10},
         {x:17, y:10}, {x: 3, y:17}, {x:10, y:17}, {x:17, y:17}],
   },
-	stoneHandler: Board.drawHandlers.REALISTIC,
+	//stoneHandler: Board.drawHandlers.SHELL,
+	stoneHandler: Board.drawHandlers.REALISTIC, // New photograph based stones
 	starSize: 1, // deprecated
 	shadowSize: 1, // deprecated
 	stoneSize: 1, // deprecated
@@ -1619,8 +1622,10 @@ Board.default = {
 		bottom: 0,
 		left: 0,
 	},
+
+	//background: WGo.DIR+"wood1.jpg",    // Original version, tileing
 	//background: WGo.DIR+"wood_512.jpg", // Mobile friendly, low resolution
-	background: WGo.DIR+"wood_1024.jpg",
+	background: WGo.DIR+"wood_1024.jpg",  // High resolution version, use with REALISTIC handler
 
 	//whiteStoneGraphic: [ WGo.DIR+"white_128.png" ], // Single image only, hires
 	//blackStoneGraphic: [ WGo.DIR+"black_128.png" ], // Single image only, hires
