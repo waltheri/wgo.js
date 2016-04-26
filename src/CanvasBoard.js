@@ -32,13 +32,15 @@ var WGo = require("./WGo");
  *     bottom: number,
  *     left: number
  *   }
- *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side. 
+ *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side.
  *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
  * * theme: Object - theme object, which defines all graphical attributes of the board. Default theme object is "WGo.CanvasBoard.themes.default". For old look you may use "WGo.CanvasBoard.themes.old".
  *
  * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only if you set property 'theme' to 'WGo.CanvasBoard.themes.old'.
  */
- 
+
+
+
 var CanvasBoard = function(elem, config) {
 	var config = config || {};
 	
@@ -1398,7 +1400,7 @@ CanvasBoard.default = {
 		bottom: 0,
 		left: 0,
 	},
-	background: WGo.DIR+"wood1.jpg",
+	//background: WGo.DIR+"wood1.jpg",
 	theme: {}
 }
 

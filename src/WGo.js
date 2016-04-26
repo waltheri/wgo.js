@@ -31,7 +31,7 @@ var WGo = {
 	i18n: {
 		en: {}
 	}
-}
+};
 
 if(global["document"]) {
 	var scripts = document.getElementsByTagName('script');
@@ -57,7 +57,7 @@ WGo.t = function(str) {
 		return loc;
 	}
 	return str;
-}
+};
 
 // helping function for class inheritance
 WGo.extendClass = function(parent, child) {
@@ -86,7 +86,7 @@ WGo.clone = function(obj) {
 		return n_obj;
 	}
 	else return obj;
-}
+};
 
 /**
  * Filters html tags from the string to avoid XSS. Characters `<` and `>` are transformed to their entities. 
@@ -99,6 +99,6 @@ WGo.clone = function(obj) {
 WGo.filterHTML = function(text) {
 	if(!text || typeof text != "string") return text;
 	return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+};
 
 module.exports = WGo;

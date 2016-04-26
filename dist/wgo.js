@@ -1410,7 +1410,7 @@ CanvasBoard.default = {
 		bottom: 0,
 		left: 0,
 	},
-	background: WGo.DIR+"wood1.jpg",
+	//background: WGo.DIR+"wood1.jpg",
 	theme: {}
 }
 

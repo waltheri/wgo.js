@@ -5,7 +5,8 @@
 	"plugins": ["plugins/markdown"],
 	"opts": {
 		"destination": "gh-pages",
-		"readme": "readme.md"
+		"readme": "readme.md",
+		"recurse": true
 	},
 	"templates": {
 		"default": {

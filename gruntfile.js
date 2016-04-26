@@ -53,6 +53,17 @@ module.exports = function(grunt) {
 				},
 				src: 'gh-pages'
 			}
+		},
+		less: {
+			development: {
+				options: {
+					ieCompat: false,
+					sourceMap: true,
+				},
+				files: {
+					"dist/wgo.css": ["styles/wgo.less"] // destination file and source file
+				}
+      		}
 		}
 	});
 
@@ -61,8 +72,10 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-github-pages');
 	grunt.loadNpmTasks('grunt-jsdoc');
 	grunt.loadNpmTasks('grunt-string-replace');
+	grunt.loadNpmTasks('grunt-contrib-less');
 
 	grunt.registerTask('default', ['browserify', 'uglify']);
 	grunt.registerTask('docs-prepare', ['jsdoc', 'string-replace']);
 	grunt.registerTask('docs', ['docs-prepare', 'githubPages']);
+	grunt.registerTask('styles', ['less']);
 };
