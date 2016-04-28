@@ -351,6 +351,46 @@ KNode.prototype = {
 	/// SGF RAW METHODS
 	
 	/**
+	 * Sets one SGF property.
+	 * 
+	 * @param   {string}          propIdent SGF property idetificator
+	 * @param   {string|string[]} propValue SGF property value
+	 * @returns {KNode}           this KNode for chaining
+	 */
+	 
+	setSGFProperty: function(propIdent, propValue) {
+		if(typeof propValue == "string") {
+			var parser = new SGFParser(propValue);
+			propValue = parser.parsePropertyValues();
+		}
+		
+		if(KNode.SGFreaders[propIdent]) {
+			KNode.SGFreaders[propIdent](this, propValue);
+		}
+		else {
+			if(propValue == null) delete this.SGFProperties[propIdent];
+			else this.SGFProperties[propIdent] = propValue;
+		}
+		
+		return this;
+	},
+	
+	/**
+	 * Gets one SGF property value.
+	 * 
+	 * @param   {string} propIdent SGF property identificator.
+	 * @returns {string} SGF property values or empty string, if node doesn't containg this property.
+	 */
+	getSGFProperty: function(propIdent) {
+		if(this.SGFProperties[propIdent]) {
+			return "["+this.SGFProperties[propIdent].map(function(propValue) {
+				return propValue.replace(/\]/g, "\\]");
+			}).join("][")+"]";	
+		}
+		return "";
+	},
+	
+	/**
 	 * Sets properties of Kifu node based on the sgf string. 
 	 * 
 	 * Basically it parsers the sgf, takes properties from it and adds them to the node. 
@@ -359,25 +399,26 @@ KNode.prototype = {
 	 * @param {string} sgf SGF text for current node. It must be without trailing `;`, however it can contain following nodes.
 	 * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
 	 */
+	 
 	setSGF: function(sgf) {
 		// clean up
-		for(var i = this.children.length-1; i >= 0; i++) {
+		for(var i = this.children.length-1; i >= 0; i--) {
 			this.removeChild(i);
 		}
 		this._init();
 		this.SGFProperties = {};
 		
-		// basically we take everything to the first control character `;` or `(` ...
-		var nodeProperties = sgf.match(SGFParser.REG_NODE)[0];
-		var restOfSgf = nodeProperties.substr(nodeProperties.length);
-		
+		var parser = new SGFParser(sgf);
+		var nodeProperties = sgf.parseProperties();
+		/*var restOfSgf = sgf.substr(nodeProperties.length);
+
 		// ... and set properties
 		nodeProperties = nodeProperties.match(SGFParser.REG_PROPS);
 		if(nodeProperties) {
 			for(var i = 0; i < nodeProperties.length; i++) {
 				this.setSGFProperty(nodeProperties[i].match(SGFParser.REG_PROP_IDENT), nodeProperties[i]);
 			}
-		}
+		}*/
 		
 		// ...then we manage the rest of sgf
 		if(restOfSgf[0] == ";") {
@@ -396,23 +437,28 @@ KNode.prototype = {
 		}
 	},
 	
-	// Sets one SGF property, if property value is missing, property will be removed
-	setSGFProperty: function(propIdent, propValue) {
-		if(propValue && typeof propValue == "string") {
-			propValue = propValue.match(SGFParser.REG_PROP_VALS).map(function(elem) {
-				// strip [ and ]
-				return elem.substring(1, elem.length-1).replace(SGFParser.REG_ESCAPE, "$2");
-			}).filter(function(elem) {
-				return elem !== "";
-			});
+	/**
+	 * Gets SGF corresponding to this node.
+	 * 
+	 * @returns {string} SGF containing all properties and also children SGF nodes.
+	 */
+	getSGF: function() {
+		var output = "";
+		for(var propIdent in this.SGFProperties) {
+			if(this.SGFProperties.hasOwnProperty(propIdent)) {
+				output += propIdent+this.getSGFProperty(propIdent);
+			}
 		}
-		
-		if(KNode.SGFreaders[propIdent]) {
-			KNode.SGFreaders[propIdent](this, propValue);
+		if(this.children.length == 1) {
+			return output+";"+this.children[0].getSGF();
+		}
+		else if(this.children.length > 1) {
+			return this.children.reduce(function(prev, current) {
+				return prev+"(;"+current.getSGF()+")";
+			}, output);
 		}
 		else {
-			if(propValue == null) delete this.SGFProperties[propIdent];
-			else this.SGFProperties[propIdent] = propValue;
+			return output;
 		}
 	},
 	

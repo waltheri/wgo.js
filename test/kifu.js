@@ -309,26 +309,25 @@ describe("Kifu", function() {
 			assert.strictEqual(node.comment, "");
 		});
 		
-		/*
 		it("Set just child nodes", function() {
 			node.setSGF(";W[fk];B[hm]");
 			
 			assert.deepEqual(node.SGFProperties, {});
 			
 			assert.deepEqual(node.children[0].move, {
-				color: WGo.W,
+				c: WGo.W,
 				x:5, 
 				y:10
 			});
 			
 			assert.deepEqual(node.children[0].children[0].move, {
-				color: WGo.B,
+				c: WGo.B,
 				x:7, 
 				y:12
 			});
 		});
 		
-		it("Set multiple properties and children", function(){
+		it("Set multiple properties and children", function() {
 			node.setSGF("AW[fk]C[Cool!](;W[hn]C[)(])(;W[hm];)");
 			
 			assert.deepEqual(node.SGFProperties, {
@@ -348,8 +347,72 @@ describe("Kifu", function() {
 			
 			assert.strictEqual(node.children[1].children.length, 1);
 			
-			assert.deepEqual(node.children[1].children.SGFProperties, {});
-		});*/
+			assert.deepEqual(node.children[1].children[0].SGFProperties, {});
+		});
+		
+		it("Invalid SGF throws an error", function() {
+			assert.throws(function() {
+				node.setSGF("AW[fk]C[Cool!];W[hn]C");
+			}, Error);
+			
+			assert.throws(function() {
+				node.setSGF("AW[fk]C[Cool!];W[hn]C[)(])(;W[hm];)");
+			}, Error);
+			
+			assert.throws(function() {
+				node.setSGF("AW[fk]C[Cool!];W[hn]C[)(](;W[hm]");
+			}, Error);
+		});
+	});
+	
+	describe("(5) KNode's getSGFProperty() and getSGF() methods", function() {
+		var node;
+
+		beforeEach(function() {
+			node = new KNode();
+			node.setSGFProperty("AB", "[hm]");
+			node.setSGFProperty("IT", "[]");
+			node.setSGFProperty("DO", []);
+			node.addSetup({c:WGo.B, x:5, y:10});
+			node.setComment("AB[hm][fk]");
+		});
+		
+		it("Basic properties", function() {
+			assert.strictEqual(node.getSGFProperty("AB"), "[hm][fk]");
+		});
+		
+		it("Properties with empty value", function() {
+			assert.strictEqual(node.getSGFProperty("IT"), "[]");
+			assert.strictEqual(node.getSGFProperty("DO"), "[]");
+		});
+		
+		it("Correct escaping of values", function() {
+			assert.strictEqual(node.getSGFProperty("C"), "[AB[hm\\][fk\\]]");
+		});
+		
+		it("getSGF() with no children", function() {
+			assert.strictEqual(node.getSGF(), "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]]");
+		});
+		
+		it("getSGF() with one child", function() {
+			var child = new KNode();
+			child.setMove({c:WGo.B, x:5, y:10});
+			child.appendChild(node);
+			assert.strictEqual(child.getSGF(), "B[fk];AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]]");
+		});
+		
+		it("getSGF() with more children", function() {
+			var child1 = new KNode();
+			var child2 = new KNode();
+			
+			child1.setMove({c:WGo.B, x:5, y:10});
+			node.appendChild(child1);
+			
+			child2.setMove({c:WGo.B, x:7, y:12});
+			node.appendChild(child2);
+			
+			assert.strictEqual(node.getSGF(), "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm])");
+		});
 	});
 	
 	/*describe("(2) SGF -> Kifu, Kifu -> SGF", function() {
