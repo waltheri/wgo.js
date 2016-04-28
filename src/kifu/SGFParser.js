@@ -79,14 +79,24 @@ var SGFSyntaxError = function() {
 var SGFParser = function(sgf) {
 	this.sgfString = sgf;
 	this.position = 0;
+	this.currentChar = sgf[0];
 }
 
 // helpers
 SGFParser.CODE_A = "A".charCodeAt(0);
 SGFParser.CODE_Z = "Z".charCodeAt(0);
+SGFParser.CODE_WHITE = " ".charCodeAt(0);
 
 SGFParser.prototype = {
 	constructor: SGFParser,
+	
+	next: function(dontSkipWhite) {
+		if(dontSkipWhite) {
+			while(this.sgfString.charCodeAt(++this.position) <= SGFParser.CODE_WHITE);
+		}
+		
+		return this.currentChar = this.sgfString[this.position];
+	}
 	
 	/**
 	 * Expects string containing value(-s) of SGF property and returns array of that values.
@@ -174,26 +184,23 @@ SGFParser.prototype = {
 	},
 	
 	parseNode: function() {
-		var char, sequence;
+		// in this point I know, that current character is ';' (don't have to check it)
+		this.next();
 		
-		sequence = [];
-		char = this.sgfString[this.position];
-		
-		// parse a node
-		if(char == ";") {
-			this.position++;
-			sequence.push(this.parseProperties());
-		}
-		
-		// parse a fork
-		else if(char == "(") {
-			this.position++;
-			sequence.push(this.parseTree());
-		}
+		return this.parseProperties();
 	},
 	
 	parseSequence: function() {
-	
+		var sequance = [];
+
+		// sequence must start with `;`
+		if(this.currentChar != ';') throw new SGFSyntaxError();
+		
+		do {
+			sequence.push(this.parseNode());
+		} while(this.currentChar != ';');
+		
+		return sequence;
 	},
 	
 	/**
@@ -203,16 +210,17 @@ SGFParser.prototype = {
 	 * @returns {[[Type]]} [[Description]]
 	 */
 	parseGameTree: function() {
-		// GameTree must start with `(`
-		if(this.sgfString[this.position++] != '(') throw new SGFSyntaxError();
+		// No need to check GameTree (we know it starts with `(`)
+		this.next();
 		
 		// Parse sequence
-		sequence = this.parseSequence();
+		var sequence = this.parseSequence();
 		
-		// And some GameTrees
-		if(this.sgfString[this.position] == '(') sequence.push(this.parseGameTree());
-		else if(this.sgfString[this.position] == ')') return sequence;
-		else throw new SGFSyntaxError(); // game tree must end with `)`
+		// Game tree ends with `)`
+		if(this.currentChar == ')') return sequence;
+		
+		// Or add subtree to the end of sequence
+		else sequence.push(this.parseCollection());
 	},
 	
 	/**
@@ -221,9 +229,13 @@ SGFParser.prototype = {
 	parseCollection: function() {
 		var gameTrees = [];
 		
+		// Collection must start with character `(`
+		if(this.currentChar != '(') throw new SGFSyntaxError();
+		
+		// Parse all trees
 		do {
 			gameTrees.push(this.parseGameTree());
-		} while(this.SGFProperties[this.position]);
+		} while(this.next());
 		
 		return gameTrees;
 	}
