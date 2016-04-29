@@ -199,6 +199,38 @@ KNode.SGFwriters = {
 
 KNode.markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
 
+var temp = function(parent, jsgf, pos) {
+	if(jsgf[pos]) {
+		if(jsgf[pos].constructor == "Array") {
+			// more children (fork)
+			jsgf[pos].forEach(function(jsgf2) {
+				temp(parent, jsgf2, 0);
+			});
+		}
+		else {
+			// one child
+			var node = new KNode();
+			node.setSGFProperties(jsgf[pos]);
+			parent.appendChild(node);
+			temp(node, jsgf, pos+1);
+		}
+	}
+}
+
+KNode.fromJSGF = function(jsgf) {
+	var root = new KNode();
+
+	root.setSGFProperties(jsgf[0]);
+	temp(root, jsgf, 1);
+	
+	return root;
+}
+
+KNode.fromSGF = function(sgf, ind) {
+	var parer = new SGFParser();
+	return KNode.fromJSGF(parser.parseCollection(sgf)[ind || 0]);
+}
+
 /*
 // Root properties
 propertyTransformers["SZ"] = function(kifu, node, value) {
@@ -390,6 +422,14 @@ KNode.prototype = {
 		return "";
 	},
 	
+	setSGFProperties: function(properties) {
+		for(var ident in properties) {
+			if(properties.hasOwnProperty(ident)) {
+				this.setSGFProperty(ident, properties[ident]);
+			}
+		}
+	},
+	
 	/**
 	 * Sets properties of Kifu node based on the sgf string. 
 	 * 
@@ -408,32 +448,29 @@ KNode.prototype = {
 		this._init();
 		this.SGFProperties = {};
 		
-		var parser = new SGFParser(sgf);
-		var nodeProperties = sgf.parseProperties();
-		/*var restOfSgf = sgf.substr(nodeProperties.length);
-
-		// ... and set properties
-		nodeProperties = nodeProperties.match(SGFParser.REG_PROPS);
-		if(nodeProperties) {
-			for(var i = 0; i < nodeProperties.length; i++) {
-				this.setSGFProperty(nodeProperties[i].match(SGFParser.REG_PROP_IDENT), nodeProperties[i]);
-			}
-		}*/
+		// prepare parser
+		var parser = typeof sgf == "string" ? new SGFParser(sgf) : sgf;
 		
-		// ...then we manage the rest of sgf
-		if(restOfSgf[0] == ";") {
+		// and parse properties
+		this.setSGFProperties(parser.parseProperties());
+		
+		// then we parse the rest of sgf
+		if(parser.currentChar == ";") {
 			// single kifu node child
 			var childNode = new KNode();
 			this.appendChild(childNode);
-			childNode.setSGF(restOfSgf.substr(1));
+			parser.next();
+			childNode.setSGF(parser);
 		}
-		else if(restOfSgf[0] == "(") {
+		else if(parser.currentChar == "(") {
 			// two or more children
-			// this is more difficult (will solve later)
+			parser.parseCollection().forEach((function(jsgf) {
+				this.appendChild(KNode.fromJSGF(jsgf));
+			}).bind(this));
 		}
-		else if(restOfSgf.length) {
+		else if(parser.currentChar) {
 			// syntax error
-			throw new Error("Temporary SGFSyntaxError");
+			throw new SGFParser.SGFSyntaxError("Illegal character in SGF node", parser);
 		}
 	},
 	

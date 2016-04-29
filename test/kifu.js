@@ -1,8 +1,9 @@
 /* Test of WGo kifu classes and functionality */
 
 var assert = require("chai").assert;
-var KNode = require("../src/kifu/KNode");
 var WGo = require("../src/WGo");
+var KNode = require("../src/kifu/KNode");
+var SGFSyntaxError = require("../src/kifu/SGFParser").SGFSyntaxError;
 
 describe("Kifu", function() {
 	describe("(1) KNode's node manipulatiobn methods.", function() {
@@ -325,6 +326,7 @@ describe("Kifu", function() {
 				x:7, 
 				y:12
 			});
+
 		});
 		
 		it("Set multiple properties and children", function() {
@@ -339,6 +341,7 @@ describe("Kifu", function() {
 			
 			assert.deepEqual(node.children[0].SGFProperties, {
 				W: ["hn"],
+				C: [")("]
 			});
 			
 			assert.deepEqual(node.children[1].SGFProperties, {
@@ -353,18 +356,18 @@ describe("Kifu", function() {
 		it("Invalid SGF throws an error", function() {
 			assert.throws(function() {
 				node.setSGF("AW[fk]C[Cool!];W[hn]C");
-			}, Error);
+			}, SGFSyntaxError);
 			
 			assert.throws(function() {
 				node.setSGF("AW[fk]C[Cool!];W[hn]C[)(])(;W[hm];)");
-			}, Error);
+			}, SGFSyntaxError);
 			
 			assert.throws(function() {
 				node.setSGF("AW[fk]C[Cool!];W[hn]C[)(](;W[hm]");
-			}, Error);
+			}, SGFSyntaxError);
 		});
 	});
-	
+	/*
 	describe("(5) KNode's getSGFProperty() and getSGF() methods", function() {
 		var node;
 
@@ -413,7 +416,7 @@ describe("Kifu", function() {
 			
 			assert.strictEqual(node.getSGF(), "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm])");
 		});
-	});
+	});*/
 	
 	/*describe("(2) SGF -> Kifu, Kifu -> SGF", function() {
 		it("KNode's innerSGF property.");

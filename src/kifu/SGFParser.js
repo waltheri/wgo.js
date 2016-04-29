@@ -3,73 +3,6 @@
  * @module SGFParser
  */
 
-// Matches sgf sequence, e.g.: "(;SZ[19];B[jj];W[kk])" => ["(", ";SZ[19]", ";B[jj]", ";W[kk]", ")"]
-var reg_seq = /\(|\)|(;(\s*[A-Z]+(\s*((\[\])|(\[(.|\s)*?([^\\]\]))))+)*)/g;
-
-// Matches sgf node, e.g.: ";AB[jj][kk]C[Hello]" => ["AB[jj][kk]", "C[Hello]"]
-var reg_node = /[A-Z]+(\s*((\[\])|(\[(.|\s)*?([^\\]\]))))+/g;
-
-// Matches sgf identificator, e.g.: "AB[jj][kk]" => "AB"
-var reg_ident = /[A-Z]+/;
-
-// Matches sgf property/-ies, e.g.: "AB[jj][kk]" => ["[jj]", "[kk]"]
-var reg_props = /(\[\])|(\[(.|\s)*?([^\\]\]))/g;
-
-// helper function for translating letters to numbers (a => 0, b => 1, ...)
-var to_num = function(str, i) {
-	return str.charCodeAt(i)-97;
-}
-
-var SGFParser = {
-	/**
-	 * Matches SGF node trees
-	 */
-	REG_TREES: /(;([A-Z]+((\[\])|(\[(.|\s)*?([^\\](\\\\)*\])))+)*)+/g,
-	
-	/**
-	 * Matches first SGf node in sequence, e.g.: `"AB[jj][kk]C[Hello];W[ll]" => "AB[jj][kk]C[Hello]"`.
-	 */
-	REG_NODE: /([A-Z]+((\[\])|(\[(.|\s)*?([^\\](\\\\)*\])))+)*/,
-	
-	/**
-	 * Matches proeprties in node, e.g.: `"AB[jj][kk]C[Cool!]" => ["AB[jj][kk]", "C[Cool!]"]`.
-	 */
-	REG_PROPS: /[A-Z]+((\[\])|(\[(.|\s)*?([^\\](\\\\)*\])))+/g,
-	
-	/**
-	 * Matches SGF property identificator, e.g.: `"AB[jj][kk]" => "AB"`.
-	 */
-	REG_PROP_IDENT: /[A-Z]+/,
-	
-	/**
-	 * Matches property values from SGF property. e.g.: `"AB[jj][kk]" => ["[jj]", "[kk]"]`. Usage:
-	 * 
-	 * ```
-	 * string.match(SGFParser.REG_PROPS); // returns array with property values (characters [ and ] are not removed)
-	 * ```
-	 */
-	REG_PROP_VALS: /(\[\])|(\[(.|\s)*?([^\\](\\\\)*\]))/g,
-	
-	/**
-	 * Regexp used for escaping characters. Usage:
-	 * 
-	 * ```
-	 * string.replace(SGFParser.REG_ESCAPE, "$2");
-	 * ```
-	 */
-	REG_ESCAPE: /\\((.)|(\n))/g
-	
-	
-	
-	
-}
-
-/*========================BETTER PARSER=============================================================*/
-
-var SGFSyntaxError = function() {
-	// temp syntax error
-}
-
 /**
  * Class for parsing of sgf files. Can be used for parsing of SGF fragments as well.
  * 
@@ -80,6 +13,28 @@ var SGFParser = function(sgf) {
 	this.sgfString = sgf;
 	this.position = 0;
 	this.currentChar = sgf[0];
+	this.lineNo = 1;
+	this.charNo = 0;
+}
+
+var SGFSyntaxError = SGFParser.SGFSyntaxError = function(message, parser) {
+	var tempError = Error.apply(this);
+	tempError.name = this.name = 'SGFSyntaxError';
+
+	this.message = message || 'There was an unspecified syntax error in the SGF';
+	if(parser) {
+		this.message += " on line "+parser.lineNo+":\n";
+		this.message += "\t"+this.getLine(parser.sgfString, parser.lineNo)+"\n";
+		this.message += "\t"+Array(parser.charNo+1).join(" ")+"^";
+	}
+	this.stack = tempError.stack;
+}
+
+SGFSyntaxError.prototype = Object.create(Error.prototype);
+SGFSyntaxError.prototype.constructor = SGFSyntaxError;
+
+SGFSyntaxError.prototype.getLine = function(str, lineNo) {
+	return str.split("\n")[lineNo-1];
 }
 
 // helpers
@@ -91,12 +46,60 @@ SGFParser.prototype = {
 	constructor: SGFParser,
 	
 	next: function(dontSkipWhite) {
-		if(dontSkipWhite) {
-			while(this.sgfString.charCodeAt(++this.position) <= SGFParser.CODE_WHITE);
+		if(!dontSkipWhite) {
+			while(this.sgfString.charCodeAt(++this.position) <= SGFParser.CODE_WHITE) {
+				if(this.sgfString[this.position] == "\n") {
+					this.charNo = 0;
+					this.lineNo++;
+				}
+				else {
+					this.charNo++;
+				}
+			}
+			this.charNo++;
+		}
+		else {
+			this.position++;
+			if(this.sgfString[this.position] == "\n") {
+				this.charNo = 0;
+				this.lineNo++;
+			}
+			else {
+				this.charNo++;
+			}
 		}
 		
 		return this.currentChar = this.sgfString[this.position];
-	}
+	},
+	
+	parsePropertyValue: function() {
+		var value = "";
+		
+		// then we read the value
+		while(this.next(true) != ']') {
+
+			// char mustn't be undefined
+			if(!this.currentChar) throw new SGFSyntaxError("End of SGF inside of property", this);
+
+			// if there is character '\' save next character
+			else if(this.currentChar == '\\') {
+				this.next(true);
+
+				// char have to exis of course
+				if(!this.currentChar) throw new SGFSyntaxError("End of SGF inside of property", this);
+
+				// ignore new line, otherwise save
+				else if(this.currentChar == '\n') {
+					continue;
+				}
+			}
+
+			// save the character
+			value += this.currentChar;
+		}
+		
+		return value;
+	},
 	
 	/**
 	 * Expects string containing value(-s) of SGF property and returns array of that values.
@@ -109,56 +112,16 @@ SGFParser.prototype = {
 	 */
 	 
 	parsePropertyValues: function() {
-		var char, value, values = [];
+		var value, values = [];
 		
-		for(;;) {
-			// check the first character
-			if(this.sgfString[this.position] != '[') {
-				// if there is no value throw an error
-				if(values.length == 0) throw new SGFSyntaxError();
+		if(this.currentChar != '[') throw new SGFSyntaxError("Property must have at least one value enclosed in '[' and ']'", this);
+		
+		do {
+			value = this.parsePropertyValue();
+			if(value != "") values.push(value);
+		} while(this.next() == '[');
 
-				// otherwise return the result (without empty values)
-				return values.filter(function(val) {
-					return val != "";
-				});
-			}
-
-			// reset the value and read the first character
-			value = "";
-			char = this.sgfString[++this.position];
-
-			// then we read the value
-			while(char != ']') {
-
-				// char mustn't be undefined
-				if(!char) throw new SGFSyntaxError();
-
-				// if there is character '\' save next character
-				else if(char == '\\') {
-					char = this.sgfString[++this.position];
-
-					// char have to exis of course
-					if(!char) throw new SGFSyntaxError();
-					
-					// ignore new line
-					else if(char != '\n') {
-						value += char;
-					}
-				}
-				
-				// save the character 
-				else {
-					value += char;
-				}
-				
-				// and move pointer
-				char = this.sgfString[++this.position];
-			}
-
-			// save the value and move pointer
-			values.push(value);
-			this.position++;
-		}
+		return values;
 	},
 	
 	/**
@@ -168,17 +131,18 @@ SGFParser.prototype = {
 	 */
 	parsePropertyIdent: function() {
 		var ident = "", charCode = this.sgfString.charCodeAt(this.position);
-		while(charCode >= SGFParser.CODE_A && charCode >= SGFParser.CODE_A) {
-			ident += this.sgfString[this.position++];
+		while(charCode >= SGFParser.CODE_A && charCode <= SGFParser.CODE_Z) {
+			ident += this.currentChar;
+			this.next();
 			charCode = this.sgfString.charCodeAt(this.position);
 		}
 		return ident;
 	},
 	
 	parseProperties: function() {
-		var properties = {};
+		var ident, properties = {};
 		while(ident = this.parsePropertyIdent()) {
-			properties.ident = this.parsePropertyValues();
+			properties[ident] = this.parsePropertyValues();
 		}
 		return properties;
 	},
@@ -191,14 +155,14 @@ SGFParser.prototype = {
 	},
 	
 	parseSequence: function() {
-		var sequance = [];
+		var sequence = [];
 
 		// sequence must start with `;`
-		if(this.currentChar != ';') throw new SGFSyntaxError();
+		if(this.currentChar != ';') throw new SGFSyntaxError("There must be at least on SGF node in sequence", this);
 		
 		do {
 			sequence.push(this.parseNode());
-		} while(this.currentChar != ';');
+		} while(this.currentChar == ';');
 		
 		return sequence;
 	},
@@ -216,11 +180,10 @@ SGFParser.prototype = {
 		// Parse sequence
 		var sequence = this.parseSequence();
 		
-		// Game tree ends with `)`
-		if(this.currentChar == ')') return sequence;
-		
-		// Or add subtree to the end of sequence
-		else sequence.push(this.parseCollection());
+		// Game tree ends with `)`, or add subtree to the end of sequence
+		if(this.currentChar != ')') sequence.push(this.parseCollection());
+
+		return sequence;
 	},
 	
 	/**
@@ -230,7 +193,7 @@ SGFParser.prototype = {
 		var gameTrees = [];
 		
 		// Collection must start with character `(`
-		if(this.currentChar != '(') throw new SGFSyntaxError();
+		if(this.currentChar != '(') throw new SGFSyntaxError("SGF tree must be enclosed in '(' and ')'", this);
 		
 		// Parse all trees
 		do {
