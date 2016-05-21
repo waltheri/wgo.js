@@ -1,4 +1,4 @@
-﻿// WGo global object with helpers
+// WGo global object with helpers
 
 /**
  * Main namespace - it initializes WGo in first run and then execute main function. 
@@ -101,4 +101,4 @@ WGo.filterHTML = function(text) {
 	return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 };
 
-module.exports = WGo;
+export default WGo;

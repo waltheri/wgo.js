@@ -3,55 +3,51 @@
  * @module SGFParser
  */
 
-const CODE_A = "A".charCodeAt(0);
-const CODE_Z = "Z".charCodeAt(0);
-const CODE_WHITE = " ".charCodeAt(0);
-
 /**
  * Class for parsing of sgf files. Can be used for parsing of SGF fragments as well.
+ * 
+ * @param {string} sgf to be parsed
  */
  
-export default class SGFParser {
+var SGFParser = function(sgf) {
+	this.sgfString = sgf;
+	this.position = 0;
+	this.currentChar = sgf[0];
+	this.lineNo = 1;
+	this.charNo = 0;
+}
 
-	/**
-	 * Class constructor.
-	 * @param {string} sgf string to parse.
-	 */
-	constructor(sgf) {
-		/** 
-		 * Parsed SGF string 
-		 * @type {string} 
-		 */
-		this.sgfString = sgf;
-		
-		/**
-		 * Current character position 
-		 * @type {number} 
-		 */
-		this.position = 0;
-		
-		/** 
-		 * Current character
-		 * @type {string} 
-		 */
-		this.currentChar = sgf[0];
-		
-		/** 
-		 * Current char number (on the line) 
-		 * @type {number}
-		 */
-		this.lineNo = 1;
-			
-		/** 
-		 * Current char number (on the line) 
-		 * @type {number}
-		 */
-		this.charNo = 0;
+var SGFSyntaxError = SGFParser.SGFSyntaxError = function(message, parser) {
+	var tempError = Error.apply(this);
+	tempError.name = this.name = 'SGFSyntaxError';
+
+	this.message = message || 'There was an unspecified syntax error in the SGF';
+	if(parser) {
+		this.message += " on line "+parser.lineNo+", char "+parser.charNo+":\n";
+		this.message += "\t"+this.getLine(parser.sgfString, parser.lineNo)+"\n";
+		this.message += "\t"+Array(parser.charNo+1).join(" ")+"^";
 	}
+	this.stack = tempError.stack;
+}
+
+SGFSyntaxError.prototype = Object.create(Error.prototype);
+SGFSyntaxError.prototype.constructor = SGFSyntaxError;
+
+SGFSyntaxError.prototype.getLine = function(str, lineNo) {
+	return str.split("\n")[lineNo-1];
+}
+
+// helpers
+SGFParser.CODE_A = "A".charCodeAt(0);
+SGFParser.CODE_Z = "Z".charCodeAt(0);
+SGFParser.CODE_WHITE = " ".charCodeAt(0);
+
+SGFParser.prototype = {
+	constructor: SGFParser,
 	
-	next(dontSkipWhite) {
+	next: function(dontSkipWhite) {
 		if(!dontSkipWhite) {
-			while(this.sgfString.charCodeAt(++this.position) <= CODE_WHITE) {
+			while(this.sgfString.charCodeAt(++this.position) <= SGFParser.CODE_WHITE) {
 				if(this.sgfString[this.position] == "\n") {
 					this.charNo = 0;
 					this.lineNo++;
@@ -74,10 +70,9 @@ export default class SGFParser {
 		}
 		
 		return this.currentChar = this.sgfString[this.position];
-	}
+	},
 	
-	
-	parsePropertyValue() {
+	parsePropertyValue: function() {
 		var value = "";
 		
 		// then we read the value
@@ -104,7 +99,7 @@ export default class SGFParser {
 		}
 		
 		return value;
-	}
+	},
 	
 	/**
 	 * Expects string containing value(-s) of SGF property and returns array of that values.
@@ -116,50 +111,50 @@ export default class SGFParser {
  	 * @throws {SGFSyntaxError} When sgf string is invalid.
 	 */
 	 
-	parsePropertyValues() {
-		var values = [];
+	parsePropertyValues: function() {
+		var value, values = [];
 		
 		if(this.currentChar != '[') throw new SGFSyntaxError("Property must have at least one value enclosed in '[' and ']'", this);
 		
 		do {
-			let value = this.parsePropertyValue();
+			value = this.parsePropertyValue();
 			if(value != "") values.push(value);
 		} while(this.next() == '[');
 
 		return values;
-	}
+	},
 	
 	/**
 	 * Reads the property identificator (One or more UC letters)
 	 * 
 	 * @returns {string} the identificator.
 	 */
-	parsePropertyIdent() {
+	parsePropertyIdent: function() {
 		var ident = "", charCode = this.sgfString.charCodeAt(this.position);
-		while(charCode >= CODE_A && charCode <= CODE_Z) {
+		while(charCode >= SGFParser.CODE_A && charCode <= SGFParser.CODE_Z) {
 			ident += this.currentChar;
 			this.next();
 			charCode = this.sgfString.charCodeAt(this.position);
 		}
 		return ident;
-	}
+	},
 	
-	parseProperties() {
+	parseProperties: function() {
 		var ident, properties = {};
 		while(ident = this.parsePropertyIdent()) {
 			properties[ident] = this.parsePropertyValues();
 		}
 		return properties;
-	}
+	},
 	
-	parseNode() {
+	parseNode: function() {
 		// in this point I know, that current character is ';' (don't have to check it)
 		this.next();
 		
 		return this.parseProperties();
-	}
+	},
 	
-	parseSequence() {
+	parseSequence: function() {
 		var sequence = [];
 
 		// sequence must start with `;`
@@ -170,7 +165,7 @@ export default class SGFParser {
 		} while(this.currentChar == ';');
 		
 		return sequence;
-	}
+	},
 	
 	/**
 	 * Parses a SGF *GameTree*.
@@ -178,7 +173,7 @@ export default class SGFParser {
 	 * @throws {SGFSyntaxError} [[Description]]
 	 * @returns {[[Type]]} [[Description]]
 	 */
-	parseGameTree() {
+	parseGameTree: function() {
 		// No need to check GameTree (we know it starts with `(`)
 		this.next();
 		
@@ -189,12 +184,12 @@ export default class SGFParser {
 		if(this.currentChar != ')') sequence.push(this.parseCollection());
 	
 		return sequence;
-	}
+	},
 	
 	/**
 	 * Parses a SGF *Collection*.
 	 */
-	parseCollection() {
+	parseCollection: function() {
 		var gameTrees = [];
 		
 		// Parse all trees
@@ -209,42 +204,4 @@ export default class SGFParser {
 	}
 }
 
-// a small ES5 hack because currently in ES6 you can't extend Errors
-export function SGFSyntaxError(message, parser) {
-	var tempError = Error.apply(this);
-	tempError.name = this.name = 'SGFSyntaxError';
-
-	this.message = message || 'There was an unspecified syntax error in the SGF';
-	if(parser) {
-		this.message += " on line "+parser.lineNo+", char "+parser.charNo+":\n";
-		this.message += "\t"+this.getLine(parser.sgfString, parser.lineNo)+"\n";
-		this.message += "\t"+Array(parser.charNo+1).join(" ")+"^";
-	}
-	this.stack = tempError.stack;
-}
-
-SGFSyntaxError.prototype = Object.create(Error.prototype);
-SGFSyntaxError.prototype.constructor = SGFSyntaxError;
-
-SGFSyntaxError.prototype.getLine = function(str, lineNo) {
-	return str.split("\n")[lineNo-1];
-}
-
-/*
-
-export class SGFSyntaxError {
-	constructor(message, parser) {
-		var tempError = Error.apply(this);
-		tempError.name = this.name = 'SGFSyntaxError';
-		this.message = message || 'There was an unspecified syntax error in the SGF';
-		
-		if(parser) {
-			this.message += " on line "+parser.lineNo+", char "+parser.charNo+":\n";
-			this.message += "\t"+parser.sgfString.split("\n")[parser.lineNo-1]+"\n";
-			this.message += "\t"+Array(parser.charNo+1).join(" ")+"^";
-		}
-		
-		this.stack = tempError.stack;
-	}
-}
-*/
+module.exports = SGFParser;

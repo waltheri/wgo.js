@@ -1,14 +1,18 @@
-import WGo from "../WGo";
-import SGFParser from "./SGFParser";
+var WGo = require("../WGo");
+var SGFParser = require("./SGFParser");
 
 // helper function for translating letters to numbers (a => 0, b => 1, ...)
-var str2coo = (str) => ({
-	x: str.charCodeAt(0)-97,
-	y: str.charCodeAt(1)-97
-});
+var str2coo = function(str) {
+	return {
+		x: str.charCodeAt(0)-97,
+		y: str.charCodeAt(1)-97
+	}
+}
 
 // helper function for translating numbers to letters (0 => a, 1 => b, ...)
-var coo2str = (field) => String.fromCharCode(field.x+97)+String.fromCharCode(field.y+97);
+var coo2str = function(field) {
+	return String.fromCharCode(field.x+97)+String.fromCharCode(field.y+97);
+}
 
 // helper to remove setup or markup from SGF properties
 var removeSGFValue = function(properties, ident, field) {
@@ -19,97 +23,106 @@ var removeSGFValue = function(properties, ident, field) {
 			if(!properties[ident].length) delete properties[ident];
 		}
 	}
-};
+}
 
-// jsgf helper
-var processJsgf = function(parent, jsgf, pos) {
-	if(jsgf[pos]) {
-		if(jsgf[pos].constructor == Array) {
-			// more children (fork)
-			jsgf[pos].forEach(function(jsgf2) {
-				processJsgf(parent, jsgf2, 0);
+var moveSGFReaderFactory = function(color) {
+	return function(node, value) {
+		if(value == null) {
+			node.setMove();
+		}
+		else if(!value[0]) {
+			node.setMove({
+				pass: true,
+				c: color
 			});
 		}
 		else {
-			// one child
-			var node = new KNode();
-			node.setSGFProperties(jsgf[pos]);
-			parent.appendChild(node);
-			processJsgf(node, jsgf, pos+1);
+			var move = str2coo(value[0]);
+			move.c = color;
+			node.setMove(move);
 		}
 	}
 }
 
-var moveSGFReaderFactory = (color) => function(node, value) {
-	if(value == null) {
-		node.setMove();
-	}
-	else if(!value[0]) {
-		node.setMove({
-			pass: true,
-			c: color
-		});
-	}
-	else {
-		var move = str2coo(value[0]);
-		move.c = color;
-		node.setMove(move);
-	}
-};
-
-var setupSGFReaderFactory = (color, propIdent) => function(node, value) {
-	if(value == null) {
-		var keys = Object.keys(node.setup);
-		for(var i = 0; i < keys.length; i++) {
-			if(node.setup[keys[i]] == color) {
-				delete node.setup[keys[i]];
+var setupSGFReaderFactory = function(color, propIdent) {
+	return function(node, value) {
+		if(value == null) {
+			var keys = Object.keys(node.setup);
+			for(var i = 0; i < keys.length; i++) {
+				if(node.setup[keys[i]] == color) {
+					delete node.setup[keys[i]];
+				}
 			}
+			delete node.SGFProperties[propIdent];
+			return;
 		}
-		delete node.SGFProperties[propIdent];
-		return;
+
+		node.addSetup(value.map(function(elem) {
+			var setup = str2coo(elem);
+			setup.c = color;
+			return setup;
+		}));
 	}
+}
 
-	node.addSetup(value.map((elem) => {
-		var setup = str2coo(elem);
-		setup.c = color;
-		return setup;
-	}));
-};
-
-var markupSGFReaderFactory = (type) => function(node, value) {
-	if(value == null) {
-		var keys = Object.keys(node.markup);
-		for(var i = 0; i < keys.length; i++) {
-			if(node.markup[keys[i]].type == type) {
-				delete node.markup[keys[i]];
+var markupSGFReaderFactory = function(type) {
+	return function(node, value) {
+		if(value == null) {
+			var keys = Object.keys(node.markup);
+			for(var i = 0; i < keys.length; i++) {
+				if(node.markup[keys[i]].type == type) {
+					delete node.markup[keys[i]];
+				}
 			}
+			delete node.SGFProperties[type];
+			return;
 		}
-		delete node.SGFProperties[type];
-		return;
+		
+		node.addMarkup(value.map(function(elem) {
+			var markup = str2coo(elem);
+			markup.type = type;
+			return markup;
+		}));
 	}
+}
 
-	node.addMarkup(value.map((elem) => {
-		var markup = str2coo(elem);
-		markup.type = type;
-		return markup;
-	}));
-};
+var playerInfoSGFReaderFactory = function(color, type) {
+	return function(node, value) {
+		node.gameInfo = node.gameInfo || {};
+		node.gameInfo[color] = node.gameInfo[color] || {};
+		node.gameInfo[color][type] = value.join("");
+	}
+}
 
-var playerInfoSGFReaderFactory = (color, type) => function(node, value) {
-	node.gameInfo = node.gameInfo || {};
-	node.gameInfo[color] = node.gameInfo[color] || {};
-	node.gameInfo[color][type] = value.join("");
-};
+var gameInfoSGFReaderFactory = function(property) {
+	return function(node, value) {
+		node.gameInfo = node.gameInfo || {};
+		node.gameInfo[property] = value.join("");
+	}
+}
 
-var gameInfoSGFReaderFactory = (property) => function(node, value) {
-	node.gameInfo = node.gameInfo || {};
-	node.gameInfo[property] = value.join("");
-};
+var KNode = function() {
+	// parent node (readonly) 
+	this.parent = null; 
+	
+	// array of child nodes (readonly)
+	this.children = [];
+	
+	// map of SGF properties (readonly) - {<PropIdent>: Array<PropValue>}
+	this.SGFProperties = {};
+	
+	// game information - should be inherited from root (readonly)
+	this.gameInfo = null;
+	
+	// kifu properties - should be inherited from root (readonly)
+	this.kifuInfo = null;
+	
+	// init some general proeprties
+	this._init();
+}
 
-/**
- * List of functions which transforms string SGF property values into javascript kifu property.
- */
-export var SGFreaders = {
+// SGF property -> KNode property
+KNode.SGFreaders = {
 	B: moveSGFReaderFactory(WGo.B),
 	W: moveSGFReaderFactory(WGo.W),
 	AB: setupSGFReaderFactory(WGo.B, "AB"),
@@ -174,62 +187,54 @@ export var SGFreaders = {
 	US: gameInfoSGFReaderFactory("user"),
 }
 
-/**
- * List of functions which transforms javascript kifu property into SGF property.
- */
-export var SGFwriters = {
-	LB: (value) => coo2str(value)+":"+value.text
+KNode.SGFwriters = {
+	LB: function(value) {
+		return coo2str(value)+":"+value.text;
+	}
 }
 
-/**
- * List of SGF markup properties.
- */
-export var markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
+KNode.markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
 
-/**
- * Class representing one kifu node.
- */
-export default class KNode {
-
-	static fromJSGF(jsgf) {
-		var root = new KNode();
-
-		root.setSGFProperties(jsgf[0]);
-		processJsgf(root, jsgf, 1);
-
-		return root;
+var temp = function(parent, jsgf, pos) {
+	if(jsgf[pos]) {
+		if(jsgf[pos].constructor == Array) {
+			// more children (fork)
+			jsgf[pos].forEach(function(jsgf2) {
+				temp(parent, jsgf2, 0);
+			});
+		}
+		else {
+			// one child
+			var node = new KNode();
+			node.setSGFProperties(jsgf[pos]);
+			parent.appendChild(node);
+			temp(node, jsgf, pos+1);
+		}
 	}
-	
-	static fromSGF(sgf, ind) {
-		var parser = new SGFParser(sgf);
-		return KNode.fromJSGF(parser.parseCollection()[ind || 0]);
-	}
-	
-	constructor() {
-		// parent node (readonly) 
-		this.parent = null; 
+}
 
-		// array of child nodes (readonly)
-		this.children = [];
+KNode.fromJSGF = function(jsgf) {
+	var root = new KNode();
 
-		// map of SGF properties (readonly) - {<PropIdent>: Array<PropValue>}
-		this.SGFProperties = {};
+	root.setSGFProperties(jsgf[0]);
+	temp(root, jsgf, 1);
 
-		// game information - should be inherited from root (readonly)
-		this.gameInfo = null;
+	return root;
+}
 
-		// kifu properties - should be inherited from root (readonly)
-		this.kifuInfo = null;
+KNode.fromSGF = function(sgf, ind) {
+	var parser = new SGFParser(sgf);
+	return KNode.fromJSGF(parser.parseCollection()[ind || 0]);
+}
 
-		// init some general proeprties
-		this._init();
-	}
+KNode.prototype = {
+	constructor: KNode,
 	
 	/**
 	 * Initialize KNode object. Called in constructor, it can be overriden to add some general properties.
 	 */
 	 
-	_init() {
+	_init: function() {
 		// map of setup (readonly)
 		this.setup = {};
 
@@ -244,7 +249,7 @@ export default class KNode {
 
 		// turn
 		this.turn = null;
-	}
+	},
 	
 	/// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)
 	
@@ -256,7 +261,7 @@ export default class KNode {
 	 * @returns {Knode} this node.
 	 */
 	
-	appendChild(node) {
+	appendChild: function(node) {
 		if(node == null || !(node instanceof KNode) || node == this) throw new Error("Invalid argument passed to `appendChild` method, KNode was expected.");
 		
 		if(node.parent) node.parent.removeChild(node);
@@ -267,13 +272,13 @@ export default class KNode {
 		
 		this.children.push(node);
 		return this;
-	}
+	},
 	
-	// Clones a KNode and all of its contents (TODO)
-	cloneNode() {
+	// Clones a KNode and all of its contents
+	cloneNode: function() {
 		
-	}
-	
+	},
+
 	/**
 	 * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
 	 * 
@@ -281,12 +286,14 @@ export default class KNode {
 	 * @returns {boolean} true, if this node contains given node.
 	 */
 	
-	contains(node) {
+	contains: function(node) {
 		if(this.children.indexOf(node) >= 0) return true;
 		
-		return this.children.some((child) => child.contains(node));
-	}
-	
+		return this.children.some(function(child) {
+			return child.contains(node);
+		});
+	},
+
 	/**
 	 * Inserts the first KNode given in a parameter immediately before the second, child of this KNode.
 	 * 
@@ -296,7 +303,7 @@ export default class KNode {
 	 * @returns {KNode}   this node
 	 */
 	
-	insertBefore(newNode, referenceNode) {
+	insertBefore: function(newNode, referenceNode) {
 		if(newNode == null || !(newNode instanceof KNode) || newNode == this) throw new Error("Invalid argument passed to `insertBefore` method, KNode was expected.");
 		else if(referenceNode == null) return this.appendChild(newNode);
 		
@@ -308,7 +315,7 @@ export default class KNode {
 		
 		this.children.splice(this.children.indexOf(referenceNode), 0, newNode);
 		return this;
-	}
+	},
 	
 	/**
 	 * Removes a child node from the current element, which must be a child of the current node.
@@ -317,15 +324,15 @@ export default class KNode {
 	 * @returns {KNode}  this node
 	 */
 	
-	removeChild(child) {
+	removeChild: function(child) {
 		this.children.splice(this.children.indexOf(child), 1);
-
+		
 		child.gameInfo = null;
 		child.kifuInfo = null;
 		child.parent = null;
 		
 		return this;
-	}
+	},
 	
 	/**
 	 * Replaces one child Node of the current one with the second one given in parameter.
@@ -336,14 +343,14 @@ export default class KNode {
 	 * @returns {KNode} this node
 	 */
 	
-	replaceChild(newChild, oldChild) {
+	replaceChild: function(newChild, oldChild) {
 		if(newChild == null || !(newChild instanceof KNode) || newChild == this) throw new Error("Invalid argument passed to `replaceChild` method, KNode was expected.");
 		
 		this.insertBefore(newChild, oldChild);
 		this.removeChild(oldChild);
 		
 		return this;
-	}
+	},
 	
 	/// SGF RAW METHODS
 	
@@ -355,14 +362,14 @@ export default class KNode {
 	 * @returns {KNode}           this KNode for chaining
 	 */
 	 
-	setSGFProperty(propIdent, propValue) {
+	setSGFProperty: function(propIdent, propValue) {
 		if(typeof propValue == "string") {
-			let parser = new SGFParser(propValue);
+			var parser = new SGFParser(propValue);
 			propValue = parser.parsePropertyValues();
 		}
 		
-		if(SGFreaders[propIdent]) {
-			SGFreaders[propIdent](this, propValue);
+		if(KNode.SGFreaders[propIdent]) {
+			KNode.SGFreaders[propIdent](this, propValue);
 		}
 		else {
 			if(propValue == null) delete this.SGFProperties[propIdent];
@@ -370,7 +377,7 @@ export default class KNode {
 		}
 		
 		return this;
-	}
+	},
 	
 	/**
 	 * Gets one SGF property value.
@@ -378,20 +385,22 @@ export default class KNode {
 	 * @param   {string} propIdent SGF property identificator.
 	 * @returns {string} SGF property values or empty string, if node doesn't containg this property.
 	 */
-	getSGFProperty(propIdent) {
+	getSGFProperty: function(propIdent) {
 		if(this.SGFProperties[propIdent]) {
-			return "["+this.SGFProperties[propIdent].map((propValue) => propValue.replace(/\]/g, "\\]")).join("][")+"]";	
+			return "["+this.SGFProperties[propIdent].map(function(propValue) {
+				return propValue.replace(/\]/g, "\\]");
+			}).join("][")+"]";	
 		}
 		return "";
-	}
+	},
 	
-	setSGFProperties(properties) {
-		for(let ident in properties) {
+	setSGFProperties: function(properties) {
+		for(var ident in properties) {
 			if(properties.hasOwnProperty(ident)) {
 				this.setSGFProperty(ident, properties[ident]);
 			}
 		}
-	}
+	},
 	
 	/**
 	 * Sets properties of Kifu node based on the sgf string. 
@@ -403,16 +412,16 @@ export default class KNode {
 	 * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
 	 */
 	 
-	setSGF(sgf) {
+	setSGF: function(sgf) {
 		// clean up
-		for(let i = this.children.length-1; i >= 0; i--) {
-			this.removeChild(this.children[i]);
+		for(var i = this.children.length-1; i >= 0; i--) {
+			this.removeChild(i);
 		}
 		this._init();
 		this.SGFProperties = {};
 		
 		// prepare parser
-		let parser = typeof sgf == "string" ? new SGFParser(sgf) : sgf;
+		var parser = typeof sgf == "string" ? new SGFParser(sgf) : sgf;
 		
 		// and parse properties
 		this.setSGFProperties(parser.parseProperties());
@@ -420,7 +429,7 @@ export default class KNode {
 		// then we parse the rest of sgf
 		if(parser.currentChar == ";") {
 			// single kifu node child
-			let childNode = new KNode();
+			var childNode = new KNode();
 			this.appendChild(childNode);
 			parser.next();
 			childNode.setSGF(parser);
@@ -435,17 +444,17 @@ export default class KNode {
 			// syntax error
 			throw new SGFParser.SGFSyntaxError("Illegal character in SGF node", parser);
 		}
-	}
+	},
 	
 	/**
 	 * Gets SGF corresponding to this node.
 	 * 
 	 * @returns {string} SGF containing all properties and also children SGF nodes.
 	 */
-	getSGF() {
+	getSGF: function() {
 		var output = "";
 		
-		for(let propIdent in this.SGFProperties) {
+		for(var propIdent in this.SGFProperties) {
 			if(this.SGFProperties.hasOwnProperty(propIdent)) {
 				output += propIdent+this.getSGFProperty(propIdent);
 			}
@@ -454,50 +463,28 @@ export default class KNode {
 			return output+";"+this.children[0].getSGF();
 		}
 		else if(this.children.length > 1) {
-			return this.children.reduce((prev, current) => prev+"(;"+current.getSGF()+")", output);
+			return this.children.reduce(function(prev, current) {
+				return prev+"(;"+current.getSGF()+")";
+			}, output);
 		}
 		else {
 			return output;
 		}
-	}
+	},
 	
-	/**
-	 * Gets SGF corresponding to this node.
-	 * 
-	 * @returns {string} SGF containing all properties and also children SGF nodes.
-	 */
-	getSGF() {
-		var output = "";
-		
-		for(let propIdent in this.SGFProperties) {
-			if(this.SGFProperties.hasOwnProperty(propIdent)) {
-				output += propIdent+this.getSGFProperty(propIdent);
-			}
-		}
-		if(this.children.length == 1) {
-			return output+";"+this.children[0].getSGF();
-		}
-		else if(this.children.length > 1) {
-			return this.children.reduce((prev, current) => prev+"(;"+current.getSGF()+")", output);
-		}
-		else {
-			return output;
-		}
-	}
-	
-	toSGF() {
+	toSGF: function() {
 		return "(;"+this.getSGF()+")";
-	}
+	},
 	
 	/// KIFU SPECIFIC METHODS
 	
 	// Adds or changes setup (may be array)
-	addSetup(setup) {
+	addSetup: function(setup) {
 		if(setup.constructor != Array) setup = [setup];
 		
 		this.removeSetup(setup);
 		
-		for(let i = 0, property; i < setup.length; i++) {
+		for(var i = 0, property; i < setup.length; i++) {
 			this.setup[setup[i].x+":"+setup[i].y] = setup[i].c;
 			
 			if(setup[i].c == WGo.B)	property = "AB";
@@ -510,50 +497,50 @@ export default class KNode {
 		}
 		
 		return this;
-	}
+	},
 	
 	// Removes setup
-	removeSetup(setup) {
+	removeSetup: function(setup) {
 		if(setup.constructor != Array) setup = [setup];
 
-		for(let i = 0; i < setup.length; i++) {
+		for(var i = 0; i < setup.length; i++) {
 			delete this.setup[setup[i].x+":"+setup[i].y];
 			
 			removeSGFValue(this.SGFProperties, "AB", setup[i]);
 			removeSGFValue(this.SGFProperties, "AW", setup[i]);
 			removeSGFValue(this.SGFProperties, "AE", setup[i]);
 		}
-	}
+	},
 	
 	// Adds or changes markup
-	addMarkup(markup) {
+	addMarkup: function(markup) {
 		if(markup.constructor != Array) markup = [markup];
 		
 		this.removeMarkup(markup);
 		
-		for(let i = 0; i < markup.length; i++) {
+		for(var i = 0; i < markup.length; i++) {
 			this.markup[markup[i].x+":"+markup[i].y] = markup[i];
 			
 			if(!this.SGFProperties[markup[i].type]) this.SGFProperties[markup[i].type] = [];
 			
-			this.SGFProperties[markup[i].type].push((SGFwriters[markup[i].type] ? SGFwriters[markup[i].type] : coo2str)(markup[i]));
+			this.SGFProperties[markup[i].type].push((KNode.SGFwriters[markup[i].type] ? KNode.SGFwriters[markup[i].type] : coo2str)(markup[i]));
 		}
-	}
+	},
 	
 	// Removes markup
-	removeMarkup(markup) {
+	removeMarkup: function(markup) {
 		if(markup.constructor != Array) markup = [markup];
 		
-		for(let i = 0; i < markup.length; i++) {
+		for(var i = 0; i < markup.length; i++) {
 			delete this.markup[markup[i].x+":"+markup[i].y];
 			
-			for(let j = 0; j < markupProperties.length; j++) {
-				removeSGFValue(this.SGFProperties, markupProperties[j], markup[i]);
+			for(var j = 0; j < KNode.markupProperties.length; j++) {
+				removeSGFValue(this.SGFProperties, KNode.markupProperties[j], markup[i]);
 			}
 		}
-	}
+	},
 	
-	setMove(move) {
+	setMove: function(move) {
 		this.move = move;
 		
 		if(!move || !move.c) {
@@ -568,9 +555,9 @@ export default class KNode {
 			delete this.SGFProperties.W;
 			this.SGFProperties.B = [coo2str(move)];
 		}
-	}
+	},
 	
-	setTurn(turn) {
+	setTurn: function(turn) {
 		this.turn = turn;
 		
 		if(turn) {
@@ -584,17 +571,17 @@ export default class KNode {
 		else {
 			delete this.SGFProperties.PL;
 		}
-	}
+	},
 	
 	// Returns anticipated turn (player color) for next move
-	getTurn() {
+	getTurn: function() {
 		if(this.turn) return this.turn;
 		else if(this.move) return -this.move.c;
 		else if(this.parent) return this.parent.getTurn();
 		else return WGo.B;
-	}
+	},
 	
-	setComment(comment) {
+	setComment: function(comment) {
 		this.comment = comment;
 		if(comment) {
 			this.SGFProperties.C = [comment];
@@ -604,6 +591,8 @@ export default class KNode {
 		}
 	}
 }
+
+module.exports = KNode;
 
 /*
  * 

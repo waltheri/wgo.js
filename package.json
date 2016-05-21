@@ -4,10 +4,11 @@
   "description": "JavaScript library for game of Go",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -R spec",
+    "test": "mocha -R spec --compilers js:babel-register",
     "install": "npm install && grunt",
     "build": "grunt",
-    "docs": "grunt docs-prepare"
+    "docs": "grunt docs-prepare",
+    "babel": "babel src/kifu/SGFParser.js -o src/kifu/parser6.js"
   },
   "repository": {
     "type": "git",
@@ -25,6 +26,10 @@
   },
   "homepage": "http://waltheri.github.io/wgo.js",
   "devDependencies": {
+    "babel-cli": "^6.9.0",
+    "babel-plugin-transform-builtin-extend": "^1.1.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-register": "^6.9.0",
     "chai": "^3.4.1",
     "grunt": "^0.4.5",
     "grunt-browserify": "^4.0.1",
@@ -35,5 +40,21 @@
     "grunt-jsdoc": "^1.0.0",
     "grunt-string-replace": "^1.2.0",
     "mocha": "^2.3.4"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ],
+    "plugins": [
+      [
+        "babel-plugin-transform-builtin-extend",
+        {
+          "globals": [
+            "Error",
+            "Array"
+          ]
+        }
+      ]
+    ]
   }
 }

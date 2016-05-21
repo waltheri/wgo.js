@@ -1,9 +1,9 @@
 /* Test of WGo kifu classes and functionality */
 
-var assert = require("chai").assert;
-var WGo = require("../src/WGo");
-var KNode = require("../src/kifu/KNode");
-var SGFSyntaxError = require("../src/kifu/SGFParser").SGFSyntaxError;
+import {assert} from "chai";
+import WGo from "../src/WGo";
+import KNode from "../src/kifu/KNode";
+import {SGFSyntaxError} from "../src/kifu/SGFParser";
 
 describe("Kifu", function() {
 	describe("(1) KNode's node manipulatiobn methods.", function() {
@@ -353,6 +353,30 @@ describe("Kifu", function() {
 			assert.deepEqual(node.children[1].children[0].SGFProperties, {});
 		});
 		
+		it("Whitespaces in SGF", function() {
+			node.setSGF("AW\n [fk] \n  C[Co  \nol!] \n ( ; W\n[hn]C [)(] ) \n (\n;W[hm] ; )\n ");
+			
+			assert.deepEqual(node.SGFProperties, {
+				AW: ["fk"],
+				C: ["Co  \nol!"]
+			});
+			
+			assert.strictEqual(node.children.length, 2);
+			
+			assert.deepEqual(node.children[0].SGFProperties, {
+				W: ["hn"],
+				C: [")("]
+			});
+			
+			assert.deepEqual(node.children[1].SGFProperties, {
+				W: ["hm"],
+			});
+			
+			assert.strictEqual(node.children[1].children.length, 1);
+			
+			assert.deepEqual(node.children[1].children[0].SGFProperties, {});
+		});
+		
 		it("Invalid SGF throws an error", function() {
 			assert.throws(function() {
 				node.setSGF("AW[fk]C[Cool!];W[hn]C");
@@ -367,7 +391,7 @@ describe("Kifu", function() {
 			}, SGFSyntaxError);
 		});
 	});
-	/*
+	
 	describe("(5) KNode's getSGFProperty() and getSGF() methods", function() {
 		var node;
 
@@ -416,7 +440,13 @@ describe("Kifu", function() {
 			
 			assert.strictEqual(node.getSGF(), "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm])");
 		});
-	});*/
+	});
+	
+	describe("(6) Static methods KNode.fromSGF() and KNode.toSGF()", function() {
+		it("KNode.fromSGF(sgf).toSGF() == sgf", function() {
+			assert.strictEqual(KNode.fromSGF("(;FF[4]SZ[19];AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))").toSGF(), "(;FF[4]SZ[19];AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))");
+		});
+	});
 	
 	/*describe("(2) SGF -> Kifu, Kifu -> SGF", function() {
 		it("KNode's innerSGF property.");
