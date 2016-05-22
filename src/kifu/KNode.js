@@ -96,12 +96,14 @@ export var rMarkup = (type) => function(node, value) {
 };
 
 export var rPlayerInfo = (color, type) => function(node, value) {
+	if(node.parent) console.warn("Adding player information("+color+"."+type+") to non-root node, probably will be ignored.");
 	node.gameInfo = node.gameInfo || {};
 	node.gameInfo[color] = node.gameInfo[color] || {};
 	node.gameInfo[color][type] = value.join("");
 };
 
 export var rGameInfo = (property) => function(node, value) {
+	if(node.parent) console.warn("Adding game information("+property+") to non-root node, probably will be ignored.");
 	node.gameInfo = node.gameInfo || {};
 	node.gameInfo[property] = value.join("");
 };
@@ -215,14 +217,38 @@ export default class KNode {
 		// map of SGF properties (readonly) - {<PropIdent>: Array<PropValue>}
 		this.SGFProperties = {};
 
-		// game information - should be inherited from root (readonly)
-		this.gameInfo = null;
-
-		// kifu properties - should be inherited from root (readonly)
-		this.kifuInfo = null;
-
 		// init some general proeprties
 		this._init();
+	}
+	
+	get root() {
+		var node = this;
+		while(node.parent != null) node = node.parent;
+		return node;
+	}
+	
+	set innerSGF(sgf) {
+		// prepare parser
+		this.setFromSGF(new SGFParser(sgf));
+	}
+
+	get innerSGF() {
+		var output = "";
+		
+		for(let propIdent in this.SGFProperties) {
+			if(this.SGFProperties.hasOwnProperty(propIdent)) {
+				output += propIdent+this.getSGFProperty(propIdent);
+			}
+		}
+		if(this.children.length == 1) {
+			return output+";"+this.children[0].innerSGF;
+		}
+		else if(this.children.length > 1) {
+			return this.children.reduce((prev, current) => prev+"(;"+current.innerSGF+")", output);
+		}
+		else {
+			return output;
+		}
 	}
 	
 	/**
@@ -262,8 +288,6 @@ export default class KNode {
 		if(node.parent) node.parent.removeChild(node);
 		
 		node.parent = this;
-		node.gameInfo = this.gameInfo;
-		node.kifuInfo = this.kifuInfo;
 		
 		this.children.push(node);
 		return this;
@@ -303,8 +327,6 @@ export default class KNode {
 		if(newNode.parent) newNode.parent.removeChild(newNode);
 		
 		newNode.parent = this;
-		newNode.gameInfo = this.gameInfo;
-		newNode.kifuInfo = this.kifuInfo;
 		
 		this.children.splice(this.children.indexOf(referenceNode), 0, newNode);
 		return this;
@@ -320,8 +342,6 @@ export default class KNode {
 	removeChild(child) {
 		this.children.splice(this.children.indexOf(child), 1);
 
-		child.gameInfo = null;
-		child.kifuInfo = null;
 		child.parent = null;
 		
 		return this;
@@ -403,16 +423,13 @@ export default class KNode {
 	 * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
 	 */
 	 
-	setSGF(sgf) {
+	setFromSGF(parser) {
 		// clean up
 		for(let i = this.children.length-1; i >= 0; i--) {
 			this.removeChild(this.children[i]);
 		}
 		this._init();
 		this.SGFProperties = {};
-		
-		// prepare parser
-		let parser = typeof sgf == "string" ? new SGFParser(sgf) : sgf;
 		
 		// and parse properties
 		this.setSGFProperties(parser.parseProperties());
@@ -423,7 +440,7 @@ export default class KNode {
 			let childNode = new KNode();
 			this.appendChild(childNode);
 			parser.next();
-			childNode.setSGF(parser);
+			childNode.setFromSGF(parser);
 		}
 		else if(parser.currentChar == "(") {
 			// two or more children
@@ -437,56 +454,8 @@ export default class KNode {
 		}
 	}
 	
-	/**
-	 * Gets SGF corresponding to this node.
-	 * 
-	 * @returns {string} SGF containing all properties and also children SGF nodes.
-	 */
-	getSGF() {
-		var output = "";
-		
-		for(let propIdent in this.SGFProperties) {
-			if(this.SGFProperties.hasOwnProperty(propIdent)) {
-				output += propIdent+this.getSGFProperty(propIdent);
-			}
-		}
-		if(this.children.length == 1) {
-			return output+";"+this.children[0].getSGF();
-		}
-		else if(this.children.length > 1) {
-			return this.children.reduce((prev, current) => prev+"(;"+current.getSGF()+")", output);
-		}
-		else {
-			return output;
-		}
-	}
-	
-	/**
-	 * Gets SGF corresponding to this node.
-	 * 
-	 * @returns {string} SGF containing all properties and also children SGF nodes.
-	 */
-	getSGF() {
-		var output = "";
-		
-		for(let propIdent in this.SGFProperties) {
-			if(this.SGFProperties.hasOwnProperty(propIdent)) {
-				output += propIdent+this.getSGFProperty(propIdent);
-			}
-		}
-		if(this.children.length == 1) {
-			return output+";"+this.children[0].getSGF();
-		}
-		else if(this.children.length > 1) {
-			return this.children.reduce((prev, current) => prev+"(;"+current.getSGF()+")", output);
-		}
-		else {
-			return output;
-		}
-	}
-	
 	toSGF() {
-		return "(;"+this.getSGF()+")";
+		return "(;"+this.innerSGF+")";
 	}
 	
 	/// KIFU SPECIFIC METHODS

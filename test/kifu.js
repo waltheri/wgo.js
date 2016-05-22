@@ -11,8 +11,8 @@ describe("Kifu", function() {
 
 		beforeEach(function(){		
 			rootNode = new KNode();
-			rootNode.gameInfo = {}; // provisional game info
-			rootNode.kifuInfo = {}; // provisional kifu info
+			//rootNode.gameInfo = {}; // provisional game info
+			//rootNode.kifuInfo = {}; // provisional kifu info
 			
 			node1 = new KNode();
 			node2 = new KNode();
@@ -27,17 +27,13 @@ describe("Kifu", function() {
 			assert.strictEqual(rootNode.children[0], node1);
 			assert.strictEqual(rootNode.children[1], node2);
 			assert.strictEqual(node1.parent, rootNode);
-			assert.strictEqual(node1.gameInfo, rootNode.gameInfo);
-			assert.strictEqual(node1.kifuInfo, rootNode.kifuInfo);
 			assert.throws(function(){rootNode.appendChild(rootNode)}, Error);
 			
-			node3.appendChild(node1);
+			node2.appendChild(node1);
 			
 			assert.strictEqual(rootNode.children.length, 1);
 			assert.notInclude(rootNode.children, node1);
-			assert.strictEqual(node1.parent, node3);
-			assert.strictEqual(node1.gameInfo, node3.gameInfo);
-			assert.strictEqual(node1.kifuInfo, node3.kifuInfo);
+			assert.strictEqual(node1.parent, node2);
 		});
 		
 		it("cloneNode()");
@@ -61,8 +57,6 @@ describe("Kifu", function() {
 			assert.strictEqual(rootNode.children[0], node2);
 			assert.strictEqual(rootNode.children[1], node1);
 			assert.strictEqual(node2.parent, rootNode);
-			assert.strictEqual(node2.gameInfo, rootNode.gameInfo);
-			assert.strictEqual(node2.kifuInfo, rootNode.kifuInfo);
 
 			assert.notInclude(node3.children, node2);
 		});
@@ -85,13 +79,26 @@ describe("Kifu", function() {
 			assert.strictEqual(rootNode.children[0], node2);
 			
 			assert.strictEqual(node2.parent, rootNode);
-			assert.strictEqual(node2.gameInfo, rootNode.gameInfo);
-			assert.strictEqual(node2.kifuInfo, rootNode.kifuInfo);
 			
 			assert.equal(node1.parent, null);
 			assert.notInclude(node3.children, node2);
 		});
 		
+		it("root property", function() {
+			rootNode.appendChild(node1);
+			node1.appendChild(node2);
+			
+			assert.strictEqual(rootNode.root, rootNode);
+			assert.strictEqual(node1.root, rootNode);
+			assert.strictEqual(node2.root, rootNode);
+			
+			rootNode.removeChild(node1);
+			assert.strictEqual(node2.root, node1);
+			
+			assert.throws(function() {
+				node2.root = node1;
+			});
+		});
 	});
 	
 	describe("(2) Kifu specific methods.", function() {
@@ -259,7 +266,7 @@ describe("Kifu", function() {
 		});
 	});
 	
-	describe("(4) KNode's setSGF() method", function() {
+	describe("(4) KNode's innerSGF property", function() {
 		var node;
 
 		beforeEach(function() {
@@ -267,7 +274,7 @@ describe("Kifu", function() {
 		});
 		
 		it("Set only properties", function() {
-			node.setSGF("AB[fk][hm]IT[]C[Hello]");
+			node.innerSGF = "AB[fk][hm]IT[]C[Hello]";
 			assert.deepEqual(node.SGFProperties, {
 				AB: ["fk", "hm"],
 				IT: [],
@@ -276,7 +283,7 @@ describe("Kifu", function() {
 		});
 		
 		it("Set properties with special characters", function() {
-			node.setSGF("B[fk]C[碁\\\\\\];(\\\n\\n\\\\]");
+			node.innerSGF = "B[fk]C[碁\\\\\\];(\\\n\\n\\\\]";
 			assert.deepEqual(node.SGFProperties, {
 				B: ["fk"],
 				C: ["碁\\];(n\\"]
@@ -290,7 +297,7 @@ describe("Kifu", function() {
 			node.setComment("Hi!");
 			node.appendChild(new KNode());
 			
-			node.setSGF("CR[fk]");
+			node.innerSGF = "CR[fk]";
 			
 			assert.deepEqual(node.SGFProperties, {
 				CR: ["fk"]
@@ -311,7 +318,7 @@ describe("Kifu", function() {
 		});
 		
 		it("Set just child nodes", function() {
-			node.setSGF(";W[fk];B[hm]");
+			node.innerSGF = ";W[fk];B[hm]";
 			
 			assert.deepEqual(node.SGFProperties, {});
 			
@@ -330,7 +337,7 @@ describe("Kifu", function() {
 		});
 		
 		it("Set multiple properties and children", function() {
-			node.setSGF("AW[fk]C[Cool!](;W[hn]C[)(])(;W[hm];)");
+			node.innerSGF = "AW[fk]C[Cool!](;W[hn]C[)(])(;W[hm];)";
 			
 			assert.deepEqual(node.SGFProperties, {
 				AW: ["fk"],
@@ -354,7 +361,7 @@ describe("Kifu", function() {
 		});
 		
 		it("Whitespaces in SGF", function() {
-			node.setSGF("AW\n [fk] \n  C[Co  \nol!] \n ( ; W\n[hn]C [)(] ) \n (\n;W[hm] ; )\n ");
+			node.innerSGF = "AW\n [fk] \n  C[Co  \nol!] \n ( ; W\n[hn]C [)(] ) \n (\n;W[hm] ; )\n ";
 			
 			assert.deepEqual(node.SGFProperties, {
 				AW: ["fk"],
@@ -379,20 +386,20 @@ describe("Kifu", function() {
 		
 		it("Invalid SGF throws an error", function() {
 			assert.throws(function() {
-				node.setSGF("AW[fk]C[Cool!];W[hn]C");
+				node.innerSGF = "AW[fk]C[Cool!];W[hn]C";
 			}, SGFSyntaxError);
 			
 			assert.throws(function() {
-				node.setSGF("AW[fk]C[Cool!];W[hn]C[)(])(;W[hm];)");
+				node.innerSGF = "AW[fk]C[Cool!];W[hn]C[)(])(;W[hm];)";
 			}, SGFSyntaxError);
 			
 			assert.throws(function() {
-				node.setSGF("AW[fk]C[Cool!];W[hn]C[)(](;W[hm]");
+				node.innerSGF = "AW[fk]C[Cool!];W[hn]C[)(](;W[hm]";
 			}, SGFSyntaxError);
 		});
 	});
 	
-	describe("(5) KNode's getSGFProperty() and getSGF() methods", function() {
+	describe("(5) KNode's getSGFProperty() and innerSGF property", function() {
 		var node;
 
 		beforeEach(function() {
@@ -417,18 +424,18 @@ describe("Kifu", function() {
 			assert.strictEqual(node.getSGFProperty("C"), "[AB[hm\\][fk\\]]");
 		});
 		
-		it("getSGF() with no children", function() {
-			assert.strictEqual(node.getSGF(), "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]]");
+		it("node.innerSGF with no children", function() {
+			assert.strictEqual(node.innerSGF, "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]]");
 		});
 		
-		it("getSGF() with one child", function() {
+		it("node.innerSGF with one child", function() {
 			var child = new KNode();
 			child.setMove({c:WGo.B, x:5, y:10});
 			child.appendChild(node);
-			assert.strictEqual(child.getSGF(), "B[fk];AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]]");
+			assert.strictEqual(child.innerSGF, "B[fk];AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]]");
 		});
 		
-		it("getSGF() with more children", function() {
+		it("node.innerSGF with more children", function() {
 			var child1 = new KNode();
 			var child2 = new KNode();
 			
@@ -438,7 +445,7 @@ describe("Kifu", function() {
 			child2.setMove({c:WGo.B, x:7, y:12});
 			node.appendChild(child2);
 			
-			assert.strictEqual(node.getSGF(), "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm])");
+			assert.strictEqual(node.innerSGF, "AB[hm][fk]IT[]DO[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm])");
 		});
 	});
 	

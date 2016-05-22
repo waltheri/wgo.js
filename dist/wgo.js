@@ -1079,6 +1079,7 @@
 
 	var rPlayerInfo = function rPlayerInfo(color, type) {
 		return function (node, value) {
+			if (node.parent) console.warn("Adding player information(" + color + "." + type + ") to non-root node, probably will be ignored.");
 			node.gameInfo = node.gameInfo || {};
 			node.gameInfo[color] = node.gameInfo[color] || {};
 			node.gameInfo[color][type] = value.join("");
@@ -1087,6 +1088,7 @@
 
 	var rGameInfo = function rGameInfo(property) {
 		return function (node, value) {
+			if (node.parent) console.warn("Adding game information(" + property + ") to non-root node, probably will be ignored.");
 			node.gameInfo = node.gameInfo || {};
 			node.gameInfo[property] = value.join("");
 		};
@@ -1207,22 +1209,18 @@
 			// map of SGF properties (readonly) - {<PropIdent>: Array<PropValue>}
 			this.SGFProperties = {};
 
-			// game information - should be inherited from root (readonly)
-			this.gameInfo = null;
-
-			// kifu properties - should be inherited from root (readonly)
-			this.kifuInfo = null;
-
 			// init some general proeprties
 			this._init();
 		}
 
-		/**
-	  * Initialize KNode object. Called in constructor, it can be overriden to add some general properties.
-	  */
-
 		babelHelpers.createClass(KNode, [{
 			key: "_init",
+
+
+			/**
+	   * Initialize KNode object. Called in constructor, it can be overriden to add some general properties.
+	   */
+
 			value: function _init() {
 				// map of setup (readonly)
 				this.setup = {};
@@ -1258,8 +1256,6 @@
 				if (node.parent) node.parent.removeChild(node);
 
 				node.parent = this;
-				node.gameInfo = this.gameInfo;
-				node.kifuInfo = this.kifuInfo;
 
 				this.children.push(node);
 				return this;
@@ -1305,8 +1301,6 @@
 				if (newNode.parent) newNode.parent.removeChild(newNode);
 
 				newNode.parent = this;
-				newNode.gameInfo = this.gameInfo;
-				newNode.kifuInfo = this.kifuInfo;
 
 				this.children.splice(this.children.indexOf(referenceNode), 0, newNode);
 				return this;
@@ -1324,8 +1318,6 @@
 			value: function removeChild(child) {
 				this.children.splice(this.children.indexOf(child), 1);
 
-				child.gameInfo = null;
-				child.kifuInfo = null;
 				child.parent = null;
 
 				return this;
@@ -1416,17 +1408,14 @@
 	   */
 
 		}, {
-			key: "setSGF",
-			value: function setSGF(sgf) {
+			key: "setFromSGF",
+			value: function setFromSGF(parser) {
 				// clean up
 				for (var i = this.children.length - 1; i >= 0; i--) {
 					this.removeChild(this.children[i]);
 				}
 				this._init();
 				this.SGFProperties = {};
-
-				// prepare parser
-				var parser = typeof sgf == "string" ? new SGFParser(sgf) : sgf;
 
 				// and parse properties
 				this.setSGFProperties(parser.parseProperties());
@@ -1437,7 +1426,7 @@
 					var childNode = new KNode();
 					this.appendChild(childNode);
 					parser.next();
-					childNode.setSGF(parser);
+					childNode.setFromSGF(parser);
 				} else if (parser.currentChar == "(") {
 					// two or more children
 					parser.parseCollection().forEach(function (jsgf) {
@@ -1448,64 +1437,10 @@
 					throw new SGFSyntaxError("Illegal character in SGF node", parser);
 				}
 			}
-
-			/**
-	   * Gets SGF corresponding to this node.
-	   * 
-	   * @returns {string} SGF containing all properties and also children SGF nodes.
-	   */
-
-		}, {
-			key: "getSGF",
-			value: function getSGF() {
-				var output = "";
-
-				for (var propIdent in this.SGFProperties) {
-					if (this.SGFProperties.hasOwnProperty(propIdent)) {
-						output += propIdent + this.getSGFProperty(propIdent);
-					}
-				}
-				if (this.children.length == 1) {
-					return output + ";" + this.children[0].getSGF();
-				} else if (this.children.length > 1) {
-					return this.children.reduce(function (prev, current) {
-						return prev + "(;" + current.getSGF() + ")";
-					}, output);
-				} else {
-					return output;
-				}
-			}
-
-			/**
-	   * Gets SGF corresponding to this node.
-	   * 
-	   * @returns {string} SGF containing all properties and also children SGF nodes.
-	   */
-
-		}, {
-			key: "getSGF",
-			value: function getSGF() {
-				var output = "";
-
-				for (var propIdent in this.SGFProperties) {
-					if (this.SGFProperties.hasOwnProperty(propIdent)) {
-						output += propIdent + this.getSGFProperty(propIdent);
-					}
-				}
-				if (this.children.length == 1) {
-					return output + ";" + this.children[0].getSGF();
-				} else if (this.children.length > 1) {
-					return this.children.reduce(function (prev, current) {
-						return prev + "(;" + current.getSGF() + ")";
-					}, output);
-				} else {
-					return output;
-				}
-			}
 		}, {
 			key: "toSGF",
 			value: function toSGF() {
-				return "(;" + this.getSGF() + ")";
+				return "(;" + this.innerSGF + ")";
 			}
 
 			/// KIFU SPECIFIC METHODS
@@ -1628,6 +1563,38 @@
 					this.SGFProperties.C = [comment];
 				} else {
 					delete this.SGFProperties.C;
+				}
+			}
+		}, {
+			key: "root",
+			get: function get() {
+				var node = this;
+				while (node.parent != null) {
+					node = node.parent;
+				}return node;
+			}
+		}, {
+			key: "innerSGF",
+			set: function set(sgf) {
+				// prepare parser
+				this.setFromSGF(new SGFParser(sgf));
+			},
+			get: function get() {
+				var output = "";
+
+				for (var propIdent in this.SGFProperties) {
+					if (this.SGFProperties.hasOwnProperty(propIdent)) {
+						output += propIdent + this.getSGFProperty(propIdent);
+					}
+				}
+				if (this.children.length == 1) {
+					return output + ";" + this.children[0].innerSGF;
+				} else if (this.children.length > 1) {
+					return this.children.reduce(function (prev, current) {
+						return prev + "(;" + current.innerSGF + ")";
+					}, output);
+				} else {
+					return output;
 				}
 			}
 		}]);
