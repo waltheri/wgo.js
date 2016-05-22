@@ -1,9 +1,9 @@
 /* Test of WGo.Game class and (handling of go game) */
-/*
-var assert = require("chai").assert;
-var Game = require("../src/Game.js");
-var Position = require("../src/Position.js");
-var WGo = require("../src/WGo.js");
+
+import {assert} from "chai";
+import * as WGo from "../src/core";
+import Game from "../src/Game.js";
+import Position from "../src/Position.js";
 
 describe("Game", function() {
 	describe("(1) Basic Game object functionality", function() {
@@ -219,4 +219,4 @@ describe("Game", function() {
 			assert.deepEqual(firstPosition, game.position);
 		});
 	});
-});*/
+});

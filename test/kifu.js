@@ -1,7 +1,7 @@
 /* Test of WGo kifu classes and functionality */
 
 import {assert} from "chai";
-import WGo from "../src/WGo";
+import * as WGo from "../src/core";
 import KNode from "../src/kifu/KNode";
 import {SGFSyntaxError} from "../src/kifu/SGFParser";
 

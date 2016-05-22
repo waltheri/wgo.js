@@ -1,12 +1,35 @@
+var babel = require('rollup-plugin-babel');
+var es2015Rollup = require('babel-preset-es2015-rollup');
+
 module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON("package.json"),
 		browserify: {
 			dist: {
 				files: {
-					'dist/wgo.js': ['index.js']
+					'dist/wgo.js': ['src/WGo.js']
 				},
 				options: {
+					transform: [["babelify", {babelrc: false, presets: [es2015Rollup]}]]
+				}
+			}
+		},
+		rollup: {
+			dist: {
+				files: {
+					'dist/wgo.js': ['src/WGo.js'],
+				},
+				options: {
+					format: "umd",
+					exports: "named",
+					moduleName: "WGo",
+					plugins: [
+						babel({
+							exclude: './node_modules/**',
+							babelrc: false,
+							presets: [es2015Rollup]
+						})
+					]
 				}
 			}
 		},
@@ -68,13 +91,14 @@ module.exports = function(grunt) {
 	});
 
 	grunt.loadNpmTasks('grunt-browserify');
+	grunt.loadNpmTasks('grunt-rollup');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-github-pages');
 	grunt.loadNpmTasks('grunt-jsdoc');
 	grunt.loadNpmTasks('grunt-string-replace');
 	grunt.loadNpmTasks('grunt-contrib-less');
 
-	grunt.registerTask('default', ['browserify', 'uglify']);
+	grunt.registerTask('default', ['rollup', 'uglify']);
 	grunt.registerTask('docs-prepare', ['jsdoc', 'string-replace']);
 	grunt.registerTask('docs', ['docs-prepare', 'githubPages']);
 	grunt.registerTask('styles', ['less']);

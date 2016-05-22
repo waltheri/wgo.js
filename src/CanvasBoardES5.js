@@ -3,10 +3,111 @@
  * @module CanvasBoard
  */
 
-import {BLACK, WHITE} from "./core";
+var WGo = require("./WGo");
 
-// theme helper
-var theme_variable = (key, board) => typeof board.theme[key] == "function" ? board.theme[key](board) : board.theme[key];
+/**
+ * CanvasBoard class constructor - it creates a canvas board.
+ *
+ * @alias WGo.CanvasBoard
+ * @class
+ * @implements WGo.Board
+ * @param {HTMLElement} elem DOM element to put in
+ * @param {Object} config Configuration object. It is object with "key: value" structure. Possible configurations are:
+ *
+ * * size: number - size of the board (default: 19)
+ * * width: number - width of the board (default: 0)
+ * * height: number - height of the board (default: 0)
+ * * font: string - font of board writings (!deprecated)
+ * * lineWidth: number - line width of board drawings (!deprecated)
+ * * autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this option rewrites 'lineWidth' /and it will keep markups sharp/ (!deprecated)
+ * * starPoints: Object - star points coordinates, defined for various board sizes. Look at CanvasBoard.default for more info.
+ * * stoneHandler: CanvasBoard.DrawHandler - stone drawing handler (default: CanvasBoard.drawHandlers.SHELL)
+ * * starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant. (!deprecated)
+ * * stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant. (!deprecated)
+ * * shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant. (!deprecated)
+ * * background: string - background of the board, it can be either color (#RRGGBB) or url. Empty string means no background. (default: WGo.DIR+"wood1.jpg")
+ * * section: {
+ *     top: number,
+ *     right: number,
+ *     bottom: number,
+ *     left: number
+ *   }
+ *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side.
+ *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
+ * * theme: Object - theme object, which defines all graphical attributes of the board. Default theme object is "WGo.CanvasBoard.themes.default". For old look you may use "WGo.CanvasBoard.themes.old".
+ *
+ * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only if you set property 'theme' to 'WGo.CanvasBoard.themes.old'.
+ */
+
+
+
+var CanvasBoard = function(elem, config) {
+	var config = config || {};
+	
+	// set user configuration
+	for(var key in config) this[key] = config[key];
+	
+	// add default configuration
+	for(var key in CanvasBoard.default) if(this[key] === undefined) this[key] = CanvasBoard.default[key];
+	
+	// add default theme variables
+	for(var key in CanvasBoard.themes.default) if(this.theme[key] === undefined) this.theme[key] = CanvasBoard.themes.default[key];
+	
+	// set section if set
+	this.tx = this.section.left;
+	this.ty = this.section.top;
+	this.bx = this.size-1-this.section.right;
+	this.by = this.size-1-this.section.bottom;
+	
+	// init board
+	this.init();
+	
+	// append to element
+	elem.appendChild(this.element);
+	
+	// set initial dimensions
+
+	// set the pixel ratio for HDPI (e.g. Retina) screens
+	this.pixelRatio = window.devicePixelRatio || 1;
+
+	if(this.width && this.height) this.setDimensions(this.width, this.height);
+	else if(this.width) this.setWidth(this.width);
+	else if(this.height) this.setHeight(this.height);
+}
+
+// New experimental board theme system - it can be changed in future, if it will appear to be unsuitable.
+CanvasBoard.themes = {};
+
+CanvasBoard.themes.old = {
+	shadowColor: "rgba(32,32,32,0.5)",	
+	shadowTransparentColor: "rgba(32,32,32,0)",
+	shadowBlur: 0,
+	shadowSize: function(board) {
+		return board.shadowSize;
+	},
+	markupBlackColor: "rgba(255,255,255,0.8)",
+	markupWhiteColor: "rgba(0,0,0,0.8)",
+	markupNoneColor: "rgba(0,0,0,0.8)",
+	markupLinesWidth: function(board) {
+		return board.autoLineWidth ? board.stoneRadius/7 : board.lineWidth;
+	},
+	gridLinesWidth: 1,
+	gridLinesColor: function(board) {
+		return "rgba(0,0,0,"+Math.min(1, board.stoneRadius/15)+")";
+	}, 
+	starColor: "#000",
+	starSize: function(board) {
+		return board.starSize*((board.width/300)+1);
+	},
+	stoneSize: function(board) {
+		return board.stoneSize*Math.min(board.fieldWidth, board.fieldHeight)/2;
+	},
+	coordinatesColor: "rgba(0,0,0,0.7)",
+	font: function(board) {
+		return board.font;
+	},
+	linesShift: 0.5
+}
 
 /** 
  * Object containing default graphical properties of a board.
@@ -14,78 +115,41 @@ var theme_variable = (key, board) => typeof board.theme[key] == "function" ? boa
  * Theme object doesn't set board and stone textures - they are set separately.
  */ 
  
-export var themes = {
-	old: {
-		shadowColor: "rgba(32,32,32,0.5)",	
-		shadowTransparentColor: "rgba(32,32,32,0)",
-		shadowBlur: 0,
-		shadowSize: function(board) {
-			return board.shadowSize;
-		},
-		markupBlackColor: "rgba(255,255,255,0.8)",
-		markupWhiteColor: "rgba(0,0,0,0.8)",
-		markupNoneColor: "rgba(0,0,0,0.8)",
-		markupLinesWidth: function(board) {
-			return board.autoLineWidth ? board.stoneRadius/7 : board.lineWidth;
-		},
-		gridLinesWidth: 1,
-		gridLinesColor: function(board) {
-			return "rgba(0,0,0,"+Math.min(1, board.stoneRadius/15)+")";
-		}, 
-		starColor: "#000",
-		starSize: function(board) {
-			return board.starSize*((board.width/300)+1);
-		},
-		stoneSize: function(board) {
-			return board.stoneSize*Math.min(board.fieldWidth, board.fieldHeight)/2;
-		},
-		coordinatesColor: "rgba(0,0,0,0.7)",
-		font: function(board) {
-			return board.font;
-		},
-		linesShift: 0.5
+CanvasBoard.themes.default = {
+	shadowColor: "rgba(62,32,32,0.5)",
+	shadowTransparentColor: "rgba(62,32,32,0)",
+	shadowBlur: function(board){
+		return board.stoneRadius*0.1;
 	},
-	default: {
-		shadowColor: "rgba(62,32,32,0.5)",
-		shadowTransparentColor: "rgba(62,32,32,0)",
-		shadowBlur: function(board){
-			return board.stoneRadius*0.1;
-		},
-		shadowSize: 1,
-		markupBlackColor: "rgba(255,255,255,0.9)",
-		markupWhiteColor: "rgba(0,0,0,0.7)",
-		markupNoneColor: "rgba(0,0,0,0.7)",
-		markupLinesWidth: function(board) {
-			return board.stoneRadius/8;
-		},
-		gridLinesWidth: function(board) {
-			return board.stoneRadius/15;
-		},
-		gridLinesColor: "#654525",
-		starColor: "#531",
-		starSize: function(board) {
-			return (board.stoneRadius/8)+1;
-		},
-		stoneSize: function(board) {
-			return Math.min(board.fieldWidth, board.fieldHeight)/2;
-		},
-		coordinatesColor: "#531",
-		variationColor: "rgba(0,32,128,0.8)",
-		font: "calibri",
-		linesShift: 0.25
-	}
-};
-
-// Drawing related functions and objects
-
-var default_field_clear = function(args, board) {
-	var xr = board.getX(args.x),
-		yr = board.getY(args.y),
-		sr = board.stoneRadius;
-	this.clearRect(xr-2*sr-board.ls,yr-2*sr-board.ls, 4*sr, 4*sr);
+	shadowSize: 1,
+	markupBlackColor: "rgba(255,255,255,0.9)",
+	markupWhiteColor: "rgba(0,0,0,0.7)",
+	markupNoneColor: "rgba(0,0,0,0.7)",
+	markupLinesWidth: function(board) {
+		return board.stoneRadius/8;
+	},
+	gridLinesWidth: function(board) {
+		return board.stoneRadius/15;
+	},
+	gridLinesColor: "#654525",
+	starColor: "#531",
+	starSize: function(board) {
+		return (board.stoneRadius/8)+1;
+	},
+	stoneSize: function(board) {
+		return Math.min(board.fieldWidth, board.fieldHeight)/2;
+	},
+	coordinatesColor: "#531",
+	variationColor: "rgba(0,32,128,0.8)",
+	font: "calibri",
+	linesShift: 0.25
 }
 
-export var shadowHandler = {
+var theme_variable = function(key, board) {
+	return typeof board.theme[key] == "function" ? board.theme[key](board) : board.theme[key];
+}
+
+var shadow_handler = {
 	draw: function(args, board) {
 		var xr = board.getX(args.x),
 			yr = board.getY(args.y),
@@ -114,13 +178,13 @@ export var shadowHandler = {
 }
 
 var get_markup_color = function(board, x, y) {
-	if(board.obj_arr[x][y][0].c == BLACK) return theme_variable("markupBlackColor", board);
-	else if(board.obj_arr[x][y][0].c == WHITE) return theme_variable("markupWhiteColor", board);
+	if(board.obj_arr[x][y][0].c == WGo.B) return theme_variable("markupBlackColor", board);
+	else if(board.obj_arr[x][y][0].c == WGo.W) return theme_variable("markupWhiteColor", board);
 	return theme_variable("markupNoneColor", board);
 }
 
 var is_here_stone = function(board, x, y) {
-	return (board.obj_arr[x][y][0] && board.obj_arr[x][y][0].c == WHITE || board.obj_arr[x][y][0].c == BLACK);
+	return (board.obj_arr[x][y][0] && board.obj_arr[x][y][0].c == WGo.W || board.obj_arr[x][y][0].c == WGo.B);
 }
 
 var redraw_layer = function(board, layer) {
@@ -134,7 +198,7 @@ var redraw_layer = function(board, layer) {
 			for(var z = 0; z < board.obj_arr[x][y].length; z++) {
 				var obj = board.obj_arr[x][y][z];
 				if(!obj.type) handler = board.stoneHandler;
-				else if(typeof obj.type == "string") handler = drawHandlers[obj.type];
+				else if(typeof obj.type == "string") handler = CanvasBoard.drawHandlers[obj.type];
 				else handler = obj.type;
 		
 				if(handler[layer]) handler[layer].draw.call(board[layer].getContext(obj), obj, board);
@@ -208,7 +272,7 @@ var draw_shell = function(arg) {
 
 // drawing handlers
 
-export var drawHandlers = {
+CanvasBoard.drawHandlers = {
 	// handler for normal stones
 	NORMAL: {
 		// draw handler for stone layer
@@ -222,7 +286,7 @@ export var drawHandlers = {
 					radgrad;
 				
 				// set stone texture
-				if(args.c == WHITE) {
+				if(args.c == WGo.W) {
 					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,sr/3,xr-sr/5,yr-sr/5,5*sr/5);
 					radgrad.addColorStop(0, '#fff');
 					radgrad.addColorStop(1, '#aaa');
@@ -241,7 +305,7 @@ export var drawHandlers = {
 			}
 		},
 		// adding shadow handler
-		shadow: shadowHandler,
+		shadow: shadow_handler,
 	},
 	
 	PAINTED: {
@@ -252,7 +316,7 @@ export var drawHandlers = {
 					sr = board.stoneRadius,
 					radgrad;
 					
-				if(args.c == WHITE) {
+				if(args.c == WGo.W) {
 					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,2,xr-sr/5,yr-sr/5,4*sr/5);
 					radgrad.addColorStop(0, '#fff');
 					radgrad.addColorStop(1, '#ddd');
@@ -271,7 +335,7 @@ export var drawHandlers = {
 				this.beginPath();
 				this.lineWidth = sr/6;
 				
-				if(args.c == WHITE) {
+				if(args.c == WGo.W) {
 					this.strokeStyle = '#999';
 					this.arc(xr+sr/8, yr+sr/8, sr/2, 0, Math.PI/2, false);
 				}
@@ -283,7 +347,7 @@ export var drawHandlers = {
 				this.stroke();
 			}
 		},
-		shadow: shadowHandler,
+		shadow: shadow_handler,
 	},
 	
 	GLOW: {
@@ -294,7 +358,7 @@ export var drawHandlers = {
 					sr = board.stoneRadius;
 					
 				var radgrad;
-				if(args.c == WHITE) {
+				if(args.c == WGo.W) {
 					radgrad = this.createRadialGradient(xr-2*sr/5,yr-2*sr/5,sr/3,xr-sr/5,yr-sr/5,8*sr/5);
 					radgrad.addColorStop(0, '#fff');
 					radgrad.addColorStop(1, '#666');
@@ -311,7 +375,7 @@ export var drawHandlers = {
 				this.fill();
 			},
 		},
-		shadow: shadowHandler,
+		shadow: shadow_handler,
 	},
 	
 	SHELL: {
@@ -328,7 +392,7 @@ export var drawHandlers = {
 					
 				var radgrad;
 
-				if(args.c == WHITE) {
+				if(args.c == WGo.W) {
 					radgrad = "#aaa";
 				}
 				else {
@@ -341,7 +405,7 @@ export var drawHandlers = {
 				this.fill();
 				
 				// do shell magic here
-				if(args.c == WHITE) {
+				if(args.c == WGo.W) {
 					// do shell magic here
 					var type = shell_seed%(3+args.x*board.size+args.y)%3;
 					var z = board.size*board.size+args.x*board.size+args.y;
@@ -414,7 +478,7 @@ export var drawHandlers = {
 				}
 			}
 		},
-		shadow: shadowHandler,
+		shadow: shadow_handler,
 	},
 	
 	MONO: {
@@ -425,7 +489,7 @@ export var drawHandlers = {
 					sr = board.stoneRadius,
 					lw = theme_variable("markupLinesWidth", board) || 1;
 					
-				if(args.c == WHITE) this.fillStyle = "white";
+				if(args.c == WGo.W) this.fillStyle = "white";
 				else this.fillStyle = "black";			
 				
 				this.beginPath();
@@ -597,7 +661,7 @@ export var drawHandlers = {
 			draw: function(args, board) {
 				if(args.alpha) this.globalAlpha = args.alpha;
 				else this.globalAlpha = 0.3;
-				if(args.stoneStyle) drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
+				if(args.stoneStyle) CanvasBoard.drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
 				else board.stoneHandler.stone.draw.call(this, args, board);
 				this.globalAlpha = 1;
 			}
@@ -608,7 +672,7 @@ export var drawHandlers = {
 		stone: {
 			draw: function(args, board) {
 				board.stoneRadius = board.stoneRadius/2;
-				if(args.stoneStyle) drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
+				if(args.stoneStyle) CanvasBoard.drawHandlers[args.stoneStyle].stone.draw.call(this, args, board);
 				else board.stoneHandler.stone.draw.call(this, args, board);
 				board.stoneRadius = board.stoneRadius*2;
 			}
@@ -616,11 +680,7 @@ export var drawHandlers = {
 	},
 }
 
-/**
- * Draws coordinates on the board 
- */
-
-export var coordinates = {
+CanvasBoard.coordinates = {
 	grid: {
 		draw: function(args, board) {
 			var ch, t, xright, xleft, ytop, ybottom;
@@ -658,44 +718,44 @@ export var coordinates = {
  * Implements one layer of the HTML5 canvas
  */
  
-export class CanvasLayer {
-	constructor() {
-		this.element = document.createElement('canvas');
-		this.context = this.element.getContext('2d');
+CanvasBoard.CanvasLayer = function() {
+	this.element = document.createElement('canvas');
+	this.context = this.element.getContext('2d');
 
-		// Adjust pixel ratio for HDPI screens (e.g. Retina)
-		this.pixelRatio = window.devicePixelRatio || 1;
-		if (this.pixelRatio > 1) {
-			this.context.scale(this.pixelRatio, this.pixelRatio);
-		}
+	// Adjust pixel ratio for HDPI screens (e.g. Retina)
+	this.pixelRatio = window.devicePixelRatio || 1;
+	if (this.pixelRatio > 1) {
+		this.context.scale(this.pixelRatio, this.pixelRatio);
 	}
+}
+
+CanvasBoard.CanvasLayer.prototype = {
+	constructor: CanvasBoard.CanvasLayer,
 	
-	setDimensions(width, height) {
+	setDimensions: function(width, height) {
 		this.element.width = width;
 		this.element.style.width = (width / this.pixelRatio) + 'px';
 		this.element.height = height;
 		this.element.style.height = (height / this.pixelRatio) + 'px';
-	}
+	},
 	
-	appendTo(element, weight) {
+	appendTo: function(element, weight) {
 		this.element.style.position = 'absolute';
 		this.element.style.zIndex = weight;
 		element.appendChild(this.element);
-	}
+	},
 	
-	removeFrom(element) {
+	removeFrom: function(element) {
 		element.removeChild(this.element);
-	}
+	},
 	
-	getContext() {
+	getContext: function() {
 		return this.context;
-	}
+	},
 	
-	draw(board) {
-		// abstract method to be implemented
-	}
+	draw: function(board) {	},
 	
-	clear() {
+	clear: function() {
 		this.context.clearRect(0,0,this.element.width,this.element.height);
 	}
 }
@@ -706,47 +766,45 @@ export class CanvasLayer {
  * Layer which renders board grid.
  */
  
-export class GridLayer extends CanvasLayer {
-	constructor() {
-		super();
-	}
+CanvasBoard.GridLayer = WGo.extendClass(CanvasBoard.CanvasLayer, function() {
+	this.super.call(this);
+});
+
+CanvasBoard.GridLayer.prototype.draw = function(board) {
+	// draw grid
+	var tmp;
+
+	this.context.beginPath();
+	this.context.lineWidth = theme_variable("gridLinesWidth", board);
+	this.context.strokeStyle = theme_variable("gridLinesColor", board);
 	
-	draw(board) {
-		// draw grid
-		var tmp;
+	var tx = Math.round(board.left),
+		ty = Math.round(board.top),
+		bw = Math.round(board.fieldWidth*(board.size-1)),
+		bh = Math.round(board.fieldHeight*(board.size-1));
+	
+	this.context.strokeRect(tx-board.ls, ty-board.ls, bw, bh);
 
-		this.context.beginPath();
-		this.context.lineWidth = theme_variable("gridLinesWidth", board);
-		this.context.strokeStyle = theme_variable("gridLinesColor", board);
+	for(var i = 1; i < board.size-1; i++) {
+		tmp = Math.round(board.getX(i))-board.ls;
+		this.context.moveTo(tmp, ty);
+		this.context.lineTo(tmp, ty+bh);
 		
-		var tx = Math.round(board.left),
-			ty = Math.round(board.top),
-			bw = Math.round(board.fieldWidth*(board.size-1)),
-			bh = Math.round(board.fieldHeight*(board.size-1));
-		
-		this.context.strokeRect(tx-board.ls, ty-board.ls, bw, bh);
+		tmp = Math.round(board.getY(i))-board.ls;
+		this.context.moveTo(tx, tmp);
+		this.context.lineTo(tx+bw, tmp);
+	}
 
-		for(var i = 1; i < board.size-1; i++) {
-			tmp = Math.round(board.getX(i))-board.ls;
-			this.context.moveTo(tmp, ty);
-			this.context.lineTo(tmp, ty+bh);
-			
-			tmp = Math.round(board.getY(i))-board.ls;
-			this.context.moveTo(tx, tmp);
-			this.context.lineTo(tx+bw, tmp);
-		}
-
-		this.context.stroke();
-		
-		// draw stars
-		this.context.fillStyle = theme_variable("starColor", board);
-		
-		if(board.starPoints[board.size]) {
-			for(var key in board.starPoints[board.size]) {
-				this.context.beginPath();
-				this.context.arc(board.getX(board.starPoints[board.size][key].x)-board.ls, board.getY(board.starPoints[board.size][key].y)-board.ls, theme_variable("starSize", board), 0, 2*Math.PI,true);
-				this.context.fill();
-			}
+	this.context.stroke();
+	
+	// draw stars
+	this.context.fillStyle = theme_variable("starColor", board);
+	
+	if(board.starPoints[board.size]) {
+		for(var key in board.starPoints[board.size]) {
+			this.context.beginPath();
+			this.context.arc(board.getX(board.starPoints[board.size][key].x)-board.ls, board.getY(board.starPoints[board.size][key].y)-board.ls, theme_variable("starSize", board), 0, 2*Math.PI,true);
+			this.context.fill();
 		}
 	}
 }
@@ -757,72 +815,70 @@ export class GridLayer extends CanvasLayer {
  * Layer that is composed from more canvases. The proper canvas is selected according to drawn object.
  * In default there are 4 canvases and they are used for board objects like stones. This allows overlapping of objects.
  */
-export class MultipleCanvasLayer extends CanvasLayer {
-	constructor(layers = 4) {
-		super();
-		this.init(layers);
-	}
+CanvasBoard.MultipleCanvasLayer = WGo.extendClass(CanvasBoard.CanvasLayer, function() {
+	this.init(4);
+});
+
+CanvasBoard.MultipleCanvasLayer.prototype.init = function(n) {
+	var tmp, tmpContext;
 	
-	init(n) {
-		var tmp, tmpContext;
-		
-		this.layers = n;
-		
-		this.elements = [];
-		this.contexts = [];
+	this.layers = n;
+	
+	this.elements = [];
+	this.contexts = [];
 
-		// Adjust pixel ratio for HDPI screens (e.g. Retina)
-		this.pixelRatio = window.devicePixelRatio || 1;
-		
-		for(var i = 0; i < n; i++) {
-			tmp = document.createElement('canvas');
-			tmpContext = tmp.getContext('2d');
+	// Adjust pixel ratio for HDPI screens (e.g. Retina)
+	this.pixelRatio = window.devicePixelRatio || 1;
+	
+	for(var i = 0; i < n; i++) {
+		tmp = document.createElement('canvas');
+		tmpContext = tmp.getContext('2d');
 
-			if (this.pixelRatio > 1) {
-				tmpContext.scale(this.pixelRatio, this.pixelRatio);
-			}
-
-			this.elements.push(tmp);
-			this.contexts.push(tmpContext);
+		if (this.pixelRatio > 1) {
+			tmpContext.scale(this.pixelRatio, this.pixelRatio);
 		}
+
+		this.elements.push(tmp);
+		this.contexts.push(tmpContext);
 	}
+}
 
-	appendTo(element, weight) {
-		for(var i = 0; i < this.layers; i++) {
-			this.elements[i].style.position = 'absolute';
-			this.elements[i].style.zIndex = weight;
-			element.appendChild(this.elements[i]);
-		}
+CanvasBoard.MultipleCanvasLayer.prototype.appendTo = function(element, weight) {
+	for(var i = 0; i < this.layers; i++) {
+		this.elements[i].style.position = 'absolute';
+		this.elements[i].style.zIndex = weight;
+		element.appendChild(this.elements[i]);
 	}
+}
 
-	removeFrom(element) {
-		for(var i = 0; i < this.layers; i++) {
-			element.removeChild(this.elements[i]);
-		}
+CanvasBoard.MultipleCanvasLayer.prototype.removeFrom = function(element) {
+	for(var i = 0; i < this.layers; i++) {
+		element.removeChild(this.elements[i]);
 	}
+}
 
-	getContext(args) {
-		if(args.x%2) {
-			return (args.y%2) ? this.contexts[0] : this.contexts[1];
-		}
-		else {
-			return (args.y%2) ? this.contexts[2] : this.contexts[3];
-		}
+CanvasBoard.MultipleCanvasLayer.prototype.getContext = function(args) {
+	if(args.x%2) {
+		return (args.y%2) ? this.contexts[0] : this.contexts[1];
 	}
-
-	clear(element, weight) {
-		for(var i = 0; i < this.layers; i++) {
-			this.contexts[i].clearRect(0,0,this.elements[i].width,this.elements[i].height);
-		}
+	else {
+		return (args.y%2) ? this.contexts[2] : this.contexts[3];
 	}
+	//return ((args.x%2) && (args.y%2) || !(args.x%2) && !(args.y%2)) ? this.context_odd : this.context_even;
+}
 
-	setDimensions(width, height) {
-		for(var i = 0; i < this.layers; i++) {
-			this.elements[i].width = width;
-			this.elements[i].style.width = (width / this.pixelRatio) + 'px';
-			this.elements[i].height = height;
-			this.elements[i].style.height = (height / this.pixelRatio) + 'px';
-		}
+CanvasBoard.MultipleCanvasLayer.prototype.clear = function(element, weight) {
+	for(var i = 0; i < this.layers; i++) {
+		this.contexts[i].clearRect(0,0,this.elements[i].width,this.elements[i].height);
+	}
+}
+
+CanvasBoard.MultipleCanvasLayer.prototype.setDimensions = function(width, height) {
+	for(var i = 0; i < this.layers; i++) {
+		this.elements[i].width = width;
+		this.elements[i].style.width = (width / this.pixelRatio) + 'px';
+		this.elements[i].height = height;
+		this.elements[i].style.height = (height / this.pixelRatio) + 'px';
 	}
 }
 
@@ -832,24 +888,29 @@ export class MultipleCanvasLayer extends CanvasLayer {
  * Layer for shadows.
  */
  
-export class ShadowLayer extends MultipleCanvasLayer {
-	constructor(board, shadowSize, shadowBlur) {
-		super(2);
-		this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
-		this.board = board;
-	}
+CanvasBoard.ShadowLayer = WGo.extendClass(CanvasBoard.MultipleCanvasLayer, function(board, shadowSize, shadowBlur) {
+	this.init(2);
+	this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
+	this.board = board;
+});
 
-	getContext(args) {
-		return ((args.x%2) && (args.y%2) || !(args.x%2) && !(args.y%2)) ? this.contexts[0] : this.contexts[1];
-	}
+CanvasBoard.ShadowLayer.prototype.getContext = function(args) {
+	return ((args.x%2) && (args.y%2) || !(args.x%2) && !(args.y%2)) ? this.contexts[0] : this.contexts[1];
+}
 
-	setDimensions(width, height) {
-		super.setDimensions(width, height);
-		
-		for(var i = 0; i < this.layers; i++) {
-			this.contexts[i].setTransform(1,0,0,1,Math.round(this.shadowSize*this.board.stoneRadius/7),Math.round(this.shadowSize*this.board.stoneRadius/7));
-		}	
-	}
+CanvasBoard.ShadowLayer.prototype.setDimensions = function(width, height) {
+	this.super.prototype.setDimensions.call(this, width, height);
+	
+	for(var i = 0; i < this.layers; i++) {
+		this.contexts[i].setTransform(1,0,0,1,Math.round(this.shadowSize*this.board.stoneRadius/7),Math.round(this.shadowSize*this.board.stoneRadius/7));
+	}	
+}
+
+var default_field_clear = function(args, board) {
+	var xr = board.getX(args.x),
+		yr = board.getY(args.y),
+		sr = board.stoneRadius;
+	this.clearRect(xr-2*sr-board.ls,yr-2*sr-board.ls, 4*sr, 4*sr);
 }
 
 // Private methods of WGo.CanvasBoard
@@ -875,7 +936,7 @@ var clearField = function(x,y) {
 	for(var z = 0; z < this.obj_arr[x][y].length; z++) {
 		var obj = this.obj_arr[x][y][z];
 		if(!obj.type) handler = this.stoneHandler;
-		else if(typeof obj.type == "string") handler = drawHandlers[obj.type];
+		else if(typeof obj.type == "string") handler = CanvasBoard.drawHandlers[obj.type];
 		else handler = obj.type;
 		
 		for(var layer in handler) {
@@ -890,7 +951,7 @@ var drawField = function(x,y) {
 	for(var z = 0; z < this.obj_arr[x][y].length; z++) {
 		var obj = this.obj_arr[x][y][z];
 		if(!obj.type) handler = this.stoneHandler;
-		else if(typeof obj.type == "string") handler = drawHandlers[obj.type];
+		else if(typeof obj.type == "string") handler = CanvasBoard.drawHandlers[obj.type];
 		else handler = obj.type;
 		
 		for(var layer in handler) {
@@ -933,80 +994,16 @@ var updateDim = function() {
 	}
 }
 
-export default class CanvasBoard {
-	/**
-	 * CanvasBoard class constructor - it creates a canvas board.
-	 *
-	 * @alias WGo.CanvasBoard
-	 * @class
-	 * @implements BLACKoard
-	 * @param {HTMLElement} elem DOM element to put in
-	 * @param {Object} config Configuration object. It is object with "key: value" structure. Possible configurations are:
-	 *
-	 * * size: number - size of the board (default: 19)
-	 * * width: number - width of the board (default: 0)
-	 * * height: number - height of the board (default: 0)
-	 * * font: string - font of board writings (!deprecated)
-	 * * lineWidth: number - line width of board drawings (!deprecated)
-	 * * autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this option rewrites 'lineWidth' /and it will keep markups sharp/ (!deprecated)
-	 * * starPoints: Object - star points coordinates, defined for various board sizes. Look at CanvasBoard.default for more info.
-	 * * stoneHandler: CanvasBoard.DrawHandler - stone drawing handler (default: CanvasBoard.drawHandlers.SHELL)
-	 * * starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant. (!deprecated)
-	 * * stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant. (!deprecated)
-	 * * shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by given constant. (!deprecated)
-	 * * background: string - background of the board, it can be either color (#RRGGBB) or url. Empty string means no background. (default: WGo.DIR+"wood1.jpg")
-	 * * section: {
-	 *     top: number,
-	 *     right: number,
-	 *     bottom: number,
-	 *     left: number
-	 *   }
-	 *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side.
-	 *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
-	 * * theme: Object - theme object, which defines all graphical attributes of the board. Default theme object is "WGo.CanvasBoard.themes.default". For old look you may use "WGo.CanvasBoard.themes.old".
-	 *
-	 * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only if you set property 'theme' to 'WGo.CanvasBoard.themes.old'.
-	 */
-	 
-	constructor(elem, config) {
-		var config = config || {};
-		
-		// set user configuration
-		for(var key in config) this[key] = config[key];
-		
-		// add default configuration
-		for(var key in defaultConfig) if(this[key] === undefined) this[key] = defaultConfig[key];
-		
-		// add default theme variables
-		for(var key in themes.default) if(this.theme[key] === undefined) this.theme[key] = themes.default[key];
-		
-		// set section if set
-		this.tx = this.section.left;
-		this.ty = this.section.top;
-		this.bx = this.size-1-this.section.right;
-		this.by = this.size-1-this.section.bottom;
-		
-		// init board
-		this.init();
-		
-		// append to element
-		elem.appendChild(this.element);
-		
-		// set initial dimensions
+// Public methods are in the prototype:
 
-		// set the pixel ratio for HDPI (e.g. Retina) screens
-		this.pixelRatio = window.devicePixelRatio || 1;
-
-		if(this.width && this.height) this.setDimensions(this.width, this.height);
-		else if(this.width) this.setWidth(this.width);
-		else if(this.height) this.setHeight(this.height);
-	}
+CanvasBoard.prototype = {
+	constructor: CanvasBoard,
 	
 	/**
      * Initialization method, it is called in constructor. You shouldn't call it, but you can alter it.
 	 */
 	 
-	init() {
+	init: function() {
 		
 		// placement of objects (in 3D array)
 		this.obj_arr = []; 
@@ -1036,16 +1033,16 @@ export default class CanvasBoard {
 			}
 		}
 		
-		this.grid = new GridLayer();
-		this.shadow = new ShadowLayer(this, theme_variable("shadowSize", this));
-		this.stone = new MultipleCanvasLayer();
+		this.grid = new CanvasBoard.GridLayer();
+		this.shadow = new CanvasBoard.ShadowLayer(this, theme_variable("shadowSize", this));
+		this.stone = new CanvasBoard.MultipleCanvasLayer();
 		
 		this.addLayer(this.grid, 100);
 		this.addLayer(this.shadow, 200);
 		this.addLayer(this.stone, 300);
-	}
+	},
 	
-	setWidth(width) {
+	setWidth: function(width) {
 		this.width = width;
 		this.width *= this.pixelRatio;
 		this.fieldHeight = this.fieldWidth = calcFieldWidth.call(this);
@@ -1056,9 +1053,9 @@ export default class CanvasBoard {
 		
 		updateDim.call(this);
 		this.redraw();
-	}
+	},
 	
-	setHeight(height) {
+	setHeight: function(height) {
 		this.height = height;
 		this.height *= this.pixelRatio;
 		this.fieldWidth = this.fieldHeight = calcFieldHeight.call(this);
@@ -1069,9 +1066,9 @@ export default class CanvasBoard {
 		
 		updateDim.call(this);
 		this.redraw();
-	}
+	},
 	
-	setDimensions(width, height) {
+	setDimensions: function(width, height) {
 		this.width = width || parseInt(this.element.style.width, 10);
 		this.width *= this.pixelRatio;
 		this.height = height || parseInt(this.element.style.height, 10);
@@ -1084,21 +1081,21 @@ export default class CanvasBoard {
 		
 		updateDim.call(this);
 		this.redraw();
-	}
+	},
 	
 	/**
 	 * Get currently visible section of the board
 	 */
 	
-	getSection() {
+	getSection: function() {
 		return this.section;
-	}
+	},
 	
 	/**
 	 * Set section of the board to be displayed
 	 */
 	
-	setSection(section_or_top, right, bottom, left) {
+	setSection: function(section_or_top, right, bottom, left) {
 		if(typeof section_or_top == "object") {
 			this.section = section_or_top;
 		}
@@ -1117,9 +1114,9 @@ export default class CanvasBoard {
 		this.by = this.size-1-this.section.bottom;
 		
 		this.setDimensions();
-	}
+	},
 	 
-	setSize(size) {
+	setSize: function(size) {
 		var size = size || 19;
 		
 		if(size != this.size) {
@@ -1135,13 +1132,13 @@ export default class CanvasBoard {
 			this.by = this.size-1-this.section.bottom;
 			this.setDimensions();
 		}
-	}
+	},
 	
 	/**
 	 * Redraw everything.
 	 */
 	
-	redraw() {
+	redraw: function() {
 		try {
 			// redraw layers
 			for(var i = 0; i < this.layers.length; i++) {
@@ -1170,7 +1167,7 @@ export default class CanvasBoard {
 			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
 			console.log("WGo board failed to render. Error: "+err.message);
 		}
-	}
+	},
 	
 	/**
 	 * Get absolute X coordinate
@@ -1178,9 +1175,9 @@ export default class CanvasBoard {
 	 * @param {number} x relative coordinate
 	 */
 	
-	getX(x) {
+	getX: function(x) {
 		return this.left+x*this.fieldWidth;
-	}
+	},
 	
 	/**
 	 * Get absolute Y coordinate
@@ -1188,9 +1185,9 @@ export default class CanvasBoard {
 	 * @param {number} y relative coordinate
 	 */
 	
-	getY(y) {
+	getY: function(y) {
 		return this.top+y*this.fieldHeight;
-	}
+	},
 	
 	/**
 	 * Add layer to the board. It is meant to be only for canvas layers.
@@ -1199,11 +1196,11 @@ export default class CanvasBoard {
 	 * @param {number} weight layer with biggest weight is on the top 
 	 */
 	
-	addLayer(layer, weight) {
+	addLayer: function(layer, weight) {
 		layer.appendTo(this.element, weight);
 		layer.setDimensions(this.width, this.height);
 		this.layers.push(layer);
-	}
+	},
 	
 	/**
 	 * Remove layer from the board.
@@ -1211,15 +1208,15 @@ export default class CanvasBoard {
 	 * @param {CanvasBoard.CanvasLayer} layer to remove
 	 */
 	
-	removeLayer(layer) {
+	removeLayer: function(layer) {
 		var i = this.layers.indexOf(layer);
 		if(i >= 0) {
 			this.layers.splice(i,1);
 			layer.removeFrom(this.element);
 		}
-	}
-
-	update(changes) {
+	},
+	
+	update: function(changes) {
 		var i;
 		if(changes.remove && changes.remove == "all") this.removeAllObjects();
 		else if(changes.remove) {
@@ -1229,9 +1226,9 @@ export default class CanvasBoard {
 		if(changes.add) {
 			for(i = 0; i < changes.add.length; i++) this.addObject(changes.add[i]);
 		}
-	}
+	},
 	
-	addObject(obj) {
+	addObject: function(obj) {
 		// handling multiple objects
 		if(obj.constructor == Array) {
 			for(var i = 0; i < obj.length; i++) this.addObject(obj[i]);
@@ -1263,9 +1260,9 @@ export default class CanvasBoard {
 			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
 			console.log("WGo board failed to render. Error: "+err.message);
 		}
-	}
+	},
 	
-	removeObject(obj) {
+	removeObject: function(obj) {
 		// handling multiple objects
 		if(obj.constructor == Array) {
 			for(var n = 0; n < obj.length; n++) this.removeObject(obj[n]);
@@ -1293,30 +1290,30 @@ export default class CanvasBoard {
 			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
 			console.log("WGo board failed to render. Error: "+err.message);
 		}
-	}
+	},
 
-	removeObjectsAt(x, y) {
+	removeObjectsAt: function(x, y) {
 		if(!this.obj_arr[x][y].length) return;
 		
 		clearField.call(this, x, y);
 		this.obj_arr[x][y] = [];
-	}
+	},
 
-	removeAllObjects() {
+	removeAllObjects: function() {
 		this.obj_arr = []; 
 		for(var i = 0; i < this.size; i++) {
 			this.obj_arr[i] = [];
 			for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
 		}
 		this.redraw();
-	}
+	},
 	
-	addCustomObject(handler, args) {
+	addCustomObject: function(handler, args) {
 		this.obj_list.push({handler: handler, args: args});
 		this.redraw();
-	}
+	},
 	
-	removeCustomObject(handler, args) {
+	removeCustomObject: function(handler, args) {
 		for(var i = 0; i < this.obj_list.length; i++) {
 			var obj = this.obj_list[i];
 			if(obj.handler == handler && obj.args == args) {
@@ -1326,9 +1323,9 @@ export default class CanvasBoard {
 			}
 		}
 		return false;
-	}
+	},
 	
-	addEventListener(type, callback) {
+	addEventListener: function(type, callback) {
 		var _this = this,
 			evListener = {
 				type: type,
@@ -1341,9 +1338,9 @@ export default class CanvasBoard {
 			
 		this.element.addEventListener(type, evListener, true);
 		this.listeners.push(evListener);
-	}
+	},
 	
-	removeEventListener(type, callback) {
+	removeEventListener: function(type, callback) {
 		for(var i = 0; i < this.listeners.length; i++) {
 			var listener = this.listeners[i];
 			if(listener.type == type && listener.callback == callback) {
@@ -1353,24 +1350,24 @@ export default class CanvasBoard {
 			}
 		}
 		return false;
-	}
+	},
 	
-	/*getState() {
+	getState: function() {
 		return {
 			objects: WGo.clone(this.obj_arr),
 			custom: WGo.clone(this.obj_list)
 		};
-	}
+	},
 	
-	restoreState(state) {
+	restoreState: function(state) {
 		this.obj_arr = state.objects || this.obj_arr;
 		this.obj_list = state.custom || this.obj_list;
 		
 		this.redraw();
-	}*/
+	}
 }
 
-export var defaultConfig = {
+CanvasBoard.default = {
 	size: 19,
 	width: 0,
 	height: 0,
@@ -1393,7 +1390,7 @@ export var defaultConfig = {
 			{x:9, y:9}],
 		9:[{x:4, y:4}],
 	},
-	stoneHandler: drawHandlers.SHELL,
+	stoneHandler: CanvasBoard.drawHandlers.SHELL,
 	starSize: 1, // deprecated
 	shadowSize: 1, // deprecated
 	stoneSize: 1, // deprecated
@@ -1406,3 +1403,6 @@ export var defaultConfig = {
 	//background: WGo.DIR+"wood1.jpg",
 	theme: {}
 }
+
+// save CanvasBoard
+module.exports = CanvasBoard;

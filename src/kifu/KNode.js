@@ -1,5 +1,5 @@
-import WGo from "../WGo";
-import SGFParser from "./SGFParser";
+import {BLACK, WHITE, EMPTY} from "../core";
+import SGFParser, {SGFSyntaxError} from "./SGFParser";
 
 // helper function for translating letters to numbers (a => 0, b => 1, ...)
 var str2coo = (str) => ({
@@ -8,7 +8,7 @@ var str2coo = (str) => ({
 });
 
 // helper function for translating numbers to letters (0 => a, 1 => b, ...)
-var coo2str = (field) => String.fromCharCode(field.x+97)+String.fromCharCode(field.y+97);
+var coo2str = (field) => String.fromCharCode(field.x+97) + String.fromCharCode(field.y+97);
 
 // helper to remove setup or markup from SGF properties
 var removeSGFValue = function(properties, ident, field) {
@@ -40,7 +40,7 @@ var processJsgf = function(parent, jsgf, pos) {
 	}
 }
 
-var moveSGFReaderFactory = (color) => function(node, value) {
+export var rMove = (color) => function(node, value) {
 	if(value == null) {
 		node.setMove();
 	}
@@ -57,7 +57,7 @@ var moveSGFReaderFactory = (color) => function(node, value) {
 	}
 };
 
-var setupSGFReaderFactory = (color, propIdent) => function(node, value) {
+export var rSetup = (color, propIdent) => function(node, value) {
 	if(value == null) {
 		var keys = Object.keys(node.setup);
 		for(var i = 0; i < keys.length; i++) {
@@ -76,7 +76,7 @@ var setupSGFReaderFactory = (color, propIdent) => function(node, value) {
 	}));
 };
 
-var markupSGFReaderFactory = (type) => function(node, value) {
+export var rMarkup = (type) => function(node, value) {
 	if(value == null) {
 		var keys = Object.keys(node.markup);
 		for(var i = 0; i < keys.length; i++) {
@@ -95,13 +95,13 @@ var markupSGFReaderFactory = (type) => function(node, value) {
 	}));
 };
 
-var playerInfoSGFReaderFactory = (color, type) => function(node, value) {
+export var rPlayerInfo = (color, type) => function(node, value) {
 	node.gameInfo = node.gameInfo || {};
 	node.gameInfo[color] = node.gameInfo[color] || {};
 	node.gameInfo[color][type] = value.join("");
 };
 
-var gameInfoSGFReaderFactory = (property) => function(node, value) {
+export var rGameInfo = (property) => function(node, value) {
 	node.gameInfo = node.gameInfo || {};
 	node.gameInfo[property] = value.join("");
 };
@@ -110,15 +110,15 @@ var gameInfoSGFReaderFactory = (property) => function(node, value) {
  * List of functions which transforms string SGF property values into javascript kifu property.
  */
 export var SGFreaders = {
-	B: moveSGFReaderFactory(WGo.B),
-	W: moveSGFReaderFactory(WGo.W),
-	AB: setupSGFReaderFactory(WGo.B, "AB"),
-	AW: setupSGFReaderFactory(WGo.W, "AW"),
-	AE: setupSGFReaderFactory(WGo.E, "AE"),
+	B: rMove(BLACK),
+	W: rMove(WHITE),
+	AB: rSetup(BLACK, "AB"),
+	AW: rSetup(WHITE, "AW"),
+	AE: rSetup(EMPTY, "AE"),
 	PL: function(node, value) {
 		if(value) {
-			if(value[0] == "b" || value[0] == "B") node.setTurn(WGo.B);
-			else if(value[0] == "w" || value[0] == "W") node.setTurn(WGo.W);
+			if(value[0] == "b" || value[0] == "B") node.setTurn(BLACK);
+			else if(value[0] == "w" || value[0] == "W") node.setTurn(WHITE);
 		}
 		else {
 			node.setTurn();
@@ -127,11 +127,11 @@ export var SGFreaders = {
 	C: function(node, value) {
 		node.setComment(value ? value.join("") : "");
 	},
-	CR: markupSGFReaderFactory("CR"), // circle
-	SQ: markupSGFReaderFactory("SQ"), // square
-	TR: markupSGFReaderFactory("TR"), // triangle
-	SL: markupSGFReaderFactory("SL"), // dot
-	MA: markupSGFReaderFactory("MA"), // X
+	CR: rMarkup("CR"), // circle
+	SQ: rMarkup("SQ"), // square
+	TR: rMarkup("TR"), // triangle
+	SL: rMarkup("SL"), // dot
+	MA: rMarkup("MA"), // X
 	LB: function(node, value) {
 		if(value == null) {
 			var keys = Object.keys(node.markup);
@@ -151,27 +151,27 @@ export var SGFreaders = {
 			return markup;
 		}));
 	},
-	BR: playerInfoSGFReaderFactory("black", "rank"),
-	PB: playerInfoSGFReaderFactory("black", "name"),
-	BT: playerInfoSGFReaderFactory("black", "team"),
-	WR: playerInfoSGFReaderFactory("white", "rank"),
-	PW: playerInfoSGFReaderFactory("white", "name"),
-	WT: playerInfoSGFReaderFactory("white", "team"),
-	TM: gameInfoSGFReaderFactory("basicTime"),
-	OT: gameInfoSGFReaderFactory("byoyomi"),
-	AN: gameInfoSGFReaderFactory("annotations"),
-	CP: gameInfoSGFReaderFactory("copyright"),
-	DT: gameInfoSGFReaderFactory("date"),
-	EV: gameInfoSGFReaderFactory("event"),
-	GN: gameInfoSGFReaderFactory("gameName"),
-	GC: gameInfoSGFReaderFactory("gameComment"),
-	ON: gameInfoSGFReaderFactory("opening"),
-	PC: gameInfoSGFReaderFactory("place"),
-	RE: gameInfoSGFReaderFactory("result"),
-	RO: gameInfoSGFReaderFactory("round"),
-	RU: gameInfoSGFReaderFactory("rules"),
-	SO: gameInfoSGFReaderFactory("source"),
-	US: gameInfoSGFReaderFactory("user"),
+	BR: rPlayerInfo("black", "rank"),
+	PB: rPlayerInfo("black", "name"),
+	BT: rPlayerInfo("black", "team"),
+	WR: rPlayerInfo("white", "rank"),
+	PW: rPlayerInfo("white", "name"),
+	WT: rPlayerInfo("white", "team"),
+	TM: rGameInfo("basicTime"),
+	OT: rGameInfo("byoyomi"),
+	AN: rGameInfo("annotations"),
+	CP: rGameInfo("copyright"),
+	DT: rGameInfo("date"),
+	EV: rGameInfo("event"),
+	GN: rGameInfo("gameName"),
+	GC: rGameInfo("gameComment"),
+	ON: rGameInfo("opening"),
+	PC: rGameInfo("place"),
+	RE: rGameInfo("result"),
+	RO: rGameInfo("round"),
+	RU: rGameInfo("rules"),
+	SO: rGameInfo("source"),
+	US: rGameInfo("user"),
 }
 
 /**
@@ -433,7 +433,7 @@ export default class KNode {
 		}
 		else if(parser.currentChar) {
 			// syntax error
-			throw new SGFParser.SGFSyntaxError("Illegal character in SGF node", parser);
+			throw new SGFSyntaxError("Illegal character in SGF node", parser);
 		}
 	}
 	
@@ -500,13 +500,13 @@ export default class KNode {
 		for(let i = 0, property; i < setup.length; i++) {
 			this.setup[setup[i].x+":"+setup[i].y] = setup[i].c;
 			
-			if(setup[i].c == WGo.B)	property = "AB";
-			else if(setup[i].c == WGo.W) property = "AW";
+			if(setup[i].c == BLACK)	property = "AB";
+			else if(setup[i].c == WHITE) property = "AW";
 			else property = "AE";
 			
 			if(!this.SGFProperties[property]) this.SGFProperties[property] = [];
 			
-			this.SGFProperties[property].push(coo2str(setup[i]));
+			this.SGFProperties[property].push((SGFwriters[property] ? SGFwriters[property] : coo2str)(setup[i]));
 		}
 		
 		return this;
@@ -560,7 +560,7 @@ export default class KNode {
 			delete this.SGFProperties.B;
 			delete this.SGFProperties.W;
 		}
-		else if(move.c == WGo.W) {
+		else if(move.c == WHITE) {
 			delete this.SGFProperties.B;
 			this.SGFProperties.W = [coo2str(move)];
 		}
@@ -574,7 +574,7 @@ export default class KNode {
 		this.turn = turn;
 		
 		if(turn) {
-			if(turn == WGo.B) {
+			if(turn == BLACK) {
 				this.SGFProperties.PL = ["B"];
 			}
 			else {
@@ -591,7 +591,7 @@ export default class KNode {
 		if(this.turn) return this.turn;
 		else if(this.move) return -this.move.c;
 		else if(this.parent) return this.parent.getTurn();
-		else return WGo.B;
+		else return BLACK;
 	}
 	
 	setComment(comment) {

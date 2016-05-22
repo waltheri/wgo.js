@@ -1,42 +1,7 @@
 // Game module
 
-var WGo = require("./WGo");
-var Position = require("./Position");
-
-/**
- * Creates instance of game class.
- * 
- * @class
- * This class implements game logic. It basically analyses given moves and returns capture stones. 
- * WGo.Game also stores every position from beginning, so it has ability to check repeating positions
- * and it can effectively restore old positions.
- *
- *
- * @param {number} [size = 19] Size of the board
- * @param {string} [checkRepeat = KO] How to handle repeated position:
- *
- * * KO - ko is properly handled - position cannot be same like previous position
- * * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
- * * NONE - position can be repeated
- *
- * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
- * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
- */
-
-var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
-	this.size = size || 19;
-	this.repeating = checkRepeat === undefined ? "KO" : checkRepeat; // possible values: KO, ALL or nothing
-	this.allow_rewrite = allowRewrite || false;
-	this.allow_suicide = allowSuicide || false;
-	
-	this.stack = [new Position(this.size)];
-	//this.turn = WGo.B;
-	
-	Object.defineProperty(this, "position", {
-		get : function(){ return this.stack[this.stack.length-1]; },
-		set : function(pos){ this.stack[this.stack.length-1] = pos; }
-	});					  
-}
+import {BLACK, WHITE, EMPTY} from "./core";
+import Position from "./Position";
 
 // function for stone capturing
 var capture = function(position, capturedStones, x, y, c) {
@@ -57,7 +22,7 @@ var hasLiberties = function(position, alreadyTested, x, y, c) {
 	if(x < 0 || x >= position.size || y < 0 || y >= position.size) return false;
 	
 	// however empty field means liberty
-	if(position.get(x,y) == WGo.E) return true;
+	if(position.get(x,y) == EMPTY) return true;
 	
 	// already tested field or stone of enemy isn't a liberty.
 	if(alreadyTested.get(x,y) == true || position.get(x,y) == -c) return false;
@@ -112,9 +77,42 @@ var checkHistory = function(position, x, y) {
 	return true;
 }
 
-Game.prototype = {
+export default class Game {
 	
-	constructor: Game,
+	/**
+	 * Creates instance of game class.
+	 * 
+	 * @class
+	 * This class implements game logic. It basically analyses given moves and returns capture stones. 
+	 * WGo.Game also stores every position from beginning, so it has ability to check repeating positions
+	 * and it can effectively restore old positions.
+	 *
+	 *
+	 * @param {number} [size = 19] Size of the board
+	 * @param {string} [checkRepeat = KO] How to handle repeated position:
+	 *
+	 * * KO - ko is properly handled - position cannot be same like previous position
+	 * * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
+	 * * NONE - position can be repeated
+	 *
+	 * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
+	 * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
+	 */
+ 
+	constructor(size, checkRepeat, allowRewrite, allowSuicide) {
+		this.size = size || 19;
+		this.repeating = checkRepeat === undefined ? "KO" : checkRepeat; // possible values: KO, ALL or nothing
+		this.allow_rewrite = allowRewrite || false;
+		this.allow_suicide = allowSuicide || false;
+		
+		this.stack = [new Position(this.size)];
+		//this.turn = BLACK;
+		
+		Object.defineProperty(this, "position", {
+			get : function(){ return this.stack[this.stack.length-1]; },
+			set : function(pos){ this.stack[this.stack.length-1] = pos; }
+		});					  
+	}
 	
 	/**
 	 * Gets actual position.
@@ -122,16 +120,16 @@ Game.prototype = {
 	 * @return {WGo.Position} actual position
 	 */
 	
-	getPosition: function() {
+	getPosition() {
 		return this.stack[this.stack.length-1];
-	},
+	}
 	
 	/**
 	 * Play move. 
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.B|WGo.W)} c color
+	 * @param {(BLACK|WHITE)} c color
 	 * @param {boolean} noplay - if true, move isn't played. Used by WGo.Game.isValid.
 	 * @return {number} code of error, if move isn't valid. If it is valid, function returns array of captured stones.
 	 * 
@@ -142,7 +140,7 @@ Game.prototype = {
 	 * 4 - repeated position
 	 */
 	
-	play: function(x, y, c, noplay) {
+	play(x, y, c, noplay) {
 		//check coordinates validity
 		if(!this.isOnBoard(x,y)) return Game.MOVE_OUT_OF_BOARD;
 		if(!this.allow_rewrite && this.position.get(x,y) != 0) return Game.FIELD_OCCUPIED;
@@ -180,41 +178,40 @@ Game.prototype = {
 		newPosition.turn = -c;
 		
 		// update position info
-		if(capturesColor == WGo.B) newPosition.capCount.black += capturedStones.length;
+		if(capturesColor == BLACK) newPosition.capCount.black += capturedStones.length;
 		else newPosition.capCount.white += capturedStones.length;
 		
 		// save position
 		this.pushPosition(newPosition);
 		
 		return capturedStones;
-		
-	},
+	}
 	
 	/**
 	 * Play pass.
 	 *
-	 * @param {(WGo.B|WGo.W)} c color
+	 * @param {(BLACK|WHITE)} c color
 	 */
 	
-	pass: function(c) {
+	pass(c) {
 		var c = c || this.position.turn; 
 		
 		this.pushPosition();
 		this.position.turn = -c;
-	},
+	}
 	
 	/**
 	 * Finds out validity of the move. 
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.B|WGo.W)} c color
+	 * @param {(BLACK|WHITE)} c color
 	 * @return {boolean} true if move can be played.
 	 */
 	
-	isValid: function(x, y, c) {
+	isValid(x, y, c) {
 		return typeof this.play(x, y, c, true) != "number";
-	},
+	}
 	
 	/**
 	 * Controls position of the move. 
@@ -224,26 +221,26 @@ Game.prototype = {
 	 * @return {boolean} true if move is on board.
 	 */
 	
-	isOnBoard: function(x, y) {
+	isOnBoard(x, y) {
 		return x >= 0 && y >= 0 && x < this.size && y < this.size;
-	},
+	}
 	
 	/**
 	 * Inserts move into current position. Use for setting position, for example in handicap game. Field must be empty.
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.B|WGo.W|WGo.E)} c color
+	 * @param {(BLACK|WHITE|EMPTY)} c color
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
-	addStone: function(x, y, c) {
-		if(this.isOnBoard(x, y) && this.position.get(x, y) == WGo.E) {
-			this.position.set(x, y, c || WGo.E);
+	addStone(x, y, c) {
+		if(this.isOnBoard(x, y) && this.position.get(x, y) == EMPTY) {
+			this.position.set(x, y, c || EMPTY);
 			return true;
 		}
 		return false;
-	},
+	}
 	
 	/**
 	 * Removes move from current position. 
@@ -253,45 +250,45 @@ Game.prototype = {
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
-	removeStone: function(x, y) {
-		if(this.isOnBoard(x, y) && this.position.get(x, y) != WGo.E) {
-			this.position.set(x, y, WGo.E);
+	removeStone(x, y) {
+		if(this.isOnBoard(x, y) && this.position.get(x, y) != EMPTY) {
+			this.position.set(x, y, EMPTY);
 			return true;
 		}
 		return false;
-	},
+	}
 	
 	/**
 	 * Set or insert move of current position.
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @param {(WGo.B|WGo.W)} [c] color
+	 * @param {(BLACK|WHITE)} [c] color
 	 * @return {boolean} true if operation is successfull.
 	 */
 	
-	setStone: function(x, y, c) {
+	setStone(x, y, c) {
 		if(this.isOnBoard(x,y)) {
-			this.position.set(x, y, c || WGo.E);
+			this.position.set(x, y, c || EMPTY);
 			return true;
 		}
 		return false;
-	},
+	}
 	
 	/**
 	 * Get stone on given position.
 	 *
 	 * @param {number} x coordinate
 	 * @param {number} y coordinate
-	 * @return {(WGo.B|WGo.W|WGo.E|null)} color
+	 * @return {(BLACK|WHITE|EMPTY|null)} color
 	 */
 	
-	getStone: function(x, y) {
+	getStone(x, y) {
 		if(this.isOnBoard(x, y)) {
 			return this.position.get(x, y);
 		}
 		return null;
-	},
+	}
 	
 	/**
 	 * Add position to stack. If position isn't specified current position is cloned and stacked.
@@ -300,42 +297,42 @@ Game.prototype = {
 	 * @param {WGo.Position} tmp position (optional)
 	 */
 	
-	pushPosition: function(pos) {
+	pushPosition(pos) {
 		var pos = pos || this.position.clone();
 		this.stack.push(pos);
 		return this;
-	},
+	}
 	
 	/**
 	 * Remove current position from stack. Pointer of actual position is moved to the previous position.
 	 */
 	
-	popPosition: function() {
+	popPosition() {
 		var old;
 		if(this.stack.length > 0) old = this.stack.pop();
 		return old;
-	},
+	}
 	
 	/**
 	 * Removes all positions.
 	 */
 	
-	firstPosition: function() {
+	firstPosition() {
 		this.stack = [];
 		this.pushPosition(new Position(this.size));
 		return this;
-	},
+	}
 	
 	/**
 	 * Gets count of captured stones.
 	 *
-	 * @param {(WGo.BLACK|WGo.WHITE)} color
+	 * @param {(BLACK|WHITE)} color
 	 * @return {number} count
 	 */
 	
-	getCaptureCount: function(color) {
-		return color == WGo.B ? this.position.capCount.black : this.position.capCount.white;
-	},
+	getCaptureCount(color) {
+		return color == BLACK ? this.position.capCount.black : this.position.capCount.white;
+	}
 	
 	/**
 	 * Validate postion. Position is tested from 0:0 to size:size, if there are some moves, that should be captured, they will be removed.
@@ -344,7 +341,7 @@ Game.prototype = {
 	 * @return {Array} removed stones
 	 */
 	 
-	validatePosition: function() {
+	validatePosition() {
 		var c, p,
 		    white = 0, 
 			black = 0,
@@ -358,7 +355,7 @@ Game.prototype = {
 					p = capturedStones.length;
 					capturedStones = capturedStones.concat(captureIfPossible(newPosition, x-1, y, -c), captureIfPossible(newPosition, x+1, y, -c), captureIfPossible(newPosition, x, y-1, -c), captureIfPossible(newPosition, x, y+1, -c));
 								
-					if(c == WGo.B) black += capturedStones.length-p;
+					if(c == BLACK) black += capturedStones.length-p;
 					else white += capturedStones.length-p;
 				}
 			}
@@ -368,14 +365,11 @@ Game.prototype = {
 		this.position.grid = newPosition.grid;
 		
 		return capturedStones;
-	},
-};
+	}
+}
 
 // Error codes returned by method Game#play()
 Game.MOVE_OUT_OF_BOARD = 1;
 Game.FIELD_OCCUPIED = 2;
 Game.MOVE_SUICIDE = 3;
 Game.POSITION_REPEATED = 4;
-
-// save Game
-module.exports = Game;
