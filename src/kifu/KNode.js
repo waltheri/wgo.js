@@ -189,6 +189,13 @@ export var SGFwriters = {
 export var markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
 
 /**
+ * List of 'boolean' SGF properties. These properties don't have a value, but their presence has a meaning. 
+ * Other properties without a value won't do anything and may be discarded.
+ */
+
+export var booleanProperties = ["DO", "IT", "KO"];
+ 
+/**
  * Class representing one kifu node.
  */
 export default class KNode {
@@ -363,6 +370,53 @@ export default class KNode {
 		this.removeChild(oldChild);
 		
 		return this;
+	}
+	
+	/// BASIC PROPERTY GETTER and SETTER
+	
+	/**
+	 * Gets property by SGF property identificator. Returns false, true or single string or array of strings.
+	 * 
+	 * @param   {string}         				propIdent - SGF property idetificator
+	 * @returns {false|true|string|string[]}	property value or values. 
+	 */
+	getProperty(propIdent) {
+		if(this.SGFProperties[propIdent]) {
+			if(this.SGFProperties[propIdent].length == 1) {
+				if(this.SGFProperties[propIdent][0] == "" && booleanProperties.indexOf(propIdent) >= 0) return true;
+				return this.SGFProperties[propIdent][0];
+			}
+			else if(this.SGFProperties[propIdent].length > 1) return this.SGFProperties[propIdent];
+		}
+		if(booleanProperties.indexOf(propIdent) >= 0) return false;
+		else return "";
+	}
+	
+	/**
+	 * Sets property by SGF property identificator. Currently it isn't consistent with other API!!!! [TODO] revisit
+	 * 
+	 * @param   {string}          propIdent - SGF property idetificator
+	 * @param   {string|string[]} value - property value or values
+	 */
+	setProperty(propIdent, value) {
+		if(value == null || value === false || value == "") {
+			// remove property
+			delete this.SGFProperties[propIdent];
+		}
+		else if(value.constructor === Array) {
+			// add multiple values
+			this.SGFProperties[propIdent] = value.slice(0);
+		}
+		else if(value === true) {
+			// add property without value
+			this.SGFProperties[propIdent] = [""];
+		}
+		else {
+			// add standard property
+			this.SGFProperties[propIdent] = [value];
+		}
+		
+		return false;
 	}
 	
 	/// SGF RAW METHODS

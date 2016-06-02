@@ -6,6 +6,7 @@ import Position from "./Game.js";
 import SGFParser, {SGFSyntaxError} from "./kifu/SGFParser.js";
 import KNode from "./kifu/KNode.js";
 import CanvasBoard from "./CanvasBoard.js";
+import Kifu from "./kifu/Kifu.js";
 
 /*WGo.Game = Game;
 WGo.Position = Position;
@@ -16,4 +17,4 @@ WGo.KNode = KNode;*/
 SGFParser.SGFSyntaxError = SGFSyntaxError;
 
 export * from "./core.js";
-export {Game, Position, SGFParser, KNode, CanvasBoard};
+export {Game, Position, SGFParser, KNode, CanvasBoard, Kifu};

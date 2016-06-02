@@ -326,6 +326,12 @@
 		return Position;
 	}();
 
+	// Error codes returned by method Game#play()
+	var MOVE_OUT_OF_BOARD = 1;
+	var FIELD_OCCUPIED = 2;
+	var MOVE_SUICIDE = 3;
+	var POSITION_REPEATED = 4;
+
 	// function for stone capturing
 	var capture = function capture(position, capturedStones, x, y, c) {
 		if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
@@ -417,38 +423,28 @@
 	  * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
 	  */
 
-		function Game(size, checkRepeat, allowRewrite, allowSuicide) {
+		function Game(size, rulesOrCheckRepeat, allowRewrite, allowSuicide) {
 			babelHelpers.classCallCheck(this, Game);
 
 			this.size = size || 19;
-			this.repeating = checkRepeat === undefined ? "KO" : checkRepeat; // possible values: KO, ALL or nothing
+
+			if ((typeof rulesOrCheckRepeat === "undefined" ? "undefined" : babelHelpers.typeof(rulesOrCheckRepeat)) == "object") {
+				allowRewrite = rulesOrCheckRepeat.allowRewrite;
+				allowSuicide = rulesOrCheckRepeat.allowSuicide;
+				rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
+			}
+
+			this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
 			this.allow_rewrite = allowRewrite || false;
 			this.allow_suicide = allowSuicide || false;
 
 			this.stack = [new Position(this.size)];
-			//this.turn = BLACK;
-
-			Object.defineProperty(this, "position", {
-				get: function get() {
-					return this.stack[this.stack.length - 1];
-				},
-				set: function set(pos) {
-					this.stack[this.stack.length - 1] = pos;
-				}
-			});
+			//this.turn = BLACK;			
 		}
 
-		/**
-	  * Gets actual position.
-	  *
-	  * @return {WGo.Position} actual position
-	  */
-
 		babelHelpers.createClass(Game, [{
-			key: "getPosition",
-			value: function getPosition() {
-				return this.stack[this.stack.length - 1];
-			}
+			key: "play",
+
 
 			/**
 	   * Play move. 
@@ -466,12 +462,10 @@
 	   * 4 - repeated position
 	   */
 
-		}, {
-			key: "play",
 			value: function play(x, y, c, noplay) {
 				//check coordinates validity
-				if (!this.isOnBoard(x, y)) return Game.MOVE_OUT_OF_BOARD;
-				if (!this.allow_rewrite && this.position.get(x, y) != 0) return Game.FIELD_OCCUPIED;
+				if (!this.isOnBoard(x, y)) return MOVE_OUT_OF_BOARD;
+				if (!this.allow_rewrite && this.position.get(x, y) != 0) return FIELD_OCCUPIED;
 
 				// clone position
 				var c = c || this.position.turn;
@@ -490,13 +484,13 @@
 						if (this.allow_suicide) {
 							capturesColor = -c;
 							capture(newPosition, capturedStones, x, y, c);
-						} else return Game.MOVE_SUICIDE;
+						} else return MOVE_SUICIDE;
 					}
 				}
 
 				// check history
 				if (this.repeating && !checkHistory.call(this, newPosition, x, y)) {
-					return Game.POSITION_REPEATED;
+					return POSITION_REPEATED;
 				}
 
 				if (noplay) return false;
@@ -716,14 +710,17 @@
 
 				return capturedStones;
 			}
+		}, {
+			key: "position",
+			get: function get() {
+				return this.stack[this.stack.length - 1];
+			},
+			set: function set(pos) {
+				this.stack[this.stack.length - 1] = pos;
+			}
 		}]);
 		return Game;
 	}();
-
-	Game.MOVE_OUT_OF_BOARD = 1;
-	Game.FIELD_OCCUPIED = 2;
-	Game.MOVE_SUICIDE = 3;
-	Game.POSITION_REPEATED = 4;
 
 	/**
 	 * Contains methods for parsing sgf string
@@ -1175,6 +1172,13 @@
 	var markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
 
 	/**
+	 * List of 'boolean' SGF properties. These properties don't have a value, but their presence has a meaning. 
+	 * Other properties without a value won't do anything and may be discarded.
+	 */
+
+	var booleanProperties = ["DO", "IT", "KO"];
+
+	/**
 	 * Class representing one kifu node.
 	 */
 
@@ -1341,6 +1345,54 @@
 				this.removeChild(oldChild);
 
 				return this;
+			}
+
+			/// BASIC PROPERTY GETTER and SETTER
+
+			/**
+	   * Gets property by SGF property identificator. Returns false, true or single string or array of strings.
+	   * 
+	   * @param   {string}         				propIdent - SGF property idetificator
+	   * @returns {false|true|string|string[]}	property value or values. 
+	   */
+
+		}, {
+			key: "getProperty",
+			value: function getProperty(propIdent) {
+				if (this.SGFProperties[propIdent]) {
+					if (this.SGFProperties[propIdent].length == 1) {
+						if (this.SGFProperties[propIdent][0] == "" && booleanProperties.indexOf(propIdent) >= 0) return true;
+						return this.SGFProperties[propIdent][0];
+					} else if (this.SGFProperties[propIdent].length > 1) return this.SGFProperties[propIdent];
+				}
+				if (booleanProperties.indexOf(propIdent) >= 0) return false;else return "";
+			}
+
+			/**
+	   * Sets property by SGF property identificator. Currently it isn't consistent with other API!!!! [TODO] revisit
+	   * 
+	   * @param   {string}          propIdent - SGF property idetificator
+	   * @param   {string|string[]} value - property value or values
+	   */
+
+		}, {
+			key: "setProperty",
+			value: function setProperty(propIdent, value) {
+				if (value == null || value === false || value == "") {
+					// remove property
+					delete this.SGFProperties[propIdent];
+				} else if (value.constructor === Array) {
+					// add multiple values
+					this.SGFProperties[propIdent] = value.slice(0);
+				} else if (value === true) {
+					// add property without value
+					this.SGFProperties[propIdent] = [""];
+				} else {
+					// add standard property
+					this.SGFProperties[propIdent] = [value];
+				}
+
+				return false;
 			}
 
 			/// SGF RAW METHODS
@@ -3013,6 +3065,97 @@
 		theme: {}
 	};
 
+	/**
+	 * Kifu class - handles kifu - it can traverse and edit it. Has powerfull api.
+	 * In previous WGo it would be KifuReader.
+	 */
+
+	var Kifu /*extends EventMixin()*/ = function () {
+		/**
+	  * Constructs a new Kifu object.
+	  * 
+	  * @param {KNode?} kNode - some KNode object of the kifu.
+	  */
+
+		function Kifu(kNode) {
+			babelHelpers.classCallCheck(this, Kifu);
+
+			//super();
+
+			this.rootNode = kNode ? kNode.root : new KNode();
+			this.currentNode = kNode || this.rootNode;
+		}
+
+		babelHelpers.createClass(Kifu, [{
+			key: "setRules",
+			value: function setRules(gameRules) {}
+		}, {
+			key: "first",
+			value: function first() {}
+		}, {
+			key: "previous",
+			value: function previous() {}
+		}, {
+			key: "next",
+			value: function next(ind) {}
+		}, {
+			key: "last",
+			value: function last() {}
+		}, {
+			key: "goTo",
+			value: function goTo(kifuPath) {}
+		}, {
+			key: "blackName",
+			get: function get() {
+				return this.rootNode.getProperty("PB");
+			},
+			set: function set(name) {
+				this.rootNode.setProperty("PB", name);
+			}
+		}, {
+			key: "blackRank",
+			get: function get() {
+				return this.rootNode.getProperty("BR");
+			},
+			set: function set(rank) {
+				this.rootNode.setProperty("BR", rank);
+			}
+		}, {
+			key: "blackTeam",
+			get: function get() {
+				return this.rootNode.getProperty("BT");
+			},
+			set: function set(team) {
+				this.rootNode.setProperty("BT", rank);
+			}
+		}, {
+			key: "whiteName",
+			get: function get() {
+				return this.rootNode.getProperty("PW");
+			},
+			set: function set(name) {
+				this.rootNode.setProperty("PW", name);
+			}
+		}, {
+			key: "whiteRank",
+			get: function get() {
+				return this.rootNode.getProperty("WR");
+			},
+			set: function set(rank) {
+				this.rootNode.setProperty("WR", rank);
+			}
+		}, {
+			key: "whiteTeam",
+			get: function get() {
+				return this.rootNode.getProperty("WT");
+			},
+			set: function set(team) {
+				this.rootNode.setProperty("WT", rank);
+			}
+		}]);
+		return Kifu;
+	}();
+
 	/*WGo.Game = Game;
 	WGo.Position = Position;
 	WGo.SGFParser = SGFParser;
@@ -3026,6 +3169,7 @@
 	exports.SGFParser = SGFParser;
 	exports.KNode = KNode;
 	exports.CanvasBoard = CanvasBoard;
+	exports.Kifu = Kifu;
 	exports.B = B;
 	exports.BLACK = BLACK;
 	exports.W = W;

@@ -3,6 +3,39 @@
 import {BLACK, WHITE, EMPTY} from "./core";
 import Position from "./Position";
 
+
+// Error codes returned by method Game#play()
+export const MOVE_OUT_OF_BOARD = 1;
+export const FIELD_OCCUPIED = 2;
+export const MOVE_SUICIDE = 3;
+export const POSITION_REPEATED = 4;
+
+// preset rule sets
+
+export const JAPANESE_RULES = {
+	checkRepeat: "KO",
+	allowRewrite: false,
+	allowSuicide: false
+}
+
+export const CHINESE_RULES = {
+	checkRepeat: "ALL",
+	allowRewrite: false,
+	allowSuicide: false
+}
+
+export const ING_RULES = {
+	checkRepeat: "ALL",
+	allowRewrite: false,
+	allowSuicide: true
+}
+
+export const NO_RULES = {
+	checkRepeat: "NONE",
+	allowRewrite: true,
+	allowSuicide: true
+}
+
 // function for stone capturing
 var capture = function(position, capturedStones, x, y, c) {
 	if(x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x,y) == c) {
@@ -99,29 +132,29 @@ export default class Game {
 	 * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
 	 */
  
-	constructor(size, checkRepeat, allowRewrite, allowSuicide) {
+	constructor(size, rulesOrCheckRepeat, allowRewrite, allowSuicide) {
 		this.size = size || 19;
-		this.repeating = checkRepeat === undefined ? "KO" : checkRepeat; // possible values: KO, ALL or nothing
+		
+		if(typeof rulesOrCheckRepeat == "object") {
+			allowRewrite = rulesOrCheckRepeat.allowRewrite;
+			allowSuicide = rulesOrCheckRepeat.allowSuicide;
+			rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
+		}
+		
+		this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
 		this.allow_rewrite = allowRewrite || false;
 		this.allow_suicide = allowSuicide || false;
 		
 		this.stack = [new Position(this.size)];
-		//this.turn = BLACK;
-		
-		Object.defineProperty(this, "position", {
-			get : function(){ return this.stack[this.stack.length-1]; },
-			set : function(pos){ this.stack[this.stack.length-1] = pos; }
-		});					  
+		//this.turn = BLACK;			  
 	}
 	
-	/**
-	 * Gets actual position.
-	 *
-	 * @return {WGo.Position} actual position
-	 */
-	
-	getPosition() {
+	get position() {
 		return this.stack[this.stack.length-1];
+	}
+	
+	set position(pos) {
+		this.stack[this.stack.length-1] = pos; 
 	}
 	
 	/**
@@ -142,8 +175,8 @@ export default class Game {
 	
 	play(x, y, c, noplay) {
 		//check coordinates validity
-		if(!this.isOnBoard(x,y)) return Game.MOVE_OUT_OF_BOARD;
-		if(!this.allow_rewrite && this.position.get(x,y) != 0) return Game.FIELD_OCCUPIED;
+		if(!this.isOnBoard(x,y)) return MOVE_OUT_OF_BOARD;
+		if(!this.allow_rewrite && this.position.get(x,y) != 0) return FIELD_OCCUPIED;
 		
 		// clone position
 		var c = c || this.position.turn; 
@@ -163,13 +196,13 @@ export default class Game {
 					capturesColor = -c;
 					capture(newPosition, capturedStones, x, y, c);
 				}
-				else return Game.MOVE_SUICIDE;
+				else return MOVE_SUICIDE;
 			}
 		}
 		
 		// check history
 		if(this.repeating && !checkHistory.call(this, newPosition, x, y)) {
-			return Game.POSITION_REPEATED;
+			return POSITION_REPEATED;
 		}
 		
 		if(noplay) return false;
@@ -367,9 +400,3 @@ export default class Game {
 		return capturedStones;
 	}
 }
-
-// Error codes returned by method Game#play()
-Game.MOVE_OUT_OF_BOARD = 1;
-Game.FIELD_OCCUPIED = 2;
-Game.MOVE_SUICIDE = 3;
-Game.POSITION_REPEATED = 4;
