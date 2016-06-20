@@ -7,7 +7,7 @@ module.exports = function(grunt) {
 		browserify: {
 			dist: {
 				files: {
-					'dist/wgo.js': ['src/WGo.js']
+					'dist/test.js': ['src/test/ifPlayerTest.js']
 				},
 				options: {
 					transform: [["babelify", {babelrc: false, presets: [es2015Rollup]}]]
@@ -98,6 +98,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-string-replace');
 	grunt.loadNpmTasks('grunt-contrib-less');
 
+	grunt.registerTask('test', ['browserify']);
 	grunt.registerTask('default', ['rollup', 'uglify']);
 	grunt.registerTask('docs-prepare', ['jsdoc', 'string-replace']);
 	grunt.registerTask('docs', ['docs-prepare', 'githubPages']);
