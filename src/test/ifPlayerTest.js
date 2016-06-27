@@ -11,6 +11,11 @@ var iframeHTML = `
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>WGo Player ${version}</title>
 		${styles.reduce((prev, current) => prev+`<link rel="stylesheet" href="${current}">`, ``)}
+		<script>
+		var globalFn = function() {
+			alert("iframe alert");
+		}
+		</script>
 	</head>
 	<body>
 		<div id="player"></div>
@@ -19,4 +24,10 @@ var iframeHTML = `
 </html>
 `;
 
-console.log(iframeHTML);
+var iframe = document.createElement("iframe");
+iframe.setAttribute("srcdoc", iframeHTML);
+
+document.addEventListener("DOMContentLoaded", () => {
+	document.querySelector("div").appendChild(iframe);
+	window.iframe = iframe;
+});

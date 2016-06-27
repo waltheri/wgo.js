@@ -286,7 +286,7 @@ export default class KNode {
 	 * 
 	 * @throws  {Error} when argument is invalid.
 	 * @param   {KNode} node to append.
-	 * @returns {Knode} this node.
+	 * @returns {number} position(index) of appended node.
 	 */
 	
 	appendChild(node) {
@@ -296,8 +296,7 @@ export default class KNode {
 		
 		node.parent = this;
 		
-		this.children.push(node);
-		return this;
+		return this.children.push(node)-1;
 	}
 	
 	// Clones a KNode and all of its contents (TODO)

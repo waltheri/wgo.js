@@ -6,10 +6,16 @@ var styles = [];
 
 var iframeHTML = "\n<!DOCTYPE html>\n<html lang=\"" + lang + "\" data-wgo-iframe>\n\t<head>\n\t\t<meta charset=\"UTF-8\">\n\t\t<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n\t\t<title>WGo Player " + version + "</title>\n\t\t" + styles.reduce(function (prev, current) {
 	return prev + ("<link rel=\"stylesheet\" href=\"" + current + "\">");
-}, "") + "\n\t</head>\n\t<body>\n\t\t<div id=\"player\"></div>\n\t\t" + scripts.reduce(function (prev, current) {
+}, "") + "\n\t\t<script>\n\t\tvar globalFn = function() {\n\t\t\talert(\"iframe alert\");\n\t\t}\n\t\t</script>\n\t</head>\n\t<body>\n\t\t<div id=\"player\"></div>\n\t\t" + scripts.reduce(function (prev, current) {
 	return prev + ("<script src=\"" + current + "\"></script>");
 }, "") + "\n\t</body>\n</html>\n";
 
-console.log(iframeHTML);
+var iframe = document.createElement("iframe");
+iframe.setAttribute("srcdoc", iframeHTML);
+
+document.addEventListener("DOMContentLoaded", function () {
+	document.querySelector("div").appendChild(iframe);
+	window.iframe = iframe;
+});
 
 },{}]},{},[1]);

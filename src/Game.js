@@ -157,6 +157,14 @@ export default class Game {
 		this.stack[this.stack.length-1] = pos; 
 	}
 	
+	get turn() {
+		return this.stack[this.stack.length-1].turn;
+	}
+	
+	set turn(turn) {
+		this.stack[this.stack.length-1].turn = turn; 
+	}
+	
 	/**
 	 * Play move. 
 	 *
