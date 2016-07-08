@@ -8,7 +8,7 @@ import propertyValueTypes from "../src/kifu/propertyValueTypes";
 
 describe("Kifu", function() {
 	describe("(1) Correct transformation of property values.", function() {
-		it("'None' properties (eg: KO)", function() {
+		it("No value properties (eg: KO)", function() {
 			assert.strictEqual(propertyValueTypes.KO.type.read(""), true);
 			assert.strictEqual(propertyValueTypes.KO.type.write(true), "");
 		});
