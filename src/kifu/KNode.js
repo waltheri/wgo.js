@@ -100,9 +100,20 @@ export default class KNode {
 		return this.children.push(node)-1;
 	}
 	
-	// Clones a KNode and all of its contents (TODO)
-	cloneNode() {
+	/**
+	 * Hard clones a KNode and all of its contents.
+	 * 
+	 * @param {boolean}	appendToParent if set true, cloned node will be appended to this parent.
+	 * @returns {KNode}	cloned node                              
+	 */
+	 
+	cloneNode(appendToParent) {
+		var node = new KNode();
+		node.innerSGF = this.innerSGF;
 		
+		if(appendToParent && this.parent) this.parent.appendChild(node);
+		
+		return node;
 	}
 	
 	/**

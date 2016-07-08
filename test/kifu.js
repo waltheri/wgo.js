@@ -85,8 +85,6 @@ describe("Kifu", function() {
 			assert.strictEqual(node1.parent, node2);
 		});
 		
-		it("cloneNode()");
-		
 		it("contains()", function() {
 			node1.appendChild(node2);
 			rootNode.appendChild(node1);
@@ -148,12 +146,30 @@ describe("Kifu", function() {
 				node2.root = node1;
 			});
 		});
+		
+		it("cloneNode()", function() {
+			node1.SGFProperties.B = {x:5, y:10};
+			node2.SGFProperties.W = {x:7, y:12};
+			node1.appendChild(node2);
+			
+			node3 = node1.cloneNode();
+			assert.deepEqual(node1, node3);
+			
+			node2.SGFProperties.W.y = 13;
+			assert.notDeepEqual(node1, node3);
+			
+			node3 = node2.cloneNode();
+			assert.notDeepEqual(node2, node3);
+			
+			node3 = node2.cloneNode(true);
+			assert.deepEqual(node2, node3);
+		});
 	});
 	
 	describe("(3) KNode's setSGFProperty method", function() {
 		var node, move1, move2;
 		
-		beforeEach(function(){
+		beforeEach(function() {
 			node = new KNode();
 			move1 = {
 				s: "fk",
@@ -163,6 +179,14 @@ describe("Kifu", function() {
 				s: "hm",
 				c: {x:7, y:12}
 			};
+		});
+		
+		it("Simple setProperty() method", function() {
+			node.setProperty("B", move1.c);
+			assert.deepEqual(node.SGFProperties, {B: move1.c});
+			
+			node.setProperty("B");
+			assert.deepEqual(node.SGFProperties, {});
 		});
 		
 		it("Set single value property", function() {
@@ -245,6 +269,13 @@ describe("Kifu", function() {
 				"W": [""],
 				"C": "[AB[hm\\][fk\\]]"
 			});
+		});
+		
+		it("Simple getProperty() method", function() {
+			assert.deepEqual(node.getProperty("AB"), [{x:7, y:12}, {x:5, y:10}]);
+			assert.strictEqual(node.getProperty("W"), false);
+			assert.strictEqual(node.getProperty("IT"), true);
+			assert.strictEqual(node.getProperty("C"), "AB[hm][fk]");
 		});
 		
 		it("Basic properties", function() {
