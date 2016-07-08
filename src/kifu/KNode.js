@@ -1,25 +1,5 @@
-import {BLACK, WHITE, EMPTY} from "../core";
 import SGFParser, {SGFSyntaxError} from "./SGFParser";
-
-// helper function for translating letters to numbers (a => 0, b => 1, ...)
-var str2coo = (str) => ({
-	x: str.charCodeAt(0)-97,
-	y: str.charCodeAt(1)-97
-});
-
-// helper function for translating numbers to letters (0 => a, 1 => b, ...)
-var coo2str = (field) => String.fromCharCode(field.x+97) + String.fromCharCode(field.y+97);
-
-// helper to remove setup or markup from SGF properties
-var removeSGFValue = function(properties, ident, field) {
-	if(properties[ident]) {
-		var pos = properties[ident].indexOf(coo2str(field));
-		if(pos >= 0) {
-			properties[ident].splice(pos, 1);
-			if(!properties[ident].length) delete properties[ident];
-		}
-	}
-};
+import propertyValueTypes from "./propertyValueTypes";
 
 // jsgf helper
 var processJsgf = function(parent, jsgf, pos) {
@@ -40,161 +20,6 @@ var processJsgf = function(parent, jsgf, pos) {
 	}
 }
 
-export var rMove = (color) => function(node, value) {
-	if(value == null) {
-		node.setMove();
-	}
-	else if(!value[0]) {
-		node.setMove({
-			pass: true,
-			c: color
-		});
-	}
-	else {
-		var move = str2coo(value[0]);
-		move.c = color;
-		node.setMove(move);
-	}
-};
-
-export var rSetup = (color, propIdent) => function(node, value) {
-	if(value == null) {
-		var keys = Object.keys(node.setup);
-		for(var i = 0; i < keys.length; i++) {
-			if(node.setup[keys[i]] == color) {
-				delete node.setup[keys[i]];
-			}
-		}
-		delete node.SGFProperties[propIdent];
-		return;
-	}
-
-	node.addSetup(value.map((elem) => {
-		var setup = str2coo(elem);
-		setup.c = color;
-		return setup;
-	}));
-};
-
-export var rMarkup = (type) => function(node, value) {
-	if(value == null) {
-		var keys = Object.keys(node.markup);
-		for(var i = 0; i < keys.length; i++) {
-			if(node.markup[keys[i]].type == type) {
-				delete node.markup[keys[i]];
-			}
-		}
-		delete node.SGFProperties[type];
-		return;
-	}
-
-	node.addMarkup(value.map((elem) => {
-		var markup = str2coo(elem);
-		markup.type = type;
-		return markup;
-	}));
-};
-
-export var rPlayerInfo = (color, type) => function(node, value) {
-	if(node.parent) console.warn("Adding player information("+color+"."+type+") to non-root node, probably will be ignored.");
-	node.gameInfo = node.gameInfo || {};
-	node.gameInfo[color] = node.gameInfo[color] || {};
-	node.gameInfo[color][type] = value.join("");
-};
-
-export var rGameInfo = (property) => function(node, value) {
-	if(node.parent) console.warn("Adding game information("+property+") to non-root node, probably will be ignored.");
-	node.gameInfo = node.gameInfo || {};
-	node.gameInfo[property] = value.join("");
-};
-
-/**
- * List of functions which transforms string SGF property values into javascript kifu property.
- */
-export var SGFreaders = {
-	B: rMove(BLACK),
-	W: rMove(WHITE),
-	AB: rSetup(BLACK, "AB"),
-	AW: rSetup(WHITE, "AW"),
-	AE: rSetup(EMPTY, "AE"),
-	PL: function(node, value) {
-		if(value) {
-			if(value[0] == "b" || value[0] == "B") node.setTurn(BLACK);
-			else if(value[0] == "w" || value[0] == "W") node.setTurn(WHITE);
-		}
-		else {
-			node.setTurn();
-		}
-	},
-	C: function(node, value) {
-		node.setComment(value ? value.join("") : "");
-	},
-	CR: rMarkup("CR"), // circle
-	SQ: rMarkup("SQ"), // square
-	TR: rMarkup("TR"), // triangle
-	SL: rMarkup("SL"), // dot
-	MA: rMarkup("MA"), // X
-	LB: function(node, value) {
-		if(value == null) {
-			var keys = Object.keys(node.markup);
-			for(var i = 0; i < keys.length; i++) {
-				if(node.markup[keys[i]].type == "LB") {
-					delete node.markup[keys[i]];
-				}
-			}
-			delete node.SGFProperties.LB;
-			return;	
-		}
-
-		node.addMarkup(value.map(function(elem) {
-			var markup = str2coo(elem);
-			markup.type = "LB";
-			markup.text = elem.substr(3);
-			return markup;
-		}));
-	},
-	BR: rPlayerInfo("black", "rank"),
-	PB: rPlayerInfo("black", "name"),
-	BT: rPlayerInfo("black", "team"),
-	WR: rPlayerInfo("white", "rank"),
-	PW: rPlayerInfo("white", "name"),
-	WT: rPlayerInfo("white", "team"),
-	TM: rGameInfo("basicTime"),
-	OT: rGameInfo("byoyomi"),
-	AN: rGameInfo("annotations"),
-	CP: rGameInfo("copyright"),
-	DT: rGameInfo("date"),
-	EV: rGameInfo("event"),
-	GN: rGameInfo("gameName"),
-	GC: rGameInfo("gameComment"),
-	ON: rGameInfo("opening"),
-	PC: rGameInfo("place"),
-	RE: rGameInfo("result"),
-	RO: rGameInfo("round"),
-	RU: rGameInfo("rules"),
-	SO: rGameInfo("source"),
-	US: rGameInfo("user"),
-}
-
-/**
- * List of functions which transforms javascript kifu property into SGF property.
- */
-export var SGFwriters = {
-	LB: (value) => coo2str(value)+":"+value.text
-}
-
-/**
- * List of SGF markup properties.
- */
-export var markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
-
-/**
- * List of 'boolean' SGF properties. These properties don't have a value, but their presence has a meaning. 
- * Other properties without a value won't do anything and may be discarded.
- */
-
-export var booleanProperties = ["DO", "IT", "KO"];
- 
 /**
  * Class representing one kifu node.
  */
@@ -223,9 +48,6 @@ export default class KNode {
 
 		// map of SGF properties (readonly) - {<PropIdent>: Array<PropValue>}
 		this.SGFProperties = {};
-
-		// init some general proeprties
-		this._init();
 	}
 	
 	get root() {
@@ -256,27 +78,6 @@ export default class KNode {
 		else {
 			return output;
 		}
-	}
-	
-	/**
-	 * Initialize KNode object. Called in constructor, it can be overriden to add some general properties.
-	 */
-	 
-	_init() {
-		// map of setup (readonly)
-		this.setup = {};
-
-		// map of markup (readonly)
-		this.markup = {};
-		
-		// move
-		this.move = null;
-
-		// comment
-		this.comment = "";
-
-		// turn
-		this.turn = null;
 	}
 	
 	/// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)
@@ -374,58 +175,62 @@ export default class KNode {
 	/// BASIC PROPERTY GETTER and SETTER
 	
 	/**
-	 * Gets property by SGF property identificator. Returns false, true or single string or array of strings.
+	 * Gets property by SGF property identificator. Returns property value (type depends on property type)
 	 * 
-	 * @param   {string}         				propIdent - SGF property idetificator
-	 * @returns {false|true|string|string[]}	property value or values. 
+	 * @param   {string} 	propIdent - SGF property idetificator
+	 * @returns {any}		property value or values or undefined, if property is missing. 
 	 */
+	 
 	getProperty(propIdent) {
-		if(this.SGFProperties[propIdent]) {
-			if(this.SGFProperties[propIdent].length == 1) {
-				if(this.SGFProperties[propIdent][0] == "" && booleanProperties.indexOf(propIdent) >= 0) return true;
-				return this.SGFProperties[propIdent][0];
-			}
-			else if(this.SGFProperties[propIdent].length > 1) return this.SGFProperties[propIdent];
-		}
-		if(booleanProperties.indexOf(propIdent) >= 0) return false;
-		else return "";
+		return this.SGFProperties[propIdent];
 	}
 	
 	/**
-	 * Sets property by SGF property identificator. Currently it isn't consistent with other API!!!! [TODO] revisit
+	 * Sets property by SGF property identificator.
 	 * 
 	 * @param   {string}          propIdent - SGF property idetificator
 	 * @param   {string|string[]} value - property value or values
 	 */
+	 
 	setProperty(propIdent, value) {
-		if(value == null || value === false || value == "") {
-			// remove property
-			delete this.SGFProperties[propIdent];
-		}
-		else if(value.constructor === Array) {
-			// add multiple values
-			this.SGFProperties[propIdent] = value.slice(0);
-		}
-		else if(value === true) {
-			// add property without value
-			this.SGFProperties[propIdent] = [""];
-		}
-		else {
-			// add standard property
-			this.SGFProperties[propIdent] = [value];
-		}
+		if(value == null) delete this.SGFProperties[propIdent];
+		else this.SGFProperties[propIdent] = value;
 		
-		return false;
+		return this;
 	}
 	
 	/// SGF RAW METHODS
 	
 	/**
+	 * Gets one SGF property value as string (with brackets `[` and `]`).
+	 * 
+	 * @param   {string} propIdent SGF property identificator.
+	 * @returns {string} SGF property values or empty string, if node doesn't containg this property.
+	 */
+	 
+	getSGFProperty(propIdent) {
+		if(this.SGFProperties[propIdent] != null) {
+			let propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
+			
+			if(propertyValueType.multiple) {
+				if(!propertyValueType.notEmpty || this.SGFProperties[propIdent].length) {
+					return "["+this.SGFProperties[propIdent].map((propValue) => propertyValueType.type.write(propValue).replace(/\]/g, "\\]")).join("][")+"]";
+				}
+			}
+			else if(!propertyValueType.notEmpty || this.SGFProperties[propIdent]) {
+				return "["+propertyValueType.type.write(this.SGFProperties[propIdent]).replace(/\]/g, "\\]")+"]";
+			}
+		}
+		
+		return "";
+	}
+	
+	/**
 	 * Sets one SGF property.
 	 * 
-	 * @param   {string}          propIdent SGF property idetificator
-	 * @param   {string|string[]} propValue SGF property value
-	 * @returns {KNode}           this KNode for chaining
+	 * @param   {string}   propIdent SGF property idetificator
+	 * @param   {string[]} propValue SGF property value
+	 * @returns {KNode}    this KNode for chaining
 	 */
 	 
 	setSGFProperty(propIdent, propValue) {
@@ -434,29 +239,29 @@ export default class KNode {
 			propValue = parser.parsePropertyValues();
 		}
 		
-		if(SGFreaders[propIdent]) {
-			SGFreaders[propIdent](this, propValue);
+		let propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
+		
+		if(propertyValueType.multiple) {
+			if(!propertyValueType.notEmpty || propValue.length) {
+				this.SGFProperties[propIdent] = propValue.map((val) => propertyValueType.type.read(val));
+			}
+		}
+		else if(!propertyValueType.notEmpty || propValue[0]) {
+			this.SGFProperties[propIdent] = propertyValueType.type.read(propValue.join(""));
 		}
 		else {
-			if(propValue == null) delete this.SGFProperties[propIdent];
-			else this.SGFProperties[propIdent] = propValue;
+			delete this.SGFProperties[propIdent];
 		}
-		
+
 		return this;
 	}
 	
 	/**
-	 * Gets one SGF property value.
+	 * Sets multiple SGF properties.
 	 * 
-	 * @param   {string} propIdent SGF property identificator.
-	 * @returns {string} SGF property values or empty string, if node doesn't containg this property.
+	 * @param   {Object}   properties - map with signature propIdent -> propValues.
+	 * @returns {KNode}    this KNode for chaining
 	 */
-	getSGFProperty(propIdent) {
-		if(this.SGFProperties[propIdent]) {
-			return "["+this.SGFProperties[propIdent].map((propValue) => propValue.replace(/\]/g, "\\]")).join("][")+"]";	
-		}
-		return "";
-	}
 	
 	setSGFProperties(properties) {
 		for(let ident in properties) {
@@ -464,10 +269,12 @@ export default class KNode {
 				this.setSGFProperty(ident, properties[ident]);
 			}
 		}
+		
+		return this;
 	}
 	
 	/**
-	 * Sets properties of Kifu node based on the sgf string. 
+	 * Sets properties of Kifu node based on the sgf string. Usually you won't use this method directly, but use innerSGF property instead.
 	 * 
 	 * Basically it parsers the sgf, takes properties from it and adds them to the node. 
 	 * Then if there are other nodes in the string, they will be appended to the node as well.
@@ -481,7 +288,6 @@ export default class KNode {
 		for(let i = this.children.length-1; i >= 0; i--) {
 			this.removeChild(this.children[i]);
 		}
-		this._init();
 		this.SGFProperties = {};
 		
 		// and parse properties
@@ -510,146 +316,4 @@ export default class KNode {
 	toSGF() {
 		return "(;"+this.innerSGF+")";
 	}
-	
-	/// KIFU SPECIFIC METHODS
-	
-	// Adds or changes setup (may be array)
-	addSetup(setup) {
-		if(setup.constructor != Array) setup = [setup];
-		
-		this.removeSetup(setup);
-		
-		for(let i = 0, property; i < setup.length; i++) {
-			this.setup[setup[i].x+":"+setup[i].y] = setup[i].c;
-			
-			if(setup[i].c == BLACK)	property = "AB";
-			else if(setup[i].c == WHITE) property = "AW";
-			else property = "AE";
-			
-			if(!this.SGFProperties[property]) this.SGFProperties[property] = [];
-			
-			this.SGFProperties[property].push((SGFwriters[property] ? SGFwriters[property] : coo2str)(setup[i]));
-		}
-		
-		return this;
-	}
-	
-	// Removes setup
-	removeSetup(setup) {
-		if(setup.constructor != Array) setup = [setup];
-
-		for(let i = 0; i < setup.length; i++) {
-			delete this.setup[setup[i].x+":"+setup[i].y];
-			
-			removeSGFValue(this.SGFProperties, "AB", setup[i]);
-			removeSGFValue(this.SGFProperties, "AW", setup[i]);
-			removeSGFValue(this.SGFProperties, "AE", setup[i]);
-		}
-	}
-	
-	// Adds or changes markup
-	addMarkup(markup) {
-		if(markup.constructor != Array) markup = [markup];
-		
-		this.removeMarkup(markup);
-		
-		for(let i = 0; i < markup.length; i++) {
-			this.markup[markup[i].x+":"+markup[i].y] = markup[i];
-			
-			if(!this.SGFProperties[markup[i].type]) this.SGFProperties[markup[i].type] = [];
-			
-			this.SGFProperties[markup[i].type].push((SGFwriters[markup[i].type] ? SGFwriters[markup[i].type] : coo2str)(markup[i]));
-		}
-	}
-	
-	// Removes markup
-	removeMarkup(markup) {
-		if(markup.constructor != Array) markup = [markup];
-		
-		for(let i = 0; i < markup.length; i++) {
-			delete this.markup[markup[i].x+":"+markup[i].y];
-			
-			for(let j = 0; j < markupProperties.length; j++) {
-				removeSGFValue(this.SGFProperties, markupProperties[j], markup[i]);
-			}
-		}
-	}
-	
-	setMove(move) {
-		this.move = move;
-		
-		if(!move || !move.c) {
-			delete this.SGFProperties.B;
-			delete this.SGFProperties.W;
-		}
-		else if(move.c == WHITE) {
-			delete this.SGFProperties.B;
-			this.SGFProperties.W = [coo2str(move)];
-		}
-		else {
-			delete this.SGFProperties.W;
-			this.SGFProperties.B = [coo2str(move)];
-		}
-	}
-	
-	setTurn(turn) {
-		this.turn = turn;
-		
-		if(turn) {
-			if(turn == BLACK) {
-				this.SGFProperties.PL = ["B"];
-			}
-			else {
-				this.SGFProperties.PL = ["W"];
-			}
-		}
-		else {
-			delete this.SGFProperties.PL;
-		}
-	}
-	
-	// Returns anticipated turn (player color) for next move
-	getTurn() {
-		if(this.turn) return this.turn;
-		else if(this.move) return -this.move.c;
-		else if(this.parent) return this.parent.getTurn();
-		else return BLACK;
-	}
-	
-	setComment(comment) {
-		this.comment = comment;
-		if(comment) {
-			this.SGFProperties.C = [comment];
-		}
-		else {
-			delete this.SGFProperties.C;
-		}
-	}
 }
-
-/*
- * 
- * (
- *   ;SZ[19];B[pc];W[pe]C[You have many choices - for example: R13]
- *   ;B[qg]C[Click on a letter to select a variation]
- *   (
- *   	;W[of]C[Old joseki]
- *    	;B[mc]
- *     	;W[qc]
- *      ;B[qb]
- * 		;W[qd]
- * 		;B[qj]
- * 		;W[ob]
- * 		;B[pb]
- *   	;W[oc]
- *    	;B[od]
- *     	;W[pd]
- *      ;B[oa]
- * 		;W[nd]
- *   	;B[nb]
- *    	;W[oe]
- *     	;B[jc]
- *   )
- *   (
- *   	;W[qc];B[qb];W[qd];B[mc](;W[og];B[pg];W[oh];B[pi];W[ob];B[pb];W[oc];B[pd];W[od];B[qe];W[re];B[qf];W[rb];B[oe];W[ne];B[pf];W[md]TR[rb][qc][qd][re]C[Marked stones are not dead yet.])(;W[pg];B[ph];W[ob];B[pb];W[oc];B[od];W[pd];B[nc];W[nd]MA[og]C[White can play at X as well.];B[oe];W[nf];B[oa];W[of];B[nb];W[qh];B[qf];W[pi];B[oh];W[ri];B[rh];W[qi];B[pf];W[nh];B[re];W[oc];B[ob];W[ne];B[oc];W[rg];B[rf];W[sh];B[rc]C[Interesting joseki])))
- */
