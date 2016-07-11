@@ -126,7 +126,7 @@ export default class KNode {
 	contains(node) {
 		if(this.children.indexOf(node) >= 0) return true;
 		
-		return this.children.some((child) => child.contains(node));
+		return this.children.some(child => child.contains(node));
 	}
 	
 	/**
@@ -225,7 +225,7 @@ export default class KNode {
 			
 			if(propertyValueType.multiple) {
 				if(!propertyValueType.notEmpty || this.SGFProperties[propIdent].length) {
-					return "["+this.SGFProperties[propIdent].map((propValue) => propertyValueType.type.write(propValue).replace(/\]/g, "\\]")).join("][")+"]";
+					return "["+this.SGFProperties[propIdent].map(propValue => propertyValueType.type.write(propValue).replace(/\]/g, "\\]")).join("][")+"]";
 				}
 			}
 			else if(!propertyValueType.notEmpty || this.SGFProperties[propIdent]) {
@@ -254,7 +254,7 @@ export default class KNode {
 		
 		if(propertyValueType.multiple) {
 			if(!propertyValueType.notEmpty || propValue.length) {
-				this.SGFProperties[propIdent] = propValue.map((val) => propertyValueType.type.read(val));
+				this.SGFProperties[propIdent] = propValue.map(val => propertyValueType.type.read(val));
 			}
 		}
 		else if(!propertyValueType.notEmpty || propValue[0]) {

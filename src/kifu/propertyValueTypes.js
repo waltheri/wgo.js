@@ -31,50 +31,50 @@ import {BLACK, WHITE, EMPTY} from "../core";
 /// Types definitions -----------------------------------------------------------------------------
 
 export const NONE = {
-	read: (str) => true,
-	write: (value) => ""
+	read: str => true,
+	write: value => ""
 }
 
 export const NUMBER = {
-	read: (str) => parseFloat(str),
-	write: (value) => value+""
+	read: str => parseFloat(str),
+	write: value => value+""
 }
 
 export const TEXT = {
-	read: (str) => str,
-	write: (value) => value
+	read: str => str,
+	write: value => value
 }
 
 export const COLOR = {
-	read: (str) => (str == "w" || str == "W" ? WHITE : BLACK),
-	write: (value) => (value == WHITE ? "W" : "B")
+	read: str => (str == "w" || str == "W" ? WHITE : BLACK),
+	write: value => (value == WHITE ? "W" : "B")
 }
 
 export const POINT = {
-	read: (str) => str ? {
+	read: str => str ? {
 		x: str.charCodeAt(0)-97,
 		y: str.charCodeAt(1)-97
 	} : false,
-	write: (value) => value ? String.fromCharCode(value.x+97) + String.fromCharCode(value.y+97) : ""
+	write: value => value ? String.fromCharCode(value.x+97) + String.fromCharCode(value.y+97) : ""
 }
 
 export const LABEL = {
-	read: (str) => ({
+	read: str => ({
 		x: str.charCodeAt(0)-97,
 		y: str.charCodeAt(1)-97,
 		text: str.substr(3)
 	}),
-	write: (value) => String.fromCharCode(value.x+97) + String.fromCharCode(value.y+97) + ":" + value.text
+	write: value => String.fromCharCode(value.x+97) + String.fromCharCode(value.y+97) + ":" + value.text
 }
 
 export const LINE = {
-	read: (str) => ({
+	read: str => ({
 		x1: str.charCodeAt(0)-97,
 		y1: str.charCodeAt(1)-97,
 		x2: str.charCodeAt(3)-97,
-		y2: str.charCodeAt(4)-97,
+		y2: str.charCodeAt(4)-97
 	}),
-	write: (value) => String.fromCharCode(value.x1+97) + String.fromCharCode(value.y1+97) + ":" + String.fromCharCode(value.x2+97) + String.fromCharCode(value.y2+97)
+	write: value => String.fromCharCode(value.x1+97) + String.fromCharCode(value.y1+97) + ":" + String.fromCharCode(value.x2+97) + String.fromCharCode(value.y2+97)
 }
 
 /// Property definitions --------------------------------------------------------------------------
