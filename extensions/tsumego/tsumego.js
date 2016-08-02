@@ -66,7 +66,7 @@ var TsumegoApi = WGo.extendClass(WGo.Player, function(config) {
 	// create element with board - it can be inserted to DOM
 	this.boardElement = document.createElement("div");
 
-	this.board = new WGo.Board(this.boardElement, this.config.board);
+	this.board = new WGo.Board(this.boardElement, this.config);
 	
 	// Player object has to contain element.
 	this.element = this.element || this.boardElement;
