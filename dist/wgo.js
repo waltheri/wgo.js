@@ -329,6 +329,36 @@
   var MOVE_SUICIDE = 3;
   var POSITION_REPEATED = 4;
 
+  // preset rule sets
+
+  var JAPANESE_RULES = {
+  	checkRepeat: "KO",
+  	allowRewrite: false,
+  	allowSuicide: false
+  };
+
+  var CHINESE_RULES = {
+  	checkRepeat: "ALL",
+  	allowRewrite: false,
+  	allowSuicide: false
+  };
+
+  var ING_RULES = {
+  	checkRepeat: "ALL",
+  	allowRewrite: false,
+  	allowSuicide: true
+  };
+
+  var rules = {
+  	"Japanese": JAPANESE_RULES,
+  	"GOE": ING_RULES,
+  	"NZ": ING_RULES,
+  	"AGA": CHINESE_RULES,
+  	"Chinese": CHINESE_RULES
+  };
+
+  var DEFAULT_RULES = "Japanese";
+
   // function for stone capturing
   var capture = function capture(position, capturedStones, x, y, c) {
   	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
@@ -420,23 +450,15 @@
     * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
     */
 
-  	function Game(size, rulesOrCheckRepeat, allowRewrite, allowSuicide) {
+  	function Game(size) {
+  		var rulesOrCheckRepeat = arguments.length <= 1 || arguments[1] === undefined ? JAPANESE_RULES : arguments[1];
+  		var allowRewrite = arguments[2];
+  		var allowSuicide = arguments[3];
   		classCallCheck(this, Game);
 
   		this.size = size || 19;
-
-  		if ((typeof rulesOrCheckRepeat === "undefined" ? "undefined" : _typeof(rulesOrCheckRepeat)) == "object") {
-  			allowRewrite = rulesOrCheckRepeat.allowRewrite;
-  			allowSuicide = rulesOrCheckRepeat.allowSuicide;
-  			rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
-  		}
-
-  		this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
-  		this.allow_rewrite = allowRewrite || false;
-  		this.allow_suicide = allowSuicide || false;
-
+  		this.setRules(rulesOrCheckRepeat, allowRewrite, allowSuicide);
   		this.stack = [new Position(this.size)];
-  		//this.turn = BLACK;			
   	}
 
   	createClass(Game, [{
@@ -462,7 +484,7 @@
   		value: function play(x, y, c, noplay) {
   			//check coordinates validity
   			if (!this.isOnBoard(x, y)) return MOVE_OUT_OF_BOARD;
-  			if (!this.allow_rewrite && this.position.get(x, y) != 0) return FIELD_OCCUPIED;
+  			if (!this.allowRewrite && this.position.get(x, y) != 0) return FIELD_OCCUPIED;
 
   			// clone position
   			var c = c || this.position.turn;
@@ -478,7 +500,7 @@
   			if (!capturedStones.length) {
   				var testing = new Position(this.size);
   				if (!hasLiberties(newPosition, testing, x, y, c)) {
-  					if (this.allow_suicide) {
+  					if (this.allowSuicide) {
   						capturesColor = -c;
   						capture(newPosition, capturedStones, x, y, c);
   					} else return MOVE_SUICIDE;
@@ -707,6 +729,29 @@
 
   			return capturedStones;
   		}
+
+  		/**
+     * Sets go rules for this game. You should use it only in the special cases. 
+     * If you change rules in the middle of the game, you can get unintentional outcome.
+     * 
+     * @param {(object|string)} rulesOrCheckRepeat      rules object or repeat flag (one of "KO", "ALL" or "NONE")
+     * @param {boolean}         [allowRewrite = false]  allow rewrite flag
+     * @param {boolean}         [allowSuicide = false]  allow suicide
+     */
+
+  	}, {
+  		key: "setRules",
+  		value: function setRules(rulesOrCheckRepeat, allowRewrite, allowSuicide) {
+  			if ((typeof rulesOrCheckRepeat === "undefined" ? "undefined" : _typeof(rulesOrCheckRepeat)) == "object") {
+  				allowRewrite = rulesOrCheckRepeat.allowRewrite;
+  				allowSuicide = rulesOrCheckRepeat.allowSuicide;
+  				rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
+  			}
+
+  			this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
+  			this.allowRewrite = allowRewrite || false;
+  			this.allowSuicide = allowSuicide || false;
+  		}
   	}, {
   		key: "position",
   		get: function get() {
@@ -714,6 +759,14 @@
   		},
   		set: function set(pos) {
   			this.stack[this.stack.length - 1] = pos;
+  		}
+  	}, {
+  		key: "turn",
+  		get: function get() {
+  			return this.stack[this.stack.length - 1].turn;
+  		},
+  		set: function set(turn) {
+  			this.stack[this.stack.length - 1].turn = turn;
   		}
   	}]);
   	return Game;
@@ -970,28 +1023,230 @@
   SGFSyntaxError.prototype = Object.create(Error.prototype);
   SGFSyntaxError.prototype.constructor = SGFSyntaxError;
 
-  // helper function for translating letters to numbers (a => 0, b => 1, ...)
-  var str2coo = function str2coo(str) {
-  	return {
-  		x: str.charCodeAt(0) - 97,
-  		y: str.charCodeAt(1) - 97
-  	};
-  };
+  /// Types definitions -----------------------------------------------------------------------------
 
-  // helper function for translating numbers to letters (0 => a, 1 => b, ...)
-  var coo2str = function coo2str(field) {
-  	return String.fromCharCode(field.x + 97) + String.fromCharCode(field.y + 97);
-  };
-
-  // helper to remove setup or markup from SGF properties
-  var removeSGFValue = function removeSGFValue(properties, ident, field) {
-  	if (properties[ident]) {
-  		var pos = properties[ident].indexOf(coo2str(field));
-  		if (pos >= 0) {
-  			properties[ident].splice(pos, 1);
-  			if (!properties[ident].length) delete properties[ident];
-  		}
+  var NONE = {
+  	read: function read(str) {
+  		return true;
+  	},
+  	write: function write(value) {
+  		return "";
   	}
+  };
+
+  var NUMBER = {
+  	read: function read(str) {
+  		return parseFloat(str);
+  	},
+  	write: function write(value) {
+  		return value + "";
+  	}
+  };
+
+  var TEXT = {
+  	read: function read(str) {
+  		return str;
+  	},
+  	write: function write(value) {
+  		return value;
+  	}
+  };
+
+  var COLOR = {
+  	read: function read(str) {
+  		return str == "w" || str == "W" ? WHITE : BLACK;
+  	},
+  	write: function write(value) {
+  		return value == WHITE ? "W" : "B";
+  	}
+  };
+
+  var POINT = {
+  	read: function read(str) {
+  		return str ? {
+  			x: str.charCodeAt(0) - 97,
+  			y: str.charCodeAt(1) - 97
+  		} : false;
+  	},
+  	write: function write(value) {
+  		return value ? String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) : "";
+  	}
+  };
+
+  var LABEL = {
+  	read: function read(str) {
+  		return {
+  			x: str.charCodeAt(0) - 97,
+  			y: str.charCodeAt(1) - 97,
+  			text: str.substr(3)
+  		};
+  	},
+  	write: function write(value) {
+  		return String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) + ":" + value.text;
+  	}
+  };
+
+  var LINE = {
+  	read: function read(str) {
+  		return {
+  			x1: str.charCodeAt(0) - 97,
+  			y1: str.charCodeAt(1) - 97,
+  			x2: str.charCodeAt(3) - 97,
+  			y2: str.charCodeAt(4) - 97
+  		};
+  	},
+  	write: function write(value) {
+  		return String.fromCharCode(value.x1 + 97) + String.fromCharCode(value.y1 + 97) + ":" + String.fromCharCode(value.x2 + 97) + String.fromCharCode(value.y2 + 97);
+  	}
+  };
+
+  /// Property definitions --------------------------------------------------------------------------
+
+  var propertyValueTypes = {
+  	_default: {
+  		type: TEXT,
+  		multiple: false,
+  		notEmpty: true
+  	}
+  };
+
+  /// Move properties -------------------------------------------------------------------------------
+
+  propertyValueTypes.B = propertyValueTypes.W = {
+  	type: POINT,
+  	multiple: false,
+  	notEmpty: false
+  };
+
+  propertyValueTypes.KO = {
+  	type: NONE,
+  	multiple: false,
+  	notEmpty: false
+  };
+
+  propertyValueTypes.MN = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  /// Setup properties ------------------------------------------------------------------------------
+
+  propertyValueTypes.AB = propertyValueTypes.AW = propertyValueTypes.AE = {
+  	type: POINT,
+  	multiple: true,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.PL = {
+  	type: COLOR,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  /// Node annotation properties --------------------------------------------------------------------
+
+  propertyValueTypes.C = propertyValueTypes.N = {
+  	type: TEXT,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.DM = propertyValueTypes.GB = propertyValueTypes.GW = propertyValueTypes.HO = propertyValueTypes.UC = propertyValueTypes.V = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  /// Move annotation properties --------------------------------------------------------------------
+
+  propertyValueTypes.BM = propertyValueTypes.TE = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.DO = propertyValueTypes.IT = {
+  	type: NONE,
+  	multiple: false,
+  	notEmpty: false
+  };
+
+  /// Markup properties -----------------------------------------------------------------------------
+
+  propertyValueTypes.CR = propertyValueTypes.MA = propertyValueTypes.SL = propertyValueTypes.SQ = propertyValueTypes.TR = {
+  	type: POINT,
+  	multiple: true,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.LB = {
+  	type: LABEL,
+  	multiple: true,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.AR = propertyValueTypes.LN = {
+  	type: LINE,
+  	multiple: true,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.DD = propertyValueTypes.TB = propertyValueTypes.TW = {
+  	type: POINT,
+  	multiple: true,
+  	notEmpty: false
+  };
+
+  /// Root properties -------------------------------------------------------------------------------
+
+  propertyValueTypes.AP = propertyValueTypes.CA = {
+  	type: TEXT,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  // note: rectangular board is not implemented (in SZ property)
+  propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = propertyValueTypes.SZ = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  /// Game info properties --------------------------------------------------------------------------
+
+  propertyValueTypes.AN = propertyValueTypes.BR = propertyValueTypes.BT = propertyValueTypes.CP = propertyValueTypes.DT = propertyValueTypes.EV = propertyValueTypes.GN = propertyValueTypes.GC = propertyValueTypes.GN = propertyValueTypes.ON = propertyValueTypes.OT = propertyValueTypes.PB = propertyValueTypes.PC = propertyValueTypes.PW = propertyValueTypes.RE = propertyValueTypes.RO = propertyValueTypes.RU = propertyValueTypes.SO = propertyValueTypes.US = propertyValueTypes.WR = propertyValueTypes.WT = {
+  	type: TEXT,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.TM = propertyValueTypes.HA = propertyValueTypes.KM = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  /// Timing properties -----------------------------------------------------------------------------
+
+  propertyValueTypes.BL = propertyValueTypes.WL = propertyValueTypes.OB = propertyValueTypes.OW = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  /// Miscellaneous properties ----------------------------------------------------------------------
+
+  propertyValueTypes.PM = {
+  	type: NUMBER,
+  	multiple: false,
+  	notEmpty: true
+  };
+
+  propertyValueTypes.VW = {
+  	type: POINT,
+  	multiple: true,
+  	notEmpty: false
   };
 
   // jsgf helper
@@ -1012,177 +1267,14 @@
   	}
   };
 
-  var rMove = function rMove(color) {
-  	return function (node, value) {
-  		if (value == null) {
-  			node.setMove();
-  		} else if (!value[0]) {
-  			node.setMove({
-  				pass: true,
-  				c: color
-  			});
-  		} else {
-  			var move = str2coo(value[0]);
-  			move.c = color;
-  			node.setMove(move);
-  		}
-  	};
-  };
-
-  var rSetup = function rSetup(color, propIdent) {
-  	return function (node, value) {
-  		if (value == null) {
-  			var keys = Object.keys(node.setup);
-  			for (var i = 0; i < keys.length; i++) {
-  				if (node.setup[keys[i]] == color) {
-  					delete node.setup[keys[i]];
-  				}
-  			}
-  			delete node.SGFProperties[propIdent];
-  			return;
-  		}
-
-  		node.addSetup(value.map(function (elem) {
-  			var setup = str2coo(elem);
-  			setup.c = color;
-  			return setup;
-  		}));
-  	};
-  };
-
-  var rMarkup = function rMarkup(type) {
-  	return function (node, value) {
-  		if (value == null) {
-  			var keys = Object.keys(node.markup);
-  			for (var i = 0; i < keys.length; i++) {
-  				if (node.markup[keys[i]].type == type) {
-  					delete node.markup[keys[i]];
-  				}
-  			}
-  			delete node.SGFProperties[type];
-  			return;
-  		}
-
-  		node.addMarkup(value.map(function (elem) {
-  			var markup = str2coo(elem);
-  			markup.type = type;
-  			return markup;
-  		}));
-  	};
-  };
-
-  var rPlayerInfo = function rPlayerInfo(color, type) {
-  	return function (node, value) {
-  		if (node.parent) console.warn("Adding player information(" + color + "." + type + ") to non-root node, probably will be ignored.");
-  		node.gameInfo = node.gameInfo || {};
-  		node.gameInfo[color] = node.gameInfo[color] || {};
-  		node.gameInfo[color][type] = value.join("");
-  	};
-  };
-
-  var rGameInfo = function rGameInfo(property) {
-  	return function (node, value) {
-  		if (node.parent) console.warn("Adding game information(" + property + ") to non-root node, probably will be ignored.");
-  		node.gameInfo = node.gameInfo || {};
-  		node.gameInfo[property] = value.join("");
-  	};
-  };
-
-  /**
-   * List of functions which transforms string SGF property values into javascript kifu property.
-   */
-  var SGFreaders = {
-  	B: rMove(BLACK),
-  	W: rMove(WHITE),
-  	AB: rSetup(BLACK, "AB"),
-  	AW: rSetup(WHITE, "AW"),
-  	AE: rSetup(EMPTY, "AE"),
-  	PL: function PL(node, value) {
-  		if (value) {
-  			if (value[0] == "b" || value[0] == "B") node.setTurn(BLACK);else if (value[0] == "w" || value[0] == "W") node.setTurn(WHITE);
-  		} else {
-  			node.setTurn();
-  		}
-  	},
-  	C: function C(node, value) {
-  		node.setComment(value ? value.join("") : "");
-  	},
-  	CR: rMarkup("CR"), // circle
-  	SQ: rMarkup("SQ"), // square
-  	TR: rMarkup("TR"), // triangle
-  	SL: rMarkup("SL"), // dot
-  	MA: rMarkup("MA"), // X
-  	LB: function LB(node, value) {
-  		if (value == null) {
-  			var keys = Object.keys(node.markup);
-  			for (var i = 0; i < keys.length; i++) {
-  				if (node.markup[keys[i]].type == "LB") {
-  					delete node.markup[keys[i]];
-  				}
-  			}
-  			delete node.SGFProperties.LB;
-  			return;
-  		}
-
-  		node.addMarkup(value.map(function (elem) {
-  			var markup = str2coo(elem);
-  			markup.type = "LB";
-  			markup.text = elem.substr(3);
-  			return markup;
-  		}));
-  	},
-  	BR: rPlayerInfo("black", "rank"),
-  	PB: rPlayerInfo("black", "name"),
-  	BT: rPlayerInfo("black", "team"),
-  	WR: rPlayerInfo("white", "rank"),
-  	PW: rPlayerInfo("white", "name"),
-  	WT: rPlayerInfo("white", "team"),
-  	TM: rGameInfo("basicTime"),
-  	OT: rGameInfo("byoyomi"),
-  	AN: rGameInfo("annotations"),
-  	CP: rGameInfo("copyright"),
-  	DT: rGameInfo("date"),
-  	EV: rGameInfo("event"),
-  	GN: rGameInfo("gameName"),
-  	GC: rGameInfo("gameComment"),
-  	ON: rGameInfo("opening"),
-  	PC: rGameInfo("place"),
-  	RE: rGameInfo("result"),
-  	RO: rGameInfo("round"),
-  	RU: rGameInfo("rules"),
-  	SO: rGameInfo("source"),
-  	US: rGameInfo("user")
-  };
-
-  /**
-   * List of functions which transforms javascript kifu property into SGF property.
-   */
-  var SGFwriters = {
-  	LB: function LB(value) {
-  		return coo2str(value) + ":" + value.text;
-  	}
-  };
-
-  /**
-   * List of SGF markup properties.
-   */
-  var markupProperties = ["CR", "LB", "MA", "SL", "SQ", "TR"];
-
-  /**
-   * List of 'boolean' SGF properties. These properties don't have a value, but their presence has a meaning. 
-   * Other properties without a value won't do anything and may be discarded.
-   */
-
-  var booleanProperties = ["DO", "IT", "KO"];
-
   /**
    * Class representing one kifu node.
    */
 
   var KNode = function () {
   	createClass(KNode, null, [{
-  		key: "fromJSGF",
-  		value: function fromJSGF(jsgf) {
+  		key: "fromJS",
+  		value: function fromJS(jsgf) {
   			var root = new KNode();
 
   			root.setSGFProperties(jsgf[0]);
@@ -1194,7 +1286,7 @@
   		key: "fromSGF",
   		value: function fromSGF(sgf, ind) {
   			var parser = new SGFParser(sgf);
-  			return KNode.fromJSGF(parser.parseCollection()[ind || 0]);
+  			return KNode.fromJS(parser.parseCollection()[ind || 0]);
   		}
   	}]);
 
@@ -1209,35 +1301,11 @@
 
   		// map of SGF properties (readonly) - {<PropIdent>: Array<PropValue>}
   		this.SGFProperties = {};
-
-  		// init some general proeprties
-  		this._init();
   	}
 
   	createClass(KNode, [{
-  		key: "_init",
+  		key: "appendChild",
 
-
-  		/**
-     * Initialize KNode object. Called in constructor, it can be overriden to add some general properties.
-     */
-
-  		value: function _init() {
-  			// map of setup (readonly)
-  			this.setup = {};
-
-  			// map of markup (readonly)
-  			this.markup = {};
-
-  			// move
-  			this.move = null;
-
-  			// comment
-  			this.comment = "";
-
-  			// turn
-  			this.turn = null;
-  		}
 
   		/// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)
 
@@ -1246,11 +1314,9 @@
      * 
      * @throws  {Error} when argument is invalid.
      * @param   {KNode} node to append.
-     * @returns {Knode} this node.
+     * @returns {number} position(index) of appended node.
      */
 
-  	}, {
-  		key: "appendChild",
   		value: function appendChild(node) {
   			if (node == null || !(node instanceof KNode) || node == this) throw new Error("Invalid argument passed to `appendChild` method, KNode was expected.");
 
@@ -1258,15 +1324,26 @@
 
   			node.parent = this;
 
-  			this.children.push(node);
-  			return this;
+  			return this.children.push(node) - 1;
   		}
 
-  		// Clones a KNode and all of its contents (TODO)
+  		/**
+     * Hard clones a KNode and all of its contents.
+     * 
+     * @param {boolean}	appendToParent if set true, cloned node will be appended to this parent.
+     * @returns {KNode}	cloned node                              
+     */
 
   	}, {
   		key: "cloneNode",
-  		value: function cloneNode() {}
+  		value: function cloneNode(appendToParent) {
+  			var node = new KNode();
+  			node.innerSGF = this.innerSGF;
+
+  			if (appendToParent && this.parent) this.parent.appendChild(node);
+
+  			return node;
+  		}
 
   		/**
      * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
@@ -1347,26 +1424,20 @@
   		/// BASIC PROPERTY GETTER and SETTER
 
   		/**
-     * Gets property by SGF property identificator. Returns false, true or single string or array of strings.
+     * Gets property by SGF property identificator. Returns property value (type depends on property type)
      * 
-     * @param   {string}         				propIdent - SGF property idetificator
-     * @returns {false|true|string|string[]}	property value or values. 
+     * @param   {string} 	propIdent - SGF property idetificator
+     * @returns {any}		property value or values or undefined, if property is missing. 
      */
 
   	}, {
   		key: "getProperty",
   		value: function getProperty(propIdent) {
-  			if (this.SGFProperties[propIdent]) {
-  				if (this.SGFProperties[propIdent].length == 1) {
-  					if (this.SGFProperties[propIdent][0] == "" && booleanProperties.indexOf(propIdent) >= 0) return true;
-  					return this.SGFProperties[propIdent][0];
-  				} else if (this.SGFProperties[propIdent].length > 1) return this.SGFProperties[propIdent];
-  			}
-  			if (booleanProperties.indexOf(propIdent) >= 0) return false;else return "";
+  			return this.SGFProperties[propIdent];
   		}
 
   		/**
-     * Sets property by SGF property identificator. Currently it isn't consistent with other API!!!! [TODO] revisit
+     * Sets property by SGF property identificator.
      * 
      * @param   {string}          propIdent - SGF property idetificator
      * @param   {string|string[]} value - property value or values
@@ -1375,31 +1446,56 @@
   	}, {
   		key: "setProperty",
   		value: function setProperty(propIdent, value) {
-  			if (value == null || value === false || value == "") {
-  				// remove property
-  				delete this.SGFProperties[propIdent];
-  			} else if (value.constructor === Array) {
-  				// add multiple values
-  				this.SGFProperties[propIdent] = value.slice(0);
-  			} else if (value === true) {
-  				// add property without value
-  				this.SGFProperties[propIdent] = [""];
-  			} else {
-  				// add standard property
-  				this.SGFProperties[propIdent] = [value];
-  			}
+  			if (value == null) delete this.SGFProperties[propIdent];else this.SGFProperties[propIdent] = value;
 
-  			return false;
+  			return this;
   		}
 
   		/// SGF RAW METHODS
 
   		/**
+     * Gets one SGF property value as string (with brackets `[` and `]`).
+     * 
+     * @param   {string} propIdent SGF property identificator.
+     * @returns {string} SGF property values or empty string, if node doesn't containg this property.
+     */
+
+  	}, {
+  		key: "getSGFProperty",
+  		value: function getSGFProperty(propIdent) {
+  			var _this = this;
+
+  			if (this.SGFProperties[propIdent] != null) {
+  				var _ret = function () {
+  					var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
+
+  					if (propertyValueType.multiple) {
+  						if (!propertyValueType.notEmpty || _this.SGFProperties[propIdent].length) {
+  							return {
+  								v: "[" + _this.SGFProperties[propIdent].map(function (propValue) {
+  									return propertyValueType.type.write(propValue).replace(/\]/g, "\\]");
+  								}).join("][") + "]"
+  							};
+  						}
+  					} else if (!propertyValueType.notEmpty || _this.SGFProperties[propIdent]) {
+  						return {
+  							v: "[" + propertyValueType.type.write(_this.SGFProperties[propIdent]).replace(/\]/g, "\\]") + "]"
+  						};
+  					}
+  				}();
+
+  				if ((typeof _ret === "undefined" ? "undefined" : _typeof(_ret)) === "object") return _ret.v;
+  			}
+
+  			return "";
+  		}
+
+  		/**
      * Sets one SGF property.
      * 
-     * @param   {string}          propIdent SGF property idetificator
-     * @param   {string|string[]} propValue SGF property value
-     * @returns {KNode}           this KNode for chaining
+     * @param   {string}   propIdent SGF property idetificator
+     * @param   {string[]} propValue SGF property value
+     * @returns {KNode}    this KNode for chaining
      */
 
   	}, {
@@ -1410,32 +1506,30 @@
   				propValue = parser.parsePropertyValues();
   			}
 
-  			if (SGFreaders[propIdent]) {
-  				SGFreaders[propIdent](this, propValue);
+  			var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
+
+  			if (propertyValueType.multiple) {
+  				if (!propertyValueType.notEmpty || propValue.length) {
+  					this.SGFProperties[propIdent] = propValue.map(function (val) {
+  						return propertyValueType.type.read(val);
+  					});
+  				}
+  			} else if (!propertyValueType.notEmpty || propValue[0]) {
+  				this.SGFProperties[propIdent] = propertyValueType.type.read(propValue.join(""));
   			} else {
-  				if (propValue == null) delete this.SGFProperties[propIdent];else this.SGFProperties[propIdent] = propValue;
+  				delete this.SGFProperties[propIdent];
   			}
 
   			return this;
   		}
 
   		/**
-     * Gets one SGF property value.
+     * Sets multiple SGF properties.
      * 
-     * @param   {string} propIdent SGF property identificator.
-     * @returns {string} SGF property values or empty string, if node doesn't containg this property.
+     * @param   {Object}   properties - map with signature propIdent -> propValues.
+     * @returns {KNode}    this KNode for chaining
      */
 
-  	}, {
-  		key: "getSGFProperty",
-  		value: function getSGFProperty(propIdent) {
-  			if (this.SGFProperties[propIdent]) {
-  				return "[" + this.SGFProperties[propIdent].map(function (propValue) {
-  					return propValue.replace(/\]/g, "\\]");
-  				}).join("][") + "]";
-  			}
-  			return "";
-  		}
   	}, {
   		key: "setSGFProperties",
   		value: function setSGFProperties(properties) {
@@ -1444,10 +1538,12 @@
   					this.setSGFProperty(ident, properties[ident]);
   				}
   			}
+
+  			return this;
   		}
 
   		/**
-     * Sets properties of Kifu node based on the sgf string. 
+     * Sets properties of Kifu node based on the sgf string. Usually you won't use this method directly, but use innerSGF property instead.
      * 
      * Basically it parsers the sgf, takes properties from it and adds them to the node. 
      * Then if there are other nodes in the string, they will be appended to the node as well.
@@ -1463,7 +1559,6 @@
   			for (var i = this.children.length - 1; i >= 0; i--) {
   				this.removeChild(this.children[i]);
   			}
-  			this._init();
   			this.SGFProperties = {};
 
   			// and parse properties
@@ -1479,7 +1574,7 @@
   			} else if (parser.currentChar == "(") {
   				// two or more children
   				parser.parseCollection().forEach(function (jsgf) {
-  					this.appendChild(KNode.fromJSGF(jsgf));
+  					this.appendChild(KNode.fromJS(jsgf));
   				}.bind(this));
   			} else if (parser.currentChar) {
   				// syntax error
@@ -1490,129 +1585,6 @@
   		key: "toSGF",
   		value: function toSGF() {
   			return "(;" + this.innerSGF + ")";
-  		}
-
-  		/// KIFU SPECIFIC METHODS
-
-  		// Adds or changes setup (may be array)
-
-  	}, {
-  		key: "addSetup",
-  		value: function addSetup(setup) {
-  			if (setup.constructor != Array) setup = [setup];
-
-  			this.removeSetup(setup);
-
-  			for (var i = 0, property; i < setup.length; i++) {
-  				this.setup[setup[i].x + ":" + setup[i].y] = setup[i].c;
-
-  				if (setup[i].c == BLACK) property = "AB";else if (setup[i].c == WHITE) property = "AW";else property = "AE";
-
-  				if (!this.SGFProperties[property]) this.SGFProperties[property] = [];
-
-  				this.SGFProperties[property].push((SGFwriters[property] ? SGFwriters[property] : coo2str)(setup[i]));
-  			}
-
-  			return this;
-  		}
-
-  		// Removes setup
-
-  	}, {
-  		key: "removeSetup",
-  		value: function removeSetup(setup) {
-  			if (setup.constructor != Array) setup = [setup];
-
-  			for (var i = 0; i < setup.length; i++) {
-  				delete this.setup[setup[i].x + ":" + setup[i].y];
-
-  				removeSGFValue(this.SGFProperties, "AB", setup[i]);
-  				removeSGFValue(this.SGFProperties, "AW", setup[i]);
-  				removeSGFValue(this.SGFProperties, "AE", setup[i]);
-  			}
-  		}
-
-  		// Adds or changes markup
-
-  	}, {
-  		key: "addMarkup",
-  		value: function addMarkup(markup) {
-  			if (markup.constructor != Array) markup = [markup];
-
-  			this.removeMarkup(markup);
-
-  			for (var i = 0; i < markup.length; i++) {
-  				this.markup[markup[i].x + ":" + markup[i].y] = markup[i];
-
-  				if (!this.SGFProperties[markup[i].type]) this.SGFProperties[markup[i].type] = [];
-
-  				this.SGFProperties[markup[i].type].push((SGFwriters[markup[i].type] ? SGFwriters[markup[i].type] : coo2str)(markup[i]));
-  			}
-  		}
-
-  		// Removes markup
-
-  	}, {
-  		key: "removeMarkup",
-  		value: function removeMarkup(markup) {
-  			if (markup.constructor != Array) markup = [markup];
-
-  			for (var i = 0; i < markup.length; i++) {
-  				delete this.markup[markup[i].x + ":" + markup[i].y];
-
-  				for (var j = 0; j < markupProperties.length; j++) {
-  					removeSGFValue(this.SGFProperties, markupProperties[j], markup[i]);
-  				}
-  			}
-  		}
-  	}, {
-  		key: "setMove",
-  		value: function setMove(move) {
-  			this.move = move;
-
-  			if (!move || !move.c) {
-  				delete this.SGFProperties.B;
-  				delete this.SGFProperties.W;
-  			} else if (move.c == WHITE) {
-  				delete this.SGFProperties.B;
-  				this.SGFProperties.W = [coo2str(move)];
-  			} else {
-  				delete this.SGFProperties.W;
-  				this.SGFProperties.B = [coo2str(move)];
-  			}
-  		}
-  	}, {
-  		key: "setTurn",
-  		value: function setTurn(turn) {
-  			this.turn = turn;
-
-  			if (turn) {
-  				if (turn == BLACK) {
-  					this.SGFProperties.PL = ["B"];
-  				} else {
-  					this.SGFProperties.PL = ["W"];
-  				}
-  			} else {
-  				delete this.SGFProperties.PL;
-  			}
-  		}
-
-  		// Returns anticipated turn (player color) for next move
-
-  	}, {
-  		key: "getTurn",
-  		value: function getTurn() {
-  			if (this.turn) return this.turn;else if (this.move) return -this.move.c;else if (this.parent) return this.parent.getTurn();else return BLACK;
-  		}
-  	}, {
-  		key: "setComment",
-  		value: function setComment(comment) {
-  			this.comment = comment;
-  			if (comment) {
-  				this.SGFProperties.C = [comment];
-  			} else {
-  				delete this.SGFProperties.C;
-  			}
   		}
   	}, {
   		key: "root",
@@ -3063,29 +3035,247 @@
   };
 
   /**
-   * Kifu class - handles kifu - it can traverse and edit it. Has powerfull api.
+   * Simple events handling.
+   */
+
+  function EventMixin(baseClass) {
+  	baseClass = baseClass || Object;
+
+  	return function (_baseClass) {
+  		inherits(_class, _baseClass);
+
+  		function _class() {
+  			classCallCheck(this, _class);
+
+  			var _this = possibleConstructorReturn(this, Object.getPrototypeOf(_class).call(this));
+
+  			_this.__events = {};
+  			return _this;
+  		}
+
+  		createClass(_class, [{
+  			key: "on",
+  			value: function on(evName, callback) {
+  				this.__events[evName] = this.__events[evName] || [];
+  				this.__events[evName].push(callback);
+  			}
+  		}, {
+  			key: "off",
+  			value: function off(evName, callback) {
+  				if (this.__events[evName]) {
+  					if (callback == null) this.__events[evName] = [];
+  					this.__events[evName] = this.__events[evName].filter(function (fn) {
+  						return fn != callback;
+  					});
+  				}
+  			}
+  		}, {
+  			key: "trigger",
+  			value: function trigger(evName, data) {
+  				if (this.__events[evName]) {
+  					this.__events[evName].forEach(function (fn) {
+  						return fn(data);
+  					});
+  				}
+  			}
+  		}]);
+  		return _class;
+  	}(baseClass);
+  }
+
+  /**
+   * Kifu class - handles kifu - it can traverse and edit it. Has powerful api.
    * In previous WGo it would be KifuReader.
    */
 
-  var Kifu /*extends EventMixin()*/ = function () {
-  	/**
-    * Constructs a new Kifu object.
-    * 
-    * @param {KNode?} kNode - some KNode object of the kifu.
-    */
+  var Kifu = function (_EventMixin) {
+  	inherits(Kifu, _EventMixin);
+  	createClass(Kifu, null, [{
+  		key: "fromJS",
 
-  	function Kifu(kNode) {
+  		/**
+     * Creates a Kifu object from the JSGF object
+     * 
+     * @param   {Object} jsgf object
+     * @returns {Kifu}   Kifu object
+     */
+  		value: function fromJS(jsgf) {
+  			return new Kifu(KNode.fromJS(jsgf));
+  		}
+
+  		/**
+     * Creates a Kifu object from the SGF string
+     * 
+     * @param   {string} sgf string
+     * @returns {Kifu}   Kifu instance
+     */
+
+  	}, {
+  		key: "fromSGF",
+  		value: function fromSGF(sgf) {
+  			return new Kifu(KNode.fromSGF(sgf));
+  		}
+
+  		/**
+     * Constructs a new empty Kifu object or Kifu object from a KNode.
+     * 
+     * @param {KNode} [kNode] - KNode object which will serve as root node of the kifu.
+     */
+
+  		//constructor()
+  		//constructor(kNode)
+  		//constructor(boardSize)
+
+  	}]);
+
+  	function Kifu(boardSize, ruleSet) {
   		classCallCheck(this, Kifu);
 
-  		//super();
 
-  		this.rootNode = kNode ? kNode.root : new KNode();
-  		this.currentNode = kNode || this.rootNode;
+  		// Board size argument
+
+  		var _this = possibleConstructorReturn(this, Object.getPrototypeOf(Kifu).call(this));
+
+  		if (typeof boardSize == "number") {
+  			_this.currentNode = _this.rootNode = new KNode();
+  			_this.rootNode.setProperty("SZ", boardSize);
+
+  			// ... and rules argument as string
+  			if (typeof ruleSet == "string") {
+  				_this.rootNode.setProperty("RU", ruleSet);
+  				_this.ruleSet = rules[ruleSet] || rules[DEFAULT_RULES];
+  			}
+  			// ... and rules argument as object
+  			else if (ruleSet != null) {
+  					_this.ruleSet = ruleSet;
+  				}
+  				// ... and no second argument
+  				else {
+  						_this.rootNode.setProperty("RU", DEFAULT_RULES);
+  						_this.ruleSet = rules[DEFAULT_RULES];
+  					}
+  		}
+  		// KNode argument
+  		else if (boardSize != null) {
+  				var kNode = boardSize;
+  				_this.rootNode = kNode.root;
+  				_this.currentNode = kNode;
+
+  				_this.ruleSet = rules[_this.rootNode.getProperty("RU")] || rules[DEFAULT_RULES];
+  				boardSize = _this.rootNode.getProperty("SZ");
+  			}
+  			// No argument
+  			else {
+  					_this.currentNode = _this.rootNode = new KNode();
+  					_this.ruleSet = rules[DEFAULT_RULES];
+  					_this.rootNode.setProperty("SZ", 19);
+  					_this.rootNode.setProperty("RU", DEFAULT_RULES);
+  				}
+
+  		_this.game = new Game(boardSize, _this.ruleSet);
+  		return _this;
   	}
 
   	createClass(Kifu, [{
-  		key: "setRules",
-  		value: function setRules(gameRules) {}
+  		key: "setRulesSet",
+  		value: function setRulesSet(ruleSet) {
+  			this.ruleSet = ruleSet;
+  			this.game.setRules(ruleSet);
+  		}
+
+  		/**
+     * Gets specified property or all available game info as an object. In this context, all properties 
+     * of the root node are considered as game info.
+     * 
+     * @param {string} [property] of info (sgf identificator), if omitted you will get all properties.
+     */
+
+  	}, {
+  		key: "getGameInfo",
+  		value: function getGameInfo(property) {
+  			if (property != null) return this.rootNode.getProperty(property);else return Object.assign({}, this.rootNode.SGFProperties);
+  		}
+
+  		/**
+     * Sets game info (as SGF property to root node).
+     * 
+     * @param {string} property of info (sgf identificator)
+     * @param {string} value    of info (sgf value)
+     */
+
+  	}, {
+  		key: "setGameInfo",
+  		value: function setGameInfo(property, value) {
+  			this.rootNode.setProperty(property, value);
+  		}
+
+  		/**
+     * Gets move associated to the current node.
+     * 
+     * @returns {Object} move object
+     */
+
+  	}, {
+  		key: "getMove",
+  		value: function getMove() {}
+
+  		/**
+     * Sets (or removes) move directly to the current node.
+     * 
+     * @param {Object} [move] object, if omitted, move will be removed from the node.
+     */
+
+  	}, {
+  		key: "setMove",
+  		value: function setMove(move) {}
+  	}, {
+  		key: "getTurn",
+  		value: function getTurn() {}
+  	}, {
+  		key: "setTurn",
+  		value: function setTurn(turn) {}
+  	}, {
+  		key: "getMarkup",
+  		value: function getMarkup() {}
+  	}, {
+  		key: "setMarkup",
+  		value: function setMarkup(markup) {}
+  	}, {
+  		key: "getNodeInfo",
+  		value: function getNodeInfo(property) {}
+  	}, {
+  		key: "setNodeInfo",
+  		value: function setNodeInfo(property, value) {}
+  	}, {
+  		key: "getSetup",
+  		value: function getSetup() {}
+  	}, {
+  		key: "setSetup",
+  		value: function setSetup(setup) {}
+
+  		/**
+     * Plays a move (in correct color). It creates a new node and perform next method.
+     * 
+     * @param {Object}  move              coordinates
+     * @param {boolean} [newVariant=true] if false, following nodes will be appended to the new node, instead of creating a new branch (default true)
+     */
+
+  	}, {
+  		key: "play",
+  		value: function play(move, newVariant) {
+  			var node = new Node();
+  			var ind;
+  			node.setMove(Object.assign(move, { c: this.game.turn }));
+
+  			if (newVariant === false && this.node.children[0]) {
+  				this.node.insertBefore(node, this.node.children[0]);
+  				ind = 0;
+  			} else {
+  				ind = this.node.appendChild(node);
+  			}
+
+  			this.next(ind);
+  		}
   	}, {
   		key: "first",
   		value: function first() {}
@@ -3149,9 +3339,26 @@
   		set: function set(team) {
   			this.rootNode.setProperty("WT", rank);
   		}
+  	}, {
+  		key: "rules",
+  		get: function get() {
+  			return this.rootNode.getProperty("RU");
+  		},
+  		set: function set(rules) {
+  			this.setRulesSet(rules[rules] || rules[DEFAULT_RULES]);
+  			this.rootNode.setProperty("RU", rules);
+  		}
+  	}, {
+  		key: "boardSize",
+  		get: function get() {
+  			return this.rootNode.getProperty("SZ") || 19;
+  		},
+  		set: function set(size) {
+  			return this.rootNode.setProperty("SZ", size);
+  		}
   	}]);
   	return Kifu;
-  }();
+  }(EventMixin());
 
   /*WGo.Game = Game;
   WGo.Position = Position;

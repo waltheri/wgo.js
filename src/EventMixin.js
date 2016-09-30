@@ -5,9 +5,9 @@
  export default function EventMixin(baseClass) {
 	baseClass = baseClass || Object;
 	
-	return class extends baseClass {
+	return class /*extends baseClass*/ {
 		constructor() {
-			super();
+			/*super();*/
 			this.__events = {};
 		}
 		
@@ -23,9 +23,9 @@
 			}
 		}
 		
-		trigger(evName, data) {
+		trigger(evName, payload) {
 			if(this.__events[evName]) {
-				this.__events[evName].forEach((fn) => fn(data));
+				this.__events[evName].forEach((fn) => fn(payload));
 			}
 		}
 	}

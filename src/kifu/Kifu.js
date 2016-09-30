@@ -1,21 +1,21 @@
 import KNode from "./KNode.js";
 import EventMixin from "../EventMixin.js";
-import {JAPANESE_RULES, CHINESE_RULES, ING_RULES, NO_RULES} from "../Game.js";
+import Game, {rules, DEFAULT_RULES} from "../Game.js";
 
 /**
  * Kifu class - handles kifu - it can traverse and edit it. Has powerful api.
  * In previous WGo it would be KifuReader.
  */
 
-export default class Kifu /*extends EventMixin()*/ {
+export default class Kifu extends EventMixin() {
 	/**
 	 * Creates a Kifu object from the JSGF object
 	 * 
 	 * @param   {Object} jsgf object
 	 * @returns {Kifu}   Kifu object
 	 */
-	static fromJSGF(jsgf) {
-		return new Kifu(KNode.fromJSGF(jsgf));
+	static fromJS(jsgf) {
+		return new Kifu(KNode.fromJS(jsgf));
 	}
 	
 	/**
@@ -33,13 +33,51 @@ export default class Kifu /*extends EventMixin()*/ {
 	 * 
 	 * @param {KNode} [kNode] - KNode object which will serve as root node of the kifu.
 	 */
-	constructor(kNode) {
-		//super();
+    
+	//constructor()
+	//constructor(kNode)
+	//constructor(boardSize)
+	constructor(boardSize, ruleSet) {
+		super();
 		
-		this.rootNode = kNode ? kNode.root : new KNode();
-		this.currentNode = kNode || this.rootNode;
-		this.ruleSet = 
-		this.game = new Game(this.boardSize, this.getRulesSet());
+		// Board size argument
+		if(typeof boardSize == "number") {
+			this.currentNode = this.rootNode = new KNode();
+			this.rootNode.setProperty("SZ", boardSize);
+			
+			// ... and rules argument as string
+			if(typeof ruleSet == "string") {
+				this.rootNode.setProperty("RU", ruleSet);
+				this.ruleSet = rules[ruleSet] || rules[DEFAULT_RULES];
+			}
+			// ... and rules argument as object
+			else if(ruleSet != null) {
+				this.ruleSet = ruleSet;
+			}
+			// ... and no second argument
+			else {
+				this.rootNode.setProperty("RU", DEFAULT_RULES);
+				this.ruleSet = rules[DEFAULT_RULES];
+			}
+		}
+		// KNode argument
+		else if(boardSize != null) {
+			let kNode = boardSize;
+			this.rootNode = kNode.root;
+			this.currentNode = kNode;
+			
+			this.ruleSet = rules[this.rootNode.getProperty("RU")] || rules[DEFAULT_RULES];
+			boardSize = this.rootNode.getProperty("SZ");
+		}
+		// No argument
+		else {
+			this.currentNode = this.rootNode = new KNode();
+			this.ruleSet = rules[DEFAULT_RULES];
+			this.rootNode.setProperty("SZ", 19);
+			this.rootNode.setProperty("RU", DEFAULT_RULES);
+		}
+		
+		this.game = new Game(boardSize, this.ruleSet);
 	}
 	
 	get blackName() {
@@ -47,7 +85,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set blackName(name) {
-		this.rootNode.setProperty("PB", name);
+		this.setGameInfo("PB", name);
 	}
 	
 	get blackRank() {
@@ -55,7 +93,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set blackRank(rank) {
-		this.rootNode.setProperty("BR", rank);
+		this.setGameInfo("BR", rank);
 	}
 	
 	get blackTeam() {
@@ -63,7 +101,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set blackTeam(team) {
-		this.rootNode.setProperty("BT", rank);
+		this.setGameInfo("BT", team);
 	}
 	
 	get whiteName() {
@@ -71,7 +109,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set whiteName(name) {
-		this.rootNode.setProperty("PW", name);
+		this.setGameInfo("PW", name);
 	}
 	
 	get whiteRank() {
@@ -79,7 +117,8 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set whiteRank(rank) {
-		this.rootNode.setProperty("WR", rank);
+		this.setGameInfo("WR", rank);
+		
 	}
 	
 	get whiteTeam() {
@@ -87,7 +126,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set whiteTeam(team) {
-		this.rootNode.setProperty("WT", rank);
+		this.setGameInfo("WT", team);
 	}
 	
 	get rules() {
@@ -95,21 +134,8 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set rules(rules) {
-		switch(rules) {
-			case "Japanese":
-				this.setRulesSet(JAPANESE_RULES);
-				break;
-			case "GOE", "NZ":
-				this.setRulesSet(ING_RULES);
-				break;
-			case "AGA", "Chinese":
-				this.setRulesSet(CHINESE_RULES);
-				break;
-			default:
-				this.setRulesSet(NO_RULES);
-		}
-		
-		this.rootNode.setProperty("RU", rules);
+		this.setRulesSet(rules[rules] || rules[DEFAULT_RULES]);
+		this.setGameInfo("RU", rules);		
 	}
 	
 	get boardSize() {
@@ -117,16 +143,12 @@ export default class Kifu /*extends EventMixin()*/ {
 	}
 	
 	set boardSize(size) {
-		return this.rootNode.setProperty("SZ", size);
+		this.setGameInfo("SZ", size);	
 	}
-	
-	setRulesSet(gameRules) {
-		this.rulesSet = gameRules;
-		this.game.setRules(gameRules);
-	}
-	
-	getRulesSet() {
-		return this.rulesSet;
+		
+	setRulesSet(ruleSet) {
+		this.ruleSet = ruleSet;
+		this.game.setRules(ruleSet);
 	}
 	
 	/**
@@ -147,8 +169,56 @@ export default class Kifu /*extends EventMixin()*/ {
 	 * @param {string} value    of info (sgf value)
 	 */
 	setGameInfo(property, value) {
+		var oldValue = this.rootNode.getProperty(property);
 		this.rootNode.setProperty(property, value);
+		this.trigger("infoChange", {
+			target: this,
+			node: this.rootNode,
+			key: property,
+			oldValue: oldValue,
+			value: value
+		});
 	}
+	
+	/* ======= NODE MANIPULATION FUNCTIONALITY ================================================== */
+	
+	/**
+	 * Adds a child node to the current node, you can specify a position.
+	 * 
+	 * @param {KNode}  node  a node to add, if omitted a new node will be created.
+	 * @param {number} index - position of node (0 means first position), if omitted the node will be added as last child of current node.
+	 */
+	addNode(node, index) {
+	
+	}
+	
+	/**
+	 * Removes current's node child, its children will be passed to the current node. 
+	 */
+	removeNode(index) {
+		
+	}
+	
+	/**
+	 * Moves current's node child from one position to another
+	 * 
+	 * @param {number} from index
+	 * @param {number} to   index
+	 */
+	moveNode(from, to) {
+	
+	}
+	
+	/**
+	 * Removes current's node child and all its descendants.
+	 * 
+	 * @param {number} index of child node
+	 */
+	removeBranch(index) {
+		
+	}
+	
+	/* ======= NODE PROPERTIES ==================================================================== */
 	
 	/**
 	 * Gets move associated to the current node.
@@ -156,7 +226,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	 * @returns {Object} move object
 	 */
 	getMove() {
-		return this.node.move;
+		
 	}
 	
 	/**
@@ -165,7 +235,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	 * @param {Object} [move] object, if omitted, move will be removed from the node.
 	 */
 	setMove(move) {
-		this.node.setMove(move);
+		
 	}
 	
 	getTurn() {
@@ -176,11 +246,64 @@ export default class Kifu /*extends EventMixin()*/ {
 	
 	}
 	
-	getMarkup() {
+	/**
+	 * Gets markup on given coordination (as markup object). If coordinates are omitted, you will get all markup in array.
+	 * 
+	 * @param {number}                      x coordinate
+	 * @param {number}                      y coordinate
+	 *                                        
+	 * @returns {(BoardObject[]|BoardObject)} Markup object or array of markup objects                  
+	 */
+	getMarkup(x, y) {
+		
+	}
+	
+	/**
+	 * Adds markup into the kifu. If there is already markup on the given coordinates, markup won't be added.
+	 * 
+	 * @param {(BoardObject|BoardObject[]|number)} markupOrX Markup object or array of markup object or x coordinate.
+	 * @param {number}                             y         Y coordinate if first argument is coordinate.
+	 * @param {string}                             type      Type of markup (if first 2 arguments are coordinates).
+	 *                                                       
+	 * @returns {boolean}                                    if operation is successfull (markup is added).
+	 */
+	addMarkup(markupOrX, y, type) {
+		return;
+	}
+	
+	/**
+	 * The same as addMarkup, but markers can be overridden
+	 * @param {[[Type]]} markupOrX [[Description]]
+	 * @param {[[Type]]} x         [[Description]]
+	 * @param {[[Type]]} type      [[Description]]
+	 */
+	setMarkup(markupOrX, x, type) {
 	
 	}
 	
-	setMarkup(markup) {
+	/**
+	 * Removes given markup or markup on coordinates.
+	 * 
+	 * @param {[[Type]]} markupOrX [[Description]]
+	 * @param {[[Type]]} y         [[Description]]
+	 */
+	removeMarkup(markupOrX, y) {
+	
+	}
+	
+	getSetup() {
+	
+	}
+	
+	addSetup() {
+	
+	}
+	
+	setSetup(setup) {
+	
+	}
+	
+	removeSetup() {
 	
 	}
 	
@@ -192,14 +315,6 @@ export default class Kifu /*extends EventMixin()*/ {
 	
 	}
 	
-	getSetup() {
-	
-	}
-	
-	setSetup(setup) {
-	
-	}
-	
 	/**
 	 * Plays a move (in correct color). It creates a new node and perform next method.
 	 * 
@@ -207,7 +322,7 @@ export default class Kifu /*extends EventMixin()*/ {
 	 * @param {boolean} [newVariant=true] if false, following nodes will be appended to the new node, instead of creating a new branch (default true)
 	 */
 	play(move, newVariant) {
-		var node = new Node();
+		var node = new KNode();
 		var ind;
 		node.setMove(Object.assign(move, {c: this.game.turn}));
 		
@@ -241,4 +356,5 @@ export default class Kifu /*extends EventMixin()*/ {
 	goTo(kifuPath) {
 	
 	}
+	
 }

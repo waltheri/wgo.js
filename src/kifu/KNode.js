@@ -25,7 +25,7 @@ var processJsgf = function(parent, jsgf, pos) {
  */
 export default class KNode {
 
-	static fromJSGF(jsgf) {
+	static fromJS(jsgf) {
 		var root = new KNode();
 
 		root.setSGFProperties(jsgf[0]);
@@ -36,7 +36,7 @@ export default class KNode {
 	
 	static fromSGF(sgf, ind) {
 		var parser = new SGFParser(sgf);
-		return KNode.fromJSGF(parser.parseCollection()[ind || 0]);
+		return KNode.fromJS(parser.parseCollection()[ind || 0]);
 	}
 	
 	constructor() {
@@ -315,7 +315,7 @@ export default class KNode {
 		else if(parser.currentChar == "(") {
 			// two or more children
 			parser.parseCollection().forEach((function(jsgf) {
-				this.appendChild(KNode.fromJSGF(jsgf));
+				this.appendChild(KNode.fromJS(jsgf));
 			}).bind(this));
 		}
 		else if(parser.currentChar) {

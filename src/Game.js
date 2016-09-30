@@ -36,6 +36,16 @@ export const NO_RULES = {
 	allowSuicide: true
 }
 
+export var rules = {
+	"Japanese": JAPANESE_RULES,
+	"GOE": ING_RULES,
+	"NZ": ING_RULES,
+	"AGA": CHINESE_RULES,
+	"Chinese": CHINESE_RULES
+}
+
+export const DEFAULT_RULES = "Japanese";
+
 // function for stone capturing
 var capture = function(position, capturedStones, x, y, c) {
 	if(x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x,y) == c) {
@@ -132,21 +142,10 @@ export default class Game {
 	 * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
 	 */
  
-	constructor(size, rulesOrCheckRepeat, allowRewrite, allowSuicide) {
+	constructor(size, rulesOrCheckRepeat = JAPANESE_RULES, allowRewrite, allowSuicide) {
 		this.size = size || 19;
-		
-		if(typeof rulesOrCheckRepeat == "object") {
-			allowRewrite = rulesOrCheckRepeat.allowRewrite;
-			allowSuicide = rulesOrCheckRepeat.allowSuicide;
-			rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
-		}
-		
-		this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
-		this.allow_rewrite = allowRewrite || false;
-		this.allow_suicide = allowSuicide || false;
-		
-		this.stack = [new Position(this.size)];
-		//this.turn = BLACK;			  
+		this.setRules(rulesOrCheckRepeat, allowRewrite, allowSuicide);
+		this.stack = [new Position(this.size)];			  
 	}
 	
 	get position() {
@@ -184,7 +183,7 @@ export default class Game {
 	play(x, y, c, noplay) {
 		//check coordinates validity
 		if(!this.isOnBoard(x,y)) return MOVE_OUT_OF_BOARD;
-		if(!this.allow_rewrite && this.position.get(x,y) != 0) return FIELD_OCCUPIED;
+		if(!this.allowRewrite && this.position.get(x,y) != 0) return FIELD_OCCUPIED;
 		
 		// clone position
 		var c = c || this.position.turn; 
@@ -200,7 +199,7 @@ export default class Game {
 		if(!capturedStones.length) {
 			var testing = new Position(this.size);
 			if(!hasLiberties(newPosition, testing, x, y, c)) {
-				if(this.allow_suicide) {
+				if(this.allowSuicide) {
 					capturesColor = -c;
 					capture(newPosition, capturedStones, x, y, c);
 				}
@@ -406,5 +405,25 @@ export default class Game {
 		this.position.grid = newPosition.grid;
 		
 		return capturedStones;
+	}
+	
+	/**
+	 * Sets go rules for this game. You should use it only in the special cases. 
+	 * If you change rules in the middle of the game, you can get unintentional outcome.
+	 * 
+	 * @param {(object|string)} rulesOrCheckRepeat      rules object or repeat flag (one of "KO", "ALL" or "NONE")
+	 * @param {boolean}         [allowRewrite = false]  allow rewrite flag
+	 * @param {boolean}         [allowSuicide = false]  allow suicide
+	 */
+	setRules(rulesOrCheckRepeat, allowRewrite, allowSuicide) {
+		if(typeof rulesOrCheckRepeat == "object") {
+			allowRewrite = rulesOrCheckRepeat.allowRewrite;
+			allowSuicide = rulesOrCheckRepeat.allowSuicide;
+			rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
+		}
+		
+		this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
+		this.allowRewrite = allowRewrite || false;
+		this.allowSuicide = allowSuicide || false;		  
 	}
 }
