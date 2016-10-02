@@ -1,6 +1,12 @@
-import KNode from "./KNode.js";
-import EventMixin from "../EventMixin.js";
-import Game, {rules, DEFAULT_RULES} from "../Game.js";
+import KNode from "./KNode";
+import EventMixin from "../EventMixin";
+import Game, {rules, DEFAULT_RULES} from "../Game";
+import {markupProperties, setupProperties} from "./propertyValueTypes";
+
+const setupPropertiesReversed = Object.keys(setupProperties).reduce((obj, key) => {
+	obj[setupProperties[key]] = key;
+	return obj;
+},{});
 
 /**
  * Kifu class - handles kifu - it can traverse and edit it. Has powerful api.
@@ -188,25 +194,36 @@ export default class Kifu extends EventMixin() {
 	 * @param {KNode}  node  a node to add, if omitted a new node will be created.
 	 * @param {number} index - position of node (0 means first position), if omitted the node will be added as last child of current node.
 	 */
-	addNode(node, index) {
-	
-	}
-	
-	/**
-	 * Removes current's node child, its children will be passed to the current node. 
-	 */
-	removeNode(index) {
+	addBranch(node, index) {
+		if(typeof node == "number") {
+			index = node;
+			node = new KNode();
+		}
+		if(node == null) {
+			node = new KNode();
+		}
 		
+		if(index == null || index >= this.currentNode.children.length) {
+			this.currentNode.appendChild(node);
+		}
+		else {
+			this.currentNode.insertBefore(node, this.currentNode.children[index]);
+		}
 	}
-	
+
 	/**
 	 * Moves current's node child from one position to another
 	 * 
 	 * @param {number} from index
 	 * @param {number} to   index
 	 */
-	moveNode(from, to) {
-	
+	moveBranch(from, to) {
+		if(from > to) {
+			this.currentNode.children.splice(to, 0, this.currentNode.children.splice(from, 1)[0]);
+		}
+		else if(from < to) {
+			this.currentNode.children.splice(to+1, 1, this.currentNode.children.splice(from, 1)[0]);
+		}
 	}
 	
 	/**
@@ -215,7 +232,56 @@ export default class Kifu extends EventMixin() {
 	 * @param {number} index of child node
 	 */
 	removeBranch(index) {
+		if(index == null) {
+			index = this.currentNode.children.length - 1;
+		}
+		this.currentNode.removeChild(this.currentNode.children[index]);
+	}
+	
+	/**
+	 * Adds a child node to the current node, you can specify a position.
+	 * 
+	 * @param {KNode}  node  a node to add, if omitted a new node will be created.
+	 * @param {number} index - position of node (0 means first position), if omitted the node will be added as last child of current node.
+	 */
+	addNode(node, index) {
+		if(typeof node == "number") {
+			index = node;
+			node = new KNode();
+		}
+		if(node == null) {
+			node = new KNode();
+		}
 		
+		if(index == null || index >= this.currentNode.children.length) {
+			this.currentNode.appendChild(node);
+		}
+		else {
+			// find last node of branch
+			var lastNode = node;
+			while(lastNode.children[0]) {
+				lastNode = lastNode.children[0];
+			}
+			
+			// replace nodes
+			lastNode.appendChild(this.currentNode.children[index]);
+			this.currentNode.children.splice(index, 0, node);
+		}
+	}
+	
+	/**
+	 * Removes current's node child and all its descendants.
+	 * 
+	 * @param {number} index of child node
+	 */
+	removeNode(index) {
+		if(index == null) {
+			index = this.currentNode.children.length - 1;
+		}
+		
+		var removedNode = this.currentNode.children[index];
+		this.currentNode.removeChild(removedNode);		
+		this.currentNode.children.splice(index, 0, ...removedNode.children);
 	}
 	
 	/* ======= NODE PROPERTIES ==================================================================== */
@@ -255,7 +321,22 @@ export default class Kifu extends EventMixin() {
 	 * @returns {(BoardObject[]|BoardObject)} Markup object or array of markup objects                  
 	 */
 	getMarkup(x, y) {
-		
+		if(arguments.length == 2) {
+			for(let propIdent in this.currentNode.SGFProperties) {
+				if(markupProperties.indexOf(propIdent) >= 0 && this.currentNode.SGFProperties[propIdent].some(markup => markup.x === x && markup.y === y)) {
+					return {x: x, y: y, type: propIdent};
+				}
+			}
+		}
+		else {
+			let markup = [];
+			for(let propIdent in this.currentNode.SGFProperties) {
+				if(markupProperties.indexOf(propIdent) >= 0) {
+					markup = markup.concat(this.currentNode.SGFProperties[propIdent].map(markup => ({x: markup.x, y: markup.y, type: propIdent})));
+				}
+			}
+			return markup;
+		}
 	}
 	
 	/**
@@ -267,8 +348,21 @@ export default class Kifu extends EventMixin() {
 	 *                                                       
 	 * @returns {boolean}                                    if operation is successfull (markup is added).
 	 */
-	addMarkup(markupOrX, y, type) {
-		return;
+	addMarkup(x, y, type) {
+		if(typeof x == "object") {
+			type = x.type;
+			y = x.y;
+			x = x.x;
+		}
+		if(this.getMarkup(x, y)) {
+			return false;
+		}
+		
+		let markup = this.currentNode.getProperty(type) || [];
+		markup.push({x, y});
+		this.currentNode.setProperty(type, markup);
+		
+		return true;
 	}
 	
 	/**
@@ -277,8 +371,18 @@ export default class Kifu extends EventMixin() {
 	 * @param {[[Type]]} x         [[Description]]
 	 * @param {[[Type]]} type      [[Description]]
 	 */
-	setMarkup(markupOrX, x, type) {
-	
+	setMarkup(x, y, type) {
+		if(typeof x == "object") {
+			type = x.type;
+			y = x.y;
+			x = x.x;
+		}
+		
+		this.removeMarkup(x, y);
+		
+		let markup = this.currentNode.getProperty(type) || [];
+		markup.push({x, y});
+		this.currentNode.setProperty(type, markup);
 	}
 	
 	/**
@@ -287,25 +391,78 @@ export default class Kifu extends EventMixin() {
 	 * @param {[[Type]]} markupOrX [[Description]]
 	 * @param {[[Type]]} y         [[Description]]
 	 */
-	removeMarkup(markupOrX, y) {
-	
+	removeMarkup(x, y) {
+		if(typeof x == "object") {
+			y = x.y;
+			x = x.x;
+		}
+		
+		for(let propIdent in this.currentNode.SGFProperties) {
+			if(markupProperties.indexOf(propIdent) >= 0) {
+				this.currentNode.setProperty(propIdent, this.currentNode.SGFProperties[propIdent].filter(markup => markup.x !== x || markup.y !== y));
+			}
+		}
 	}
 	
-	getSetup() {
-	
+	getSetup(x, y) {
+		if(arguments.length == 2) {
+			for(let propIdent in this.currentNode.SGFProperties) {
+				if(setupProperties[propIdent] != null && this.currentNode.SGFProperties[propIdent].some(setup => setup.x === x && setup.y === y)) {
+					return {x: x, y: y, c: setupProperties[propIdent]};
+				}
+			}
+		}
+		else {
+			let setup = [];
+			for(let propIdent in this.currentNode.SGFProperties) {
+				if(setupProperties[propIdent] != null) {
+					setup = setup.concat(this.currentNode.SGFProperties[propIdent].map(setup => ({x: setup.x, y: setup.y, c: setupProperties[propIdent]})));
+				}
+			}
+			return setup;
+		}
 	}
 	
-	addSetup() {
-	
+	addSetup(x, y, color) {
+		if(typeof x == "object") {
+			color = x.c;
+			y = x.y;
+			x = x.x;
+		}
+		if(this.getSetup(x, y)) {
+			return false;
+		}
+		
+		let setup = this.currentNode.getProperty(setupPropertiesReversed[color]) || [];
+		setup.push({x, y});
+		this.currentNode.setProperty(setupPropertiesReversed[color], setup);
+		
+		return true;
 	}
 	
-	setSetup(setup) {
-	
+	setSetup(x, y, color) {
+		if(typeof x == "object") {
+			color = x.c;
+			y = x.y;
+			x = x.x;
+		}
+		
+		for(let propIdent in this.currentNode.SGFProperties) {
+			if(setupProperties[propIdent] != null) {
+				this.currentNode.setProperty(propIdent, this.currentNode.SGFProperties[propIdent].filter(setup => setup.x !== x || setup.y !== y));
+			}
+		}
+			
+		let setup = this.currentNode.getProperty(setupPropertiesReversed[color]) || [];
+		setup.push({x, y});
+		this.currentNode.setProperty(setupPropertiesReversed[color], setup);
+		
+		return true;
 	}
 	
-	removeSetup() {
-	
-	}
+	//removeSetup(x, y) {
+	//
+	//}
 	
 	getNodeInfo(property) {
 	

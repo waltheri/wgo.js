@@ -121,6 +121,12 @@ propertyValueTypes.PL= {
 	notEmpty: true
 }
 
+export var setupProperties = {
+	"AB": BLACK, 
+	"AW": WHITE, 
+	"AE": EMPTY
+};
+
 /// Node annotation properties --------------------------------------------------------------------
 
 propertyValueTypes.C = propertyValueTypes.N = {
@@ -175,6 +181,8 @@ propertyValueTypes.DD = propertyValueTypes.TB = propertyValueTypes.TW = {
 	multiple: true,
 	notEmpty: false
 }
+
+export var markupProperties = ["CR", "MA", "SL", "SQ", "TR", "LB"];
 
 /// Root properties -------------------------------------------------------------------------------
 

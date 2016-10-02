@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha -R spec --compilers js:babel-register",
+	"test-kifu": "mocha -R spec --compilers js:babel-register test/kifu.js",
     "install": "grunt",
     "build": "grunt",
     "docs": "grunt docs-prepare",
