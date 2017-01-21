@@ -1,9 +1,9 @@
 // dummy index.js
 
-var WGo = require("./src/WGo");
+var WGo = require("./es6/WGo");
 
-WGo.CanvasBoard = require("./src/CanvasBoard");
-WGo.Position = require("./src/Position");
-WGo.Game = require("./src/Game");
+WGo.CanvasBoard = require("./es6/CanvasBoard");
+WGo.Position = require("./es6/Position");
+WGo.Game = require("./es6/Game");
 
 window.WGo = module.exports = WGo;

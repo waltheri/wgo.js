@@ -5,11 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha -R spec --compilers js:babel-register",
-	"test-kifu": "mocha -R spec --compilers js:babel-register test/kifu.js",
+    "test-kifu": "mocha -R spec --compilers js:babel-register test/kifu.js",
     "install": "grunt",
     "build": "grunt",
     "docs": "grunt docs-prepare",
-    "babel": "babel src/WGo.js -o src/WGo5.js"
+    "babel": "babel src/WGo.js -o src/WGo5.js",
+    "start": "rollup -c rollup.config.js",
+    "watch": "rollup -c rollup.config.js -w",
+    "dev": "rollup -c rollup.config.js -w | http-server"
   },
   "repository": {
     "type": "git",
@@ -33,6 +36,8 @@
     "babel-register": "^6.9.0",
     "babelify": "^7.3.0",
     "chai": "^3.4.1",
+    "eslint": "^3.14.0",
+    "eslint-plugin-import": "^2.2.0",
     "grunt": "^0.4.5",
     "grunt-browserify": "^4.0.1",
     "grunt-cli": "^0.1.13",
@@ -42,12 +47,18 @@
     "grunt-jsdoc": "^1.0.0",
     "grunt-rollup": "^0.7.1",
     "grunt-string-replace": "^1.2.0",
+    "http-server": "^0.9.0",
     "mocha": "^2.3.4",
-    "rollup-plugin-babel": "^2.4.0"
+    "rollup": "^0.41.4",
+    "rollup-plugin-babel": "^2.4.0",
+    "rollup-plugin-commonjs": "^7.0.0",
+    "rollup-plugin-node-resolve": "^2.0.0",
+    "rollup-watch": "^3.2.2"
   },
   "babel": {
     "presets": [
-	  "es2015"
+      "es2015"
     ]
-  }
+  },
+  "dependencies": {}
 }

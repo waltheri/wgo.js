@@ -1,0 +1,20 @@
+{
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module",
+        "ecmaFeatures": {
+
+        }
+    },
+    "plugins": [
+        "eslint-plugin-import"
+    ],
+	"extends": "eslint:recommended",
+    "rules": {
+        "no-implicit-globals": 1,
+        "no-global-assign": 1,
+        "no-use-before-define": 1,
+        "import/no-unresolved": 1,
+        "import/named": 1
+    }
+}
