@@ -8,10 +8,6 @@ import gridHandler from "./drawHandlers/grid";
  */
  
 export default class GridLayer extends CanvasLayer {
-	constructor() {
-		super();
-	}
-	
 	initialDraw(board) {
 		gridHandler.grid.draw(this.context, {}, board);
 	}

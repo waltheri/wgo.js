@@ -2,6 +2,7 @@ import shellStone from "./shellStone";
 import glassStone from "./glassStone";
 import paintedStone from "./paintedStone";
 import simpleStone from "./simpleStone";
+import realisticStone from "./realisticStone";
 
 import circle from "./circle";
 import square from "./square";
@@ -16,6 +17,7 @@ export {
 	glassStone, 
 	paintedStone,
 	simpleStone,
+	realisticStone,
 	circle, 
 	square, 
 	triangle, 

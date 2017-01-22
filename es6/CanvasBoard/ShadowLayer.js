@@ -1,4 +1,5 @@
 import CanvasLayer from "./CanvasLayer";
+import { themeVariable } from "./helpers";
 
 /**
  * @class
@@ -7,13 +8,8 @@ import CanvasLayer from "./CanvasLayer";
  */
 
 export default class ShadowLayer extends CanvasLayer {
-	constructor(shadowSize) {
-		super();
-		this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
-	}
-
 	setDimensions(width, height, board) {
 		super.setDimensions(width, height, board);
-		this.context.transform(1, 0, 0, 1, Math.round(this.shadowSize * board.stoneRadius / 7), Math.round(this.shadowSize * board.stoneRadius / 7));
+		this.context.transform(1, 0, 0, 1, themeVariable("shadowOffsetX", board), themeVariable("shadowOffsetY", board));
 	}
 }

@@ -1857,62 +1857,69 @@ var gridHandler = {
 };
 
 var GridLayer = function (_CanvasLayer) {
-	babelHelpers.inherits(GridLayer, _CanvasLayer);
+  babelHelpers.inherits(GridLayer, _CanvasLayer);
 
-	function GridLayer() {
-		babelHelpers.classCallCheck(this, GridLayer);
-		return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(GridLayer).call(this));
-	}
+  function GridLayer() {
+    babelHelpers.classCallCheck(this, GridLayer);
+    return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(GridLayer).apply(this, arguments));
+  }
 
-	babelHelpers.createClass(GridLayer, [{
-		key: "initialDraw",
-		value: function initialDraw(board) {
-			gridHandler.grid.draw(this.context, {}, board);
-		}
-	}]);
-	return GridLayer;
+  babelHelpers.createClass(GridLayer, [{
+    key: "initialDraw",
+    value: function initialDraw(board) {
+      gridHandler.grid.draw(this.context, {}, board);
+    }
+  }]);
+  return GridLayer;
 }(CanvasLayer);
 
 var ShadowLayer = function (_CanvasLayer) {
-	babelHelpers.inherits(ShadowLayer, _CanvasLayer);
+  babelHelpers.inherits(ShadowLayer, _CanvasLayer);
 
-	function ShadowLayer(shadowSize) {
-		babelHelpers.classCallCheck(this, ShadowLayer);
+  function ShadowLayer() {
+    babelHelpers.classCallCheck(this, ShadowLayer);
+    return babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ShadowLayer).apply(this, arguments));
+  }
 
-		var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ShadowLayer).call(this));
-
-		_this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
-		return _this;
-	}
-
-	babelHelpers.createClass(ShadowLayer, [{
-		key: "setDimensions",
-		value: function setDimensions(width, height, board) {
-			babelHelpers.get(Object.getPrototypeOf(ShadowLayer.prototype), "setDimensions", this).call(this, width, height, board);
-			this.context.transform(1, 0, 0, 1, Math.round(this.shadowSize * board.stoneRadius / 7), Math.round(this.shadowSize * board.stoneRadius / 7));
-		}
-	}]);
-	return ShadowLayer;
+  babelHelpers.createClass(ShadowLayer, [{
+    key: "setDimensions",
+    value: function setDimensions(width, height, board) {
+      babelHelpers.get(Object.getPrototypeOf(ShadowLayer.prototype), "setDimensions", this).call(this, width, height, board);
+      this.context.transform(1, 0, 0, 1, themeVariable("shadowOffsetX", board), themeVariable("shadowOffsetY", board));
+    }
+  }]);
+  return ShadowLayer;
 }(CanvasLayer);
 
 /**
  * Generic shadow draw handler for all stones
+ * 
+ * "shadowBlur" 0-1
+ * 0 - no blur - createRadialGradient(0, 0, stoneRadius, 0, 0, stoneRadius)
+ * 1 - maximal blur - createRadialGradient(0, 0, 0, 0, 0, 8/7*stoneRadius)
  */
 
 var shadow = {
 	draw: function draw(canvasCtx, args, board) {
 		var stoneRadius = board.stoneRadius;
-		var blur = themeVariable("shadowBlur", board);
+		var blur = themeVariable("shadowBlur", board) || 0.00001;
 
-		var gradient = canvasCtx.createRadialGradient(0, 0, stoneRadius - 1 - blur, 0, 0, stoneRadius + blur);
+		var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
+		var stopRadius = stoneRadius + 1 / 7 * stoneRadius * blur;
+
+		var gradient = canvasCtx.createRadialGradient(0, 0, startRadius, 0, 0, stopRadius);
 		gradient.addColorStop(0, themeVariable("shadowColor", board));
 		gradient.addColorStop(1, themeVariable("shadowTransparentColor", board));
 
 		canvasCtx.beginPath();
 		canvasCtx.fillStyle = gradient;
-		canvasCtx.arc(0, 0, stoneRadius + blur, 0, 2 * Math.PI, true);
+		canvasCtx.arc(0, 0, stopRadius, 0, 2 * Math.PI, true);
 		canvasCtx.fill();
-	}
+
+		//canvasCtx.beginPath();
+		//canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+		//canvasCtx.stroke();
+	} //
 };
 
 var shellSeed = Math.ceil(Math.random() * 9999999);
@@ -2147,6 +2154,67 @@ var simpleStone = {
 	}
 };
 
+/* global window */
+
+function isOkay(img) {
+	if (typeof img === 'string') {
+		return false;
+	}
+	if (!img.complete) {
+		return false;
+	}
+	if (typeof img.naturalWidth != "undefined" && img.naturalWidth == 0) {
+		return false;
+	}
+	return true;
+}
+
+// Shadow handler for the 'REALISITC' rendering mode
+// handler for image based stones
+var realisticStone = function (graphics, fallback) {
+	var randSeed = Math.ceil(Math.random() * 9999999);
+	var redrawRequest = void 0;
+
+	return {
+		stone: {
+			draw: function draw(canvasCtx, args, board) {
+				var stoneRadius = board.stoneRadius;
+				var graphic = args.c == WHITE ? graphics.whiteStoneGraphic : graphics.blackStoneGraphic;
+				var count = graphic.length;
+				var idx = randSeed % (count + args.x * board.size + args.y) % count;
+
+				if (typeof graphic[idx] === 'string') {
+					// The image has not been loaded yet
+					var stoneGraphic = new window.Image();
+					// Redraw the whole board after the image has been loaded.
+					// This prevents 'missing stones' and similar graphical errors
+					// especially on slower internet connections.
+					stoneGraphic.onload = function () {
+						// make sure board will be redraw just once, and after every stone is processed
+						if (redrawRequest != null) {
+							window.clearTimeout(redrawRequest);
+						}
+						redrawRequest = window.setTimeout(function () {
+							board.redraw();
+							redrawRequest = null;
+						}, 1);
+					};
+					stoneGraphic.src = themeVariable("imageFolder", board) + graphic[idx];
+					graphic[idx] = stoneGraphic;
+				}
+
+				if (isOkay(graphic[idx])) {
+					canvasCtx.drawImage(graphic[idx], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+				} else {
+					// Fall back to SHELL handler if there was a problem loading the image
+					fallback.stone.draw(canvasCtx, args, board);
+				}
+			}
+		},
+		shadow: shadow
+	};
+};
+
 var circle = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
@@ -2277,6 +2345,7 @@ var drawHandlers = Object.freeze({
 	glassStone: glassStone,
 	paintedStone: paintedStone,
 	simpleStone: simpleStone,
+	realisticStone: realisticStone,
 	circle: circle,
 	square: square,
 	triangle: triangle,
@@ -2323,21 +2392,28 @@ var coordinates = {
 	}
 };
 
-var theme = {
+var realisticTheme = {
     // stones
-    stoneHandler: shellStone,
+    stoneHandler: realisticStone({
+        whiteStoneGraphic: ["stones/white00_128.png", "stones/white01_128.png", "stones/white02_128.png", "stones/white03_128.png", "stones/white04_128.png", "stones/white05_128.png", "stones/white06_128.png", "stones/white07_128.png", "stones/white08_128.png", "stones/white09_128.png", "stones/white10_128.png"],
+        blackStoneGraphic: ["stones/black00_128.png", "stones/black01_128.png", "stones/black02_128.png", "stones/black03_128.png"]
+    }, shellStone),
     stoneSize: function stoneSize(board) {
         var fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
-        return 8 / 17 * fieldSize;
+        return (/*8/17**/0.5 * fieldSize
+        );
     },
 
     // shadow
     shadowColor: "rgba(62,32,32,0.5)",
     shadowTransparentColor: "rgba(62,32,32,0)",
-    shadowBlur: function shadowBlur(board) {
-        return board.stoneRadius * 0.1;
+    shadowBlur: 0.5,
+    shadowOffsetX: function shadowOffsetX(board) {
+        return Math.round(board.stoneRadius / 7);
     },
-    shadowSize: 1,
+    shadowOffsetY: function shadowOffsetY(board) {
+        return Math.round(board.stoneRadius / 3);
+    },
 
     // markup
     markupBlackColor: "rgba(255,255,255,0.9)",
@@ -2369,14 +2445,88 @@ var theme = {
     // coordinates
     coordinatesHandler: coordinates,
     coordinatesColor: "#531",
-    coordinatesX: "ABCDEFGHJKLMNOPQRST",
-    coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+    coordinatesX: "ABCDEFGHJKLMNOPQRSTUV",
+    coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
 
     // other
     variationColor: "rgba(0,32,128,0.8)",
     font: "calibri",
-    linesShift: -0.25
+    linesShift: -0.25,
+    imageFolder: "../images/"
 };
+
+/** 
+ * Object containing default graphical properties of a board.
+ * A value of all properties can be even static value or function, returning final value.
+ * Theme object doesn't set board and stone textures - they are set separately.
+ */
+
+var modernTheme = {
+    // stones
+    stoneHandler: shellStone,
+    stoneSize: function stoneSize(board) {
+        var fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
+        return 8 / 17 * fieldSize;
+    },
+
+    // shadow
+    shadowColor: "rgba(62,32,32,0.5)",
+    shadowTransparentColor: "rgba(62,32,32,0)",
+    shadowBlur: 0.25,
+    shadowOffsetX: function shadowOffsetX(board) {
+        return Math.round(board.stoneRadius / 7);
+    },
+    shadowOffsetY: function shadowOffsetY(board) {
+        return Math.round(board.stoneRadius / 7);
+    },
+
+    // markup
+    markupBlackColor: "rgba(255,255,255,0.9)",
+    markupWhiteColor: "rgba(0,0,0,0.7)",
+    markupNoneColor: "rgba(0,0,0,0.7)",
+    markupLinesWidth: function markupLinesWidth(board) {
+        return board.stoneRadius / 7.5;
+    },
+    markupHandlers: {
+        CR: circle,
+        LB: label,
+        SQ: square,
+        TR: triangle,
+        MA: xMark,
+        SL: dot,
+        SM: smileyFace
+    },
+
+    // grid & star points
+    gridLinesWidth: function gridLinesWidth(board) {
+        return board.stoneRadius / 15;
+    },
+    gridLinesColor: "#654525",
+    starColor: "#531",
+    starSize: function starSize(board) {
+        return board.stoneRadius / 8 + 1;
+    },
+
+    // coordinates
+    coordinatesHandler: coordinates,
+    coordinatesColor: "#531",
+    coordinatesX: "ABCDEFGHJKLMNOPQRSTUV",
+    coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+
+    // other
+    variationColor: "rgba(0,32,128,0.8)",
+    font: "calibri",
+    linesShift: -0.25,
+    imageFolder: "../images/"
+};
+
+// add here all themes, which should be publicly exposed
+
+
+var themes = Object.freeze({
+	realisticTheme: realisticTheme,
+	modernTheme: modernTheme
+});
 
 /**
  * A faster alternative to `Function#apply`, this function invokes `func`
@@ -5118,7 +5268,7 @@ var CanvasBoard = function () {
 			}
 
 			this.grid = new GridLayer();
-			this.shadow = new ShadowLayer(themeVariable("shadowSize", this));
+			this.shadow = new ShadowLayer();
 			this.stone = new CanvasLayer();
 
 			this.addLayer(this.grid, 100);
@@ -5512,9 +5662,22 @@ CanvasBoard.defaultConfig = {
 	width: 0,
 	height: 0,
 	starPoints: {
+		5: [{ x: 2, y: 2 }],
+		7: [{ x: 3, y: 3 }],
+		8: [{ x: 2, y: 2 }, { x: 5, y: 2 }, { x: 2, y: 5 }, { x: 5, y: 5 }],
+		9: [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 6 }, { x: 6, y: 6 }],
+		10: [{ x: 2, y: 2 }, { x: 7, y: 2 }, { x: 2, y: 7 }, { x: 7, y: 7 }],
+		11: [{ x: 2, y: 2 }, { x: 8, y: 2 }, { x: 5, y: 5 }, { x: 2, y: 8 }, { x: 8, y: 8 }],
+		12: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }],
+		13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 6, y: 6 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
+		14: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }],
+		15: [{ x: 3, y: 3 }, { x: 11, y: 3 }, { x: 7, y: 7 }, { x: 3, y: 11 }, { x: 11, y: 11 }],
+		16: [{ x: 3, y: 3 }, { x: 12, y: 3 }, { x: 3, y: 12 }, { x: 12, y: 12 }],
+		17: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 13, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }, { x: 13, y: 8 }, { x: 3, y: 13 }, { x: 8, y: 13 }, { x: 13, y: 13 }],
+		18: [{ x: 3, y: 3 }, { x: 14, y: 3 }, { x: 3, y: 14 }, { x: 14, y: 14 }],
 		19: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 15, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 }, { x: 15, y: 9 }, { x: 3, y: 15 }, { x: 9, y: 15 }, { x: 15, y: 15 }],
-		13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
-		9: [{ x: 4, y: 4 }]
+		20: [{ x: 3, y: 3 }, { x: 16, y: 3 }, { x: 3, y: 16 }, { x: 16, y: 16 }],
+		21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }, { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }]
 	},
 	section: {
 		top: 0,
@@ -5523,10 +5686,11 @@ CanvasBoard.defaultConfig = {
 		left: 0
 	},
 	coordinates: false,
-	theme: theme
+	theme: realisticTheme
 };
 
 CanvasBoard.drawHandlers = drawHandlers;
+CanvasBoard.themes = themes;
 
 /**
  * Simple events handling.

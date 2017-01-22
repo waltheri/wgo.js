@@ -9,7 +9,7 @@ import { themeVariable, defaultFieldClear } from "./helpers";
 import GridLayer from "./GridLayer";
 import ShadowLayer from "./ShadowLayer";
 import CanvasLayer from "./CanvasLayer";
-import theme from "./defaultTheme";
+import * as themes from "./themes";
 import * as drawHandlers from "./drawHandlers";
 import defaultsDeep from "lodash/defaultsDeep";
 
@@ -195,7 +195,7 @@ export default class CanvasBoard {
 		}
 
 		this.grid = new GridLayer();
-		this.shadow = new ShadowLayer(themeVariable("shadowSize", this));
+		this.shadow = new ShadowLayer();
 		this.stone = new CanvasLayer();
 
 		this.addLayer(this.grid, 100);
@@ -337,28 +337,28 @@ export default class CanvasBoard {
 
 	redrawLayer(layer) {
 		var obj, handler;
-		
+
 		this[layer].clear();
 		this[layer].initialDraw(this);
-		
-		for(var x = 0; x < this.size; x++) {
-			for(var y = 0; y < this.size; y++) {
-				for(var z = 0; z < this.obj_arr[x][y].length; z++) {
+
+		for (var x = 0; x < this.size; x++) {
+			for (var y = 0; y < this.size; y++) {
+				for (var z = 0; z < this.obj_arr[x][y].length; z++) {
 					obj = this.obj_arr[x][y][z];
-					if(!obj.type) handler = themeVariable("stoneHandler", this);
-					else if(typeof obj.type == "string") handler = themeVariable("markupHandlers", this)[obj.type];
+					if (!obj.type) handler = themeVariable("stoneHandler", this);
+					else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", this)[obj.type];
 					else handler = obj.type;
-			
-					if(handler[layer]) this[layer].drawField(handler[layer].draw, obj, this);
+
+					if (handler[layer]) this[layer].drawField(handler[layer].draw, obj, this);
 				}
 			}
 		}
-		
-		for(var i = 0; i < this.obj_list.length; i++) {
+
+		for (var i = 0; i < this.obj_list.length; i++) {
 			obj = this.obj_list[i];
 			handler = obj.handler;
-			
-			if(handler[layer]) this[layer].draw(handler[layer].draw, obj, this);
+
+			if (handler[layer]) this[layer].draw(handler[layer].draw, obj, this);
 		}
 	}
 
@@ -429,7 +429,7 @@ export default class CanvasBoard {
 		}
 
 		// TODO: should be warning or error
-		if(obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
+		if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
 
 		try {
 			// clear all objects on object's coordinates
@@ -465,7 +465,7 @@ export default class CanvasBoard {
 			return;
 		}
 
-		if(obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
+		if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
 
 		try {
 			let i;
@@ -556,25 +556,25 @@ CanvasBoard.defaultConfig = {
 	width: 0,
 	height: 0,
 	starPoints: {
-		19: [
-			{ x: 3, y: 3 },
-			{ x: 9, y: 3 },
-			{ x: 15, y: 3 },
-			{ x: 3, y: 9 },
-			{ x: 9, y: 9 },
-			{ x: 15, y: 9 },
-			{ x: 3, y: 15 },
-			{ x: 9, y: 15 },
-			{ x: 15, y: 15 }
-		],
-		13: [
-			{ x: 3, y: 3 },
-			{ x: 9, y: 3 },
-			{ x: 3, y: 9 },
-			{ x: 9, y: 9 }],
-		9: [
-			{ x: 4, y: 4 }
-		],
+		5: [{ x: 2, y: 2 }],
+		7: [{ x: 3, y: 3 }],
+		8: [{ x: 2, y: 2 }, { x: 5, y: 2 }, { x: 2, y: 5 }, { x: 5, y: 5 }],
+		9: [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 6 }, { x: 6, y: 6 }],
+		10: [{ x: 2, y: 2 }, { x: 7, y: 2 }, { x: 2, y: 7 }, { x: 7, y: 7 }],
+		11: [{ x: 2, y: 2 }, { x: 8, y: 2 }, { x: 5, y: 5 }, { x: 2, y: 8 }, { x: 8, y: 8 }],
+		12: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }],
+		13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 6, y: 6 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
+		14: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }],
+		15: [{ x: 3, y: 3 }, { x: 11, y: 3 }, { x: 7, y: 7 }, { x: 3, y: 11 }, { x: 11, y: 11 }],
+		16: [{ x: 3, y: 3 }, { x: 12, y: 3 }, { x: 3, y: 12 }, { x: 12, y: 12 }],
+		17: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 13, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 },
+		{ x: 13, y: 8 }, { x: 3, y: 13 }, { x: 8, y: 13 }, { x: 13, y: 13 }],
+		18: [{ x: 3, y: 3 }, { x: 14, y: 3 }, { x: 3, y: 14 }, { x: 14, y: 14 }],
+		19: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 15, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 },
+		{ x: 15, y: 9 }, { x: 3, y: 15 }, { x: 9, y: 15 }, { x: 15, y: 15 }],
+		20: [{ x: 3, y: 3 }, { x: 16, y: 3 }, { x: 3, y: 16 }, { x: 16, y: 16 }],
+		21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 },
+		{ x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }],
 	},
 	section: {
 		top: 0,
@@ -583,7 +583,8 @@ CanvasBoard.defaultConfig = {
 		left: 0,
 	},
 	coordinates: false,
-	theme: theme
+	theme: themes.realisticTheme
 }
 
 CanvasBoard.drawHandlers = drawHandlers;
+CanvasBoard.themes = themes;
