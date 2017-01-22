@@ -1,4 +1,5 @@
 /* global document, window */
+import { themeVariable } from "./helpers";
 
 /**
  * @class
@@ -19,6 +20,8 @@ export default class CanvasLayer {
 	}
 
 	setDimensions(width, height, board) {
+		const linesShift = themeVariable("linesShift", board);
+
 		this.element.width = width;
 		this.element.style.width = (width / this.pixelRatio) + 'px';
 		this.element.height = height;
@@ -26,7 +29,7 @@ export default class CanvasLayer {
 
 		this.context.restore();
 		this.context.save();
-		this.context.transform(1, 0, 0, 1, board.linesShift, board.linesShift);
+		this.context.transform(1, 0, 0, 1, linesShift, linesShift);
 	}
 
 	appendTo(element, weight) {

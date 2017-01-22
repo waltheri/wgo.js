@@ -16,25 +16,25 @@ import defaultsDeep from "lodash/defaultsDeep";
 // Private methods of WGo.CanvasBoard
 
 var calcLeftMargin = function (board) {
-	return (3 * board.width) / (4 * (board.bx + 1 - board.tx) + 2) - board.fieldWidth * board.tx;
+	return (3 * board.width) / (4 * (board.bottomRightFieldX + 1 - board.topLeftFieldX) + 2) - board.fieldWidth * board.topLeftFieldX;
 }
 
 var calcTopMargin = function (board) {
-	return (3 * board.height) / (4 * (board.by + 1 - board.ty) + 2) - board.fieldHeight * board.ty;
+	return (3 * board.height) / (4 * (board.bottomRightFieldY + 1 - board.topLeftFieldY) + 2) - board.fieldHeight * board.topLeftFieldY;
 }
 
 var calcFieldWidth = function (board) {
-	return (4 * board.width) / (4 * (board.bx + 1 - board.tx) + 2);
+	return (4 * board.width) / (4 * (board.bottomRightFieldX + 1 - board.topLeftFieldX) + 2);
 }
 
 var calcFieldHeight = function (board) {
-	return (4 * board.height) / (4 * (board.by + 1 - board.ty) + 2);
+	return (4 * board.height) / (4 * (board.bottomRightFieldY + 1 - board.topLeftFieldY) + 2);
 }
 
 var clearField = function (board, x, y) {
 	var handler;
-	for (var z = 0; z < board.obj_arr[x][y].length; z++) {
-		var obj = board.obj_arr[x][y][z];
+	for (var z = 0; z < board.fieldObjects[x][y].length; z++) {
+		var obj = board.fieldObjects[x][y][z];
 		if (!obj.type) handler = themeVariable("stoneHandler", board);
 		else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", board)[obj.type];
 		else handler = obj.type;
@@ -48,8 +48,8 @@ var clearField = function (board, x, y) {
 // Draws all object on specified field
 var drawField = function (board, x, y) {
 	let handler;
-	for (let z = 0; z < board.obj_arr[x][y].length; z++) {
-		let obj = board.obj_arr[x][y][z];
+	for (let z = 0; z < board.fieldObjects[x][y].length; z++) {
+		let obj = board.fieldObjects[x][y][z];
 
 		if (!obj.type) handler = themeVariable("stoneHandler", board);
 		else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", board)[obj.type];
@@ -87,7 +87,6 @@ var updateDim = function (board) {
 	board.element.style.height = (board.height / board.pixelRatio) + "px";
 
 	board.stoneRadius = themeVariable("stoneSize", board);
-	board.linesShift = themeVariable("linesShift", board);
 
 	for (var i = 0; i < board.layers.length; i++) {
 		board.layers[i].setDimensions(board.width, board.height, board);
@@ -139,10 +138,10 @@ export default class CanvasBoard {
 		});
 
 		// set section if set
-		this.tx = this.section.left;
-		this.ty = this.section.top;
-		this.bx = this.size - 1 - this.section.right;
-		this.by = this.size - 1 - this.section.bottom;
+		this.topLeftFieldX = this.section.left;
+		this.topLeftFieldY = this.section.top;
+		this.bottomRightFieldX = this.size - 1 - this.section.right;
+		this.bottomRightFieldY = this.size - 1 - this.section.bottom;
 
 		// init board
 		this.init();
@@ -167,14 +166,14 @@ export default class CanvasBoard {
 	init() {
 
 		// placement of objects (in 3D array)
-		this.obj_arr = [];
+		this.fieldObjects = [];
 		for (var i = 0; i < this.size; i++) {
-			this.obj_arr[i] = [];
-			for (var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+			this.fieldObjects[i] = [];
+			for (var j = 0; j < this.size; j++) this.fieldObjects[i][j] = [];
 		}
 
 		// other objects, stored in list
-		this.obj_list = [];
+		this.customObjects = [];
 
 		// layers
 		this.layers = [];
@@ -209,7 +208,7 @@ export default class CanvasBoard {
 		this.fieldHeight = this.fieldWidth = calcFieldWidth(this);
 		this.left = calcLeftMargin(this);
 
-		this.height = (this.by - this.ty + 1.5) * this.fieldHeight;
+		this.height = (this.bottomRightFieldY - this.topLeftFieldY + 1.5) * this.fieldHeight;
 		this.top = calcTopMargin(this);
 
 		updateDim(this);
@@ -222,7 +221,7 @@ export default class CanvasBoard {
 		this.fieldWidth = this.fieldHeight = calcFieldHeight(this);
 		this.top = calcTopMargin(this);
 
-		this.width = (this.bx - this.tx + 1.5) * this.fieldWidth;
+		this.width = (this.bottomRightFieldX - this.topLeftFieldX + 1.5) * this.fieldWidth;
 		this.left = calcLeftMargin(this);
 
 		updateDim(this);
@@ -269,10 +268,10 @@ export default class CanvasBoard {
 			}
 		}
 
-		this.tx = this.section.left;
-		this.ty = this.section.top;
-		this.bx = this.size - 1 - this.section.right;
-		this.by = this.size - 1 - this.section.bottom;
+		this.topLeftFieldX = this.section.left;
+		this.topLeftFieldY = this.section.top;
+		this.bottomRightFieldX = this.size - 1 - this.section.right;
+		this.bottomRightFieldY = this.size - 1 - this.section.bottom;
 
 		this.setDimensions();
 	}
@@ -283,14 +282,14 @@ export default class CanvasBoard {
 		if (size != this.size) {
 			this.size = size;
 
-			this.obj_arr = [];
+			this.fieldObjects = [];
 			for (var i = 0; i < this.size; i++) {
-				this.obj_arr[i] = [];
-				for (var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+				this.fieldObjects[i] = [];
+				for (var j = 0; j < this.size; j++) this.fieldObjects[i][j] = [];
 			}
 
-			this.bx = this.size - 1 - this.section.right;
-			this.by = this.size - 1 - this.section.bottom;
+			this.bottomRightFieldX = this.size - 1 - this.section.right;
+			this.bottomRightFieldY = this.size - 1 - this.section.bottom;
 			this.setDimensions();
 		}
 	}
@@ -315,8 +314,8 @@ export default class CanvasBoard {
 			}
 
 			// redraw custom objects
-			for (let i = 0; i < this.obj_list.length; i++) {
-				var obj = this.obj_list[i];
+			for (let i = 0; i < this.customObjects.length; i++) {
+				var obj = this.customObjects[i];
 				var handler = obj.handler;
 
 				for (var layer in handler) {
@@ -343,8 +342,8 @@ export default class CanvasBoard {
 
 		for (var x = 0; x < this.size; x++) {
 			for (var y = 0; y < this.size; y++) {
-				for (var z = 0; z < this.obj_arr[x][y].length; z++) {
-					obj = this.obj_arr[x][y][z];
+				for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
+					obj = this.fieldObjects[x][y][z];
 					if (!obj.type) handler = themeVariable("stoneHandler", this);
 					else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", this)[obj.type];
 					else handler = obj.type;
@@ -354,8 +353,8 @@ export default class CanvasBoard {
 			}
 		}
 
-		for (var i = 0; i < this.obj_list.length; i++) {
-			obj = this.obj_list[i];
+		for (var i = 0; i < this.customObjects.length; i++) {
+			obj = this.customObjects[i];
 			handler = obj.handler;
 
 			if (handler[layer]) this[layer].draw(handler[layer].draw, obj, this);
@@ -436,7 +435,7 @@ export default class CanvasBoard {
 			clearField(this, obj.x, obj.y);
 
 			// if object of this type is on the board, replace it
-			var layers = this.obj_arr[obj.x][obj.y];
+			var layers = this.fieldObjects[obj.x][obj.y];
 			for (var z = 0; z < layers.length; z++) {
 				if (layers[z].type == obj.type) {
 					layers[z] = obj;
@@ -469,8 +468,8 @@ export default class CanvasBoard {
 
 		try {
 			let i;
-			for (let j = 0; j < this.obj_arr[obj.x][obj.y].length; j++) {
-				if (this.obj_arr[obj.x][obj.y][j].type == obj.type) {
+			for (let j = 0; j < this.fieldObjects[obj.x][obj.y].length; j++) {
+				if (this.fieldObjects[obj.x][obj.y][j].type == obj.type) {
 					i = j;
 					break;
 				}
@@ -480,7 +479,7 @@ export default class CanvasBoard {
 			// clear all objects on object's coordinates
 			clearField(this, obj.x, obj.y);
 
-			this.obj_arr[obj.x][obj.y].splice(i, 1);
+			this.fieldObjects[obj.x][obj.y].splice(i, 1);
 
 			drawField(this, obj.x, obj.y);
 		}
@@ -491,31 +490,31 @@ export default class CanvasBoard {
 	}
 
 	removeObjectsAt(x, y) {
-		if (!this.obj_arr[x][y].length) return;
+		if (!this.fieldObjects[x][y].length) return;
 
 		clearField(this, x, y);
-		this.obj_arr[x][y] = [];
+		this.fieldObjects[x][y] = [];
 	}
 
 	removeAllObjects() {
-		this.obj_arr = [];
+		this.fieldObjects = [];
 		for (var i = 0; i < this.size; i++) {
-			this.obj_arr[i] = [];
-			for (var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+			this.fieldObjects[i] = [];
+			for (var j = 0; j < this.size; j++) this.fieldObjects[i][j] = [];
 		}
 		this.redraw();
 	}
 
 	addCustomObject(handler, args) {
-		this.obj_list.push({ handler: handler, args: args });
+		this.customObjects.push({ handler: handler, args: args });
 		this.redraw();
 	}
 
 	removeCustomObject(handler, args) {
-		for (var i = 0; i < this.obj_list.length; i++) {
-			var obj = this.obj_list[i];
+		for (var i = 0; i < this.customObjects.length; i++) {
+			var obj = this.customObjects[i];
 			if (obj.handler == handler && obj.args == args) {
-				this.obj_list.splice(i, 1);
+				this.customObjects.splice(i, 1);
 				this.redraw();
 				return true;
 			}

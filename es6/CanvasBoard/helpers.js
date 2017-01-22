@@ -9,13 +9,13 @@ export function themeVariable(key, board) {
 }
 
 export function getMarkupColor(board, x, y) {
-	if (board.obj_arr[x][y][0].c == BLACK) return themeVariable("markupBlackColor", board);
-	else if (board.obj_arr[x][y][0].c == WHITE) return themeVariable("markupWhiteColor", board);
+	if (board.fieldObjects[x][y][0].c == BLACK) return themeVariable("markupBlackColor", board);
+	else if (board.fieldObjects[x][y][0].c == WHITE) return themeVariable("markupWhiteColor", board);
 	return themeVariable("markupNoneColor", board);
 }
 
 export function isHereStone(board, x, y) {
-	return (board.obj_arr[x][y][0] && board.obj_arr[x][y][0].c == WHITE || board.obj_arr[x][y][0].c == BLACK);
+	return (board.fieldObjects[x][y][0] && board.fieldObjects[x][y][0].c == WHITE || board.fieldObjects[x][y][0].c == BLACK);
 }
 
 export function defaultFieldClear(canvasCtx, args, board) {
