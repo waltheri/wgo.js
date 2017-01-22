@@ -12,7 +12,7 @@ export default class GridLayer extends CanvasLayer {
 		super();
 	}
 	
-	draw(board) {
+	initialDraw(board) {
 		gridHandler.grid.draw(this.context, {}, board);
 	}
 }

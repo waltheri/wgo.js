@@ -1,24 +1,44 @@
-import {getMarkupColor, themeVariable} from "../helpers";
+import { getMarkupColor, themeVariable, gridClearField } from "../helpers";
 
 export default {
 	stone: {
-		draw: function(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-				yr = board.getY(args.y),
-				sr = board.stoneRadius;
-				
+		draw: function (canvasCtx, args, board) {
+			const stoneRadius = board.stoneRadius;
+
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-			canvasCtx.lineWidth = (args.lineWidth || themeVariable("markupLinesWidth", board) || 1)*2;
+			canvasCtx.lineWidth = (args.lineWidth || themeVariable("markupLinesWidth", board) || 1) * 2;
 			canvasCtx.beginPath();
-			canvasCtx.arc(xr-sr/3, yr-sr/3, sr/6, 0, 2*Math.PI, true);
+			canvasCtx.arc(
+				-stoneRadius / 3,
+				-stoneRadius / 3,
+				stoneRadius / 6,
+				0,
+				2 * Math.PI,
+				true
+			);
 			canvasCtx.stroke();
 			canvasCtx.beginPath();
-			canvasCtx.arc(xr+sr/3, yr-sr/3, sr/6, 0, 2*Math.PI, true);
+			canvasCtx.arc(
+				stoneRadius / 3,
+				-stoneRadius / 3,
+				stoneRadius / 6,
+				0,
+				2 * Math.PI,
+				true
+			);
 			canvasCtx.stroke();
 			canvasCtx.beginPath();
-			canvasCtx.moveTo(xr-sr/1.5,yr);
-			canvasCtx.bezierCurveTo(xr-sr/1.5,yr+sr/2,xr+sr/1.5,yr+sr/2,xr+sr/1.5,yr);
+			canvasCtx.moveTo(-stoneRadius / 1.5, 0);
+			canvasCtx.bezierCurveTo(
+				-stoneRadius / 1.5,
+				stoneRadius / 2,
+				stoneRadius / 1.5,
+				stoneRadius / 2,
+				stoneRadius / 1.5,
+				0
+			);
 			canvasCtx.stroke();
 		}
-	}
+	},
+	grid: gridClearField
 }

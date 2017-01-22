@@ -10,6 +10,7 @@ import GridLayer from "./GridLayer";
 import ShadowLayer from "./ShadowLayer";
 import CanvasLayer from "./CanvasLayer";
 import theme from "./defaultTheme";
+import * as drawHandlers from "./drawHandlers";
 import defaultsDeep from "lodash/defaultsDeep";
 
 // Private methods of WGo.CanvasBoard
@@ -30,27 +31,6 @@ var calcFieldHeight = function (board) {
 	return (4 * board.height) / (4 * (board.by + 1 - board.ty) + 2);
 }
 
-var drawFieldObject = function (drawingFn, context, board, obj) {
-	const x = board.fieldWidth / 2;
-	const y = board.fieldHeight / 2;
-	const leftOffset = board.left + obj.x * board.fieldWidth - x;
-	const topOffset = board.top + obj.y * board.fieldHeight - y;
-
-	context.save();
-	context.transform(1, 0, 0, 1, leftOffset, topOffset);
-	context.beginPath();
-	context.rect(0, 0, board.fieldWidth, board.fieldHeight);
-	//context.clip();
-
-	drawingFn(context, {
-		x,
-		y,
-		stoneRadius: board.stoneRadius
-	}, obj, board);
-
-	context.restore();
-}
-
 var clearField = function (board, x, y) {
 	var handler;
 	for (var z = 0; z < board.obj_arr[x][y].length; z++) {
@@ -60,19 +40,14 @@ var clearField = function (board, x, y) {
 		else handler = obj.type;
 
 		for (var layer in handler) {
-			drawFieldObject(
-				handler[layer].clear ? handler[layer].clear : defaultFieldClear, 
-				board[layer].getContext(obj), 
-				board, 
-				obj
-			);
+			board[layer].drawField(handler[layer].clear ? handler[layer].clear : defaultFieldClear, obj, board);
 		}
 	}
 }
 
 // Draws all object on specified field
 var drawField = function (board, x, y) {
-	var handler;
+	let handler;
 	for (let z = 0; z < board.obj_arr[x][y].length; z++) {
 		let obj = board.obj_arr[x][y][z];
 
@@ -81,7 +56,7 @@ var drawField = function (board, x, y) {
 		else handler = obj.type;
 
 		for (let layer in handler) {
-			drawFieldObject(handler[layer].draw, board[layer].getContext(obj), board, obj);
+			board[layer].drawField(handler[layer].draw, obj, board);
 		}
 	}
 }
@@ -112,11 +87,10 @@ var updateDim = function (board) {
 	board.element.style.height = (board.height / board.pixelRatio) + "px";
 
 	board.stoneRadius = themeVariable("stoneSize", board);
-	//if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
-	board.ls = themeVariable("linesShift", board);
+	board.linesShift = themeVariable("linesShift", board);
 
 	for (var i = 0; i < board.layers.length; i++) {
-		board.layers[i].setDimensions(board.width, board.height);
+		board.layers[i].setDimensions(board.width, board.height, board);
 	}
 }
 
@@ -221,7 +195,7 @@ export default class CanvasBoard {
 		}
 
 		this.grid = new GridLayer();
-		this.shadow = new ShadowLayer(this, themeVariable("shadowSize", this));
+		this.shadow = new ShadowLayer(themeVariable("shadowSize", this));
 		this.stone = new CanvasLayer();
 
 		this.addLayer(this.grid, 100);
@@ -330,7 +304,7 @@ export default class CanvasBoard {
 			// redraw layers
 			for (let i = 0; i < this.layers.length; i++) {
 				this.layers[i].clear(this);
-				this.layers[i].draw(this);
+				this.layers[i].initialDraw(this);
 			}
 
 			// redraw field objects
@@ -346,13 +320,45 @@ export default class CanvasBoard {
 				var handler = obj.handler;
 
 				for (var layer in handler) {
-					handler[layer].draw(this[layer].getContext(obj.args), obj.args, this);
+					this[layer].draw(handler[layer].draw, obj, this);
 				}
 			}
 		}
 		catch (err) {
 			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
-			console.log("WGo board failed to render. Error: " + err.message);
+			console.error("WGo board failed to render. Error: " + err.message);
+		}
+	}
+
+	/**
+	 * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
+	 * For complete redrawing use method redraw().
+	 */
+
+	redrawLayer(layer) {
+		var obj, handler;
+		
+		this[layer].clear();
+		this[layer].initialDraw(this);
+		
+		for(var x = 0; x < this.size; x++) {
+			for(var y = 0; y < this.size; y++) {
+				for(var z = 0; z < this.obj_arr[x][y].length; z++) {
+					obj = this.obj_arr[x][y][z];
+					if(!obj.type) handler = themeVariable("stoneHandler", this);
+					else if(typeof obj.type == "string") handler = themeVariable("markupHandlers", this)[obj.type];
+					else handler = obj.type;
+			
+					if(handler[layer]) this[layer].drawField(handler[layer].draw, obj, this);
+				}
+			}
+		}
+		
+		for(var i = 0; i < this.obj_list.length; i++) {
+			obj = this.obj_list[i];
+			handler = obj.handler;
+			
+			if(handler[layer]) this[layer].draw(handler[layer].draw, obj, this);
 		}
 	}
 
@@ -385,7 +391,7 @@ export default class CanvasBoard {
 
 	addLayer(layer, weight) {
 		layer.appendTo(this.element, weight);
-		layer.setDimensions(this.width, this.height);
+		//layer.setDimensions(this.width, this.height, this);
 		this.layers.push(layer);
 	}
 
@@ -422,6 +428,9 @@ export default class CanvasBoard {
 			return;
 		}
 
+		// TODO: should be warning or error
+		if(obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
+
 		try {
 			// clear all objects on object's coordinates
 			clearField(this, obj.x, obj.y);
@@ -445,7 +454,7 @@ export default class CanvasBoard {
 		}
 		catch (err) {
 			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
-			console.log("WGo board failed to render. Error: " + err.message);
+			console.error("WGo board failed to render. Error: " + err.message);
 		}
 	}
 
@@ -456,15 +465,17 @@ export default class CanvasBoard {
 			return;
 		}
 
+		if(obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
+
 		try {
-			var i;
-			for (var j = 0; j < this.obj_arr[obj.x][obj.y].length; j++) {
+			let i;
+			for (let j = 0; j < this.obj_arr[obj.x][obj.y].length; j++) {
 				if (this.obj_arr[obj.x][obj.y][j].type == obj.type) {
 					i = j;
 					break;
 				}
 			}
-			if (i === undefined) return;
+			if (i == null) return;
 
 			// clear all objects on object's coordinates
 			clearField(this, obj.x, obj.y);
@@ -475,7 +486,7 @@ export default class CanvasBoard {
 		}
 		catch (err) {
 			// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
-			console.log("WGo board failed to render. Error: " + err.message);
+			console.error("WGo board failed to render. Error: " + err.message);
 		}
 	}
 
@@ -574,3 +585,5 @@ CanvasBoard.defaultConfig = {
 	coordinates: false,
 	theme: theme
 }
+
+CanvasBoard.drawHandlers = drawHandlers;

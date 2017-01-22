@@ -7,14 +7,13 @@ import CanvasLayer from "./CanvasLayer";
  */
 
 export default class ShadowLayer extends CanvasLayer {
-	constructor(board, shadowSize) {
+	constructor(shadowSize) {
 		super();
 		this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
-		this.board = board;
 	}
 
-	setDimensions(width, height) {
-		super.setDimensions(width, height);
-		this.context.setTransform(1, 0, 0, 1, Math.round(this.shadowSize * this.board.stoneRadius / 7), Math.round(this.shadowSize * this.board.stoneRadius / 7));
+	setDimensions(width, height, board) {
+		super.setDimensions(width, height, board);
+		this.context.transform(1, 0, 0, 1, Math.round(this.shadowSize * board.stoneRadius / 7), Math.round(this.shadowSize * board.stoneRadius / 7));
 	}
 }

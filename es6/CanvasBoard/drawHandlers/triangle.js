@@ -1,20 +1,19 @@
-import {getMarkupColor, themeVariable} from "../helpers";
+import { getMarkupColor, themeVariable, gridClearField } from "../helpers";
 
 export default {
 	stone: {
-		draw: function(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-				yr = board.getY(args.y),
-				sr = board.stoneRadius;
-				
+		draw: function (canvasCtx, args, board) {
+			const stoneRadius = board.stoneRadius;
+
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.lineWidth = args.lineWidth || themeVariable("markupLinesWidth", board) || 1;
 			canvasCtx.beginPath();
-			canvasCtx.moveTo(xr-board.ls, yr-board.ls-Math.round(sr/2));
-			canvasCtx.lineTo(Math.round(xr-sr/2)-board.ls, Math.round(yr+sr/3)+board.ls);
-			canvasCtx.lineTo(Math.round(xr+sr/2)+board.ls, Math.round(yr+sr/3)+board.ls);
+			canvasCtx.moveTo(0, 0 - Math.round(stoneRadius / 2));
+			canvasCtx.lineTo(Math.round(-stoneRadius / 2), Math.round(stoneRadius / 3));
+			canvasCtx.lineTo(Math.round(+stoneRadius / 2), Math.round(stoneRadius / 3));
 			canvasCtx.closePath();
 			canvasCtx.stroke();
 		}
-	}
+	},
+	grid: gridClearField
 }

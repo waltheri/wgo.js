@@ -1,16 +1,15 @@
-import {getMarkupColor} from "../helpers";
+import { getMarkupColor, gridClearField } from "../helpers";
 
 export default {
 	stone: {
-		draw: function(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-				yr = board.getY(args.y),
-				sr = board.stoneRadius;
-				
+		draw: function (canvasCtx, args, board) {
+			const stoneRadius = board.stoneRadius;
+
 			canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.beginPath();
-			canvasCtx.rect(xr-sr/2, yr-sr/2, sr, sr);
+			canvasCtx.rect(-stoneRadius / 2, -stoneRadius / 2, stoneRadius, stoneRadius);
 			canvasCtx.fill();
 		}
-	}
+	},
+	grid: gridClearField
 }

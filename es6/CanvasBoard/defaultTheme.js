@@ -1,12 +1,4 @@
-import shellStone from "./drawHandlers/shellStone";
-import glassStone from "./drawHandlers/glassStone";
-import circle from "./drawHandlers/circle";
-import square from "./drawHandlers/square";
-import triangle from "./drawHandlers/triangle";
-import label from "./drawHandlers/label";
-import dot from "./drawHandlers/dot";
-import xMark from "./drawHandlers/xMark";
-import smileyFace from "./drawHandlers/smileyFace";
+import * as drawHandlers from "./drawHandlers";
 import coordinates from "./drawHandlers/coordinates";
 
 /** 
@@ -17,7 +9,7 @@ import coordinates from "./drawHandlers/coordinates";
 
 export default {
     // stones
-    stoneHandler: glassStone,
+    stoneHandler: drawHandlers.shellStone,
     stoneSize: function(board) {
         const fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
         return 8/17*fieldSize;
@@ -36,16 +28,16 @@ export default {
     markupWhiteColor: "rgba(0,0,0,0.7)",
     markupNoneColor: "rgba(0,0,0,0.7)",
     markupLinesWidth: function(board) {
-        return board.stoneRadius/8;
+        return board.stoneRadius/7.5;
     },
     markupHandlers: {
-        CR: circle,
-        LB: label,
-        SQ: square,
-        TR: triangle,
-        MA: xMark,
-        SL: dot,
-        SM: smileyFace,
+        CR: drawHandlers.circle,
+        LB: drawHandlers.label,
+        SQ: drawHandlers.square,
+        TR: drawHandlers.triangle,
+        MA: drawHandlers.xMark,
+        SL: drawHandlers.dot,
+        SM: drawHandlers.smileyFace,
     },
 
     // grid & star points
@@ -67,5 +59,5 @@ export default {
     // other
     variationColor: "rgba(0,32,128,0.8)",
     font: "calibri",
-    linesShift: 0.25,
+    linesShift: -0.25,
 }

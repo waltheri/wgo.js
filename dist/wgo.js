@@ -1700,34 +1700,28 @@ function isHereStone(board, x, y) {
 	return board.obj_arr[x][y][0] && board.obj_arr[x][y][0].c == WHITE || board.obj_arr[x][y][0].c == BLACK;
 }
 
-function redrawLayer(board, layer) {
-	var obj, handler;
+function defaultFieldClear(canvasCtx, args, board) {
+	canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
+}
 
-	board[layer].clear();
-	board[layer].draw(board);
+var gridClearField = {
+	draw: function draw(canvasCtx, args, board) {
+		if (!isHereStone(board, args.x, args.y) && !args._nodraw) {
+			var stoneRadius = board.stoneRadius;
 
-	for (var x = 0; x < board.size; x++) {
-		for (var y = 0; y < board.size; y++) {
-			for (var z = 0; z < board.obj_arr[x][y].length; z++) {
-				obj = board.obj_arr[x][y][z];
-				if (!obj.type) handler = themeVariable("stoneHandler", board);else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", board)[obj.type];else handler = obj.type;
-
-				if (handler[layer]) handler[layer].draw(board[layer].getContext(obj), obj, board);
-			}
+			canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+		}
+	},
+	clear: function clear(canvasCtx, args, board) {
+		if (!isHereStone(board, args.x, args.y)) {
+			args._nodraw = true;
+			canvasCtx.restore(); // small hack for now
+			board.redrawLayer("grid");
+			canvasCtx.save();
+			delete args._nodraw;
 		}
 	}
-
-	for (var i = 0; i < board.obj_list.length; i++) {
-		obj = board.obj_list[i];
-		handler = obj.handler;
-
-		if (handler[layer]) handler[layer].draw(board[layer].getContext(obj.args), obj.args, board);
-	}
-}
-
-function defaultFieldClear(canvasCtx, field, args, board) {
-	canvasCtx.clearRect(0, 0, board.fieldWidth, board.fieldHeight);
-}
+};
 
 /* global document, window */
 
@@ -1745,18 +1739,23 @@ var CanvasLayer = function () {
 
 		// Adjust pixel ratio for HDPI screens (e.g. Retina)
 		this.pixelRatio = window.devicePixelRatio || 1;
-		if (this.pixelRatio > 1) {
-			this.context.scale(this.pixelRatio, this.pixelRatio);
-		}
+		//this.context.scale(this.pixelRatio, this.pixelRatio);
+		//this.context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
+		this.context.scale(this.pixelRatio, this.pixelRatio);
+		this.context.save();
 	}
 
 	babelHelpers.createClass(CanvasLayer, [{
 		key: 'setDimensions',
-		value: function setDimensions(width, height) {
+		value: function setDimensions(width, height, board) {
 			this.element.width = width;
 			this.element.style.width = width / this.pixelRatio + 'px';
 			this.element.height = height;
 			this.element.style.height = height / this.pixelRatio + 'px';
+
+			this.context.restore();
+			this.context.save();
+			this.context.transform(1, 0, 0, 1, board.linesShift, board.linesShift);
 		}
 	}, {
 		key: 'appendTo',
@@ -1776,9 +1775,34 @@ var CanvasLayer = function () {
 			return this.context;
 		}
 	}, {
-		key: 'draw',
-		value: function draw() {
+		key: 'initialDraw',
+		value: function initialDraw() /*board*/{
 			// abstract method to be implemented
+		}
+	}, {
+		key: 'draw',
+		value: function draw(drawingFn, args, board) {
+			this.context.save();
+			drawingFn(this.context, args, board);
+			this.context.restore();
+		}
+	}, {
+		key: 'drawField',
+		value: function drawField(drawingFn, args, board) {
+			var leftOffset = Math.round(board.left + args.x * board.fieldWidth);
+			var topOffset = board.top + args.y * board.fieldHeight;
+
+			// create a "sandbox" for drawing function
+			this.context.save();
+
+			this.context.transform(1, 0, 0, 1, leftOffset, topOffset);
+			this.context.beginPath();
+			this.context.rect(-board.fieldWidth / 2, -board.fieldWidth / 2, board.fieldWidth, board.fieldHeight);
+			this.context.clip();
+			drawingFn(this.context, args, board);
+
+			// restore context
+			this.context.restore();
 		}
 	}, {
 		key: 'clear',
@@ -1804,14 +1828,14 @@ var gridHandler = {
 			    bw = Math.round(board.fieldWidth * (board.size - 1)),
 			    bh = Math.round(board.fieldHeight * (board.size - 1));
 
-			canvasCtx.strokeRect(tx - board.ls, ty - board.ls, bw, bh);
+			canvasCtx.strokeRect(tx, ty, bw, bh);
 
 			for (var i = 1; i < board.size - 1; i++) {
-				tmp = Math.round(board.getX(i)) - board.ls;
+				tmp = Math.round(board.getX(i));
 				canvasCtx.moveTo(tmp, ty);
 				canvasCtx.lineTo(tmp, ty + bh);
 
-				tmp = Math.round(board.getY(i)) - board.ls;
+				tmp = Math.round(board.getY(i));
 				canvasCtx.moveTo(tx, tmp);
 				canvasCtx.lineTo(tx + bw, tmp);
 			}
@@ -1824,7 +1848,7 @@ var gridHandler = {
 			if (board.starPoints[board.size]) {
 				for (var key in board.starPoints[board.size]) {
 					canvasCtx.beginPath();
-					canvasCtx.arc(board.getX(board.starPoints[board.size][key].x) - board.ls, board.getY(board.starPoints[board.size][key].y) - board.ls, themeVariable("starSize", board), 0, 2 * Math.PI, true);
+					canvasCtx.arc(board.getX(board.starPoints[board.size][key].x), board.getY(board.starPoints[board.size][key].y), themeVariable("starSize", board), 0, 2 * Math.PI, true);
 					canvasCtx.fill();
 				}
 			}
@@ -1841,8 +1865,8 @@ var GridLayer = function (_CanvasLayer) {
 	}
 
 	babelHelpers.createClass(GridLayer, [{
-		key: "draw",
-		value: function draw(board) {
+		key: "initialDraw",
+		value: function initialDraw(board) {
 			gridHandler.grid.draw(this.context, {}, board);
 		}
 	}]);
@@ -1852,21 +1876,20 @@ var GridLayer = function (_CanvasLayer) {
 var ShadowLayer = function (_CanvasLayer) {
 	babelHelpers.inherits(ShadowLayer, _CanvasLayer);
 
-	function ShadowLayer(board, shadowSize) {
+	function ShadowLayer(shadowSize) {
 		babelHelpers.classCallCheck(this, ShadowLayer);
 
 		var _this = babelHelpers.possibleConstructorReturn(this, Object.getPrototypeOf(ShadowLayer).call(this));
 
 		_this.shadowSize = shadowSize === undefined ? 1 : shadowSize;
-		_this.board = board;
 		return _this;
 	}
 
 	babelHelpers.createClass(ShadowLayer, [{
 		key: "setDimensions",
-		value: function setDimensions(width, height) {
-			babelHelpers.get(Object.getPrototypeOf(ShadowLayer.prototype), "setDimensions", this).call(this, width, height);
-			this.context.setTransform(1, 0, 0, 1, Math.round(this.shadowSize * this.board.stoneRadius / 7), Math.round(this.shadowSize * this.board.stoneRadius / 7));
+		value: function setDimensions(width, height, board) {
+			babelHelpers.get(Object.getPrototypeOf(ShadowLayer.prototype), "setDimensions", this).call(this, width, height, board);
+			this.context.transform(1, 0, 0, 1, Math.round(this.shadowSize * board.stoneRadius / 7), Math.round(this.shadowSize * board.stoneRadius / 7));
 		}
 	}]);
 	return ShadowLayer;
@@ -1877,43 +1900,179 @@ var ShadowLayer = function (_CanvasLayer) {
  */
 
 var shadow = {
-	draw: function draw(canvasCtx, _ref, args, board) {
-		var x = _ref.x;
-		var y = _ref.y;
-		var stoneRadius = _ref.stoneRadius;
-
+	draw: function draw(canvasCtx, args, board) {
+		var stoneRadius = board.stoneRadius;
 		var blur = themeVariable("shadowBlur", board);
 
-		var gradient = canvasCtx.createRadialGradient(x, y, stoneRadius - 1 - blur, x, y, stoneRadius + blur);
+		var gradient = canvasCtx.createRadialGradient(0, 0, stoneRadius - 1 - blur, 0, 0, stoneRadius + blur);
 		gradient.addColorStop(0, themeVariable("shadowColor", board));
 		gradient.addColorStop(1, themeVariable("shadowTransparentColor", board));
 
 		canvasCtx.beginPath();
 		canvasCtx.fillStyle = gradient;
-		canvasCtx.arc(x, y, stoneRadius + blur, 0, 2 * Math.PI, true);
+		canvasCtx.arc(0, 0, stoneRadius + blur, 0, 2 * Math.PI, true);
 		canvasCtx.fill();
 	}
+};
+
+var shellSeed = Math.ceil(Math.random() * 9999999);
+
+var drawShellLine = function drawShellLine(ctx, x, y, radius, startAngle, endAngle, factor, thickness) {
+	ctx.strokeStyle = "rgba(64,64,64,0.2)";
+
+	ctx.lineWidth = radius / 30 * thickness;
+	ctx.beginPath();
+
+	radius -= Math.max(1, ctx.lineWidth);
+
+	var x1 = x + radius * Math.cos(startAngle * Math.PI);
+	var y1 = y + radius * Math.sin(startAngle * Math.PI);
+	var x2 = x + radius * Math.cos(endAngle * Math.PI);
+	var y2 = y + radius * Math.sin(endAngle * Math.PI);
+
+	var m, angle, diffX, diffY;
+	if (x2 > x1) {
+		m = (y2 - y1) / (x2 - x1);
+		angle = Math.atan(m);
+	} else if (x2 == x1) {
+		angle = Math.PI / 2;
+	} else {
+		m = (y2 - y1) / (x2 - x1);
+		angle = Math.atan(m) - Math.PI;
+	}
+
+	var c = factor * radius;
+	diffX = Math.sin(angle) * c;
+	diffY = Math.cos(angle) * c;
+
+	var bx1 = x1 + diffX;
+	var by1 = y1 - diffY;
+
+	var bx2 = x2 + diffX;
+	var by2 = y2 - diffY;
+
+	ctx.moveTo(x1, y1);
+	ctx.bezierCurveTo(bx1, by1, bx2, by2, x2, y2);
+	ctx.stroke();
+};
+
+var drawShell = function drawShell(arg) {
+	var fromAngle = arg.angle;
+	var toAngle = arg.angle;
+
+	for (var i = 0; i < arg.lines.length; i++) {
+		fromAngle += arg.lines[i];
+		toAngle -= arg.lines[i];
+		drawShellLine(arg.ctx, arg.x, arg.y, arg.radius, fromAngle, toAngle, arg.factor, arg.thickness);
+	}
+};
+
+var shellStone = {
+	stone: {
+		draw: function draw(canvasCtx, args, board) {
+			var stoneRadius = board.stoneRadius;
+			var radgrad = void 0;
+
+			if (args.c == WHITE) {
+				radgrad = "#aaa";
+			} else {
+				radgrad = "#000";
+			}
+
+			canvasCtx.beginPath();
+			canvasCtx.fillStyle = radgrad;
+			canvasCtx.arc(0, 0, Math.max(0, stoneRadius - 0.5), 0, 2 * Math.PI, true);
+			canvasCtx.fill();
+
+			// do shell magic here
+			if (args.c == WHITE) {
+				// do shell magic here
+				var type = shellSeed % (3 + args.x * board.size + args.y) % 3;
+				var z = board.size * board.size + args.x * board.size + args.y;
+				var angle = 2 / z * (shellSeed % z);
+
+				if (type == 0) {
+					drawShell({
+						ctx: canvasCtx,
+						x: 0,
+						y: 0,
+						radius: stoneRadius,
+						angle: angle,
+						lines: [0.10, 0.12, 0.11, 0.10, 0.09, 0.09, 0.09, 0.09],
+						factor: 0.25,
+						thickness: 1.75
+					});
+				} else if (type == 1) {
+					drawShell({
+						ctx: canvasCtx,
+						x: 0,
+						y: 0,
+						radius: stoneRadius,
+						angle: angle,
+						lines: [0.10, 0.09, 0.08, 0.07, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06],
+						factor: 0.2,
+						thickness: 1.5
+					});
+				} else {
+					drawShell({
+						ctx: canvasCtx,
+						x: 0,
+						y: 0,
+						radius: stoneRadius,
+						angle: angle,
+						lines: [0.12, 0.14, 0.13, 0.12, 0.12, 0.12],
+						factor: 0.3,
+						thickness: 2
+					});
+				}
+				radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
+				radgrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+				radgrad.addColorStop(1, 'rgba(255,255,255,0)');
+
+				// add radial gradient //
+				canvasCtx.beginPath();
+				canvasCtx.fillStyle = radgrad;
+				canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+				canvasCtx.fill();
+			} else {
+				radgrad = canvasCtx.createRadialGradient(0.4 * stoneRadius, 0.4 * stoneRadius, 0, 0.5 * stoneRadius, 0.5 * stoneRadius, stoneRadius);
+				radgrad.addColorStop(0, 'rgba(32,32,32,1)');
+				radgrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+				canvasCtx.beginPath();
+				canvasCtx.fillStyle = radgrad;
+				canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+				canvasCtx.fill();
+
+				radgrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 1, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
+				radgrad.addColorStop(0, 'rgba(64,64,64,1)');
+				radgrad.addColorStop(1, 'rgba(0,0,0,0)');
+
+				canvasCtx.beginPath();
+				canvasCtx.fillStyle = radgrad;
+				canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+				canvasCtx.fill();
+			}
+		}
+	},
+	shadow: shadow
 };
 
 var glassStone = {
     // draw handler for stone layer
     stone: {
         // drawing function - args object contain info about drawing object, board is main board object
-        draw: function draw(canvasCtx, _ref, _ref2) {
-            var x = _ref.x;
-            var y = _ref.y;
-            var stoneRadius = _ref.stoneRadius;
-            var c = _ref2.c;
-
+        draw: function draw(canvasCtx, args, board) {
+            var stoneRadius = board.stoneRadius;
             var radgrad;
 
             // set stone texture
-            if (c == WHITE) {
-                radgrad = canvasCtx.createRadialGradient(x - 2 * stoneRadius / 5, y - 2 * stoneRadius / 5, stoneRadius / 3, x - stoneRadius / 5, y - stoneRadius / 5, 5 * stoneRadius / 5);
+            if (args.c == WHITE) {
+                radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
                 radgrad.addColorStop(0, '#fff');
                 radgrad.addColorStop(1, '#aaa');
             } else {
-                radgrad = canvasCtx.createRadialGradient(x - 2 * stoneRadius / 5, y - 2 * stoneRadius / 5, 1, x - stoneRadius / 5, y - stoneRadius / 5, 4 * stoneRadius / 5);
+                radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
                 radgrad.addColorStop(0, '#666');
                 radgrad.addColorStop(1, '#000');
             }
@@ -1921,7 +2080,7 @@ var glassStone = {
             // paint stone
             canvasCtx.beginPath();
             canvasCtx.fillStyle = radgrad;
-            canvasCtx.arc(x, y, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
             canvasCtx.fill();
         }
     },
@@ -1930,154 +2089,202 @@ var glassStone = {
     shadow: shadow
 };
 
+var paintedStone = {
+	stone: {
+		draw: function draw(canvasCtx, args, board) {
+			var stoneRadius = board.stoneRadius;
+			var radgrad = void 0;
+
+			if (args.c == WHITE) {
+				radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+				radgrad.addColorStop(0, '#fff');
+				radgrad.addColorStop(1, '#ddd');
+			} else {
+				radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+				radgrad.addColorStop(0, '#111');
+				radgrad.addColorStop(1, '#000');
+			}
+
+			canvasCtx.beginPath();
+			canvasCtx.fillStyle = radgrad;
+			canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+			canvasCtx.fill();
+
+			canvasCtx.beginPath();
+			canvasCtx.lineWidth = stoneRadius / 6;
+
+			if (args.c == WHITE) {
+				canvasCtx.strokeStyle = '#999';
+				canvasCtx.arc(stoneRadius / 8, stoneRadius / 8, stoneRadius / 2, 0, Math.PI / 2, false);
+			} else {
+				canvasCtx.strokeStyle = '#ccc';
+				canvasCtx.arc(-stoneRadius / 8, -stoneRadius / 8, stoneRadius / 2, Math.PI, 1.5 * Math.PI);
+			}
+
+			canvasCtx.stroke();
+		}
+	},
+	shadow: shadow
+};
+
+// Black and white stone
+var simpleStone = {
+	stone: {
+		draw: function draw(canvasCtx, args, board) {
+			var stoneRadius = board.stoneRadius;
+			var lw = themeVariable("markupLinesWidth", board) || 1;
+
+			if (args.c == WHITE) canvasCtx.fillStyle = "white";else canvasCtx.fillStyle = "black";
+
+			canvasCtx.beginPath();
+			canvasCtx.arc(0, 0, Math.max(0, stoneRadius - lw), 0, 2 * Math.PI, true);
+			canvasCtx.fill();
+
+			canvasCtx.lineWidth = lw;
+			canvasCtx.strokeStyle = "black";
+			canvasCtx.stroke();
+		}
+	}
+};
+
 var circle = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = board.stoneRadius;
+			var stoneRadius = board.stoneRadius;
 
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.lineWidth = args.lineWidth || themeVariable("markupLinesWidth", board) || 1;
 			canvasCtx.beginPath();
-			canvasCtx.arc(xr - board.ls, yr - board.ls, sr / 2, 0, 2 * Math.PI, true);
+			canvasCtx.arc(0, 0, Math.round(stoneRadius / 2), 0, 2 * Math.PI, true);
 			canvasCtx.stroke();
 		}
-	}
+	},
+	grid: gridClearField
 };
 
 var square = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = Math.round(board.stoneRadius);
+			var stoneRadius = Math.round(board.stoneRadius);
 
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.lineWidth = args.lineWidth || themeVariable("markupLinesWidth", board) || 1;
 			canvasCtx.beginPath();
-			canvasCtx.rect(Math.round(xr - sr / 2) - board.ls, Math.round(yr - sr / 2) - board.ls, sr, sr);
+			canvasCtx.rect(Math.round(-stoneRadius / 2), Math.round(-stoneRadius / 2), stoneRadius, stoneRadius);
 			canvasCtx.stroke();
 		}
-	}
+	},
+	grid: gridClearField
 };
 
 var triangle = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = board.stoneRadius;
+			var stoneRadius = board.stoneRadius;
 
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.lineWidth = args.lineWidth || themeVariable("markupLinesWidth", board) || 1;
 			canvasCtx.beginPath();
-			canvasCtx.moveTo(xr - board.ls, yr - board.ls - Math.round(sr / 2));
-			canvasCtx.lineTo(Math.round(xr - sr / 2) - board.ls, Math.round(yr + sr / 3) + board.ls);
-			canvasCtx.lineTo(Math.round(xr + sr / 2) + board.ls, Math.round(yr + sr / 3) + board.ls);
+			canvasCtx.moveTo(0, 0 - Math.round(stoneRadius / 2));
+			canvasCtx.lineTo(Math.round(-stoneRadius / 2), Math.round(stoneRadius / 3));
+			canvasCtx.lineTo(Math.round(+stoneRadius / 2), Math.round(stoneRadius / 3));
 			canvasCtx.closePath();
 			canvasCtx.stroke();
 		}
-	}
+	},
+	grid: gridClearField
 };
 
 var label = {
-	stone: {
-		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = board.stoneRadius,
-			    font = args.font || themeVariable("font", board) || "";
+			stone: {
+						draw: function draw(canvasCtx, args, board) {
+									var stoneRadius = board.stoneRadius;
+									var font = args.font || themeVariable("font", board) || "";
 
-			canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
+									canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
 
-			if (args.text.length == 1) canvasCtx.font = Math.round(sr * 1.5) + "px " + font;else if (args.text.length == 2) canvasCtx.font = Math.round(sr * 1.2) + "px " + font;else canvasCtx.font = Math.round(sr) + "px " + font;
+									if (args.text.length == 1) canvasCtx.font = Math.round(stoneRadius * 1.5) + "px " + font;else if (args.text.length == 2) canvasCtx.font = Math.round(stoneRadius * 1.2) + "px " + font;else canvasCtx.font = Math.round(stoneRadius) + "px " + font;
 
-			canvasCtx.beginPath();
-			canvasCtx.textBaseline = "middle";
-			canvasCtx.textAlign = "center";
-			canvasCtx.fillText(args.text, xr, yr, 2 * sr);
-		}
-	},
-
-	// modifies grid layer too
-	grid: {
-		draw: function draw(canvasCtx, args, board) {
-			if (!isHereStone(board, args.x, args.y) && !args._nodraw) {
-				var xr = board.getX(args.x),
-				    yr = board.getY(args.y),
-				    sr = board.stoneRadius;
-				this.clearRect(xr - sr, yr - sr, 2 * sr, 2 * sr);
-			}
-		},
-		clear: function clear(canvasCtx, args, board) {
-			if (!isHereStone(board, args.x, args.y)) {
-				args._nodraw = true;
-				redrawLayer(board, "grid");
-				delete args._nodraw;
-			}
-		}
-	}
+									canvasCtx.beginPath();
+									canvasCtx.textBaseline = "middle";
+									canvasCtx.textAlign = "center";
+									canvasCtx.fillText(args.text, 0, 0, 2 * stoneRadius);
+						}
+			},
+			grid: gridClearField
 };
 
 var dot = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = board.stoneRadius;
+			var stoneRadius = board.stoneRadius;
 
 			canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.beginPath();
-			canvasCtx.rect(xr - sr / 2, yr - sr / 2, sr, sr);
+			canvasCtx.rect(-stoneRadius / 2, -stoneRadius / 2, stoneRadius, stoneRadius);
 			canvasCtx.fill();
 		}
-	}
+	},
+	grid: gridClearField
 };
 
 var xMark = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = board.stoneRadius;
+			var stoneRadius = board.stoneRadius;
 
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.lineCap = "round";
 			canvasCtx.lineWidth = (args.lineWidth || themeVariable("markupLinesWidth", board) || 1) * 2 - 1;
 			canvasCtx.beginPath();
-			canvasCtx.moveTo(Math.round(xr - sr / 2), Math.round(yr - sr / 2));
-			canvasCtx.lineTo(Math.round(xr + sr / 2), Math.round(yr + sr / 2));
-			canvasCtx.moveTo(Math.round(xr + sr / 2) - 1, Math.round(yr - sr / 2));
-			canvasCtx.lineTo(Math.round(xr - sr / 2) - 1, Math.round(yr + sr / 2));
+			canvasCtx.moveTo(Math.round(-stoneRadius / 2), Math.round(-stoneRadius / 2));
+			canvasCtx.lineTo(Math.round(stoneRadius / 2), Math.round(stoneRadius / 2));
+			canvasCtx.moveTo(Math.round(stoneRadius / 2) - 1, Math.round(-stoneRadius / 2));
+			canvasCtx.lineTo(Math.round(-stoneRadius / 2) - 1, Math.round(stoneRadius / 2));
 			canvasCtx.stroke();
 			canvasCtx.lineCap = "butt";
 		}
-	}
+	},
+	grid: gridClearField
 };
 
 var smileyFace = {
 	stone: {
 		draw: function draw(canvasCtx, args, board) {
-			var xr = board.getX(args.x),
-			    yr = board.getY(args.y),
-			    sr = board.stoneRadius;
+			var stoneRadius = board.stoneRadius;
 
 			canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
 			canvasCtx.lineWidth = (args.lineWidth || themeVariable("markupLinesWidth", board) || 1) * 2;
 			canvasCtx.beginPath();
-			canvasCtx.arc(xr - sr / 3, yr - sr / 3, sr / 6, 0, 2 * Math.PI, true);
+			canvasCtx.arc(-stoneRadius / 3, -stoneRadius / 3, stoneRadius / 6, 0, 2 * Math.PI, true);
 			canvasCtx.stroke();
 			canvasCtx.beginPath();
-			canvasCtx.arc(xr + sr / 3, yr - sr / 3, sr / 6, 0, 2 * Math.PI, true);
+			canvasCtx.arc(stoneRadius / 3, -stoneRadius / 3, stoneRadius / 6, 0, 2 * Math.PI, true);
 			canvasCtx.stroke();
 			canvasCtx.beginPath();
-			canvasCtx.moveTo(xr - sr / 1.5, yr);
-			canvasCtx.bezierCurveTo(xr - sr / 1.5, yr + sr / 2, xr + sr / 1.5, yr + sr / 2, xr + sr / 1.5, yr);
+			canvasCtx.moveTo(-stoneRadius / 1.5, 0);
+			canvasCtx.bezierCurveTo(-stoneRadius / 1.5, stoneRadius / 2, stoneRadius / 1.5, stoneRadius / 2, stoneRadius / 1.5, 0);
 			canvasCtx.stroke();
 		}
-	}
+	},
+	grid: gridClearField
 };
+
+
+
+var drawHandlers = Object.freeze({
+	shellStone: shellStone,
+	glassStone: glassStone,
+	paintedStone: paintedStone,
+	simpleStone: simpleStone,
+	circle: circle,
+	square: square,
+	triangle: triangle,
+	label: label,
+	dot: dot,
+	xMark: xMark,
+	smileyFace: smileyFace
+});
 
 /**
  * Draws coordinates on the board 
@@ -2118,7 +2325,7 @@ var coordinates = {
 
 var theme = {
     // stones
-    stoneHandler: glassStone,
+    stoneHandler: shellStone,
     stoneSize: function stoneSize(board) {
         var fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
         return 8 / 17 * fieldSize;
@@ -2137,7 +2344,7 @@ var theme = {
     markupWhiteColor: "rgba(0,0,0,0.7)",
     markupNoneColor: "rgba(0,0,0,0.7)",
     markupLinesWidth: function markupLinesWidth(board) {
-        return board.stoneRadius / 8;
+        return board.stoneRadius / 7.5;
     },
     markupHandlers: {
         CR: circle,
@@ -2168,7 +2375,7 @@ var theme = {
     // other
     variationColor: "rgba(0,32,128,0.8)",
     font: "calibri",
-    linesShift: 0.25
+    linesShift: -0.25
 };
 
 /**
@@ -4746,27 +4953,6 @@ var calcFieldHeight = function calcFieldHeight(board) {
 	return 4 * board.height / (4 * (board.by + 1 - board.ty) + 2);
 };
 
-var drawFieldObject = function drawFieldObject(drawingFn, context, board, obj) {
-	var x = board.fieldWidth / 2;
-	var y = board.fieldHeight / 2;
-	var leftOffset = board.left + obj.x * board.fieldWidth - x;
-	var topOffset = board.top + obj.y * board.fieldHeight - y;
-
-	context.save();
-	context.transform(1, 0, 0, 1, leftOffset, topOffset);
-	context.beginPath();
-	context.rect(0, 0, board.fieldWidth, board.fieldHeight);
-	//context.clip();
-
-	drawingFn(context, {
-		x: x,
-		y: y,
-		stoneRadius: board.stoneRadius
-	}, obj, board);
-
-	context.restore();
-};
-
 var clearField = function clearField(board, x, y) {
 	var handler;
 	for (var z = 0; z < board.obj_arr[x][y].length; z++) {
@@ -4774,21 +4960,21 @@ var clearField = function clearField(board, x, y) {
 		if (!obj.type) handler = themeVariable("stoneHandler", board);else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", board)[obj.type];else handler = obj.type;
 
 		for (var layer in handler) {
-			drawFieldObject(handler[layer].clear ? handler[layer].clear : defaultFieldClear, board[layer].getContext(obj), board, obj);
+			board[layer].drawField(handler[layer].clear ? handler[layer].clear : defaultFieldClear, obj, board);
 		}
 	}
 };
 
 // Draws all object on specified field
 var drawField = function drawField(board, x, y) {
-	var handler;
+	var handler = void 0;
 	for (var z = 0; z < board.obj_arr[x][y].length; z++) {
 		var obj = board.obj_arr[x][y][z];
 
 		if (!obj.type) handler = themeVariable("stoneHandler", board);else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", board)[obj.type];else handler = obj.type;
 
 		for (var layer in handler) {
-			drawFieldObject(handler[layer].draw, board[layer].getContext(obj), board, obj);
+			board[layer].drawField(handler[layer].draw, obj, board);
 		}
 	}
 };
@@ -4819,11 +5005,10 @@ var updateDim = function updateDim(board) {
 	board.element.style.height = board.height / board.pixelRatio + "px";
 
 	board.stoneRadius = themeVariable("stoneSize", board);
-	//if(this.autoLineWidth) this.lineWidth = this.stoneRadius/7; //< 15 ? 1 : 3;
-	board.ls = themeVariable("linesShift", board);
+	board.linesShift = themeVariable("linesShift", board);
 
 	for (var i = 0; i < board.layers.length; i++) {
-		board.layers[i].setDimensions(board.width, board.height);
+		board.layers[i].setDimensions(board.width, board.height, board);
 	}
 };
 
@@ -4933,7 +5118,7 @@ var CanvasBoard = function () {
 			}
 
 			this.grid = new GridLayer();
-			this.shadow = new ShadowLayer(this, themeVariable("shadowSize", this));
+			this.shadow = new ShadowLayer(themeVariable("shadowSize", this));
 			this.stone = new CanvasLayer();
 
 			this.addLayer(this.grid, 100);
@@ -5053,7 +5238,7 @@ var CanvasBoard = function () {
 				// redraw layers
 				for (var i = 0; i < this.layers.length; i++) {
 					this.layers[i].clear(this);
-					this.layers[i].draw(this);
+					this.layers[i].initialDraw(this);
 				}
 
 				// redraw field objects
@@ -5069,12 +5254,44 @@ var CanvasBoard = function () {
 					var handler = obj.handler;
 
 					for (var layer in handler) {
-						handler[layer].draw(this[layer].getContext(obj.args), obj.args, this);
+						this[layer].draw(handler[layer].draw, obj, this);
 					}
 				}
 			} catch (err) {
 				// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
-				console.log("WGo board failed to render. Error: " + err.message);
+				console.error("WGo board failed to render. Error: " + err.message);
+			}
+		}
+
+		/**
+   * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
+   * For complete redrawing use method redraw().
+   */
+
+	}, {
+		key: "redrawLayer",
+		value: function redrawLayer(layer) {
+			var obj, handler;
+
+			this[layer].clear();
+			this[layer].initialDraw(this);
+
+			for (var x = 0; x < this.size; x++) {
+				for (var y = 0; y < this.size; y++) {
+					for (var z = 0; z < this.obj_arr[x][y].length; z++) {
+						obj = this.obj_arr[x][y][z];
+						if (!obj.type) handler = themeVariable("stoneHandler", this);else if (typeof obj.type == "string") handler = themeVariable("markupHandlers", this)[obj.type];else handler = obj.type;
+
+						if (handler[layer]) this[layer].drawField(handler[layer].draw, obj, this);
+					}
+				}
+			}
+
+			for (var i = 0; i < this.obj_list.length; i++) {
+				obj = this.obj_list[i];
+				handler = obj.handler;
+
+				if (handler[layer]) this[layer].draw(handler[layer].draw, obj, this);
 			}
 		}
 
@@ -5113,7 +5330,7 @@ var CanvasBoard = function () {
 		key: "addLayer",
 		value: function addLayer(layer, weight) {
 			layer.appendTo(this.element, weight);
-			layer.setDimensions(this.width, this.height);
+			//layer.setDimensions(this.width, this.height, this);
 			this.layers.push(layer);
 		}
 
@@ -5158,6 +5375,9 @@ var CanvasBoard = function () {
 				}return;
 			}
 
+			// TODO: should be warning or error
+			if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
+
 			try {
 				// clear all objects on object's coordinates
 				clearField(this, obj.x, obj.y);
@@ -5179,7 +5399,7 @@ var CanvasBoard = function () {
 				drawField(this, obj.x, obj.y);
 			} catch (err) {
 				// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
-				console.log("WGo board failed to render. Error: " + err.message);
+				console.error("WGo board failed to render. Error: " + err.message);
 			}
 		}
 	}, {
@@ -5192,15 +5412,17 @@ var CanvasBoard = function () {
 				}return;
 			}
 
+			if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) return;
+
 			try {
-				var i;
+				var i = void 0;
 				for (var j = 0; j < this.obj_arr[obj.x][obj.y].length; j++) {
 					if (this.obj_arr[obj.x][obj.y][j].type == obj.type) {
 						i = j;
 						break;
 					}
 				}
-				if (i === undefined) return;
+				if (i == null) return;
 
 				// clear all objects on object's coordinates
 				clearField(this, obj.x, obj.y);
@@ -5210,7 +5432,7 @@ var CanvasBoard = function () {
 				drawField(this, obj.x, obj.y);
 			} catch (err) {
 				// If the board is too small some canvas painting function can throw an exception, but we don't want to break our app
-				console.log("WGo board failed to render. Error: " + err.message);
+				console.error("WGo board failed to render. Error: " + err.message);
 			}
 		}
 	}, {
@@ -5303,6 +5525,8 @@ CanvasBoard.defaultConfig = {
 	coordinates: false,
 	theme: theme
 };
+
+CanvasBoard.drawHandlers = drawHandlers;
 
 /**
  * Simple events handling.
