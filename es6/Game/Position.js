@@ -3,7 +3,7 @@
  * @module Position
  */
 
-import {BLACK, EMPTY, WHITE} from "./core";
+import {BLACK, EMPTY, WHITE} from "../core";
 
 export default class Position {
 	/**

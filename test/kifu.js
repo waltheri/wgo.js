@@ -1,10 +1,10 @@
 /* Test of WGo kifu classes and functionality */
 
 import {assert} from "chai";
-import * as WGo from "../src/core";
-import Kifu from "../src/kifu/Kifu";
-import KNode from "../src/kifu/KNode";
-import Game, {rules, DEFAULT_RULES, CHINESE_RULES, NO_RULES} from "../src/Game";
+import * as WGo from "../es6/core";
+import Kifu from "../es6/kifu/Kifu";
+import KNode from "../es6/kifu/KNode";
+import Game, {rules, DEFAULT_RULES, CHINESE_RULES, NO_RULES} from "../es6/Game";
 
 describe("Kifu", function() {
 	describe("(1) Kifu object is created correctly", function() {

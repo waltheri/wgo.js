@@ -1,9 +1,11 @@
+/* global describe, it, beforeEach */
 /* Test of WGo.Game class and (handling of go game) */
 
 import {assert} from "chai";
-import * as WGo from "../src/core";
-import Game, {MOVE_OUT_OF_BOARD, FIELD_OCCUPIED, MOVE_SUICIDE, POSITION_REPEATED} from "../src/Game";
-import Position from "../src/Game/Position";
+import * as WGo from "../es6/core";
+import Game from "../es6/Game";
+import Position from "../es6/Game/Position";
+import * as err from "../es6/Game/errors";
 
 describe("Game", function() {
 	describe("(1) Basic Game object functionality", function() {
@@ -130,39 +132,39 @@ describe("Game", function() {
 		it("Invalid moves and suicides.", function(){
 			// out of board
 			assert(game.isValid(-1,-1) === false);
-			assert(game.play(-1,-1) === MOVE_OUT_OF_BOARD);
+			assert(game.play(-1,-1) === err.MOVE_OUT_OF_BOARD);
 			assert(game.isValid(19,19) === false);
-			assert(game.play(19,19) === MOVE_OUT_OF_BOARD);
+			assert(game.play(19,19) === err.MOVE_OUT_OF_BOARD);
 			assert(game.isValid(0,0) === true);
 			assert(game.position.turn === WGo.B);
 			assert(game.stack.length === 1);
 			game.play(0,0);
 			
 			// occupied
-			assert(game.play(0,0) === FIELD_OCCUPIED);
+			assert(game.play(0,0) === err.FIELD_OCCUPIED);
 			
 			// suicide of 1 stone
 			game.addStone(1,1,WGo.B);
 			game.addStone(0,2,WGo.B);
-			assert(game.play(0,1) === MOVE_SUICIDE);
+			assert(game.play(0,1) === err.MOVE_SUICIDE);
 			
 			// suicide of more stones
 			game.addStone(1,0,WGo.W);
 			game.addStone(2,1,WGo.W);
 			game.addStone(1,2,WGo.W);
 			game.addStone(0,3,WGo.W);
-			assert(game.play(0,1, WGo.B) === MOVE_SUICIDE);
+			assert(game.play(0,1, WGo.B) === err.MOVE_SUICIDE);
 			
 			// repeated suicide
 			assert.sameDeepMembers(game.play(0,1), [{x: 0, y: 0}, {x: 1, y: 1}, {x: 0,y: 2}]);
-			assert(game.play(0,0) === MOVE_SUICIDE);
+			assert(game.play(0,0) === err.MOVE_SUICIDE);
 			
 			// ko
 			game.addStone(2,0,WGo.B);
 			game.addStone(3,1,WGo.B);
 			game.addStone(2,2,WGo.B);
 			assert.deepEqual(game.play(1,1), [{x: 2, y: 1}]);
-			assert(game.play(2,1) === POSITION_REPEATED);
+			assert(game.play(2,1) === err.POSITION_REPEATED);
 			
 			// threat
 			game.play(5,5);
