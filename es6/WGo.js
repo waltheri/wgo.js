@@ -1,7 +1,7 @@
 // WGo module
 
 import Game from "./Game";
-import Position from "./Game";
+import Position from "./Game/Position";
 import SGFParser, {SGFSyntaxError} from "./kifu/SGFParser";
 import KNode from "./kifu/KNode";
 import CanvasBoard from "./CanvasBoard";

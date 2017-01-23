@@ -3,47 +3,6 @@
 import {BLACK, WHITE, EMPTY} from "./core";
 import Position from "./Position";
 
-
-// Error codes returned by method Game#play()
-export const MOVE_OUT_OF_BOARD = 1;
-export const FIELD_OCCUPIED = 2;
-export const MOVE_SUICIDE = 3;
-export const POSITION_REPEATED = 4;
-
-// preset rule sets
-
-export const JAPANESE_RULES = {
-	checkRepeat: "KO",
-	allowRewrite: false,
-	allowSuicide: false
-}
-
-export const CHINESE_RULES = {
-	checkRepeat: "ALL",
-	allowRewrite: false,
-	allowSuicide: false
-}
-
-export const ING_RULES = {
-	checkRepeat: "ALL",
-	allowRewrite: false,
-	allowSuicide: true
-}
-
-export const NO_RULES = {
-	checkRepeat: "NONE",
-	allowRewrite: true,
-	allowSuicide: true
-}
-
-export var rules = {
-	"Japanese": JAPANESE_RULES,
-	"GOE": ING_RULES,
-	"NZ": ING_RULES,
-	"AGA": CHINESE_RULES,
-	"Chinese": CHINESE_RULES
-}
-
 export const DEFAULT_RULES = "Japanese";
 
 // function for stone capturing

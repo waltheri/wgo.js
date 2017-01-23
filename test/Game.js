@@ -2,8 +2,8 @@
 
 import {assert} from "chai";
 import * as WGo from "../src/core";
-import Game, {MOVE_OUT_OF_BOARD, FIELD_OCCUPIED, MOVE_SUICIDE, POSITION_REPEATED} from "../src/Game.js";
-import Position from "../src/Position.js";
+import Game, {MOVE_OUT_OF_BOARD, FIELD_OCCUPIED, MOVE_SUICIDE, POSITION_REPEATED} from "../src/Game";
+import Position from "../src/Game/Position";
 
 describe("Game", function() {
 	describe("(1) Basic Game object functionality", function() {

@@ -134,4 +134,13 @@ export default class Position {
 			remove: remove
 		}
 	}
+
+	/**
+	 * Returns new position after a certain move (with rules applied - without captured stones).
+	 * If you don't provide move coordinates, no move will be added, but position will be validated -
+	 * captured stones will be removed from top-left to bottom-right.
+	 */
+	next(x, y, allowSuicide) {
+		
+	}
 }
