@@ -3,81 +3,7 @@
 import { BLACK, WHITE, EMPTY } from "../core";
 import Position from "./Position";
 import * as err from "./errors";
-import rules, {JAPANESE_RULES} from "./rules";
-
-// function for stone capturing
-var capture = function (position, capturedStones, x, y, c) {
-	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
-		position.set(x, y, 0);
-		capturedStones.push({ x: x, y: y });
-
-		capture(position, capturedStones, x, y - 1, c);
-		capture(position, capturedStones, x, y + 1, c);
-		capture(position, capturedStones, x - 1, y, c);
-		capture(position, capturedStones, x + 1, y, c);
-	}
-}
-
-// looking at liberties
-var hasLiberties = function (position, alreadyTested, x, y, c) {
-	// out of the board there aren't liberties
-	if (x < 0 || x >= position.size || y < 0 || y >= position.size) return false;
-
-	// however empty field means liberty
-	if (position.get(x, y) == EMPTY) return true;
-
-	// already tested field or stone of enemy isn't a liberty.
-	if (alreadyTested.get(x, y) == true || position.get(x, y) == -c) return false;
-
-	// set this field as tested
-	alreadyTested.set(x, y, true);
-
-	// in this case we are checking our stone, if we get 4 false, it has no liberty
-	return hasLiberties(position, alreadyTested, x, y - 1, c) ||
-		hasLiberties(position, alreadyTested, x, y + 1, c) ||
-		hasLiberties(position, alreadyTested, x - 1, y, c) ||
-		hasLiberties(position, alreadyTested, x + 1, y, c);
-}
-
-// analysing function - modifies original position, if there are some capturing, and returns array of captured stones
-var captureIfPossible = function (position, x, y, c) {
-	var capturedStones = [];
-	// is there a stone possible to capture?
-	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
-		// create testing map
-		var alreadyTested = new Position(position.size);
-		// if it has zero liberties capture it
-		if (!hasLiberties(position, alreadyTested, x, y, c)) {
-			// capture stones from game
-			capture(position, capturedStones, x, y, c);
-		}
-	}
-	return capturedStones;
-}
-
-// analysing history
-var checkHistory = function (position, x, y) {
-	var flag, stop;
-
-	if (this.repeating == "KO" && this.stack.length - 2 >= 0) stop = this.stack.length - 2;
-	else if (this.repeating == "ALL") stop = 0;
-	else return true;
-
-	for (var i = this.stack.length - 2; i >= stop; i--) {
-		if (this.stack[i].get(x, y) == position.get(x, y)) {
-			flag = true;
-			for (var j = 0; j < this.size * this.size; j++) {
-				if (this.stack[i].grid[j] != position.grid[j]) {
-					flag = false;
-					break;
-				}
-			}
-			if (flag) return false;
-		}
-	}
-
-	return true;
-}
+import rules, { JAPANESE_RULES, repeat } from "./rules";
 
 export default class Game {
 
@@ -143,52 +69,59 @@ export default class Game {
 	 * 3 - suicide (currently they are forbbiden)
 	 * 4 - repeated position
 	 */
+	play(x, y, c = this.position.turn) {
+		let nextPosition = this.tryToPlay(x, y, c);
 
-	play(x, y, c, noplay) {
+		if(nextPosition instanceof Position) {
+			this.pushPosition(nextPosition);
+		}
+
+		return nextPosition;
+	}
+
+	/**
+	 * Tries to play on given coordinates, returns new position after the play, or error code.
+	 */
+	tryToPlay(x, y, c) {
 		//check coordinates validity
 		if (!this.isOnBoard(x, y)) return err.MOVE_OUT_OF_BOARD;
 		if (!this.allowRewrite && this.position.get(x, y) != 0) return err.FIELD_OCCUPIED;
 
-		// clone position
-		c = c || this.position.turn;
+		const nextPosition = this.position.next(x, y, c, this.allowSuicide);
 
-		var newPosition = this.position.clone();
-		newPosition.set(x, y, c);
+		if (nextPosition == null) return err.MOVE_SUICIDE;
+		else if (!this.checkHistory(nextPosition, x, y)) return err.POSITION_REPEATED;
 
-		// check capturing
-		var capturesColor = c;
-		var capturedStones = captureIfPossible(newPosition, x - 1, y, -c).concat(captureIfPossible(newPosition, x + 1, y, -c), captureIfPossible(newPosition, x, y - 1, -c), captureIfPossible(newPosition, x, y + 1, -c));
+		return nextPosition;
+	}
 
-		// check suicide
-		if (!capturedStones.length) {
-			var testing = new Position(this.size);
-			if (!hasLiberties(newPosition, testing, x, y, c)) {
-				if (this.allowSuicide) {
-					capturesColor = -c;
-					capture(newPosition, capturedStones, x, y, c);
+	/**
+	 * @param {Position} position to check
+	 * @param {number} x coordinate
+	 * @param {number} y coordinate
+	 * @return {boolean} Returns true if the position didn't occured in the past (according to the ruleset)
+	 */
+	checkHistory(position, x, y) {
+		var flag, stop;
+
+		if (this.checkRepeat == repeat.KO && this.stack.length - 2 >= 0) stop = this.stack.length - 2;
+		else if (this.checkRepeat == repeat.ALL) stop = 0;
+		else return true;
+
+		for (var i = this.stack.length - 2; i >= stop; i--) {
+			if (this.stack[i].get(x, y) == position.get(x, y)) {
+				flag = true;
+				for (var j = 0; j < this.size * this.size; j++) {
+					if (this.stack[i].grid[j] != position.grid[j]) {
+						flag = false;
+						break;
+					}
 				}
-				else return err.MOVE_SUICIDE;
+				if (flag) return false;
 			}
 		}
 
-		// check history
-		if (this.repeating && !checkHistory.call(this, newPosition, x, y)) {
-			return err.POSITION_REPEATED;
-		}
-
-		if (noplay) return false;
-
-		// reverse turn
-		newPosition.turn = -c;
-
-		// update position info
-		if (capturesColor == BLACK) newPosition.capCount.black += capturedStones.length;
-		else newPosition.capCount.white += capturedStones.length;
-
-		// save position
-		this.pushPosition(newPosition);
-
-		return capturedStones;
+		return true;
 	}
 
 	/**
@@ -198,10 +131,9 @@ export default class Game {
 	 */
 
 	pass(c) {
-		c = c || this.position.turn;
-
-		this.pushPosition();
-		this.position.turn = -c;
+		let nextPosition = this.position.clone();
+		nextPosition.turn = -(c || this.position.turn);
+		this.pushPosition(nextPosition);
 	}
 
 	/**
@@ -213,8 +145,8 @@ export default class Game {
 	 * @return {boolean} true if move can be played.
 	 */
 
-	isValid(x, y, c) {
-		return typeof this.play(x, y, c, true) != "number";
+	isValid(x, y, c = this.position.turn) {
+		return this.tryToPlay(x, y, c) instanceof Position;
 	}
 
 	/**
@@ -302,9 +234,7 @@ export default class Game {
 	 */
 
 	pushPosition(pos) {
-		pos = pos || this.position.clone();
-		this.stack.push(pos);
-		return this;
+		return this.stack.push(pos);
 	}
 
 	/**
@@ -312,9 +242,7 @@ export default class Game {
 	 */
 
 	popPosition() {
-		var old;
-		if (this.stack.length > 0) old = this.stack.pop();
-		return old;
+		return this.stack.pop();
 	}
 
 	/**
@@ -346,32 +274,11 @@ export default class Game {
 	 */
 
 	validatePosition() {
-		var c, p,
-			white = 0,
-			black = 0,
-			capturedStones = [],
-			newPosition = this.position.clone();
-
-		for (var x = 0; x < this.size; x++) {
-			for (var y = 0; y < this.size; y++) {
-				c = this.position.get(x, y);
-				if (c) {
-					p = capturedStones.length;
-					capturedStones = capturedStones.concat(captureIfPossible(newPosition, x - 1, y, -c), captureIfPossible(newPosition, x + 1, y, -c), captureIfPossible(newPosition, x, y - 1, -c), captureIfPossible(newPosition, x, y + 1, -c));
-
-					if (c == BLACK) black += capturedStones.length - p;
-					else white += capturedStones.length - p;
-				}
-			}
-		}
-		this.position.capCount.black += black;
-		this.position.capCount.white += white;
-		this.position.grid = newPosition.grid;
-
-		return capturedStones;
+		this.position = this.position.getValidatedPosition();
 	}
 }
 
 Game.defaultRules = JAPANESE_RULES;
 Game.defaultSize = 19;
 Game.rules = rules;
+Game.errorCodes = err;

@@ -14,8 +14,8 @@ var createGrid = function(size) {
 	return grid;
 }
 
-// function for stone capturing
-var capture = function (position, capturedStones, x, y, c) {
+// function for stone capturing, returns number of captured stones
+var capture = function (position, x, y, c) {
 	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
 		position.set(x, y, 0);
 		return 1 + capture(position, x, y - 1, c) + capture(position, x, y + 1, c) + capture(position, x - 1, y, c) + capture(position, x + 1, y, c);
@@ -32,10 +32,10 @@ var hasLiberties = function (position, alreadyTested, x, y, c) {
 	if (position.get(x, y) == EMPTY) return true;
 
 	// already tested field or stone of enemy isn't a liberty.
-	if (alreadyTested.get(x, y) == true || position.get(x, y) == -c) return false;
+	if (alreadyTested[x][y] || position.get(x, y) == -c) return false;
 
 	// set this field as tested
-	alreadyTested.set(x, y, true);
+	alreadyTested[x][y] = true;
 
 	// in this case we are checking our stone, if we get 4 false, it has no liberty
 	return hasLiberties(position, alreadyTested, x, y - 1, c) ||
@@ -44,13 +44,13 @@ var hasLiberties = function (position, alreadyTested, x, y, c) {
 		hasLiberties(position, alreadyTested, x + 1, y, c);
 }
 
-// analysing function - modifies original position, if there are some capturing, and returns array of captured stones
+// analysing function - modifies original position, if there are some capturing, and returns number of captured stones
 var captureIfPossible = function (position, x, y, c) {
 	var capturedStones = 0;
 	// is there a stone possible to capture?
 	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
 		// create testing map
-		var alreadyTested = createGrid(this.size);
+		var alreadyTested = createGrid(position.size);
 		// if it has zero liberties capture it
 		if (!hasLiberties(position, alreadyTested, x, y, c)) {
 			// capture stones from game
@@ -203,20 +203,134 @@ export default class Position {
 		let newPosition = this.clone();
 		newPosition.set(x, y, c);
 
-		// check capturing
-		const capturedStones = captureIfPossible(newPosition, x - 1, y, -c) + captureIfPossible(newPosition, x + 1, y, -c) + captureIfPossible(newPosition, x, y - 1, -c) + captureIfPossible(newPosition, x, y + 1, -c);
+		// check capturing of all surrounding stones
+		let capturedStones = captureIfPossible(newPosition, x - 1, y, -c) + captureIfPossible(newPosition, x + 1, y, -c) + captureIfPossible(newPosition, x, y - 1, -c) + captureIfPossible(newPosition, x, y + 1, -c);
 
 		// check suicide
-		if (capturedStones !== 0) {
+		if (capturedStones === 0) {
 			var testing = createGrid(this.size);
 			if (!hasLiberties(newPosition, testing, x, y, c)) {
 				if (allowSuicide) {
-					capture(newPosition, x, y, c);
+					capturedStones = capture(newPosition, x, y, c);
+					// captured stones will have the same color
+					c = -c;
 				}
 				else return null;
 			}
 		}
 
+		if(c == BLACK) newPosition.capCount.black += capturedStones;
+		else newPosition.capCount.white += capturedStones;
+			
+		newPosition.turn = -c;
+		
 		return newPosition;
+	}
+
+	
+	/**
+	 * Validate postion. Position is tested from 0:0 to size:size, if there are some moves, 
+	 * that should be captured, they will be removed. Returns a new Position object.
+	 * This position isn't modified.
+	 *
+	 * @return {Array} removed stones
+	 */
+
+	getValidatedPosition() {
+		let c;
+		let white = 0;
+		let black = 0;
+		let capturedStones;
+		const newPosition = this.clone();
+
+		for (let x = 0; x < this.size; x++) {
+			for (let  y = 0; y < this.size; y++) {
+				c = newPosition.get(x, y);
+				if (c) {
+					capturedStones = captureIfPossible(newPosition, x - 1, y, -c) + captureIfPossible(newPosition, x + 1, y, -c) + captureIfPossible(newPosition, x, y - 1, -c) + captureIfPossible(newPosition, x, y + 1, -c);
+
+					if (c == BLACK) black += capturedStones;
+					else white += capturedStones;
+				}
+			}
+		}
+
+		newPosition.capCount.black += black;
+		newPosition.capCount.white += white;
+
+		return newPosition;
+	}
+
+	/**
+	 * For debug purposes.
+	 */
+	toString() {
+		const TL = "┌";
+		const TM = "┬";
+		const TR = "┐";
+		const ML = "├";
+		const MM = "┼";
+		const MR = "┤";
+		const BL = "└";
+		const BM = "┴";
+		const BR = "┘";
+		const BS = "●";
+		const WS = "○";
+		const HF = "─"; // horizontal fill
+
+		let output = "   ";
+		
+		for(let i = 0; i < this.size; i++) {
+			output += i < 9 ? i+" " : i;
+		}
+
+		output += "\n";
+
+		for(let y = 0; y < this.size; y++) {
+			for(let x = 0; x < this.size; x++) {
+				const color = this.grid[x*this.size + y];
+
+				if(x == 0) {
+					output += (y < 10 ? " "+y : y) + " ";
+				}
+				
+				if(color != EMPTY) {
+					output += color == BLACK ? BS : WS;
+				}
+				else {
+					let char;
+
+					if(y == 0) {
+						// top line
+						if(x == 0) char = TL;
+						else if(x < this.size-1) char = TM;
+						else char = TR;
+					}
+					else if(y < this.size-1) {
+						// middle line
+						if(x == 0) char = ML;
+						else if(x < this.size-1) char = MM;
+						else char = MR;
+					}
+					else {
+						// bottom line
+						if(x == 0) char = BL;
+						else if(x < this.size-1) char = BM;
+						else char = BR;
+					}
+
+					output += char;
+				}
+
+				if(x == this.size-1) {
+					if(y != this.size-1) output += "\n";
+				}
+				else {
+					output += HF;
+				}
+			}
+		}
+
+		return output;
 	}
 }

@@ -9,7 +9,7 @@
  * Extend object `gameRules` if you wish to add some rule set. Names of the rules should correspond with SGF's `RU` property.
  */
 
-export var repeat = {
+export let repeat = {
 	KO: "KO",
 	ALL: "ALL",
 	NONE: "NONE"
