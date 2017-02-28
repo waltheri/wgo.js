@@ -196,6 +196,58 @@ WGo.filterHTML = function(text) {
  * @module Position
  */
 
+// creates 2-dim array for testing
+var createGrid = function createGrid(size) {
+	var grid = [];
+	for (var i = 0; i < size; i++) {
+		grid.push([]);
+	}
+	return grid;
+};
+
+// function for stone capturing, returns number of captured stones
+var capture = function capture(position, x, y, c) {
+	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
+		position.set(x, y, 0);
+		return 1 + capture(position, x, y - 1, c) + capture(position, x, y + 1, c) + capture(position, x - 1, y, c) + capture(position, x + 1, y, c);
+	}
+	return 0;
+};
+
+// looking at liberties
+var hasLiberties = function hasLiberties(position, alreadyTested, x, y, c) {
+	// out of the board there aren't liberties
+	if (x < 0 || x >= position.size || y < 0 || y >= position.size) return false;
+
+	// however empty field means liberty
+	if (position.get(x, y) == EMPTY) return true;
+
+	// already tested field or stone of enemy isn't a liberty.
+	if (alreadyTested[x][y] || position.get(x, y) == -c) return false;
+
+	// set this field as tested
+	alreadyTested[x][y] = true;
+
+	// in this case we are checking our stone, if we get 4 false, it has no liberty
+	return hasLiberties(position, alreadyTested, x, y - 1, c) || hasLiberties(position, alreadyTested, x, y + 1, c) || hasLiberties(position, alreadyTested, x - 1, y, c) || hasLiberties(position, alreadyTested, x + 1, y, c);
+};
+
+// analysing function - modifies original position, if there are some capturing, and returns number of captured stones
+var captureIfPossible = function captureIfPossible(position, x, y, c) {
+	var capturedStones = 0;
+	// is there a stone possible to capture?
+	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
+		// create testing map
+		var alreadyTested = createGrid(position.size);
+		// if it has zero liberties capture it
+		if (!hasLiberties(position, alreadyTested, x, y, c)) {
+			// capture stones from game
+			capturedStones += capture(position, x, y, c);
+		}
+	}
+	return capturedStones;
+};
+
 var Position = function () {
 	/**
   * Creates instance of position object.
@@ -338,33 +390,193 @@ var Position = function () {
 				remove: remove
 			};
 		}
+
+		/**
+   * Returns new position after a certain move (with rules applied - without captured stones).
+   * If you don't provide move coordinates, no move will be added, but position will be validated -
+   * captured stones will be removed from top-left to bottom-right.
+   */
+
+	}, {
+		key: "next",
+		value: function next(x, y, c, allowSuicide) {
+			// check if move is on empty field of the board
+			if (this.get(x, y) !== EMPTY) return null;
+
+			// clone position and add a stone
+			var newPosition = this.clone();
+			newPosition.set(x, y, c);
+
+			// check capturing of all surrounding stones
+			var capturedStones = captureIfPossible(newPosition, x - 1, y, -c) + captureIfPossible(newPosition, x + 1, y, -c) + captureIfPossible(newPosition, x, y - 1, -c) + captureIfPossible(newPosition, x, y + 1, -c);
+
+			// check suicide
+			if (capturedStones === 0) {
+				var testing = createGrid(this.size);
+				if (!hasLiberties(newPosition, testing, x, y, c)) {
+					if (allowSuicide) {
+						capturedStones = capture(newPosition, x, y, c);
+						// captured stones will have the same color
+						c = -c;
+					} else return null;
+				}
+			}
+
+			if (c == BLACK) newPosition.capCount.black += capturedStones;else newPosition.capCount.white += capturedStones;
+
+			newPosition.turn = -c;
+
+			return newPosition;
+		}
+
+		/**
+   * Validate postion. Position is tested from 0:0 to size:size, if there are some moves, 
+   * that should be captured, they will be removed. Returns a new Position object.
+   * This position isn't modified.
+   *
+   * @return {Array} removed stones
+   */
+
+	}, {
+		key: "getValidatedPosition",
+		value: function getValidatedPosition() {
+			var c = void 0;
+			var white = 0;
+			var black = 0;
+			var capturedStones = void 0;
+			var newPosition = this.clone();
+
+			for (var x = 0; x < this.size; x++) {
+				for (var y = 0; y < this.size; y++) {
+					c = newPosition.get(x, y);
+					if (c) {
+						capturedStones = captureIfPossible(newPosition, x - 1, y, -c) + captureIfPossible(newPosition, x + 1, y, -c) + captureIfPossible(newPosition, x, y - 1, -c) + captureIfPossible(newPosition, x, y + 1, -c);
+
+						if (c == BLACK) black += capturedStones;else white += capturedStones;
+					}
+				}
+			}
+
+			newPosition.capCount.black += black;
+			newPosition.capCount.white += white;
+
+			return newPosition;
+		}
+
+		/**
+   * For debug purposes.
+   */
+
+	}, {
+		key: "toString",
+		value: function toString() {
+			var TL = "┌";
+			var TM = "┬";
+			var TR = "┐";
+			var ML = "├";
+			var MM = "┼";
+			var MR = "┤";
+			var BL = "└";
+			var BM = "┴";
+			var BR = "┘";
+			var BS = "●";
+			var WS = "○";
+			var HF = "─"; // horizontal fill
+
+			var output = "   ";
+
+			for (var i = 0; i < this.size; i++) {
+				output += i < 9 ? i + " " : i;
+			}
+
+			output += "\n";
+
+			for (var y = 0; y < this.size; y++) {
+				for (var x = 0; x < this.size; x++) {
+					var color = this.grid[x * this.size + y];
+
+					if (x == 0) {
+						output += (y < 10 ? " " + y : y) + " ";
+					}
+
+					if (color != EMPTY) {
+						output += color == BLACK ? BS : WS;
+					} else {
+						var char = void 0;
+
+						if (y == 0) {
+							// top line
+							if (x == 0) char = TL;else if (x < this.size - 1) char = TM;else char = TR;
+						} else if (y < this.size - 1) {
+							// middle line
+							if (x == 0) char = ML;else if (x < this.size - 1) char = MM;else char = MR;
+						} else {
+							// bottom line
+							if (x == 0) char = BL;else if (x < this.size - 1) char = BM;else char = BR;
+						}
+
+						output += char;
+					}
+
+					if (x == this.size - 1) {
+						if (y != this.size - 1) output += "\n";
+					} else {
+						output += HF;
+					}
+				}
+			}
+
+			return output;
+		}
 	}]);
 	return Position;
 }();
 
-// Game module
+// Error codes returned by method Game#play()
 
 var MOVE_OUT_OF_BOARD = 1;
 var FIELD_OCCUPIED = 2;
 var MOVE_SUICIDE = 3;
 var POSITION_REPEATED = 4;
 
-// preset rule sets
+var errorCodes = Object.freeze({
+	MOVE_OUT_OF_BOARD: MOVE_OUT_OF_BOARD,
+	FIELD_OCCUPIED: FIELD_OCCUPIED,
+	MOVE_SUICIDE: MOVE_SUICIDE,
+	POSITION_REPEATED: POSITION_REPEATED
+});
+
+/**
+ * WGo's game engine offers to set 3 rules:
+ *
+ * - *checkRepeat* - one of `repeat.KO`, `repeat.ALL`, `repeat.NONE` - defines if or when a move can be repeated.
+ * - *allowRewrite* - if set true a move can rewrite existing move (for uncommon applications)
+ * - *allowSuicide* - if set true a suicide will be allowed (and stone will be immediately captured)
+ *
+ * In this module there are some common preset rule sets (Japanese, Chinese etc...). 
+ * Extend object `gameRules` if you wish to add some rule set. Names of the rules should correspond with SGF's `RU` property.
+ */
+
+var repeat = {
+	KO: "KO",
+	ALL: "ALL",
+	NONE: "NONE"
+};
 
 var JAPANESE_RULES = {
-	checkRepeat: "KO",
+	checkRepeat: repeat.KO,
 	allowRewrite: false,
 	allowSuicide: false
 };
 
 var CHINESE_RULES = {
-	checkRepeat: "ALL",
+	checkRepeat: repeat.ALL,
 	allowRewrite: false,
 	allowSuicide: false
 };
 
 var ING_RULES = {
-	checkRepeat: "ALL",
+	checkRepeat: repeat.ALL,
 	allowRewrite: false,
 	allowSuicide: true
 };
@@ -379,78 +591,7 @@ var rules = {
 	"Chinese": CHINESE_RULES
 };
 
-var DEFAULT_RULES = "Japanese";
-
-// function for stone capturing
-var capture = function capture(position, capturedStones, x, y, c) {
-	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
-		position.set(x, y, 0);
-		capturedStones.push({ x: x, y: y });
-
-		capture(position, capturedStones, x, y - 1, c);
-		capture(position, capturedStones, x, y + 1, c);
-		capture(position, capturedStones, x - 1, y, c);
-		capture(position, capturedStones, x + 1, y, c);
-	}
-};
-
-// looking at liberties
-var hasLiberties = function hasLiberties(position, alreadyTested, x, y, c) {
-	// out of the board there aren't liberties
-	if (x < 0 || x >= position.size || y < 0 || y >= position.size) return false;
-
-	// however empty field means liberty
-	if (position.get(x, y) == EMPTY) return true;
-
-	// already tested field or stone of enemy isn't a liberty.
-	if (alreadyTested.get(x, y) == true || position.get(x, y) == -c) return false;
-
-	// set this field as tested
-	alreadyTested.set(x, y, true);
-
-	// in this case we are checking our stone, if we get 4 false, it has no liberty
-	return hasLiberties(position, alreadyTested, x, y - 1, c) || hasLiberties(position, alreadyTested, x, y + 1, c) || hasLiberties(position, alreadyTested, x - 1, y, c) || hasLiberties(position, alreadyTested, x + 1, y, c);
-};
-
-// analysing function - modifies original position, if there are some capturing, and returns array of captured stones
-var captureIfPossible = function captureIfPossible(position, x, y, c) {
-	var capturedStones = [];
-	// is there a stone possible to capture?
-	if (x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x, y) == c) {
-		// create testing map
-		var alreadyTested = new Position(position.size);
-		// if it has zero liberties capture it
-		if (!hasLiberties(position, alreadyTested, x, y, c)) {
-			// capture stones from game
-			capture(position, capturedStones, x, y, c);
-		}
-	}
-	return capturedStones;
-};
-
-// analysing history
-var checkHistory = function checkHistory(position, x, y) {
-	var flag, stop;
-
-	if (this.repeating == "KO" && this.stack.length - 2 >= 0) stop = this.stack.length - 2;else if (this.repeating == "ALL") stop = 0;else return true;
-
-	for (var i = this.stack.length - 2; i >= stop; i--) {
-		if (this.stack[i].get(x, y) == position.get(x, y)) {
-			flag = true;
-			for (var j = 0; j < this.size * this.size; j++) {
-				if (this.stack[i].grid[j] != position.grid[j]) {
-					flag = false;
-					break;
-				}
-			}
-			if (flag) return false;
-		}
-	}
-
-	return true;
-};
-
-var Game = function () {
+var Game$1 = function () {
 
 	/**
   * Creates instance of game class.
@@ -472,14 +613,16 @@ var Game = function () {
   * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
   */
 
-	function Game(size) {
-		var rulesOrCheckRepeat = arguments.length <= 1 || arguments[1] === undefined ? JAPANESE_RULES : arguments[1];
-		var allowRewrite = arguments[2];
-		var allowSuicide = arguments[3];
+	function Game(size, rules) {
 		babelHelpers.classCallCheck(this, Game);
 
-		this.size = size || 19;
-		this.setRules(rulesOrCheckRepeat, allowRewrite, allowSuicide);
+		this.size = size || Game.defaultSize;
+		rules = rules || Game.defaultRules;
+
+		this.checkRepeat = rules.checkRepeat;
+		this.allowRewrite = rules.allowRewrite;
+		this.allowSuicide = rules.allowSuicide;
+
 		this.stack = [new Position(this.size)];
 	}
 
@@ -502,50 +645,64 @@ var Game = function () {
    * 3 - suicide (currently they are forbbiden)
    * 4 - repeated position
    */
+		value: function play(x, y) {
+			var c = arguments.length <= 2 || arguments[2] === undefined ? this.position.turn : arguments[2];
 
-		value: function play(x, y, c, noplay) {
+			var nextPosition = this.tryToPlay(x, y, c);
+
+			if (nextPosition instanceof Position) {
+				this.pushPosition(nextPosition);
+			}
+
+			return nextPosition;
+		}
+
+		/**
+   * Tries to play on given coordinates, returns new position after the play, or error code.
+   */
+
+	}, {
+		key: "tryToPlay",
+		value: function tryToPlay(x, y, c) {
 			//check coordinates validity
 			if (!this.isOnBoard(x, y)) return MOVE_OUT_OF_BOARD;
 			if (!this.allowRewrite && this.position.get(x, y) != 0) return FIELD_OCCUPIED;
 
-			// clone position
-			var c = c || this.position.turn;
+			var nextPosition = this.position.next(x, y, c, this.allowSuicide);
 
-			var newPosition = this.position.clone();
-			newPosition.set(x, y, c);
+			if (nextPosition == null) return MOVE_SUICIDE;else if (!this.checkHistory(nextPosition, x, y)) return POSITION_REPEATED;
 
-			// check capturing
-			var capturesColor = c;
-			var capturedStones = captureIfPossible(newPosition, x - 1, y, -c).concat(captureIfPossible(newPosition, x + 1, y, -c), captureIfPossible(newPosition, x, y - 1, -c), captureIfPossible(newPosition, x, y + 1, -c));
+			return nextPosition;
+		}
 
-			// check suicide
-			if (!capturedStones.length) {
-				var testing = new Position(this.size);
-				if (!hasLiberties(newPosition, testing, x, y, c)) {
-					if (this.allowSuicide) {
-						capturesColor = -c;
-						capture(newPosition, capturedStones, x, y, c);
-					} else return MOVE_SUICIDE;
+		/**
+   * @param {Position} position to check
+   * @param {number} x coordinate
+   * @param {number} y coordinate
+   * @return {boolean} Returns true if the position didn't occured in the past (according to the ruleset)
+   */
+
+	}, {
+		key: "checkHistory",
+		value: function checkHistory(position, x, y) {
+			var flag, stop;
+
+			if (this.checkRepeat == repeat.KO && this.stack.length - 2 >= 0) stop = this.stack.length - 2;else if (this.checkRepeat == repeat.ALL) stop = 0;else return true;
+
+			for (var i = this.stack.length - 2; i >= stop; i--) {
+				if (this.stack[i].get(x, y) == position.get(x, y)) {
+					flag = true;
+					for (var j = 0; j < this.size * this.size; j++) {
+						if (this.stack[i].grid[j] != position.grid[j]) {
+							flag = false;
+							break;
+						}
+					}
+					if (flag) return false;
 				}
 			}
 
-			// check history
-			if (this.repeating && !checkHistory.call(this, newPosition, x, y)) {
-				return POSITION_REPEATED;
-			}
-
-			if (noplay) return false;
-
-			// reverse turn
-			newPosition.turn = -c;
-
-			// update position info
-			if (capturesColor == BLACK) newPosition.capCount.black += capturedStones.length;else newPosition.capCount.white += capturedStones.length;
-
-			// save position
-			this.pushPosition(newPosition);
-
-			return capturedStones;
+			return true;
 		}
 
 		/**
@@ -557,10 +714,9 @@ var Game = function () {
 	}, {
 		key: "pass",
 		value: function pass(c) {
-			var c = c || this.position.turn;
-
-			this.pushPosition();
-			this.position.turn = -c;
+			var nextPosition = this.position.clone();
+			nextPosition.turn = -(c || this.position.turn);
+			this.pushPosition(nextPosition);
 		}
 
 		/**
@@ -574,8 +730,10 @@ var Game = function () {
 
 	}, {
 		key: "isValid",
-		value: function isValid(x, y, c) {
-			return typeof this.play(x, y, c, true) != "number";
+		value: function isValid(x, y) {
+			var c = arguments.length <= 2 || arguments[2] === undefined ? this.position.turn : arguments[2];
+
+			return this.tryToPlay(x, y, c) instanceof Position;
 		}
 
 		/**
@@ -675,9 +833,7 @@ var Game = function () {
 	}, {
 		key: "pushPosition",
 		value: function pushPosition(pos) {
-			var pos = pos || this.position.clone();
-			this.stack.push(pos);
-			return this;
+			return this.stack.push(pos);
 		}
 
 		/**
@@ -687,9 +843,7 @@ var Game = function () {
 	}, {
 		key: "popPosition",
 		value: function popPosition() {
-			var old;
-			if (this.stack.length > 0) old = this.stack.pop();
-			return old;
+			return this.stack.pop();
 		}
 
 		/**
@@ -727,52 +881,7 @@ var Game = function () {
 	}, {
 		key: "validatePosition",
 		value: function validatePosition() {
-			var c,
-			    p,
-			    white = 0,
-			    black = 0,
-			    capturedStones = [],
-			    newPosition = this.position.clone();
-
-			for (var x = 0; x < this.size; x++) {
-				for (var y = 0; y < this.size; y++) {
-					c = this.position.get(x, y);
-					if (c) {
-						p = capturedStones.length;
-						capturedStones = capturedStones.concat(captureIfPossible(newPosition, x - 1, y, -c), captureIfPossible(newPosition, x + 1, y, -c), captureIfPossible(newPosition, x, y - 1, -c), captureIfPossible(newPosition, x, y + 1, -c));
-
-						if (c == BLACK) black += capturedStones.length - p;else white += capturedStones.length - p;
-					}
-				}
-			}
-			this.position.capCount.black += black;
-			this.position.capCount.white += white;
-			this.position.grid = newPosition.grid;
-
-			return capturedStones;
-		}
-
-		/**
-   * Sets go rules for this game. You should use it only in the special cases. 
-   * If you change rules in the middle of the game, you can get unintentional outcome.
-   * 
-   * @param {(object|string)} rulesOrCheckRepeat      rules object or repeat flag (one of "KO", "ALL" or "NONE")
-   * @param {boolean}         [allowRewrite = false]  allow rewrite flag
-   * @param {boolean}         [allowSuicide = false]  allow suicide
-   */
-
-	}, {
-		key: "setRules",
-		value: function setRules(rulesOrCheckRepeat, allowRewrite, allowSuicide) {
-			if ((typeof rulesOrCheckRepeat === "undefined" ? "undefined" : babelHelpers.typeof(rulesOrCheckRepeat)) == "object") {
-				allowRewrite = rulesOrCheckRepeat.allowRewrite;
-				allowSuicide = rulesOrCheckRepeat.allowSuicide;
-				rulesOrCheckRepeat = rulesOrCheckRepeat.checkRepeat;
-			}
-
-			this.repeating = rulesOrCheckRepeat == null ? "KO" : rulesOrCheckRepeat; // possible values: KO, ALL or nothing
-			this.allowRewrite = allowRewrite || false;
-			this.allowSuicide = allowSuicide || false;
+			this.position = this.position.getValidatedPosition();
 		}
 	}, {
 		key: "position",
@@ -794,6 +903,39 @@ var Game = function () {
 	return Game;
 }();
 
+// Game module
+var defaultSize = 19;
+
+Game$1.Position = Position;
+Game$1.rules = rules;
+Game$1.defaultRules = JAPANESE_RULES;
+Game$1.defaultSize = defaultSize;
+Game$1.errorCodes = errorCodes;
+
+/**
+ * Class for syntax errors in SGF string.
+ * @extends Error
+ */
+var SGFSyntaxError = function SGFSyntaxError(message, parser) {
+	babelHelpers.classCallCheck(this, SGFSyntaxError);
+
+	var tempError = Error.apply(this);
+	tempError.name = this.name = 'SGFSyntaxError';
+	this.message = message || 'There was an unspecified syntax error in the SGF';
+
+	if (parser) {
+		this.message += " on line " + parser.lineNo + ", char " + parser.charNo + ":\n";
+		this.message += "\t" + parser.sgfString.split("\n")[parser.lineNo - 1] + "\n";
+		this.message += "\t" + Array(parser.charNo + 1).join(" ") + "^";
+	}
+
+	this.stack = tempError.stack;
+};
+
+// a small ES5 hack because currently in ES6 you can't extend Errors
+SGFSyntaxError.prototype = Object.create(Error.prototype);
+SGFSyntaxError.prototype.constructor = SGFSyntaxError;
+
 /**
  * Contains methods for parsing sgf string
  * @module SGFParser
@@ -807,7 +949,7 @@ var CODE_WHITE = " ".charCodeAt(0);
  * Class for parsing of sgf files. Can be used for parsing of SGF fragments as well.
  */
 
-var SGFParser = function () {
+var SGFParser$1 = function () {
 
 	/**
   * Class constructor.
@@ -1025,31 +1167,7 @@ var SGFParser = function () {
 	return SGFParser;
 }();
 
-/**
- * Class for syntax errors in SGF string.
- * @extends Error
- */
-
-
-var SGFSyntaxError = function SGFSyntaxError(message, parser) {
-	babelHelpers.classCallCheck(this, SGFSyntaxError);
-
-	var tempError = Error.apply(this);
-	tempError.name = this.name = 'SGFSyntaxError';
-	this.message = message || 'There was an unspecified syntax error in the SGF';
-
-	if (parser) {
-		this.message += " on line " + parser.lineNo + ", char " + parser.charNo + ":\n";
-		this.message += "\t" + parser.sgfString.split("\n")[parser.lineNo - 1] + "\n";
-		this.message += "\t" + Array(parser.charNo + 1).join(" ") + "^";
-	}
-
-	this.stack = tempError.stack;
-};
-
-// a small ES5 hack because currently in ES6 you can't extend Errors
-SGFSyntaxError.prototype = Object.create(Error.prototype);
-SGFSyntaxError.prototype.constructor = SGFSyntaxError;
+SGFParser$1.SGFSyntaxError = SGFSyntaxError;
 
 /**
  * From SGF specification, there are these types of property values:
@@ -1078,6 +1196,8 @@ SGFSyntaxError.prototype.constructor = SGFSyntaxError;
  * 
  * {@link http://www.red-bean.com/sgf/sgf4.html}
  */
+
+/// Types definitions -----------------------------------------------------------------------------
 
 var NONE = {
 	read: function read(str) {
@@ -1311,6 +1431,7 @@ propertyValueTypes.VW = {
 	notEmpty: false
 };
 
+// jsgf helper
 var processJsgf = function processJsgf(parent, jsgf, pos) {
 	if (jsgf[pos]) {
 		if (jsgf[pos].constructor == Array) {
@@ -1346,7 +1467,7 @@ var KNode = function () {
 	}, {
 		key: "fromSGF",
 		value: function fromSGF(sgf, ind) {
-			var parser = new SGFParser(sgf);
+			var parser = new SGFParser$1(sgf);
 			return KNode.fromJS(parser.parseCollection()[ind || 0]);
 		}
 	}]);
@@ -1563,7 +1684,7 @@ var KNode = function () {
 		key: "setSGFProperty",
 		value: function setSGFProperty(propIdent, propValue) {
 			if (typeof propValue == "string") {
-				var parser = new SGFParser(propValue);
+				var parser = new SGFParser$1(propValue);
 				propValue = parser.parsePropertyValues();
 			}
 
@@ -1659,7 +1780,7 @@ var KNode = function () {
 		key: "innerSGF",
 		set: function set(sgf) {
 			// prepare parser
-			this.setFromSGF(new SGFParser(sgf));
+			this.setFromSGF(new SGFParser$1(sgf));
 		},
 		get: function get() {
 			var output = "";
@@ -1724,6 +1845,11 @@ var gridClearField = {
 };
 
 /* global document, window */
+/**
+ * @class
+ * Implements one layer of the HTML5 canvas
+ */
+
 var CanvasLayer = function () {
 	function CanvasLayer() {
 		babelHelpers.classCallCheck(this, CanvasLayer);
@@ -1852,6 +1978,12 @@ var gridHandler = {
 	}
 };
 
+/**
+ * @class
+ * @extends WGo.CanvasBoard.CanvasLayer
+ * Layer which renders board grid.
+ */
+
 var GridLayer = function (_CanvasLayer) {
   babelHelpers.inherits(GridLayer, _CanvasLayer);
 
@@ -1868,6 +2000,12 @@ var GridLayer = function (_CanvasLayer) {
   }]);
   return GridLayer;
 }(CanvasLayer);
+
+/**
+ * @class
+ * @extends WGo.CanvasBoard.CanvasLayer
+ * Layer for shadows. It is slightly translated.
+ */
 
 var ShadowLayer = function (_CanvasLayer) {
   babelHelpers.inherits(ShadowLayer, _CanvasLayer);
@@ -1918,6 +2056,7 @@ var shadow = {
 	} //
 };
 
+// shell stone helping functions
 var shellSeed = Math.ceil(Math.random() * 9999999);
 
 var drawShellLine = function drawShellLine(ctx, x, y, radius, startAngle, endAngle, factor, thickness) {
@@ -2152,6 +2291,8 @@ var simpleStone = {
 
 /* global window */
 
+// Check if image has been loaded properly
+// see https://stereochro.me/ideas/detecting-broken-images-js
 function isOkay(img) {
 	if (typeof img === 'string') {
 		return false;
@@ -2388,6 +2529,12 @@ var coordinates = {
 	}
 };
 
+/** 
+ * Object containing default graphical properties of a board.
+ * A value of all properties can be even static value or function, returning final value.
+ * Theme object doesn't set board and stone textures - they are set separately.
+ */
+
 var realisticTheme = {
     // stones
     stoneHandler: realisticStone({
@@ -2450,6 +2597,12 @@ var realisticTheme = {
     linesShift: -0.25,
     imageFolder: "../images/"
 };
+
+/** 
+ * Object containing default graphical properties of a board.
+ * A value of all properties can be even static value or function, returning final value.
+ * Theme object doesn't set board and stone textures - they are set separately.
+ */
 
 var modernTheme = {
     // stones
@@ -2517,6 +2670,38 @@ var themes = Object.freeze({
 	realisticTheme: realisticTheme,
 	modernTheme: modernTheme
 });
+
+var defaultConfig = {
+	size: 19,
+	width: 0,
+	height: 0,
+	starPoints: {
+		5: [{ x: 2, y: 2 }],
+		7: [{ x: 3, y: 3 }],
+		8: [{ x: 2, y: 2 }, { x: 5, y: 2 }, { x: 2, y: 5 }, { x: 5, y: 5 }],
+		9: [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 6 }, { x: 6, y: 6 }],
+		10: [{ x: 2, y: 2 }, { x: 7, y: 2 }, { x: 2, y: 7 }, { x: 7, y: 7 }],
+		11: [{ x: 2, y: 2 }, { x: 8, y: 2 }, { x: 5, y: 5 }, { x: 2, y: 8 }, { x: 8, y: 8 }],
+		12: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }],
+		13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 6, y: 6 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
+		14: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }],
+		15: [{ x: 3, y: 3 }, { x: 11, y: 3 }, { x: 7, y: 7 }, { x: 3, y: 11 }, { x: 11, y: 11 }],
+		16: [{ x: 3, y: 3 }, { x: 12, y: 3 }, { x: 3, y: 12 }, { x: 12, y: 12 }],
+		17: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 13, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }, { x: 13, y: 8 }, { x: 3, y: 13 }, { x: 8, y: 13 }, { x: 13, y: 13 }],
+		18: [{ x: 3, y: 3 }, { x: 14, y: 3 }, { x: 3, y: 14 }, { x: 14, y: 14 }],
+		19: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 15, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 }, { x: 15, y: 9 }, { x: 3, y: 15 }, { x: 9, y: 15 }, { x: 15, y: 15 }],
+		20: [{ x: 3, y: 3 }, { x: 16, y: 3 }, { x: 3, y: 16 }, { x: 16, y: 16 }],
+		21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }, { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }]
+	},
+	section: {
+		top: 0,
+		right: 0,
+		bottom: 0,
+		left: 0
+	},
+	coordinates: false,
+	theme: realisticTheme
+};
 
 /**
  * A faster alternative to `Function#apply`, this function invokes `func`
@@ -2636,6 +2821,7 @@ function createCommonjsModule(fn, module) {
 	return module = { exports: {} }, fn(module, module.exports), module.exports;
 }
 
+/** Detect free variable `global` from Node.js. */
 var freeGlobal$1 = typeof commonjsGlobal == 'object' && commonjsGlobal && commonjsGlobal.Object === Object && commonjsGlobal;
 
 var _freeGlobal = freeGlobal$1;
@@ -5153,7 +5339,7 @@ var updateDim = function updateDim(board) {
 	}
 };
 
-var CanvasBoard = function () {
+var CanvasBoard$1 = function () {
 	/**
   * CanvasBoard class constructor - it creates a canvas board.
   *
@@ -5189,16 +5375,16 @@ var CanvasBoard = function () {
   */
 
 	function CanvasBoard(elem, config) {
-		var _this2 = this;
+		var _this = this;
 
 		babelHelpers.classCallCheck(this, CanvasBoard);
 
 		// merge user config with default
-		this.config = defaultsDeep_1(config || {}, CanvasBoard.defaultConfig);
+		this.config = defaultsDeep_1(config || {}, defaultConfig);
 
 		// and store it directly on `this`
 		Object.keys(this.config).forEach(function (key) {
-			_this2[key] = _this2.config[key];
+			_this[key] = _this.config[key];
 		});
 
 		// set section if set
@@ -5616,15 +5802,16 @@ var CanvasBoard = function () {
 			return false;
 		}
 	}, {
-		key: "addEventListener",
-		value: function addEventListener(type, callback) {
-			var _this = this,
-			    evListener = {
+		key: "on",
+		value: function on(type, callback) {
+			var _this2 = this;
+
+			var evListener = {
 				type: type,
 				callback: callback,
-				handleEvent: function handleEvent(e) {
-					var coo = getMousePos(_this, e);
-					callback(coo.x, coo.y, e);
+				handleEvent: function handleEvent(event) {
+					var coo = getMousePos(_this2, event);
+					callback(coo.x, coo.y, event);
 				}
 			};
 
@@ -5632,8 +5819,8 @@ var CanvasBoard = function () {
 			this.listeners.push(evListener);
 		}
 	}, {
-		key: "removeEventListener",
-		value: function removeEventListener(type, callback) {
+		key: "off",
+		value: function off(type, callback) {
 			for (var i = 0; i < this.listeners.length; i++) {
 				var listener = this.listeners[i];
 				if (listener.type == type && listener.callback == callback) {
@@ -5648,40 +5835,9 @@ var CanvasBoard = function () {
 	return CanvasBoard;
 }();
 
-CanvasBoard.defaultConfig = {
-	size: 19,
-	width: 0,
-	height: 0,
-	starPoints: {
-		5: [{ x: 2, y: 2 }],
-		7: [{ x: 3, y: 3 }],
-		8: [{ x: 2, y: 2 }, { x: 5, y: 2 }, { x: 2, y: 5 }, { x: 5, y: 5 }],
-		9: [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 6 }, { x: 6, y: 6 }],
-		10: [{ x: 2, y: 2 }, { x: 7, y: 2 }, { x: 2, y: 7 }, { x: 7, y: 7 }],
-		11: [{ x: 2, y: 2 }, { x: 8, y: 2 }, { x: 5, y: 5 }, { x: 2, y: 8 }, { x: 8, y: 8 }],
-		12: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }],
-		13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 6, y: 6 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
-		14: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }],
-		15: [{ x: 3, y: 3 }, { x: 11, y: 3 }, { x: 7, y: 7 }, { x: 3, y: 11 }, { x: 11, y: 11 }],
-		16: [{ x: 3, y: 3 }, { x: 12, y: 3 }, { x: 3, y: 12 }, { x: 12, y: 12 }],
-		17: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 13, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }, { x: 13, y: 8 }, { x: 3, y: 13 }, { x: 8, y: 13 }, { x: 13, y: 13 }],
-		18: [{ x: 3, y: 3 }, { x: 14, y: 3 }, { x: 3, y: 14 }, { x: 14, y: 14 }],
-		19: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 15, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 }, { x: 15, y: 9 }, { x: 3, y: 15 }, { x: 9, y: 15 }, { x: 15, y: 15 }],
-		20: [{ x: 3, y: 3 }, { x: 16, y: 3 }, { x: 3, y: 16 }, { x: 16, y: 16 }],
-		21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }, { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }]
-	},
-	section: {
-		top: 0,
-		right: 0,
-		bottom: 0,
-		left: 0
-	},
-	coordinates: false,
-	theme: realisticTheme
-};
-
-CanvasBoard.drawHandlers = drawHandlers;
-CanvasBoard.themes = themes;
+CanvasBoard$1.drawHandlers = drawHandlers;
+CanvasBoard$1.themes = themes;
+CanvasBoard$1.defaultConfig = defaultConfig;
 
 /**
  * Simple events handling.
@@ -5793,7 +5949,7 @@ var Kifu = function (_EventMixin) {
 			// ... and rules argument as string
 			if (typeof ruleSet == "string") {
 				_this.rootNode.setProperty("RU", ruleSet);
-				_this.ruleSet = rules[ruleSet] || rules[DEFAULT_RULES];
+				_this.ruleSet = rules[ruleSet] || rules[JAPANESE_RULES];
 			}
 			// ... and rules argument as object
 			else if (ruleSet != null) {
@@ -5801,8 +5957,8 @@ var Kifu = function (_EventMixin) {
 				}
 				// ... and no second argument
 				else {
-						_this.rootNode.setProperty("RU", DEFAULT_RULES);
-						_this.ruleSet = rules[DEFAULT_RULES];
+						_this.rootNode.setProperty("RU", JAPANESE_RULES);
+						_this.ruleSet = rules[JAPANESE_RULES];
 					}
 		}
 		// KNode argument
@@ -5811,18 +5967,18 @@ var Kifu = function (_EventMixin) {
 				_this.rootNode = kNode.root;
 				_this.currentNode = kNode;
 
-				_this.ruleSet = rules[_this.rootNode.getProperty("RU")] || rules[DEFAULT_RULES];
+				_this.ruleSet = rules[_this.rootNode.getProperty("RU")] || rules[JAPANESE_RULES];
 				boardSize = _this.rootNode.getProperty("SZ");
 			}
 			// No argument
 			else {
 					_this.currentNode = _this.rootNode = new KNode();
-					_this.ruleSet = rules[DEFAULT_RULES];
+					_this.ruleSet = rules[JAPANESE_RULES];
 					_this.rootNode.setProperty("SZ", 19);
-					_this.rootNode.setProperty("RU", DEFAULT_RULES);
+					_this.rootNode.setProperty("RU", JAPANESE_RULES);
 				}
 
-		_this.game = new Game(boardSize, _this.ruleSet);
+		_this.game = new Game$1(boardSize, _this.ruleSet);
 		return _this;
 	}
 
@@ -6297,7 +6453,7 @@ var Kifu = function (_EventMixin) {
 			return this.rootNode.getProperty("RU");
 		},
 		set: function set(rules$$1) {
-			this.setRulesSet(rules$$1[rules$$1] || rules$$1[DEFAULT_RULES]);
+			this.setRulesSet(rules$$1[rules$$1] || rules$$1[JAPANESE_RULES]);
 			this.setGameInfo("RU", rules$$1);
 		}
 	}, {
@@ -6314,13 +6470,11 @@ var Kifu = function (_EventMixin) {
 
 // WGo module
 
-SGFParser.SGFSyntaxError = SGFSyntaxError;
-
-exports.Game = Game;
-exports.Position = Game;
-exports.SGFParser = SGFParser;
+exports.Game = Game$1;
+exports.Position = Position;
+exports.SGFParser = SGFParser$1;
 exports.KNode = KNode;
-exports.CanvasBoard = CanvasBoard;
+exports.CanvasBoard = CanvasBoard$1;
 exports.Kifu = Kifu;
 exports.B = B;
 exports.BLACK = BLACK;

@@ -3,7 +3,7 @@
  * @module Position
  */
 
-import { BLACK, EMPTY, WHITE } from "../core";
+import { BLACK, EMPTY } from "../core";
 
 // creates 2-dim array for testing
 var createGrid = function(size) {
