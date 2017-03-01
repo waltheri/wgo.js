@@ -1,7 +1,6 @@
 import KNode from "./KNode";
 import EventMixin from "../EventMixin";
-import Game from "../Game";
-import rules from "../Game/rules";
+import Game, {rules, defaultRules} from "../Game";
 import {markupProperties, setupProperties} from "./propertyValueTypes";
 
 const setupPropertiesReversed = Object.keys(setupProperties).reduce((obj, key) => {
@@ -55,7 +54,7 @@ export default class Kifu extends EventMixin() {
 			// ... and rules argument as string
 			if(typeof ruleSet == "string") {
 				this.rootNode.setProperty("RU", ruleSet);
-				this.ruleSet = rules[ruleSet];
+				this.ruleSet = rules[ruleSet] || rules[defaultRules];
 			}
 			// ... and rules argument as object
 			else if(ruleSet != null) {
@@ -63,7 +62,8 @@ export default class Kifu extends EventMixin() {
 			}
 			// ... and no second argument
 			else {
-				this.ruleSet = Game.defaultRules;
+				this.rootNode.setProperty("RU", defaultRules);
+				this.ruleSet = rules[defaultRules];
 			}
 		}
 		// KNode argument
@@ -72,14 +72,15 @@ export default class Kifu extends EventMixin() {
 			this.rootNode = kNode.root;
 			this.currentNode = kNode;
 			
-			this.ruleSet = rules[this.rootNode.getProperty("RU")] || Game.defaultRules;
+			this.ruleSet = rules[this.rootNode.getProperty("RU")] || rules[defaultRules];
 			boardSize = this.rootNode.getProperty("SZ");
 		}
 		// No argument
 		else {
 			this.currentNode = this.rootNode = new KNode();
-			this.ruleSet = Game.defaultRules;
-			this.rootNode.setProperty("SZ", Game.defaultSize);
+			this.ruleSet = rules[defaultRules];
+			this.rootNode.setProperty("SZ", 19);
+			this.rootNode.setProperty("RU", defaultRules);
 		}
 		
 		this.game = new Game(boardSize, this.ruleSet);
@@ -139,7 +140,7 @@ export default class Kifu extends EventMixin() {
 	}
 	
 	set rules(rules) {
-		this.setRulesSet(rules[rules] || rules[DEFAULT_RULES]);
+		this.setRulesSet(rules[rules] || rules[defaultRules]);
 		this.setGameInfo("RU", rules);		
 	}
 	

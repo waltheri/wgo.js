@@ -1,9 +1,11 @@
+/* global describe, it, beforeEach */
 /* Test of WGo.Game class and (handling of go game) */
 
 import {assert} from "chai";
-import * as WGo from "../src/core";
-import Game, {MOVE_OUT_OF_BOARD, FIELD_OCCUPIED, MOVE_SUICIDE, POSITION_REPEATED} from "../src/Game";
-import Position from "../src/Game/Position";
+import * as WGo from "../es6/core";
+import Game from "../es6/Game";
+import Position from "../es6/Game/Position";
+import * as err from "../es6/Game/errors";
 
 describe("Game", function() {
 	describe("(1) Basic Game object functionality", function() {
@@ -14,33 +16,65 @@ describe("Game", function() {
 		});
 		
 		it("Game is correctly created.", function() {
-			assert(game.size === 19);
-			assert(game.position.turn === WGo.B);
+			assert.strictEqual(game.size, 19);
+			assert.strictEqual(game.position.turn, WGo.B);
 			assert.deepEqual(game.position.capCount, {black: 0, white: 0});
-			assert(game.isOnBoard(0,0) === true);
-			assert(game.isOnBoard(18,18) === true);
-			assert(game.isOnBoard(-1,-1) === false);
-			assert(game.isOnBoard(19,19) === false);
+			assert.isTrue(game.isOnBoard(0,0));
+			assert.isTrue(game.isOnBoard(18,18));
+			assert.isFalse(game.isOnBoard(-1,-1));
+			assert.isFalse(game.isOnBoard(19,19));
+		});
+
+		it("Comparing of positions", function() {
+			let position1 = new Position(19);
+			position1.set(5, 5, WGo.B);
+			position1.set(5, 6, WGo.W);
+			position1.set(6, 5, WGo.B);
+			position1.set(6, 6, WGo.W);
+			
+			let position2 = new Position(19);
+			position2.set(5, 5, WGo.B);
+			position2.set(5, 6, WGo.W);
+			position2.set(7, 5, WGo.B);
+			position2.set(7, 6, WGo.W);
+			
+			let difference = position1.compare(position2);
+
+			assert.deepEqual(difference.remove, [
+				{x:6, y:5},
+				{x:6, y:6}
+			]);
+
+			assert.deepEqual(difference.add, [
+				{x:7, y:5, c:WGo.B},
+				{x:7, y:6, c:WGo.W}
+			]);
 		});
 		
 		it("Basic methods - play(), pass().", function() {
+			let position;
+
 			// move 1
-			assert.deepEqual(game.play(5,5), []);
-			assert(game.position.get(5,5) === WGo.B);
-			assert(game.position.turn === WGo.W);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(5,5)).remove, []);
+			assert.strictEqual(game.position.get(5,5), WGo.B);
+			assert.strictEqual(game.position.turn, WGo.W);
 			
 			// move 2
-			assert.deepEqual(game.play(5,6), []);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(5,6)).remove, []);
 			assert(game.position.get(5,6) === WGo.W);
 			assert(game.position.turn === WGo.B);
 			
 			// move 3
-			assert.deepEqual(game.play(5,7), []);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(5,7)).remove, []);
 			assert(game.position.get(5,7) === WGo.B);
 			assert(game.position.turn === WGo.W);
 			
 			// move 4 (color change)
-			assert.deepEqual(game.play(6,6, WGo.B), []);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(6,6, WGo.B)).remove, []);
 			assert(game.position.get(6,6) === WGo.B);
 			assert(game.position.turn === WGo.W);
 			
@@ -50,7 +84,8 @@ describe("Game", function() {
 			assert(game.stack.length == 6);
 			
 			// move 6 (capture)
-			assert.deepEqual(game.play(4,6), [{x:5, y:6}]);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(4,6)).remove, [{x:5, y:6}]);
 			assert(game.position.get(5,6) === WGo.E);
 			assert(game.getCaptureCount(WGo.B) == 1);
 		});
@@ -110,8 +145,21 @@ describe("Game", function() {
 			game.addStone(2,9, WGo.B);
 			game.addStone(3,9, WGo.B);
 
-			assert.sameDeepMembers(game.play(3,7), [{x: 2, y: 5}, {x: 1, y: 6}, {x: 2, y: 6}, {x: 3, y: 6}, {x: 4, y: 6}, {x: 0, y: 7}, {x: 1, y: 7}, {x: 2, y: 7}, {x: 4, y: 7}, {x: 2, y: 8}, {x: 3, y: 8}]);
-			
+			let position = game.position;
+			assert.sameDeepMembers(position.compare(game.play(3,7)).remove, [
+				{x: 2, y: 5}, 
+				{x: 1, y: 6}, 
+				{x: 2, y: 6}, 
+				{x: 3, y: 6}, 
+				{x: 4, y: 6}, 
+				{x: 0, y: 7}, 
+				{x: 1, y: 7}, 
+				{x: 2, y: 7}, 
+				{x: 4, y: 7}, 
+				{x: 2, y: 8}, 
+				{x: 3, y: 8}
+			]);
+
 			assert(game.position.get(2,5) === WGo.E);
 			assert(game.position.get(1,6) === WGo.E);
 			assert(game.position.get(2,6) === WGo.E);
@@ -128,48 +176,53 @@ describe("Game", function() {
 		})
 		
 		it("Invalid moves and suicides.", function(){
+			let position;
+
 			// out of board
-			assert(game.isValid(-1,-1) === false);
-			assert(game.play(-1,-1) === MOVE_OUT_OF_BOARD);
-			assert(game.isValid(19,19) === false);
-			assert(game.play(19,19) === MOVE_OUT_OF_BOARD);
-			assert(game.isValid(0,0) === true);
-			assert(game.position.turn === WGo.B);
-			assert(game.stack.length === 1);
+			assert.isFalse(game.isValid(-1,-1));
+			assert.strictEqual(game.play(-1,-1), err.MOVE_OUT_OF_BOARD);
+			assert.isFalse(game.isValid(19,19), false);
+			assert.strictEqual(game.play(19,19), err.MOVE_OUT_OF_BOARD);
+			assert.isTrue(game.isValid(0,0), true);
+			assert.strictEqual(game.position.turn, WGo.B);
+			assert.strictEqual(game.stack.length, 1);
 			game.play(0,0);
 			
 			// occupied
-			assert(game.play(0,0) === FIELD_OCCUPIED);
+			assert.strictEqual(game.play(0,0), err.FIELD_OCCUPIED);
 			
 			// suicide of 1 stone
 			game.addStone(1,1,WGo.B);
 			game.addStone(0,2,WGo.B);
-			assert(game.play(0,1) === MOVE_SUICIDE);
+			assert.strictEqual(game.play(0,1), err.MOVE_SUICIDE);
 			
 			// suicide of more stones
 			game.addStone(1,0,WGo.W);
 			game.addStone(2,1,WGo.W);
 			game.addStone(1,2,WGo.W);
 			game.addStone(0,3,WGo.W);
-			assert(game.play(0,1, WGo.B) === MOVE_SUICIDE);
+			assert.strictEqual(game.play(0,1, WGo.B), err.MOVE_SUICIDE);
 			
 			// repeated suicide
-			assert.sameDeepMembers(game.play(0,1), [{x: 0, y: 0}, {x: 1, y: 1}, {x: 0,y: 2}]);
-			assert(game.play(0,0) === MOVE_SUICIDE);
+			position = game.position;
+			assert.sameDeepMembers(position.compare(game.play(0,1)).remove, [{x: 0, y: 0}, {x: 1, y: 1}, {x: 0,y: 2}]);
+			assert.strictEqual(game.play(0,0), err.MOVE_SUICIDE);
 			
 			// ko
 			game.addStone(2,0,WGo.B);
 			game.addStone(3,1,WGo.B);
 			game.addStone(2,2,WGo.B);
-			assert.deepEqual(game.play(1,1), [{x: 2, y: 1}]);
-			assert(game.play(2,1) === POSITION_REPEATED);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(1,1)).remove, [{x: 2, y: 1}]);
+			assert.strictEqual(game.play(2,1), err.POSITION_REPEATED);
 			
 			// threat
 			game.play(5,5);
 			game.play(5,6);
 			assert(game.isValid(2,1) === true);
-			assert.deepEqual(game.play(2,1), [{x: 1, y: 1}]);
-			assert(game.isValid(1,1) === false);
+			position = game.position;
+			assert.deepEqual(position.compare(game.play(2,1)).remove, [{x: 1, y: 1}]);
+			assert.isFalse(game.isValid(1,1));
 		});
 		
 		it("Push, pop, validate and first position.", function(){
@@ -178,7 +231,7 @@ describe("Game", function() {
 			// basic push position
 			game.addStone(9,9,WGo.B);
 			var position = game.position;
-			game.pushPosition();
+			game.pushPosition(position.clone());
 			assert.deepEqual(position, game.position);
 			
 			game.addStone(9, 8, WGo.W);
@@ -186,8 +239,8 @@ describe("Game", function() {
 			game.addStone(8, 9, WGo.W);
 			position = game.position;
 			
-			assert.deepEqual(game.play(10, 9, WGo.W), [{x: 9, y: 9}]);
-			assert(game.position.get(9, 9) == WGo.E);
+			assert.deepEqual(position.compare(game.play(10, 9, WGo.W)).remove, [{x: 9, y: 9}]);
+			assert.strictEqual(game.position.get(9, 9), WGo.E);
 			
 			// basic pop position
 			var change = game.popPosition().compare(game.position);
@@ -204,11 +257,14 @@ describe("Game", function() {
 			assert.deepEqual(newPosition, game.position);
 			
 			// validate position
-			assert.sameDeepMembers(game.validatePosition(), [{x:2, y:0}, {x:3, y:0}]);
+			let tmpPosition = game.position;
+			game.validatePosition();
+			newPosition = game.position;
+			assert.sameDeepMembers(tmpPosition.compare(newPosition).remove, [{x:2, y:0}, {x:3, y:0}]);
 			
-			assert(game.position.get(2, 0) == WGo.E);
-			assert(game.position.get(3, 0) == WGo.E);
-			assert(game.getCaptureCount(WGo.B) == 2);
+			assert.strictEqual(game.position.get(2, 0), WGo.E);
+			assert.strictEqual(game.position.get(3, 0), WGo.E);
+			assert.strictEqual(game.getCaptureCount(WGo.B), 2);
 			
 			// pop position again
 			game.popPosition();

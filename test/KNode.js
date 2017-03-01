@@ -1,10 +1,10 @@
 /* Test of WGo kifu classes and functionality */
 
 import {assert} from "chai";
-import * as WGo from "../src/core";
-import KNode from "../src/kifu/KNode";
-import {SGFSyntaxError} from "../src/kifu/SGFParser";
-import propertyValueTypes from "../src/kifu/propertyValueTypes";
+import * as WGo from "../es6/core";
+import KNode from "../es6/kifu/KNode";
+import {SGFSyntaxError} from "../es6/kifu/SGFParser";
+import propertyValueTypes from "../es6/kifu/propertyValueTypes";
 
 describe("SGF & KNode", function() {
 	describe("(1) Correct transformation of property values.", function() {

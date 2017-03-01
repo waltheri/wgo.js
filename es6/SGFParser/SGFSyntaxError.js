@@ -2,8 +2,7 @@
  * Class for syntax errors in SGF string.
  * @extends Error
  */
-
-export default class SGFSyntaxError {
+export class SGFSyntaxError {
 	constructor(message, parser) {
 		var tempError = Error.apply(this);
 		tempError.name = this.name = 'SGFSyntaxError';
@@ -22,3 +21,5 @@ export default class SGFSyntaxError {
 // a small ES5 hack because currently in ES6 you can't extend Errors
 SGFSyntaxError.prototype = Object.create(Error.prototype);
 SGFSyntaxError.prototype.constructor = SGFSyntaxError;
+
+export default SGFSyntaxError;
