@@ -1,4 +1,4 @@
-import SGFParser, {SGFSyntaxError} from "./SGFParser";
+import SGFParser, {SGFSyntaxError} from "../SGFParser";
 import propertyValueTypes from "./propertyValueTypes";
 
 // jsgf helper
