@@ -3,7 +3,7 @@
 import {assert} from "chai";
 import * as WGo from "../es6/core";
 import KNode from "../es6/kifu/KNode";
-import {SGFSyntaxError} from "../es6/kifu/SGFParser";
+import {SGFSyntaxError} from "../es6/SGFParser";
 import propertyValueTypes from "../es6/kifu/propertyValueTypes";
 
 describe("SGF & KNode", function() {

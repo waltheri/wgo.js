@@ -4,7 +4,8 @@ import {assert} from "chai";
 import * as WGo from "../es6/core";
 import Kifu from "../es6/kifu/Kifu";
 import KNode from "../es6/kifu/KNode";
-import Game, {rules, DEFAULT_RULES, CHINESE_RULES, NO_RULES} from "../es6/Game";
+import Game, {rules, defaultRules} from "../es6/Game";
+import {CHINESE_RULES, NO_RULES} from "../es6/Game/rules";
 
 describe("Kifu", function() {
 	describe("(1) Kifu object is created correctly", function() {
@@ -12,44 +13,44 @@ describe("Kifu", function() {
 			var kifu = new Kifu();
 			
 			assert.instanceOf(kifu.rootNode, KNode);
-			assert(kifu.rootNode === kifu.currentNode);
-			assert(kifu.ruleSet === rules[DEFAULT_RULES]);
-			assert(kifu.rootNode.getProperty("RU") === DEFAULT_RULES);
-			assert(kifu.rootNode.getProperty("SZ") === 19);
+			assert.strictEqual(kifu.rootNode, kifu.currentNode);
+			assert.strictEqual(kifu.ruleSet, rules[defaultRules]);
+			assert.strictEqual(kifu.rootNode.getProperty("RU"), defaultRules);
+			assert.strictEqual(kifu.rootNode.getProperty("SZ"), 19);
 		});
 		
 		it("With board size argument", function() {
 			var kifu = new Kifu(9);
 			
 			assert.instanceOf(kifu.rootNode, KNode);
-			assert(kifu.rootNode === kifu.currentNode);
-			assert(kifu.ruleSet === rules[DEFAULT_RULES]);
-			assert(kifu.rootNode.getProperty("RU") === DEFAULT_RULES);
-			assert(kifu.rootNode.getProperty("SZ") === 9);
+			assert.strictEqual(kifu.rootNode, kifu.currentNode);
+			assert.strictEqual(kifu.ruleSet, rules[defaultRules]);
+			assert.strictEqual(kifu.rootNode.getProperty("RU"), defaultRules);
+			assert.strictEqual(kifu.rootNode.getProperty("SZ"), 9);
 		});
 		
 		it("With board size and rules arguments", function() {
 			var kifu = new Kifu(9, "Chinese");
 			
 			assert.instanceOf(kifu.rootNode, KNode);
-			assert(kifu.rootNode === kifu.currentNode);
-			assert(kifu.ruleSet === CHINESE_RULES);
-			assert(kifu.rootNode.getProperty("RU") === "Chinese");
-			assert(kifu.rootNode.getProperty("SZ") === 9);
+			assert.strictEqual(kifu.rootNode, kifu.currentNode);
+			assert.strictEqual(kifu.ruleSet, CHINESE_RULES);
+			assert.strictEqual(kifu.rootNode.getProperty("RU"), "Chinese");
+			assert.strictEqual(kifu.rootNode.getProperty("SZ"), 9);
 		});
 		
 		it("With unknown rules", function() {
 			var kifu = new Kifu(19, "Foo");
 
-			assert(kifu.ruleSet === rules[DEFAULT_RULES]);
-			assert(kifu.rootNode.getProperty("RU") === "Foo");
+			assert.strictEqual(kifu.ruleSet, rules[defaultRules]);
+			assert.strictEqual(kifu.rootNode.getProperty("RU"), "Foo");
 		});
 		
 		it("With no rules", function() {
 			var kifu = new Kifu(19, NO_RULES);
 
-			assert(kifu.ruleSet === NO_RULES);
-			assert(kifu.rootNode.getProperty("RU") == null);
+			assert.strictEqual(kifu.ruleSet, NO_RULES);
+			assert.equal(kifu.rootNode.getProperty("RU"), null);
 		});
 		
 		it("With KNode argument", function() {
@@ -57,20 +58,20 @@ describe("Kifu", function() {
 			var childNode = kNode.children[0];
 			var kifu = new Kifu(childNode);
 
-			assert(kifu.rootNode === kNode);
-			assert(kifu.currentNode === childNode);
-			assert(kifu.ruleSet === rules[DEFAULT_RULES]);
-			assert(kifu.rules == null);
+			assert.strictEqual(kifu.rootNode, kNode);
+			assert.strictEqual(kifu.currentNode, childNode);
+			assert.strictEqual(kifu.ruleSet, rules[defaultRules]);
+			assert.equal(kifu.rootNode.getProperty("RU"), null);
 		});
 		
 		it("With KNode argument with rules", function() {
 			var kNode = KNode.fromSGF("(;RU[Chinese];B[ij])");
 			var kifu = new Kifu(kNode);
 
-			assert(kifu.rootNode === kNode);
-			assert(kifu.currentNode === kNode);			
-			assert(kifu.rules === "Chinese");
-			assert(kifu.ruleSet === CHINESE_RULES);
+			assert.strictEqual(kifu.rootNode, kNode);
+			assert.strictEqual(kifu.currentNode, kNode);			
+			assert.strictEqual(kifu.rootNode.getProperty("RU"), "Chinese");
+			assert.strictEqual(kifu.ruleSet, CHINESE_RULES);
 		});
 	});
 	

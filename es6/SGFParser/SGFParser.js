@@ -117,7 +117,7 @@ export default class SGFParser {
  	 * @returns {string[]} array of property values                       
  	 * @throws {SGFSyntaxError} When sgf string is invalid.
 	 */
-	 
+
 	parsePropertyValues() {
 		var values = [];
 		

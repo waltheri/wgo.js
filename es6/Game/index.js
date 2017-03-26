@@ -2,15 +2,16 @@
 import Game from "./Game";
 import Position from "./Position";
 import * as errorCodes from "./errors";
-import rules, { JAPANESE_RULES } from "./rules";
+import rules from "./rules";
 
 const defaultSize = 19;
+const defaultRules = "Japanese";
 
 Game.Position = Position;
 Game.rules = rules;
-Game.defaultRules = JAPANESE_RULES;
+Game.defaultRules = defaultRules;
 Game.defaultSize = defaultSize;
 Game.errorCodes = errorCodes;
 
 export default Game;
-export { Position, rules, JAPANESE_RULES as defaultRules, defaultSize, errorCodes };
+export { Position, rules, defaultRules, defaultSize, errorCodes };
