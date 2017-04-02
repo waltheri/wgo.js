@@ -147,6 +147,7 @@ export default class Kifu extends EventEmitter {
 		}
 		
 		this.game = new Game(boardSize, this.ruleSet);
+		this.executeNode();
 	}
 	
 	get blackName() {
@@ -457,6 +458,8 @@ export default class Kifu extends EventEmitter {
 
 		if(c == BLACK) this.currentNode.setProperty(BLACK_MOVE, {x, y});
 		else if(c == WHITE) this.currentNode.setProperty(WHITE_MOVE, {x, y});
+
+		this.refreshGame();
 	}
 
 	/**
@@ -465,6 +468,7 @@ export default class Kifu extends EventEmitter {
 	removeMove() {
 		this.currentNode.setProperty(BLACK_MOVE);
 		this.currentNode.setProperty(WHITE_MOVE);
+		this.refreshGame();
 	}
 	
 	/**
@@ -485,36 +489,29 @@ export default class Kifu extends EventEmitter {
 		}
 
 		this.currentNode.setProperty(SET_TURN, turn);
+
+		if(turn == null) {
+			let prevPos = this.game.getPreviousPosition();
+			turn = prevPos ? prevPos.turn : BLACK;
+		}
+
 		this.game.turn = turn;
 	}
 	
 	/* ======= MARKUP ==================================================================== */
 
 	/**
-	 * Gets markup on given coordination (as markup object). If coordinates are omitted, you will get all markup in array.
-	 * 
-	 * @param {number}                      x coordinate
-	 * @param {number}                      y coordinate
-	 *                                        
-	 * @returns {(BoardObject[]|BoardObject)} Markup object or array of markup objects                  
+	 * Gets all markup associated with the current node.
+	 *
+	 * @returns {BoardObject[]} Array of markup objects                  
 	 */
-	getMarkup(x, y) {
-		if(arguments.length == 2) {
-			for(let propIdent in this.currentNode.SGFProperties) {
-				if(markupProperties.indexOf(propIdent) >= 0 && this.currentNode.SGFProperties[propIdent].some(markup => markup.x === x && markup.y === y)) {
-					return {x: x, y: y, type: propIdent};
-				}
-			}
-
-			return null;
-		}
-
+	getMarkup() {
 		let markupList = [];
 
 		getMarkupProperties(this.currentNode).forEach(({propIdent, value}) => {
 			markupList = [
 				...markupList,
-				value.map(markup => ({
+				...value.map(markup => ({
 					x: markup.x, 
 					y: markup.y, 
 					type: propIdent,
@@ -523,6 +520,24 @@ export default class Kifu extends EventEmitter {
 		});
 
 		return markupList;
+	}
+
+	/**
+	 * Gets markup on given coordination (as markup object).
+	 * 
+	 * @param {number}                      x coordinate
+	 * @param {number}                      y coordinate
+	 *                                        
+	 * @returns {BoardObject} Markup object.                
+	 */
+	getMarkupAt(x, y) {
+		for(let propIdent in this.currentNode.SGFProperties) {
+			if(markupProperties.indexOf(propIdent) >= 0 && this.currentNode.SGFProperties[propIdent].some(markup => markup.x === x && markup.y === y)) {
+				return {x: x, y: y, type: propIdent};
+			}
+		}
+
+		return null;
 	}
 		
 	/**
@@ -559,14 +574,36 @@ export default class Kifu extends EventEmitter {
 	/* ======= SETUP ==================================================================== */
 
 	/**
-	 * Gets setup stone on given coordination (as setup object). If coordinates are omitted, you will get all setup stones in array.
+	 * Gets setup stones in the current node.
+	 *                                        
+	 * @returns {BoardObject[]} Array of setup object.  
+	 */
+	getSetup() {
+		let setupList = [];
+
+		getSetupProperties(this.currentNode).forEach(({propIdent, value}) => {
+			setupList = [
+				...setupList,
+				...value.map(setup => ({
+					x: setup.x, 
+					y: setup.y, 
+					c: setupProperties[propIdent],
+				})),
+			];
+		});
+
+		return setupList;
+	}
+
+	/**
+	 * Gets setup stone on given coordination (as setup object).
 	 * 
 	 * @param {number}                      x coordinate
 	 * @param {number}                      y coordinate
 	 *                                        
-	 * @returns {(BoardObject[]|BoardObject)} Markup object or array of markup objects    
+	 * @returns {BoardObject} Setup object  
 	 */
-	getSetup(x, y) {
+	getSetupAt(x, y) {
 		if(arguments.length == 2) {
 			for(let propIdent in this.currentNode.SGFProperties) {
 				if(setupProperties[propIdent] != null && this.currentNode.SGFProperties[propIdent].some(onCoordinates(x, y))) {
@@ -612,6 +649,8 @@ export default class Kifu extends EventEmitter {
 		let setupList = this.currentNode.getProperty(setupPropertiesReversed[c]) || [];
 		setupList.push({x, y});
 		this.currentNode.setProperty(setupPropertiesReversed[c], setupList);
+
+		this.game.setStone(x, y, c);
 	}
 	
 	/**
@@ -626,6 +665,8 @@ export default class Kifu extends EventEmitter {
 		getSetupProperties(this.currentNode).forEach(({propIdent, value}) => {
 			this.currentNode.setProperty(propIdent, value.filter(notOnCoordinates(x, y)));
 		});
+
+		this.refreshGame();
 	}
 	
 	/* ======= TRAVERSING ==================================================================== */
@@ -633,6 +674,9 @@ export default class Kifu extends EventEmitter {
 	first() {
 		this.currentNode = this.rootNode;
 		this.game.firstPosition();
+		this.executeNode();
+
+		return this;
 	}
 	
 	previous() {
@@ -640,6 +684,8 @@ export default class Kifu extends EventEmitter {
 			this.currentNode = this.currentNode.parent;
 			this.game.popPosition();
 		}
+
+		return this;
 	}
 	
 	next(index = 0) {
@@ -647,6 +693,8 @@ export default class Kifu extends EventEmitter {
 			this.currentNode = this.currentNode.children[index];
 			this.executeNode();
 		}
+
+		return this;
 	}
 	
 	last() {
@@ -654,10 +702,17 @@ export default class Kifu extends EventEmitter {
 			this.currentNode = this.currentNode.children[0];
 			this.executeNode();
 		}
+
+		return this;
 	}
 
+	/**
+	 * TODO: analysis needed.
+	 * 
+	 * @param {*} kifuPath 
+	 */
 	goTo(kifuPath) {
-	
+		return this;
 	}
 
 	/**
@@ -666,17 +721,25 @@ export default class Kifu extends EventEmitter {
 	 * to reflect node properties in game object (play move, set stones...).
 	 */
 	executeNode() {
-		const move = this.getMove();
+		if(this.currentNode != this.rootNode) {
+			const move = this.getMove();
 
-		if(move != null) {
-			this.game.play(move.x, move.y, move.c);
+			if(move != null) {
+				this.game.play(move.x, move.y, move.c);
+				return;
+			}
+			else {
+				this.game.pushPosition(this.game.position.clone());
+			}
 		}
-		else {
-			this.game.pushPosition(this.game.position.clone());
 
-			getSetupProperties(this.currentNode).forEach(({propIdent, value}) => {
-				value.forEach(({x, y}) => this.game.addStone(x, y, setupProperties[propIdent]));
-			});
+		getSetupProperties(this.currentNode).forEach(({propIdent, value}) => {
+			value.forEach(({x, y}) => this.game.setStone(x, y, setupProperties[propIdent]));
+		});
+
+		const turnSet = this.currentNode.getProperty(SET_TURN);
+		if(turnSet != null) {
+			this.game.turn = turnSet;
 		}
 	}
 
@@ -684,15 +747,12 @@ export default class Kifu extends EventEmitter {
 	 * Refresh game object - should be called, when current node's move or setup stones have changed.
 	 */
 	refreshGame() {
-		if(this.currentNode.parent == null) {
-			getSetupProperties(this.currentNode).forEach(({propIdent, value}) => {
-				value.forEach(({x, y}) => this.game.addStone(x, y, setupProperties[propIdent]));
-			});
-		}
-		else {
+		if(this.currentNode.parent != null) {
 			this.game.popPosition();
-			this.executeNode();
+		} else {
+			this.game.firstPosition();
 		}
+		this.executeNode();
 	}
 
 	/* ======= SHORTCUTS AND HELPERS ========================================================= */
@@ -713,12 +773,12 @@ export default class Kifu extends EventEmitter {
 	 */
 	play(move, newVariant = true) {
 		const newNode = new KNode();
-		const {x, y, c} = newNode;
+		const {x, y, c} = move;
 
 		if(c == BLACK) newNode.setProperty(BLACK_MOVE, {x, y});
 		else if(c == WHITE) newNode.setProperty(WHITE_MOVE, {x, y});
 
-		if(newVariant === false && this.node.children[0]) {
+		if(newVariant === false && this.currentNode.children[0]) {
 
 			this.currentNode.children.forEach((node) => {
 				newNode.appendChild(node);

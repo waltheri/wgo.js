@@ -2,7 +2,10 @@
 import { BLACK, EMPTY } from "../core";
 import Position from "./Position";
 import * as err from "./errors";
-import { repeat } from "./rules";
+import predefinedRules, { repeat } from "./rules";
+
+export let defaultSize = 19;
+export let defaultRules = "Japanese";
 
 export default class Game {
 
@@ -15,21 +18,19 @@ export default class Game {
 	 * and it can effectively restore old positions.
 	 *
 	 *
-	 * @param {number} [size = 19] Size of the board
-	 * @param {string} [checkRepeat = KO] How to handle repeated position:
-	 *
-	 * * KO - ko is properly handled - position cannot be same like previous position
-	 * * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
-	 * * NONE - position can be repeated
-	 *
-	 * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
-	 * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
+	 * @param {number}  [size = 19]           Size of the board
+	 * @param {object}  [rules]               Rules object.
+	 * @param {string}  [rules.checkRepeat]   How to handle repeated position:
+	 * @param {boolean} [rules.allowSuicide]  Allow to play suicides, stones are immediately captured
+	 * @param {boolean} [rules.allowRewrite]  Allow to play moves, which were already played, options:
+	 *                                        - KO - ko is properly handled - position cannot be same like previous position
+	 *                                        - ALL - position cannot be same like any previous position - e.g. it forbids triple ko
+	 *                                        - NONE - position can be repeated
 	 */
 
-	constructor(size, rules) {
-		this.size = size || Game.defaultSize;
-		rules = rules || Game.defaultRules
-
+	constructor(size = defaultSize, rules = predefinedRules[defaultRules]) {
+		this.size = defaultSize;
+		
 		this.checkRepeat = rules.checkRepeat;
 		this.allowRewrite = rules.allowRewrite;
 		this.allowSuicide = rules.allowSuicide;
@@ -46,11 +47,11 @@ export default class Game {
 	}
 
 	get turn() {
-		return this.stack[this.stack.length - 1].turn;
+		return this.position.turn;
 	}
 
 	set turn(turn) {
-		this.stack[this.stack.length - 1].turn = turn;
+		this.position.turn = turn;
 	}
 
 	/**
@@ -274,5 +275,14 @@ export default class Game {
 
 	validatePosition() {
 		this.position = this.position.getValidatedPosition();
+	}
+
+	/**
+	 * Gets previous position or undefined, if current position is the first one.
+	 * 
+	 * @return {Position}
+	 */
+	getPreviousPosition() {
+		return this.stack[this.stack.length-2];
 	}
 }

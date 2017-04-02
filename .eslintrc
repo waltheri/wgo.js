@@ -17,5 +17,10 @@
         "import/no-unresolved": 2,
         "import/named": 2,
         "no-unused-vars": 1
+    },
+    "globals": {
+        "it": true,
+        "describe": true,
+        "beforeEach": true
     }
 }

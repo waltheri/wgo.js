@@ -1,11 +1,8 @@
 // Game module
-import Game from "./Game";
+import Game, {defaultRules, defaultSize} from "./Game";
 import Position from "./Position";
 import * as errorCodes from "./errors";
 import rules from "./rules";
-
-const defaultSize = 19;
-const defaultRules = "Japanese";
 
 Game.Position = Position;
 Game.rules = rules;
