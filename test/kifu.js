@@ -2,10 +2,8 @@
 
 import {assert} from "chai";
 import * as WGo from "../es6/core";
-import Kifu from "../es6/kifu/Kifu";
-import KifuError from "../es6/kifu/KifuError";
-import KNode from "../es6/kifu/KNode";
-import Game, {rules, defaultRules} from "../es6/Game";
+import Kifu, {KifuError, KNode} from "../es6/Kifu";
+import {rules, defaultRules} from "../es6/Game";
 import {CHINESE_RULES, NO_RULES} from "../es6/Game/rules";
 
 describe("Kifu", function() {
