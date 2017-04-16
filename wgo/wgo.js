@@ -769,25 +769,6 @@ Board.drawHandlers = {
 		},
 	},
 
-	LINE: {
-		stone: {
-			draw: function(args, board) {
-				var xrf = board.getX(args.xfrom),
-					yrf = board.getY(args.yfrom),
-                    xrt = board.getX(args.xto),
-					yrt = board.getY(args.yto),
-					sr = Math.round(board.stoneRadius);
-
-				this.strokeStyle = args.c || get_markup_color(board, args.x, args.y);
-				this.lineWidth = args.lineWidth || theme_variable("markupLinesWidth", board) || 1;
-				this.beginPath();
-                this.moveTo(xrf, yrf);
-                this.lineTo(xrt, yrt);
-				this.stroke();
-			}
-		}
-	},
-
 	SQ: {
 		stone: {
 			draw: function(args, board) {
