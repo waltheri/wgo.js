@@ -1,4 +1,4 @@
-<h1>SGF Player</h1>
+﻿<h1>SGF Player</h1>
 <p>
 WGo.js Player is the most significant component of the library. It is an application for viewing and replaying go game records that can be embedded into any website. Basically it does the same job as Eidogo or GOswf but trying to be better.
 </p>
@@ -22,11 +22,11 @@ WGo.js Player is the most significant component of the library. It is an applica
   <div class="span4">
     <h3>Demo</h3>
     <ul>
-      <li><a href="/demo/player/1">Basic player</a></li>
-      <li><a href="/demo/player/2">Player in Bootstrap</a></li>
-      <li><a href="/demo/player/3">Dark Theme</a></li>
-      <li><a href="/demo/player/4">Different board size</a></li>
-      <li><a href="/demo/player/5">Different layout</a></li>
+      <li><a href="tutorials/tutorial-player-1.html">Basic player</a></li>
+      <li><a href="tutorials/tutorial-player-2.html">Player in Bootstrap</a></li>
+      <li><a href="tutorials/tutorial-player-3.html">Dark Theme</a></li>
+      <li><a href="tutorials/tutorial-player-4.html">Different board size</a></li>
+      <li><a href="tutorials/tutorial-player-5.html">Different layout</a></li>
     </ul>
   </div>
 </div>
@@ -37,8 +37,8 @@ Working with the player is quite awesome. Download WGo.js files and link them in
 &lt;html&gt;
   &lt;head&gt;
     &lt;title&gt;My page&lt;/title&gt;
-    &lt;script type="text/javascript" src="wgo/wgo.min.js"&gt;&lt;/script&gt;
-    &lt;script type="text/javascript" src="wgo/wgo.player.min.js"&gt;&lt;/script&gt;
+    &lt;script type="text/javascript" src="../wgo/wgo.min.js"&gt;&lt;/script&gt;
+    &lt;script type="text/javascript" src="../wgo/wgo.player.min.js"&gt;&lt;/script&gt;
     &lt;link type="text/css" href="wgo/wgo.player.css" rel="stylesheet" /&gt;
   &lt;/head&gt;
   &lt;body&gt;
@@ -408,7 +408,7 @@ var player = new WGo.BasicPlayer(elem, {
   </div>
 </div>
 
-<p class="text-right"><a href="/tutorials/player/6">View the example</a></p>
+<p class="text-right"><a href="tutorials/tutorial-player-6.html">View the example</a></p>
 
 <p>Normally when you control player with mouse wheel, window scrolling is locked. You can suppress this if you set attribute <code>data-wgo-lockscroll</code> or property <code>lockScroll</code> to <code>false</code>. In that case the window will be scrolled no matter what.</p>
 
@@ -483,7 +483,7 @@ var player = new WGo.BasicPlayer(elem, {
 });
 </pre>
 
-<p class="text-right"><a href="/tutorials/player/7">View the example</a></p>
+<p class="text-right"><a href="tutorials/tutorial-player-7.html">View the example</a></p>
 
 <h2>Theming</h2>
 <p>All theming is done with CSS. You can set dimensions of the player and any component. You can also change colors, icons and almost anything else. Just create your own CSS file, altering the basic look, and include it after other WGo files.</p><p>You can also find some alternative themes in <a href="/download">download</a> section. For example look at <a href="/demo/player/3">Dark theme</a>.</p>
