@@ -5,7 +5,7 @@ import KifuError from "./KifuError";
 // jsgf helper
 var processJsgf = function(parent, jsgf, pos) {
 	if(jsgf[pos]) {
-		if(jsgf[pos].constructor == Array) {
+		if(Array.isArray(jsgf[pos])) {
 			// more children (fork)
 			jsgf[pos].forEach(function(jsgf2) {
 				processJsgf(parent, jsgf2, 0);
@@ -13,7 +13,7 @@ var processJsgf = function(parent, jsgf, pos) {
 		}
 		else {
 			// one child
-			var node = new KNode();
+			let node = new KNode();
 			node.setSGFProperties(jsgf[pos]);
 			parent.appendChild(node);
 			processJsgf(node, jsgf, pos+1);

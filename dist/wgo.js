@@ -35,6 +35,21 @@ babelHelpers.createClass = function () {
   };
 }();
 
+babelHelpers.defineProperty = function (obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+
+  return obj;
+};
+
 babelHelpers.get = function get(object, property, receiver) {
   if (object === null) object = Function.prototype;
   var desc = Object.getOwnPropertyDescriptor(object, property);
@@ -130,13 +145,18 @@ function t(str) {
 	return str;
 }
 
-/*
-if(global["document"]) {
+// helper for dynamic loading
+exports.DIR = void 0;
+
+if (global["document"]) {
 	var scripts = document.getElementsByTagName('script');
-	var path = scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
-	WGo.DIR = path.split('/').slice(0, -1).join('/')+'/';  
+	var path = scripts[scripts.length - 1].src.split('?')[0]; // remove any ?query
+	exports.DIR = path.split('/').slice(0, -1).join('/') + '/';
 }
 
+
+
+/*
 if(global["navigator"]) {
 	// browser detection - can be handy
 	WGo.opera = navigator.userAgent.search(/(opera)(?:.*version)?[ \/]([\w.]+)/i) != -1;
@@ -591,6 +611,9 @@ var rules = {
 	"Chinese": CHINESE_RULES
 };
 
+var defaultSize = 19;
+var defaultRules = "Japanese";
+
 var Game$1 = function () {
 
 	/**
@@ -602,26 +625,26 @@ var Game$1 = function () {
   * and it can effectively restore old positions.
   *
   *
-  * @param {number} [size = 19] Size of the board
-  * @param {string} [checkRepeat = KO] How to handle repeated position:
-  *
-  * * KO - ko is properly handled - position cannot be same like previous position
-  * * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
-  * * NONE - position can be repeated
-  *
-  * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
-  * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
+  * @param {number}  [size = 19]           Size of the board
+  * @param {object}  [rules]               Rules object.
+  * @param {string}  [rules.checkRepeat]   How to handle repeated position:
+  * @param {boolean} [rules.allowSuicide]  Allow to play suicides, stones are immediately captured
+  * @param {boolean} [rules.allowRewrite]  Allow to play moves, which were already played, options:
+  *                                        - KO - ko is properly handled - position cannot be same like previous position
+  *                                        - ALL - position cannot be same like any previous position - e.g. it forbids triple ko
+  *                                        - NONE - position can be repeated
   */
 
-	function Game(size, rules) {
+	function Game() {
+		var size = arguments.length <= 0 || arguments[0] === undefined ? defaultSize : arguments[0];
+		var rules$$1 = arguments.length <= 1 || arguments[1] === undefined ? rules[defaultRules] : arguments[1];
 		babelHelpers.classCallCheck(this, Game);
 
-		this.size = size || Game.defaultSize;
-		rules = rules || Game.defaultRules;
+		this.size = defaultSize;
 
-		this.checkRepeat = rules.checkRepeat;
-		this.allowRewrite = rules.allowRewrite;
-		this.allowSuicide = rules.allowSuicide;
+		this.checkRepeat = rules$$1.checkRepeat;
+		this.allowRewrite = rules$$1.allowRewrite;
+		this.allowSuicide = rules$$1.allowSuicide;
 
 		this.stack = [new Position(this.size)];
 	}
@@ -883,6 +906,18 @@ var Game$1 = function () {
 		value: function validatePosition() {
 			this.position = this.position.getValidatedPosition();
 		}
+
+		/**
+   * Gets previous position or undefined, if current position is the first one.
+   * 
+   * @return {Position}
+   */
+
+	}, {
+		key: "getPreviousPosition",
+		value: function getPreviousPosition() {
+			return this.stack[this.stack.length - 2];
+		}
 	}, {
 		key: "position",
 		get: function get() {
@@ -894,21 +929,19 @@ var Game$1 = function () {
 	}, {
 		key: "turn",
 		get: function get() {
-			return this.stack[this.stack.length - 1].turn;
+			return this.position.turn;
 		},
 		set: function set(turn) {
-			this.stack[this.stack.length - 1].turn = turn;
+			this.position.turn = turn;
 		}
 	}]);
 	return Game;
 }();
 
 // Game module
-var defaultSize = 19;
-
 Game$1.Position = Position;
 Game$1.rules = rules;
-Game$1.defaultRules = JAPANESE_RULES;
+Game$1.defaultRules = defaultRules;
 Game$1.defaultSize = defaultSize;
 Game$1.errorCodes = errorCodes;
 
@@ -1318,12 +1351,6 @@ propertyValueTypes.PL = {
 	notEmpty: true
 };
 
-var setupProperties = {
-	"AB": BLACK,
-	"AW": WHITE,
-	"AE": EMPTY
-};
-
 /// Node annotation properties --------------------------------------------------------------------
 
 propertyValueTypes.C = propertyValueTypes.N = {
@@ -1378,8 +1405,6 @@ propertyValueTypes.DD = propertyValueTypes.TB = propertyValueTypes.TW = {
 	notEmpty: false
 };
 
-var markupProperties = ["CR", "MA", "SL", "SQ", "TR", "LB"];
-
 /// Root properties -------------------------------------------------------------------------------
 
 propertyValueTypes.AP = propertyValueTypes.CA = {
@@ -1431,10 +1456,26 @@ propertyValueTypes.VW = {
 	notEmpty: false
 };
 
+/**
+ * Class for errors happend during manipulation the Kifu object.
+ * @extends Error
+ */
+var KifuError = function KifuError(message) {
+	babelHelpers.classCallCheck(this, KifuError);
+
+	var tempError = Error.apply(this);
+	this.message = message;
+	this.stack = tempError.stack;
+};
+
+// a small ES5 hack because currently in ES6 you can't extend Errors
+KifuError.prototype = Object.create(Error.prototype);
+KifuError.prototype.constructor = KifuError;
+
 // jsgf helper
 var processJsgf = function processJsgf(parent, jsgf, pos) {
 	if (jsgf[pos]) {
-		if (jsgf[pos].constructor == Array) {
+		if (Array.isArray(jsgf[pos])) {
 			// more children (fork)
 			jsgf[pos].forEach(function (jsgf2) {
 				processJsgf(parent, jsgf2, 0);
@@ -1494,13 +1535,13 @@ var KNode = function () {
 		/**
    * Insert a KNode as the last child node of this node.
    * 
-   * @throws  {Error} when argument is invalid.
+   * @throws  {KifuError} when argument is invalid.
    * @param   {KNode} node to append.
    * @returns {number} position(index) of appended node.
    */
 
 		value: function appendChild(node) {
-			if (node == null || !(node instanceof KNode) || node == this) throw new Error("Invalid argument passed to `appendChild` method, KNode was expected.");
+			if (node == null || !(node instanceof KNode) || node == this) throw new KifuError("Invalid argument passed to `appendChild` method, KNode was expected.");
 
 			if (node.parent) node.parent.removeChild(node);
 
@@ -1547,7 +1588,7 @@ var KNode = function () {
 		/**
    * Inserts the first KNode given in a parameter immediately before the second, child of this KNode.
    * 
-   * @throws  {Error}   when argument is invalid.
+   * @throws  {KifuError}   when argument is invalid.
    * @param   {KNode}   newNode       node to be inserted
    * @param   {(KNode)} referenceNode reference node, if omitted, new node will be inserted at the end. 
    * @returns {KNode}   this node
@@ -1556,7 +1597,7 @@ var KNode = function () {
 	}, {
 		key: "insertBefore",
 		value: function insertBefore(newNode, referenceNode) {
-			if (newNode == null || !(newNode instanceof KNode) || newNode == this) throw new Error("Invalid argument passed to `insertBefore` method, KNode was expected.");else if (referenceNode == null) return this.appendChild(newNode);
+			if (newNode == null || !(newNode instanceof KNode) || newNode == this) throw new KifuError("Invalid argument passed to `insertBefore` method, KNode was expected.");else if (referenceNode == null) return this.appendChild(newNode);
 
 			if (newNode.parent) newNode.parent.removeChild(newNode);
 
@@ -1576,7 +1617,13 @@ var KNode = function () {
 	}, {
 		key: "removeChild",
 		value: function removeChild(child) {
-			this.children.splice(this.children.indexOf(child), 1);
+			var childPosition = this.children.indexOf(child);
+
+			if (childPosition == -1) {
+				throw new KifuError("Argument passed to `removeChild` method is not child node of the node.");
+			}
+
+			this.children.splice(childPosition, 1);
 
 			child.parent = null;
 
@@ -1586,7 +1633,7 @@ var KNode = function () {
 		/**
    * Replaces one child Node of the current one with the second one given in parameter.
    * 
-   * @throws  {Error} when argument is invalid
+   * @throws  {KifuError} when argument is invalid
    * @param   {KNode} newChild node to be inserted
    * @param   {KNode} oldChild node to be replaced
    * @returns {KNode} this node
@@ -1595,7 +1642,7 @@ var KNode = function () {
 	}, {
 		key: "replaceChild",
 		value: function replaceChild(newChild, oldChild) {
-			if (newChild == null || !(newChild instanceof KNode) || newChild == this) throw new Error("Invalid argument passed to `replaceChild` method, KNode was expected.");
+			if (newChild == null || !(newChild instanceof KNode) || newChild == this) throw new KifuError("Invalid argument passed to `replaceChild` method, KNode was expected.");
 
 			this.insertBefore(newChild, oldChild);
 			this.removeChild(oldChild);
@@ -5339,6 +5386,18 @@ var updateDim = function updateDim(board) {
 	}
 };
 
+var objectMissing = function objectMissing(objectsArray) {
+	return function (object) {
+		return !objectsArray.some(function (obj) {
+			if (object == obj) return true;
+
+			return Object.keys(object).every(function (key) {
+				return object[key] == obj[key];
+			});
+		});
+	};
+};
+
 var CanvasBoard$1 = function () {
 	/**
   * CanvasBoard class constructor - it creates a canvas board.
@@ -5678,8 +5737,10 @@ var CanvasBoard$1 = function () {
 		}
 	}, {
 		key: "update",
-		value: function update(changes) {
-			var i;
+		value: function update(fieldObjects) {
+			var changes = this.getChanges(fieldObjects);
+			var i = void 0;
+
 			if (changes.remove && changes.remove == "all") this.removeAllObjects();else if (changes.remove) {
 				for (i = 0; i < changes.remove.length; i++) {
 					this.removeObject(changes.remove[i]);
@@ -5691,6 +5752,27 @@ var CanvasBoard$1 = function () {
 					this.addObject(changes.add[i]);
 				}
 			}
+		}
+	}, {
+		key: "getChanges",
+		value: function getChanges(fieldObjects) {
+			if (fieldObjects == this.fieldObjects) return {};
+
+			var add = [];
+			var remove = [];
+
+			for (var x = 0; x < this.size; x++) {
+				if (fieldObjects[x] != this.fieldObjects[x]) {
+					for (var y = 0; y < this.size; y++) {
+						if (fieldObjects[x][y] != this.fieldObjects[x][y] && (fieldObjects[x][y].length || this.fieldObjects[x][y].length)) {
+							add = add.concat(fieldObjects[x][y].filter(objectMissing(this.fieldObjects[x][y])));
+							remove = remove.concat(this.fieldObjects[x][y].filter(objectMissing(fieldObjects[x][y])));
+						}
+					}
+				}
+			}
+
+			return { add: add, remove: remove };
 		}
 	}, {
 		key: "addObject",
@@ -5843,59 +5925,281 @@ CanvasBoard$1.defaultConfig = defaultConfig;
  * Simple events handling.
  */
 
-function EventMixin(baseClass) {
-	baseClass = baseClass || Object;
+var EventEmitter = function () {
+	function EventEmitter() {
+		babelHelpers.classCallCheck(this, EventEmitter);
 
-	return function () {
-		function _class() {
-			babelHelpers.classCallCheck(this, _class);
+		this.__events = {};
+	}
 
-			/*super();*/
-			this.__events = {};
+	babelHelpers.createClass(EventEmitter, [{
+		key: "on",
+		value: function on(evName, callback) {
+			this.__events[evName] = this.__events[evName] || [];
+			this.__events[evName].push(callback);
 		}
+	}, {
+		key: "off",
+		value: function off(evName, callback) {
+			if (this.__events[evName]) {
+				if (callback == null) this.__events[evName] = [];
+				this.__events[evName] = this.__events[evName].filter(function (fn) {
+					return fn != callback;
+				});
+			}
+		}
+	}, {
+		key: "trigger",
+		value: function trigger(evName, payload) {
+			if (this.__events[evName]) {
+				this.__events[evName].forEach(function (fn) {
+					return fn(payload);
+				});
+			}
+		}
+	}]);
+	return EventEmitter;
+}();
 
-		babelHelpers.createClass(_class, [{
-			key: "on",
-			value: function on(evName, callback) {
-				this.__events[evName] = this.__events[evName] || [];
-				this.__events[evName].push(callback);
-			}
-		}, {
-			key: "off",
-			value: function off(evName, callback) {
-				if (this.__events[evName]) {
-					if (callback == null) this.__events[evName] = [];
-					this.__events[evName] = this.__events[evName].filter(function (fn) {
-						return fn != callback;
-					});
-				}
-			}
-		}, {
-			key: "trigger",
-			value: function trigger(evName, payload) {
-				if (this.__events[evName]) {
-					this.__events[evName].forEach(function (fn) {
-						return fn(payload);
-					});
-				}
-			}
-		}]);
-		return _class;
-	}();
-}
+/**
+ * This file contains all SGF property (for go) identifiers as constants.
+ */
+
+var BLACK_MOVE = "B";
+var EXECUTE_ILLEGAL = "KO";
+var MOVE_NUMBER = "MN";
+var WHITE_MOVE = "W";
+
+var ADD_BLACK = "AB";
+var CLEAR_FIELD = "AE";
+var ADD_WHITE = "AW";
+var SET_TURN = "PL";
+
+var COMMENT = "C";
+var EVEN_POSITION = "DM";
+var GOOD_FOR_BLACK = "GB";
+var GOOD_FOR_WHITE = "GW";
+var HOTSPOT = "HO";
+var NODE_NAME = "N";
+var UNCLEAR_POSITION = "UC";
+var NODE_VALUE = "V";
+
+var BAD_MOVE = "BM";
+var DOUBTFUL_MOVE = "DM";
+var INTERESTING_MOVE = "IT";
+var GOOD_MOVE = "TE";
+
+var ARROW = "AR";
+var CIRCLE = "CR";
+var DIM = "DD";
+var LABEL$1 = "LB";
+var LINE$1 = "LN";
+var X_MARK = "MA";
+var SELECTED = "SL";
+var SQUARE = "SQ";
+var TRIANGLE = "TR";
+
+var APPLICATION = "AP";
+var CHARSET = "CA";
+var SGF_VERSION = "FF";
+var GAME_TYPE = "GM";
+var VARIATIONS_STYLE = "ST";
+var BOARD_SIZE = "SZ";
+
+var ANNOTATOR = "AN";
+var BLACK_RANK = "BR";
+var BLACK_TEAM = "BT";
+var COPYRIGHT = "CP";
+var DATE = "DT";
+var EVENT = "EV";
+var GAME_NAME = "GN";
+var GAME_COMMENT = "GC";
+var OPENING_INFO = "ON";
+var OVER_TIME = "OT";
+var BLACK_NAME = "BN";
+var PLACE = "PC";
+var WHITE_NAME = "PW";
+var RESULT = "RE";
+var ROUND = "RO";
+var RULES = "RU";
+var SOURCE = "SO";
+var TIME_LIMITS = "TM";
+var AUTHOR = "US";
+var WHITE_RANK = "WR";
+var WHITE_TEAM = "WT";
+
+var BLACK_TIME_LEFT = "BL";
+var BLACK_STONES_LEFT = "OB";
+var WHITE_STONES_LEFT = "OW";
+var WHITE_TIME_LEFT = "WL";
+
+var FIGURE = "FG";
+var PRINT_MOVE_NUMBERS = "PM";
+var BOARD_SECTION = "VW";
+
+var HANDICAP = "HA";
+var KOMI = "KM";
+var BLACK_TERRITORY = "TB";
+var WHITE_TERRITORY = "TW";
+
+var properties = Object.freeze({
+	BLACK_MOVE: BLACK_MOVE,
+	EXECUTE_ILLEGAL: EXECUTE_ILLEGAL,
+	MOVE_NUMBER: MOVE_NUMBER,
+	WHITE_MOVE: WHITE_MOVE,
+	ADD_BLACK: ADD_BLACK,
+	CLEAR_FIELD: CLEAR_FIELD,
+	ADD_WHITE: ADD_WHITE,
+	SET_TURN: SET_TURN,
+	COMMENT: COMMENT,
+	EVEN_POSITION: EVEN_POSITION,
+	GOOD_FOR_BLACK: GOOD_FOR_BLACK,
+	GOOD_FOR_WHITE: GOOD_FOR_WHITE,
+	HOTSPOT: HOTSPOT,
+	NODE_NAME: NODE_NAME,
+	UNCLEAR_POSITION: UNCLEAR_POSITION,
+	NODE_VALUE: NODE_VALUE,
+	BAD_MOVE: BAD_MOVE,
+	DOUBTFUL_MOVE: DOUBTFUL_MOVE,
+	INTERESTING_MOVE: INTERESTING_MOVE,
+	GOOD_MOVE: GOOD_MOVE,
+	ARROW: ARROW,
+	CIRCLE: CIRCLE,
+	DIM: DIM,
+	LABEL: LABEL$1,
+	LINE: LINE$1,
+	X_MARK: X_MARK,
+	SELECTED: SELECTED,
+	SQUARE: SQUARE,
+	TRIANGLE: TRIANGLE,
+	APPLICATION: APPLICATION,
+	CHARSET: CHARSET,
+	SGF_VERSION: SGF_VERSION,
+	GAME_TYPE: GAME_TYPE,
+	VARIATIONS_STYLE: VARIATIONS_STYLE,
+	BOARD_SIZE: BOARD_SIZE,
+	ANNOTATOR: ANNOTATOR,
+	BLACK_RANK: BLACK_RANK,
+	BLACK_TEAM: BLACK_TEAM,
+	COPYRIGHT: COPYRIGHT,
+	DATE: DATE,
+	EVENT: EVENT,
+	GAME_NAME: GAME_NAME,
+	GAME_COMMENT: GAME_COMMENT,
+	OPENING_INFO: OPENING_INFO,
+	OVER_TIME: OVER_TIME,
+	BLACK_NAME: BLACK_NAME,
+	PLACE: PLACE,
+	WHITE_NAME: WHITE_NAME,
+	RESULT: RESULT,
+	ROUND: ROUND,
+	RULES: RULES,
+	SOURCE: SOURCE,
+	TIME_LIMITS: TIME_LIMITS,
+	AUTHOR: AUTHOR,
+	WHITE_RANK: WHITE_RANK,
+	WHITE_TEAM: WHITE_TEAM,
+	BLACK_TIME_LEFT: BLACK_TIME_LEFT,
+	BLACK_STONES_LEFT: BLACK_STONES_LEFT,
+	WHITE_STONES_LEFT: WHITE_STONES_LEFT,
+	WHITE_TIME_LEFT: WHITE_TIME_LEFT,
+	FIGURE: FIGURE,
+	PRINT_MOVE_NUMBERS: PRINT_MOVE_NUMBERS,
+	BOARD_SECTION: BOARD_SECTION,
+	HANDICAP: HANDICAP,
+	KOMI: KOMI,
+	BLACK_TERRITORY: BLACK_TERRITORY,
+	WHITE_TERRITORY: WHITE_TERRITORY
+});
+
+var _setupProperties;
+
+/**
+ * Groups of propertise with special meaning.
+ */
+
+var markupProperties = [CIRCLE, X_MARK, SELECTED, SQUARE, TRIANGLE, LABEL$1];
+
+var setupProperties = (_setupProperties = {}, babelHelpers.defineProperty(_setupProperties, ADD_BLACK, BLACK), babelHelpers.defineProperty(_setupProperties, ADD_WHITE, WHITE), babelHelpers.defineProperty(_setupProperties, CLEAR_FIELD, EMPTY), _setupProperties);
 
 var setupPropertiesReversed = Object.keys(setupProperties).reduce(function (obj, key) {
 	obj[setupProperties[key]] = key;
 	return obj;
 }, {});
 
+function onCoordinates(x, y) {
+	return function (obj) {
+		return obj.x === x && obj.y === y;
+	};
+}
+
+function notOnCoordinates(x, y) {
+	return function (obj) {
+		return obj.x !== x || obj.y !== y;
+	};
+}
+
+function normalizeMarkupArguments(setupOrX, y, type) {
+	if ((typeof setupOrX === "undefined" ? "undefined" : babelHelpers.typeof(setupOrX)) == "object") {
+		return {
+			x: setupOrX.x,
+			y: setupOrX.y,
+			type: setupOrX.type
+		};
+	}
+
+	return {
+		x: setupOrX,
+		y: y,
+		type: type
+	};
+}
+
+function getMarkupProperties(kNode) {
+	return Object.keys(kNode.SGFProperties).filter(function (propIdent) {
+		return markupProperties.indexOf(propIdent) >= 0;
+	}).map(function (propIdent) {
+		return {
+			propIdent: propIdent,
+			value: kNode.SGFProperties[propIdent]
+		};
+	});
+}
+
+function normalizeSetupArguments(setupOrX, y, c) {
+	if ((typeof setupOrX === "undefined" ? "undefined" : babelHelpers.typeof(setupOrX)) == "object") {
+		return {
+			x: setupOrX.x,
+			y: setupOrX.y,
+			c: setupOrX.c
+		};
+	}
+
+	return {
+		x: setupOrX,
+		y: y,
+		c: c
+	};
+}
+
+function getSetupProperties(kNode) {
+	return Object.keys(kNode.SGFProperties).filter(function (propIdent) {
+		return setupProperties[propIdent] != null;
+	}).map(function (propIdent) {
+		return {
+			propIdent: propIdent,
+			value: kNode.SGFProperties[propIdent]
+		};
+	});
+}
+
 /**
  * Kifu class - handles kifu - it can traverse and edit it. Has powerful api.
  * In previous WGo it would be KifuReader.
  */
 
-var Kifu = function (_EventMixin) {
-	babelHelpers.inherits(Kifu, _EventMixin);
+var Kifu$1 = function (_EventEmitter) {
+	babelHelpers.inherits(Kifu, _EventEmitter);
 	babelHelpers.createClass(Kifu, null, [{
 		key: "fromJS",
 
@@ -5928,10 +6232,6 @@ var Kifu = function (_EventMixin) {
    * @param {KNode} [kNode] - KNode object which will serve as root node of the kifu.
    */
 
-		//constructor()
-		//constructor(kNode)
-		//constructor(boardSize)
-
 	}]);
 
 	function Kifu(boardSize, ruleSet) {
@@ -5949,7 +6249,7 @@ var Kifu = function (_EventMixin) {
 			// ... and rules argument as string
 			if (typeof ruleSet == "string") {
 				_this.rootNode.setProperty("RU", ruleSet);
-				_this.ruleSet = rules[ruleSet] || rules[JAPANESE_RULES];
+				_this.ruleSet = rules[ruleSet] || rules[defaultRules];
 			}
 			// ... and rules argument as object
 			else if (ruleSet != null) {
@@ -5957,8 +6257,8 @@ var Kifu = function (_EventMixin) {
 				}
 				// ... and no second argument
 				else {
-						_this.rootNode.setProperty("RU", JAPANESE_RULES);
-						_this.ruleSet = rules[JAPANESE_RULES];
+						_this.rootNode.setProperty("RU", defaultRules);
+						_this.ruleSet = rules[defaultRules];
 					}
 		}
 		// KNode argument
@@ -5967,18 +6267,19 @@ var Kifu = function (_EventMixin) {
 				_this.rootNode = kNode.root;
 				_this.currentNode = kNode;
 
-				_this.ruleSet = rules[_this.rootNode.getProperty("RU")] || rules[JAPANESE_RULES];
+				_this.ruleSet = rules[_this.rootNode.getProperty("RU")] || rules[defaultRules];
 				boardSize = _this.rootNode.getProperty("SZ");
 			}
 			// No argument
 			else {
 					_this.currentNode = _this.rootNode = new KNode();
-					_this.ruleSet = rules[JAPANESE_RULES];
+					_this.ruleSet = rules[defaultRules];
 					_this.rootNode.setProperty("SZ", 19);
-					_this.rootNode.setProperty("RU", JAPANESE_RULES);
+					_this.rootNode.setProperty("RU", defaultRules);
 				}
 
 		_this.game = new Game$1(boardSize, _this.ruleSet);
+		_this.executeNode();
 		return _this;
 	}
 
@@ -6014,7 +6315,7 @@ var Kifu = function (_EventMixin) {
 		value: function setGameInfo(property, value) {
 			var oldValue = this.rootNode.getProperty(property);
 			this.rootNode.setProperty(property, value);
-			this.trigger("infoChange", {
+			this.trigger("infoChanged", {
 				target: this,
 				node: this.rootNode,
 				key: property,
@@ -6026,64 +6327,18 @@ var Kifu = function (_EventMixin) {
 		/* ======= NODE MANIPULATION FUNCTIONALITY ================================================== */
 
 		/**
-   * Adds a child node to the current node, you can specify a position.
+   * Adds a child node to the current node, you can specify a position. Example:
    * 
-   * @param {KNode}  node  a node to add, if omitted a new node will be created.
-   * @param {number} index - position of node (0 means first position), if omitted the node will be added as last child of current node.
-   */
-
-	}, {
-		key: "addBranch",
-		value: function addBranch(node, index) {
-			if (typeof node == "number") {
-				index = node;
-				node = new KNode();
-			}
-			if (node == null) {
-				node = new KNode();
-			}
-
-			if (index == null || index >= this.currentNode.children.length) {
-				this.currentNode.appendChild(node);
-			} else {
-				this.currentNode.insertBefore(node, this.currentNode.children[index]);
-			}
-		}
-
-		/**
-   * Moves current's node child from one position to another
+   * ```
+   * # Current node - D5
+   * D5 ─┬─ C7 ── D6
+   *     └─ B6
    * 
-   * @param {number} from index
-   * @param {number} to   index
-   */
-
-	}, {
-		key: "moveBranch",
-		value: function moveBranch(from, to) {
-			if (from > to) {
-				this.currentNode.children.splice(to, 0, this.currentNode.children.splice(from, 1)[0]);
-			} else if (from < to) {
-				this.currentNode.children.splice(to + 1, 1, this.currentNode.children.splice(from, 1)[0]);
-			}
-		}
-
-		/**
-   * Removes current's node child and all its descendants.
-   * 
-   * @param {number} index of child node
-   */
-
-	}, {
-		key: "removeBranch",
-		value: function removeBranch(index) {
-			if (index == null) {
-				index = this.currentNode.children.length - 1;
-			}
-			this.currentNode.removeChild(this.currentNode.children[index]);
-		}
-
-		/**
-   * Adds a child node to the current node, you can specify a position.
+   * # After addNode(F5)
+   * D5 ─┬─ C7 ── D6
+   *     ├─ B6
+   *     └─ F5
+   * ```
    * 
    * @param {KNode}  node  a node to add, if omitted a new node will be created.
    * @param {number} index - position of node (0 means first position), if omitted the node will be added as last child of current node.
@@ -6095,47 +6350,125 @@ var Kifu = function (_EventMixin) {
 			if (typeof node == "number") {
 				index = node;
 				node = new KNode();
-			}
-			if (node == null) {
+			} else if (node == null) {
 				node = new KNode();
 			}
 
 			if (index == null || index >= this.currentNode.children.length) {
 				this.currentNode.appendChild(node);
 			} else {
-				// find last node of branch
-				var lastNode = node;
-				while (lastNode.children[0]) {
-					lastNode = lastNode.children[0];
-				}
-
-				// replace nodes
-				lastNode.appendChild(this.currentNode.children[index]);
-				this.currentNode.children.splice(index, 0, node);
+				this.currentNode.insertBefore(node, this.currentNode.children[index]);
 			}
+
+			this.trigger("treeChanged", {
+				target: this,
+				currentNode: this.currentNode,
+				type: "addNode",
+				node: node,
+				position: index
+			});
 		}
 
 		/**
-   * Removes current's node child and all its descendants.
+   * Moves current's node child from one position to another. Example:
+   * 
+   * ```
+   * # Current node - D5
+   * D5 ─┬─ C7 ── D6
+   *     └─ B6
+   * 
+   * # After moveNode(0, 1)
+   * D5 ─┬─ B6
+   *     └─ C7 ── D6
+   * ```
+   * 
+   * @param {number} from index
+   * @param {number} to   index
+   */
+
+	}, {
+		key: "moveNode",
+		value: function moveNode(from, to) {
+			var nodeFrom = this.currentNode.children[from];
+			var nodeTo = this.currentNode.children[to];
+
+			if (nodeFrom == null || nodeTo == null) {
+				throw new KifuError("Argument `from` or argument `to` of method `moveNode()` points to nonexisting node.");
+			}
+
+			if (from > to) {
+				this.currentNode.children.splice(to, 0, this.currentNode.children.splice(from, 1)[0]);
+			} else if (from < to) {
+				this.currentNode.children.splice(to + 1, 1, this.currentNode.children.splice(from, 1)[0]);
+			}
+
+			this.trigger("treeChanged", {
+				target: this,
+				currentNode: this.currentNode,
+				type: "moveNode",
+				nodeFrom: nodeFrom,
+				positionFrom: from,
+				nodeTo: nodeTo,
+				positionTo: to
+			});
+		}
+
+		/**
+   * Removes current's node child and all its descendants. Example:
+   * 
+   * ```
+   * # Current node - D5
+   * D5 ─┬─ C7 ── D6
+   *     └─ B6
+   * 
+   * # After removeNode(0)
+   * D5 ── F5
+   * ```
    * 
    * @param {number} index of child node
+   * @return {KNode} Removed node.
    */
 
 	}, {
 		key: "removeNode",
 		value: function removeNode(index) {
-			var _currentNode$children;
-
 			if (index == null) {
 				index = this.currentNode.children.length - 1;
 			}
 
 			var removedNode = this.currentNode.children[index];
+
 			this.currentNode.removeChild(removedNode);
-			(_currentNode$children = this.currentNode.children).splice.apply(_currentNode$children, [index, 0].concat(babelHelpers.toConsumableArray(removedNode.children)));
+
+			this.trigger("treeChanged", {
+				target: this,
+				currentNode: this.currentNode,
+				type: "removeNode",
+				node: removedNode,
+				position: index
+			});
+
+			return removedNode;
 		}
 
-		/* ======= NODE PROPERTIES ==================================================================== */
+		/* ======= GENERAL NODE PROPERTIES =============================================================*/
+
+	}, {
+		key: "hasMoveProperty",
+		value: function hasMoveProperty() {
+			return Object.keys(this.currentNode.SGFProperties).some(function (propIdent) {
+				return propIdent == BLACK_MOVE || propIdent == WHITE_MOVE;
+			});
+		}
+	}, {
+		key: "hasSetupProperties",
+		value: function hasSetupProperties() {
+			return Object.keys(this.currentNode.SGFProperties).some(function (propIdent) {
+				return setupProperties[propIdent] != null || setupProperties[propIdent] == SET_TURN;
+			});
+		}
+
+		/* ======= MOVE RELATED PROPERTIES ============================================================== */
 
 		/**
    * Gets move associated to the current node.
@@ -6145,224 +6478,492 @@ var Kifu = function (_EventMixin) {
 
 	}, {
 		key: "getMove",
-		value: function getMove() {}
+		value: function getMove() {
+			if (this.currentNode.SGFProperties[BLACK_MOVE]) {
+				return Object.assign({ c: BLACK }, this.currentNode.SGFProperties[BLACK_MOVE]);
+			} else if (this.currentNode.SGFProperties[WHITE_MOVE]) {
+				return Object.assign({ c: WHITE }, this.currentNode.SGFProperties[WHITE_MOVE]);
+			}
+
+			return null;
+		}
 
 		/**
    * Sets (or removes) move directly to the current node.
    * 
-   * @param {Object} [move] object, if omitted, move will be removed from the node.
+   * @param {(Object|number)}    x      move object or x coordinate of move.
+   * @param {number}             y      y coordinate of move (if first argument is not move object)
+   * @param {(WGo.B|WGo.E)}      c      color of move (if first argument is not move object)
    */
 
 	}, {
 		key: "setMove",
-		value: function setMove(move) {}
-	}, {
-		key: "getTurn",
-		value: function getTurn() {}
-	}, {
-		key: "setTurn",
-		value: function setTurn(turn) {}
+		value: function setMove(x, y, c) {
+			if (this.hasSetupProperties()) {
+				throw new KifuError("Move cannot be set. Move properties mustn't be mixed with setup properties.");
+			} else if (this.currentNode.parent == null) {
+				throw new KifuError("Move cannot be set. Root node mustn't contain move properties.");
+			}
+
+			var _normalizeSetupArgume = normalizeSetupArguments(x, y, c);
+
+			x = _normalizeSetupArgume.x;
+			y = _normalizeSetupArgume.y;
+			c = _normalizeSetupArgume.c;
+
+			this.removeMove();
+
+			if (c == BLACK) this.currentNode.setProperty(BLACK_MOVE, { x: x, y: y });else if (c == WHITE) this.currentNode.setProperty(WHITE_MOVE, { x: x, y: y });
+
+			this.refreshGame();
+		}
 
 		/**
-   * Gets markup on given coordination (as markup object). If coordinates are omitted, you will get all markup in array.
+   * Removes any move proprty in the current node.
+   */
+
+	}, {
+		key: "removeMove",
+		value: function removeMove() {
+			this.currentNode.setProperty(BLACK_MOVE);
+			this.currentNode.setProperty(WHITE_MOVE);
+			this.refreshGame();
+		}
+
+		/**
+   * Gets color of currently playing player.
+   */
+
+	}, {
+		key: "getTurn",
+		value: function getTurn() {
+			return this.game.turn;
+		}
+
+		/**
+   * Sets player of next move.
    * 
-   * @param {number}                      x coordinate
-   * @param {number}                      y coordinate
-   *                                        
-   * @returns {(BoardObject[]|BoardObject)} Markup object or array of markup objects                  
+   * @param {(WGo.B|WGo.W)} turn 
+   */
+
+	}, {
+		key: "setTurn",
+		value: function setTurn(turn) {
+			if (this.hasMoveProperty()) {
+				throw new KifuError("Turn can't be set. Setup properties mustn't be mixed with move properties.");
+			}
+
+			this.currentNode.setProperty(SET_TURN, turn);
+
+			if (turn == null) {
+				var prevPos = this.game.getPreviousPosition();
+				turn = prevPos ? prevPos.turn : BLACK;
+			}
+
+			this.game.turn = turn;
+		}
+
+		/* ======= MARKUP ==================================================================== */
+
+		/**
+   * Gets all markup associated with the current node.
+   *
+   * @returns {BoardObject[]} Array of markup objects                  
    */
 
 	}, {
 		key: "getMarkup",
-		value: function getMarkup(x, y) {
-			var _this2 = this;
+		value: function getMarkup() {
+			var markupList = [];
 
-			if (arguments.length == 2) {
-				for (var propIdent in this.currentNode.SGFProperties) {
-					if (markupProperties.indexOf(propIdent) >= 0 && this.currentNode.SGFProperties[propIdent].some(function (markup) {
-						return markup.x === x && markup.y === y;
-					})) {
-						return { x: x, y: y, type: propIdent };
-					}
-				}
-			} else {
-				var markup = [];
+			getMarkupProperties(this.currentNode).forEach(function (_ref) {
+				var propIdent = _ref.propIdent;
+				var value = _ref.value;
 
-				var _loop = function _loop(_propIdent) {
-					if (markupProperties.indexOf(_propIdent) >= 0) {
-						markup = markup.concat(_this2.currentNode.SGFProperties[_propIdent].map(function (markup) {
-							return { x: markup.x, y: markup.y, type: _propIdent };
-						}));
-					}
-				};
+				markupList = [].concat(babelHelpers.toConsumableArray(markupList), babelHelpers.toConsumableArray(value.map(function (markup) {
+					return {
+						x: markup.x,
+						y: markup.y,
+						type: propIdent
+					};
+				})));
+			});
 
-				for (var _propIdent in this.currentNode.SGFProperties) {
-					_loop(_propIdent);
-				}
-				return markup;
-			}
+			return markupList;
 		}
 
 		/**
-   * Adds markup into the kifu. If there is already markup on the given coordinates, markup won't be added.
+   * Gets markup on given coordination (as markup object).
    * 
-   * @param {(BoardObject|BoardObject[]|number)} markupOrX Markup object or array of markup object or x coordinate.
-   * @param {number}                             y         Y coordinate if first argument is coordinate.
-   * @param {string}                             type      Type of markup (if first 2 arguments are coordinates).
-   *                                                       
-   * @returns {boolean}                                    if operation is successfull (markup is added).
+   * @param {number}                      x coordinate
+   * @param {number}                      y coordinate
+   *                                        
+   * @returns {BoardObject} Markup object.                
    */
 
 	}, {
-		key: "addMarkup",
-		value: function addMarkup(x, y, type) {
-			if ((typeof x === "undefined" ? "undefined" : babelHelpers.typeof(x)) == "object") {
-				type = x.type;
-				y = x.y;
-				x = x.x;
-			}
-			if (this.getMarkup(x, y)) {
-				return false;
+		key: "getMarkupAt",
+		value: function getMarkupAt(x, y) {
+			for (var propIdent in this.currentNode.SGFProperties) {
+				if (markupProperties.indexOf(propIdent) >= 0 && this.currentNode.SGFProperties[propIdent].some(function (markup) {
+					return markup.x === x && markup.y === y;
+				})) {
+					return { x: x, y: y, type: propIdent };
+				}
 			}
 
-			var markup = this.currentNode.getProperty(type) || [];
-			markup.push({ x: x, y: y });
-			this.currentNode.setProperty(type, markup);
-
-			return true;
+			return null;
 		}
 
 		/**
-   * The same as addMarkup, but markers can be overridden
-   * @param {[[Type]]} markupOrX [[Description]]
-   * @param {[[Type]]} x         [[Description]]
-   * @param {[[Type]]} type      [[Description]]
+   * Adds markup into the kifu. If there is already a markup on given coordinates, it will be overridden.
+   * 
+   * @param {(BoardObject|number)} x         Markup object or x coordinate.
+   * @param {number}               y         Y coordinate if first argument is coordinate.
+   * @param {string}               type      Type of markup (if first 2 arguments are coordinates).
    */
 
 	}, {
 		key: "setMarkup",
 		value: function setMarkup(x, y, type) {
-			if ((typeof x === "undefined" ? "undefined" : babelHelpers.typeof(x)) == "object") {
-				type = x.type;
-				y = x.y;
-				x = x.x;
-			}
+			var _normalizeMarkupArgum = normalizeMarkupArguments(x, y, type);
+
+			x = _normalizeMarkupArgum.x;
+			y = _normalizeMarkupArgum.y;
+			type = _normalizeMarkupArgum.type;
+
 
 			this.removeMarkup(x, y);
 
-			var markup = this.currentNode.getProperty(type) || [];
-			markup.push({ x: x, y: y });
-			this.currentNode.setProperty(type, markup);
+			var markupList = this.currentNode.getProperty(type) || [];
+			markupList.push({ x: x, y: y });
+			this.currentNode.setProperty(type, markupList);
 		}
 
 		/**
    * Removes given markup or markup on coordinates.
    * 
-   * @param {[[Type]]} markupOrX [[Description]]
-   * @param {[[Type]]} y         [[Description]]
+   * @param {(BoardObject|number)} x         Markup object or x coordinate.
+   * @param {number}               y         Y coordinate if first argument is coordinate.
    */
 
 	}, {
 		key: "removeMarkup",
 		value: function removeMarkup(x, y) {
-			if ((typeof x === "undefined" ? "undefined" : babelHelpers.typeof(x)) == "object") {
-				y = x.y;
-				x = x.x;
-			}
+			var _this2 = this;
 
-			for (var propIdent in this.currentNode.SGFProperties) {
-				if (markupProperties.indexOf(propIdent) >= 0) {
-					this.currentNode.setProperty(propIdent, this.currentNode.SGFProperties[propIdent].filter(function (markup) {
-						return markup.x !== x || markup.y !== y;
-					}));
-				}
-			}
+			var _normalizeMarkupArgum2 = normalizeMarkupArguments(x, y);
+
+			x = _normalizeMarkupArgum2.x;
+			y = _normalizeMarkupArgum2.y;
+
+
+			getMarkupProperties(this.currentNode).forEach(function (_ref2) {
+				var propIdent = _ref2.propIdent;
+				var value = _ref2.value;
+
+				_this2.currentNode.setProperty(propIdent, value.filter(notOnCoordinates(x, y)));
+			});
 		}
+
+		/* ======= SETUP ==================================================================== */
+
+		/**
+   * Gets setup stones in the current node.
+   *                                        
+   * @returns {BoardObject[]} Array of setup object.  
+   */
+
 	}, {
 		key: "getSetup",
-		value: function getSetup(x, y) {
-			var _this3 = this;
+		value: function getSetup() {
+			var setupList = [];
 
+			getSetupProperties(this.currentNode).forEach(function (_ref3) {
+				var propIdent = _ref3.propIdent;
+				var value = _ref3.value;
+
+				setupList = [].concat(babelHelpers.toConsumableArray(setupList), babelHelpers.toConsumableArray(value.map(function (setup) {
+					return {
+						x: setup.x,
+						y: setup.y,
+						c: setupProperties[propIdent]
+					};
+				})));
+			});
+
+			return setupList;
+		}
+
+		/**
+   * Gets setup stone on given coordination (as setup object).
+   * 
+   * @param {number}                      x coordinate
+   * @param {number}                      y coordinate
+   *                                        
+   * @returns {BoardObject} Setup object  
+   */
+
+	}, {
+		key: "getSetupAt",
+		value: function getSetupAt(x, y) {
 			if (arguments.length == 2) {
 				for (var propIdent in this.currentNode.SGFProperties) {
-					if (setupProperties[propIdent] != null && this.currentNode.SGFProperties[propIdent].some(function (setup) {
-						return setup.x === x && setup.y === y;
-					})) {
+					if (setupProperties[propIdent] != null && this.currentNode.SGFProperties[propIdent].some(onCoordinates(x, y))) {
 						return { x: x, y: y, c: setupProperties[propIdent] };
 					}
 				}
-			} else {
-				var setup = [];
 
-				var _loop2 = function _loop2(_propIdent2) {
-					if (setupProperties[_propIdent2] != null) {
-						setup = setup.concat(_this3.currentNode.SGFProperties[_propIdent2].map(function (setup) {
-							return { x: setup.x, y: setup.y, c: setupProperties[_propIdent2] };
-						}));
-					}
-				};
-
-				for (var _propIdent2 in this.currentNode.SGFProperties) {
-					_loop2(_propIdent2);
-				}
-				return setup;
+				return null;
 			}
+
+			var setupList = [];
+
+			getSetupProperties(this.currentNode).forEach(function (_ref4) {
+				var propIdent = _ref4.propIdent;
+				var value = _ref4.value;
+
+				setupList = [].concat(babelHelpers.toConsumableArray(setupList), [value.map(function (setup) {
+					return {
+						x: setup.x,
+						y: setup.y,
+						c: setupProperties[propIdent]
+					};
+				})]);
+			});
+
+			return setupList;
 		}
-	}, {
-		key: "addSetup",
-		value: function addSetup(x, y, color) {
-			if ((typeof x === "undefined" ? "undefined" : babelHelpers.typeof(x)) == "object") {
-				color = x.c;
-				y = x.y;
-				x = x.x;
-			}
-			if (this.getSetup(x, y)) {
-				return false;
-			}
-
-			var setup = this.currentNode.getProperty(setupPropertiesReversed[color]) || [];
-			setup.push({ x: x, y: y });
-			this.currentNode.setProperty(setupPropertiesReversed[color], setup);
-
-			return true;
-		}
-	}, {
-		key: "setSetup",
-		value: function setSetup(x, y, color) {
-			if ((typeof x === "undefined" ? "undefined" : babelHelpers.typeof(x)) == "object") {
-				color = x.c;
-				y = x.y;
-				x = x.x;
-			}
-
-			for (var propIdent in this.currentNode.SGFProperties) {
-				if (setupProperties[propIdent] != null) {
-					this.currentNode.setProperty(propIdent, this.currentNode.SGFProperties[propIdent].filter(function (setup) {
-						return setup.x !== x || setup.y !== y;
-					}));
-				}
-			}
-
-			var setup = this.currentNode.getProperty(setupPropertiesReversed[color]) || [];
-			setup.push({ x: x, y: y });
-			this.currentNode.setProperty(setupPropertiesReversed[color], setup);
-
-			return true;
-		}
-
-		//removeSetup(x, y) {
-		//
-		//}
-
-	}, {
-		key: "getNodeInfo",
-		value: function getNodeInfo(property) {}
-	}, {
-		key: "setNodeInfo",
-		value: function setNodeInfo(property, value) {}
 
 		/**
-   * Plays a move (in correct color). It creates a new node and perform next method.
+   * Adds setup stone into the kifu. If there is already a setup stone on given coordinates, it will be overridden.
+   * 
+   * @param {(BoardObject|number)} x         Setup object or x coordinate.
+   * @param {number}               y         Y coordinate if first argument is coordinate.
+   * @param {(WGo.B|WGo.W|WGo.E)}  color     Color of stone (if first 2 arguments are coordinates).
+   */
+
+	}, {
+		key: "setSetup",
+		value: function setSetup(x, y, c) {
+			if (this.hasMoveProperty()) {
+				throw new KifuError("Stone cannot be set. Setup properties mustn't be mixed with move properties.");
+			}
+
+			var _normalizeSetupArgume2 = normalizeSetupArguments(x, y, c);
+
+			x = _normalizeSetupArgume2.x;
+			y = _normalizeSetupArgume2.y;
+			c = _normalizeSetupArgume2.c;
+
+
+			this.removeSetup(x, y);
+
+			var setupList = this.currentNode.getProperty(setupPropertiesReversed[c]) || [];
+			setupList.push({ x: x, y: y });
+			this.currentNode.setProperty(setupPropertiesReversed[c], setupList);
+
+			this.game.setStone(x, y, c);
+		}
+
+		/**
+   * Removes given setup or setup stone on coordinates.
+   * 
+   * @param {(BoardObject|number)} x         Setup object or x coordinate.
+   * @param {number}               y         Y coordinate if first argument is coordinate.
+   */
+
+	}, {
+		key: "removeSetup",
+		value: function removeSetup(x, y) {
+			var _this3 = this;
+
+			var _normalizeSetupArgume3 = normalizeSetupArguments(x, y);
+
+			x = _normalizeSetupArgume3.x;
+			y = _normalizeSetupArgume3.y;
+
+
+			getSetupProperties(this.currentNode).forEach(function (_ref5) {
+				var propIdent = _ref5.propIdent;
+				var value = _ref5.value;
+
+				_this3.currentNode.setProperty(propIdent, value.filter(notOnCoordinates(x, y)));
+			});
+
+			this.refreshGame();
+		}
+
+		/* ======= TRAVERSING ==================================================================== */
+
+	}, {
+		key: "first",
+		value: function first() {
+			var previousNode = this.currentNode;
+
+			this.currentNode = this.rootNode;
+			this.game.firstPosition();
+			this.executeNode();
+
+			if (previousNode != this.currentNod) {
+				this.trigger("update", {
+					target: this,
+					action: "first",
+					currentNode: this.currentNode,
+					previousNode: previousNode,
+					game: this.game
+				});
+			}
+
+			return this;
+		}
+	}, {
+		key: "previous",
+		value: function previous() {
+			if (this.currentNode.parent != null) {
+				var previousNode = this.currentNode;
+
+				this.currentNode = this.currentNode.parent;
+				this.game.popPosition();
+
+				this.trigger("update", {
+					target: this,
+					action: "previous",
+					currentNode: this.currentNode,
+					previousNode: previousNode,
+					game: this.game
+				});
+			}
+
+			return this;
+		}
+	}, {
+		key: "next",
+		value: function next() {
+			var index = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
+
+			if (this.currentNode.children[index] != null) {
+				var previousNode = this.currentNode;
+
+				this.currentNode = this.currentNode.children[index];
+				this.executeNode();
+
+				this.trigger("update", {
+					target: this,
+					action: "next",
+					currentNode: this.currentNode,
+					previousNode: previousNode,
+					index: index,
+					game: this.game
+				});
+			}
+
+			return this;
+		}
+	}, {
+		key: "last",
+		value: function last() {
+			var previousNode = this.currentNode;
+
+			while (this.currentNode.children[0]) {
+				this.currentNode = this.currentNode.children[0];
+				this.executeNode();
+			}
+
+			if (previousNode != this.currentNode) {
+				this.trigger("update", {
+					target: this,
+					action: "last",
+					currentNode: this.currentNode,
+					previousNode: previousNode,
+					game: this.game
+				});
+			}
+
+			return this;
+		}
+
+		/**
+   * TODO: analysis needed.
+   * 
+   * @param {*} kifuPath 
+   */
+
+	}, {
+		key: "goTo",
+		value: function goTo(kifuPath) {
+			return this;
+		}
+
+		/**
+   * Executes current node - new position will be created in game object.
+   * This method should be called when there is new current node and you want to
+   * to reflect node properties in game object (play move, set stones...).
+   */
+
+	}, {
+		key: "executeNode",
+		value: function executeNode() {
+			var _this4 = this;
+
+			if (this.currentNode != this.rootNode) {
+				var move = this.getMove();
+
+				if (move != null) {
+					this.game.play(move.x, move.y, move.c);
+					return;
+				} else {
+					this.game.pushPosition(this.game.position.clone());
+				}
+			}
+
+			getSetupProperties(this.currentNode).forEach(function (_ref6) {
+				var propIdent = _ref6.propIdent;
+				var value = _ref6.value;
+
+				value.forEach(function (_ref7) {
+					var x = _ref7.x;
+					var y = _ref7.y;
+					return _this4.game.setStone(x, y, setupProperties[propIdent]);
+				});
+			});
+
+			var turnSet = this.currentNode.getProperty(SET_TURN);
+			if (turnSet != null) {
+				this.game.turn = turnSet;
+			}
+		}
+
+		/**
+   * Refresh game object - should be called, when current node's move or setup stones have changed.
+   */
+
+	}, {
+		key: "refreshGame",
+		value: function refreshGame() {
+			if (this.currentNode.parent != null) {
+				this.game.popPosition();
+			} else {
+				this.game.firstPosition();
+			}
+			this.executeNode();
+		}
+
+		/* ======= SHORTCUTS AND HELPERS ========================================================= */
+
+	}, {
+		key: "getPosition",
+		value: function getPosition() {
+			return this.game.position;
+		}
+	}, {
+		key: "isValidMove",
+		value: function isValidMove(move) {
+			return this.game.isValid(move.x, move.y);
+		}
+
+		/**
+   * Plays a move. This is a shortcut for creating a node, setting a move property and traversing on it.
    * 
    * @param {Object}  move              coordinates
    * @param {boolean} [newVariant=true] if false, following nodes will be appended to the new node, instead of creating a new branch (default true)
@@ -6370,82 +6971,125 @@ var Kifu = function (_EventMixin) {
 
 	}, {
 		key: "play",
-		value: function play(move, newVariant) {
-			var node = new KNode();
-			var ind;
-			node.setMove(Object.assign(move, { c: this.game.turn }));
+		value: function play(move) {
+			var newVariant = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
-			if (newVariant === false && this.node.children[0]) {
-				this.node.insertBefore(node, this.node.children[0]);
-				ind = 0;
+			var newNode = new KNode();
+			var x = move.x;
+			var y = move.y;
+			var _move$c = move.c;
+			var c = _move$c === undefined ? this.getTurn() : _move$c;
+
+
+			if (c == BLACK) newNode.setProperty(BLACK_MOVE, { x: x, y: y });else if (c == WHITE) newNode.setProperty(WHITE_MOVE, { x: x, y: y });
+
+			if (newVariant === false && this.currentNode.children[0]) {
+
+				this.currentNode.children.forEach(function (node) {
+					newNode.appendChild(node);
+				});
+
+				this.next(this.currentNode.appendChild(newNode));
 			} else {
-				ind = this.node.appendChild(node);
+				this.next(this.currentNode.appendChild(newNode));
 			}
-
-			this.next(ind);
 		}
 	}, {
-		key: "first",
-		value: function first() {}
+		key: "toSGF",
+		value: function toSGF() {
+			return this.rootNode.toSGF();
+		}
 	}, {
-		key: "previous",
-		value: function previous() {}
-	}, {
-		key: "next",
-		value: function next(ind) {}
-	}, {
-		key: "last",
-		value: function last() {}
-	}, {
-		key: "goTo",
-		value: function goTo(kifuPath) {}
+		key: "toJS",
+		value: function toJS() {
+			return this.rootNode.toJS();
+		}
 	}, {
 		key: "blackName",
 		get: function get() {
-			return this.rootNode.getProperty("PB");
+			return this.rootNode.getProperty(BLACK_NAME);
 		},
 		set: function set(name) {
-			this.setGameInfo("PB", name);
+			this.setGameInfo(BLACK_NAME, name);
 		}
 	}, {
 		key: "blackRank",
 		get: function get() {
-			return this.rootNode.getProperty("BR");
+			return this.rootNode.getProperty(BLACK_RANK);
 		},
 		set: function set(rank) {
-			this.setGameInfo("BR", rank);
+			this.setGameInfo(BLACK_RANK, rank);
 		}
 	}, {
 		key: "blackTeam",
 		get: function get() {
-			return this.rootNode.getProperty("BT");
+			return this.rootNode.getProperty(BLACK_TEAM);
 		},
 		set: function set(team) {
-			this.setGameInfo("BT", team);
+			this.setGameInfo(BLACK_TEAM, team);
 		}
 	}, {
 		key: "whiteName",
 		get: function get() {
-			return this.rootNode.getProperty("PW");
+			return this.rootNode.getProperty(WHITE_NAME);
 		},
 		set: function set(name) {
-			this.setGameInfo("PW", name);
+			this.setGameInfo(WHITE_NAME, name);
 		}
 	}, {
 		key: "whiteRank",
 		get: function get() {
-			return this.rootNode.getProperty("WR");
+			return this.rootNode.getProperty(WHITE_RANK);
 		},
 		set: function set(rank) {
-			this.setGameInfo("WR", rank);
+			this.setGameInfo(WHITE_RANK, rank);
 		}
 	}, {
 		key: "whiteTeam",
 		get: function get() {
-			return this.rootNode.getProperty("WT");
+			return this.rootNode.getProperty(WHITE_TEAM);
 		},
 		set: function set(team) {
-			this.setGameInfo("WT", team);
+			this.setGameInfo(WHITE_TEAM, team);
+		}
+	}, {
+		key: "date",
+		get: function get() {
+			var date = this.rootNode.getProperty(DATE);
+			return date ? new Date(date) : null;
+		},
+		set: function set(date) {
+			var month = date.getMonth();
+			var day = date.getDate();
+
+			month = month < 9 ? "0" + (month + 1) : month + 1;
+			day = day < 10 ? "0" + day : day;
+
+			this.setGameInfo(DATE, date.getFullYear() + "-" + month + "-" + day);
+		}
+	}, {
+		key: "event",
+		get: function get() {
+			return this.rootNode.getProperty(EVENT);
+		},
+		set: function set(team) {
+			this.setGameInfo(EVENT, team);
+		}
+	}, {
+		key: "result",
+		get: function get() {
+			return this.rootNode.getProperty(RESULT);
+		},
+		set: function set(result) {
+			this.setGameInfo(RESULT, result);
+		}
+	}, {
+		key: "komi",
+		get: function get() {
+			return this.rootNode.getProperty(KOMI);
+		},
+		set: function set(komi) {
+			this.setGameInfo(KOMI, komi);
 		}
 	}, {
 		key: "rules",
@@ -6453,20 +7097,230 @@ var Kifu = function (_EventMixin) {
 			return this.rootNode.getProperty("RU");
 		},
 		set: function set(rules$$1) {
-			this.setRulesSet(rules$$1[rules$$1] || rules$$1[JAPANESE_RULES]);
+			this.setRulesSet(rules$$1[rules$$1] || rules$$1[defaultRules]);
 			this.setGameInfo("RU", rules$$1);
 		}
 	}, {
 		key: "boardSize",
 		get: function get() {
 			return this.rootNode.getProperty("SZ") || 19;
-		},
-		set: function set(size) {
-			this.setGameInfo("SZ", size);
 		}
 	}]);
 	return Kifu;
-}(EventMixin());
+}(EventEmitter);
+
+Kifu$1.KNode = KNode;
+Kifu$1.KifuError = KifuError;
+Kifu$1.markupProperties = markupProperties;
+Kifu$1.properties = properties;
+Kifu$1.propertyValueTypes = propertyValueTypes;
+
+var defaultConfig$1 = {
+	inIframe: true,
+	board: CanvasBoard$1,
+	boardConfig: {},
+	styles: [exports.DIR + "wgo.css"]
+};
+
+var template = "\n\t<div class=\"wgo-player\">\n\t\t<div class=\"wgo-board-wrapper\">\n\t\t\t<div class=\"wgo-board-container\"></div>\n\t\t</div>\n\t\t<div class=\"wgo-bottom\">\n\t\t\t<div class=\"wgo-capture-info\">\n\t\t\t\t<div class=\"wgo-capture-box wgo-capture-black\">2</div>\n\t\t\t\t<div class=\"wgo-capture-box wgo-capture-white\">5</div>\n\t\t\t</div>\n\t\t\t<button class=\"wgo-button wgo-menu\">\n\t\t\t\t<span class=\"wgo-dot\"></span>\n\t\t\t\t<span class=\"wgo-dot\"></span>\n\t\t\t\t<span class=\"wgo-dot\"></span>\n\t\t\t</button>\n\t\t\t<div class=\"wgo-control\">\n\t\t\t\t<button class=\"wgo-button wgo-first\"></button>\n\t\t\t\t<button class=\"wgo-button wgo-prev-10\"></button>\n\t\t\t\t<button class=\"wgo-button wgo-prev\"></button>\n\t\t\t\t<input type=\"text\" class=\"wgo-move\" maxlength=\"3\" value=\"0\">\n\t\t\t\t<button class=\"wgo-button wgo-next\"></button>\n\t\t\t\t<button class=\"wgo-button wgo-next-10\"></button>\n\t\t\t\t<button class=\"wgo-button wgo-last\"></button>\n\t\t\t</div>\n\t\t</div>\n\t</div>\n";
+
+var iframe = function (styles, scripts) {
+	return "\n\t\t<!DOCTYPE html>\n\t\t<html class=\"wgo-player-iframe-content\">\n\t\t\t<head>\n\t\t\t\t<meta charset=\"UTF-8\">\n\t\t\t\t<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n\t\t\t\t" + styles.reduce(function (prev, current) {
+		return prev + ("<link rel=\"stylesheet\" href=\"" + current + "\">");
+	}, "") + "\n\t\t\t</head>\n\t\t\t<body>\n\t\t\t\t<div id=\"player\"></div>\n\t\t\t\t" + scripts.reduce(function (prev, current) {
+		return prev + ("<script src=\"" + current + "\"></script>");
+	}, "") + "\n\t\t\t</body>\n\t\t</html>\n\t";
+};
+
+var Board = function () {
+	function Board(BoardRenderer, elem, options) {
+		babelHelpers.classCallCheck(this, Board);
+
+		this.boardRenderer = new BoardRenderer(elem, options);
+		this.updateBoard = this.updateBoard.bind(this);
+	}
+
+	babelHelpers.createClass(Board, [{
+		key: "registerEvents",
+		value: function registerEvents(kifu) {
+			kifu.on("update", this.updateBoard);
+		}
+	}, {
+		key: "updateBoard",
+		value: function updateBoard(event) {
+			var objects = [];
+			var size = event.game.position.size;
+			size;
+			// get stones
+			for (var x = 0; x < size; x++) {
+				objects[x] = [];
+				for (var y = 0; y < size; y++) {
+					objects[x][y] = [];
+					if (event.game.position.grid[x * size + y]) {
+						objects[x][y].push({ x: x, y: y, c: event.game.position.grid[x * size + y] });
+					}
+				}
+			}
+
+			// get markup
+			var move = event.target.getMove();
+			if (move) objects[move.x][move.y].push({ x: move.x, y: move.y, type: "CR" });
+
+			// render board object
+			this.boardRenderer.update(objects);
+		}
+	}]);
+	return Board;
+}();
+
+var Player$1 = function () {
+	function Player(elem, config) {
+		babelHelpers.classCallCheck(this, Player);
+
+		// merge user config with default
+		this.config = defaultsDeep_1(config || {}, defaultConfig$1);
+		this.kifu = new Kifu$1();
+		this.dom = {};
+		this.domLoaded = null;
+
+		if (this.config.inIframe) {
+			this.initIframe(elem);
+		} else {
+			this.initPlayer(elem);
+		}
+
+		this.registerKifuEvents = this.registerKifuEvents.bind(this);
+		this.updateCaptureCounts = this.updateCaptureCounts.bind(this);
+
+		this.first = this.first.bind(this);
+		this.prev10 = this.prev10.bind(this);
+		this.prev = this.prev.bind(this);
+		this.next = this.next.bind(this);
+		this.next10 = this.next10.bind(this);
+		this.last = this.last.bind(this);
+	}
+
+	babelHelpers.createClass(Player, [{
+		key: "loadSGFFromURL",
+		value: function loadSGFFromURL(url) {
+			var _this = this;
+
+			return fetch(url).then(function (sgf) {
+				return _this.loadSGF(sgf);
+			});
+		}
+	}, {
+		key: "loadSGF",
+		value: function loadSGF(sgf) {
+			this.kifu = Kifu$1.fromSGF(sgf);
+
+			if (this.domLoaded) {
+				this.domLoaded.then(this.registerKifuEvents);
+			} else {
+				this.registerKifuEvents();
+			}
+		}
+	}, {
+		key: "initIframe",
+		value: function initIframe(elem) {
+			var _this2 = this;
+
+			var iframeElem = document.createElement("iframe");
+			iframeElem.setAttribute("srcdoc", iframe(this.config.styles, []));
+			iframeElem.className = "wgo-iframe-player";
+			elem.appendChild(iframeElem);
+
+			this.domLoaded = new Promise(function (resolve) {
+				iframeElem.addEventListener("load", function () {
+					_this2.initPlayer(iframeElem.contentDocument.getElementById("player"));
+					resolve();
+				});
+			});
+
+			return this.domLoaded;
+		}
+	}, {
+		key: "initPlayer",
+		value: function initPlayer(elem) {
+			elem.innerHTML = template;
+
+			// board
+			this.dom.board = elem.querySelector(".wgo-board-container");
+
+			// buttons
+			this.dom.first = elem.querySelector(".wgo-first");
+			this.dom.prev10 = elem.querySelector(".wgo-prev-10");
+			this.dom.prev = elem.querySelector(".wgo-prev");
+			this.dom.next = elem.querySelector(".wgo-next");
+			this.dom.next10 = elem.querySelector(".wgo-next-10");
+			this.dom.last = elem.querySelector(".wgo-last");
+
+			// capture stones counts
+			this.dom.captureBlack = elem.querySelector(".wgo-capture-black");
+			this.dom.captureWhite = elem.querySelector(".wgo-capture-white");
+
+			if (!this.config.boardConfig.width) {
+				this.config.boardConfig.width = parseInt(this.dom.board.offsetWidth);
+			}
+
+			this.board = new Board(this.config.board, this.dom.board, this.config.boardConfig);
+		}
+	}, {
+		key: "registerKifuEvents",
+		value: function registerKifuEvents() {
+			this.domLoaded = null;
+			this.board.registerEvents(this.kifu);
+
+			this.dom.first.addEventListener("click", this.first);
+			this.dom.prev10.addEventListener("click", this.prev10);
+			this.dom.prev.addEventListener("click", this.prev);
+			this.dom.next.addEventListener("click", this.next);
+			this.dom.next10.addEventListener("click", this.next10);
+			this.dom.last.addEventListener("click", this.last);
+
+			this.kifu.on("update", this.updateCaptureCounts);
+		}
+	}, {
+		key: "updateCaptureCounts",
+		value: function updateCaptureCounts(event) {
+			this.dom.captureBlack.textContent = event.game.position.capCount.black;
+			this.dom.captureWhite.textContent = event.game.position.capCount.white;
+		}
+	}, {
+		key: "first",
+		value: function first() {
+			this.kifu.first();
+		}
+	}, {
+		key: "prev10",
+		value: function prev10() {
+			//todo
+		}
+	}, {
+		key: "prev",
+		value: function prev() {
+			this.kifu.previous();
+		}
+	}, {
+		key: "next",
+		value: function next() {
+			this.kifu.next();
+		}
+	}, {
+		key: "next10",
+		value: function next10() {
+			//todo
+		}
+	}, {
+		key: "last",
+		value: function last() {
+			this.kifu.last();
+		}
+	}]);
+	return Player;
+}();
+
+Player$1.defaultConfig = defaultConfig$1;
 
 // WGo module
 
@@ -6475,7 +7329,8 @@ exports.Position = Position;
 exports.SGFParser = SGFParser$1;
 exports.KNode = KNode;
 exports.CanvasBoard = CanvasBoard$1;
-exports.Kifu = Kifu;
+exports.Kifu = Kifu$1;
+exports.Player = Player$1;
 exports.B = B;
 exports.BLACK = BLACK;
 exports.W = W;

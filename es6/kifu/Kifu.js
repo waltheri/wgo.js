@@ -672,17 +672,39 @@ export default class Kifu extends EventEmitter {
 	/* ======= TRAVERSING ==================================================================== */
 
 	first() {
+		let previousNode = this.currentNode;
+
 		this.currentNode = this.rootNode;
 		this.game.firstPosition();
 		this.executeNode();
+
+		if (previousNode != this.currentNod) {
+			this.trigger("update", {
+				target: this,
+				action: "first",
+				currentNode: this.currentNode,
+				previousNode,
+				game: this.game,
+			});
+		}
 
 		return this;
 	}
 	
 	previous() {
 		if(this.currentNode.parent != null) {
+			let previousNode = this.currentNode;
+
 			this.currentNode = this.currentNode.parent;
 			this.game.popPosition();
+
+			this.trigger("update", {
+				target: this,
+				action: "previous",
+				currentNode: this.currentNode,
+				previousNode,
+				game: this.game,
+			});
 		}
 
 		return this;
@@ -690,17 +712,40 @@ export default class Kifu extends EventEmitter {
 	
 	next(index = 0) {
 		if(this.currentNode.children[index] != null) {
+			let previousNode = this.currentNode;
+
 			this.currentNode = this.currentNode.children[index];
 			this.executeNode();
+
+			this.trigger("update", {
+				target: this,
+				action: "next",
+				currentNode: this.currentNode,
+				previousNode,
+				index,
+				game: this.game,
+			});
 		}
 
 		return this;
 	}
 	
 	last() {
+		let previousNode = this.currentNode;
+
 		while(this.currentNode.children[0]) {
 			this.currentNode = this.currentNode.children[0];
 			this.executeNode();
+		}
+
+		if(previousNode != this.currentNode) {
+			this.trigger("update", {
+				target: this,
+				action: "last",
+				currentNode: this.currentNode,
+				previousNode,
+				game: this.game,
+			});
 		}
 
 		return this;
@@ -773,7 +818,7 @@ export default class Kifu extends EventEmitter {
 	 */
 	play(move, newVariant = true) {
 		const newNode = new KNode();
-		const {x, y, c} = move;
+		const {x, y, c = this.getTurn()} = move;
 
 		if(c == BLACK) newNode.setProperty(BLACK_MOVE, {x, y});
 		else if(c == WHITE) newNode.setProperty(WHITE_MOVE, {x, y});
@@ -791,4 +836,11 @@ export default class Kifu extends EventEmitter {
 		}
 	}
 	
+	toSGF() {
+		return this.rootNode.toSGF();
+	}
+
+	toJS() {
+		return this.rootNode.toJS();
+	}
 }

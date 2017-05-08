@@ -31,13 +31,18 @@ export function t(str) {
 	return str;
 };
 
-/*
+// helper for dynamic loading
+let DIR;
+
 if(global["document"]) {
-	var scripts = document.getElementsByTagName('script');
-	var path = scripts[scripts.length-1].src.split('?')[0];      // remove any ?query
-	WGo.DIR = path.split('/').slice(0, -1).join('/')+'/';  
+	let scripts = document.getElementsByTagName('script');
+	let path = scripts[scripts.length-1].src.split('?')[0];  // remove any ?query
+	DIR = path.split('/').slice(0, -1).join('/')+'/';
 }
 
+export { DIR };
+
+/*
 if(global["navigator"]) {
 	// browser detection - can be handy
 	WGo.opera = navigator.userAgent.search(/(opera)(?:.*version)?[ \/]([\w.]+)/i) != -1;
