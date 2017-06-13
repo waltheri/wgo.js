@@ -475,7 +475,7 @@ BasicPlayer.attributes = {
 	
 	"data-wgo-move": function(value) {
 		var m = parseInt(value);
-		if(m) this.move = m;
+		if(!isNaN(m)) this.move = m;
 		else this.move = eval("({"+value+"})");
 	},
 

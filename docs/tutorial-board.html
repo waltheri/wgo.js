@@ -24,7 +24,7 @@
     &lt;/div&gt;
   &lt;/body&gt;
 &lt;/html&gt;</pre>
-<p>You can see result <a href="board/1">here</a></p>
+<p>You can see result <a href="tutorials/tutorial-board-1.html">here</a></p>
 
 <h3>Step two - displaying a board</h3>
 <p>For rendering a board we add javascript to our document which must be executed after target DOM element is loaded. Otherwise it won't work. We can use either <code>onLoad</code> event or put javascript at the end of the file.</p>
@@ -45,7 +45,7 @@ var board = new WGo.Board(document.getElementById("board"), {
     }
 });
 </pre>
-<p>You can see result <a href="board/2">here</a></p>
+<p>You can see result <a href="tutorials/tutorial-board-2.html">here</a></p>
 
 <h3>Step three - adding and removing objects</h3>
 <p>Now comes a little bit harder part. In this step we make possible adding desired objects on the board by mouse clicking. For that we use board's method <code>addEventListener</code>.</p>
@@ -80,7 +80,7 @@ board.addEventListener("click", function(x, y) {
     }
 });
 </pre>
-<p>You can see result of this step <a href="board/3">here</a></p>
+<p>You can see result of this step <a href="tutorials/tutorial-board-3.html">here</a></p>
 
 <h3>Step four - adding own objects</h3>
 <p>How about we want some special object, let's say an airplane. Firstly we must add an option to the select list.</p>
@@ -132,7 +132,7 @@ else if(tool.value == "plane") {
 }
 ...
 </pre>
-<p>As usual the result is <a href="board/4">here</a></p>
+<p>As usual the result is <a href="tutorials/tutorial-board-4.html">here</a></p>
 
 <h3>Step five - adding coordinates</h3>
 <p>Last step of our tutorial is displaying coordinates (labels like A1, A2 ...) around the board. Coordinates are not bind with any single field so we cannot use <code>addObject</code> method. For this kind of drawing there is method <code>addCustomObject</code>. Everything else is similar to adding normal objects - we create <code>WGo.Board.DrawHandler</code> and then we assign it to the board.</p>
@@ -184,4 +184,4 @@ var board = new WGo.Board(document.getElementById("board"), {
     }
 });
 </pre>
-<p>This will enlarge right and bottom margin of the board by half field. The final result with all source codes is <a href="board/5">here</a></p>
+<p>This will enlarge right and bottom margin of the board by half field. The final result with all source codes is <a href="tutorials/tutorial-board-5.html">here</a></p>

@@ -70,7 +70,7 @@ var update_board = function(e) {
 	}
 
 	// add variation letters
-	if(e.node.children.length > 1) {
+	if(e.node.children.length > 1 && this.config.displayVariations) {
 		for(var i = 0; i < e.node.children.length; i++) {
 			if(e.node.children[i].move && !e.node.children[i].move.pass)	add.push({
 				type: "LB",
@@ -115,7 +115,7 @@ var prepare_board = function(e) {
 // detecting scrolling of element - e.g. when we are scrolling text in comment box, we want to be aware.
 var detect_scrolling = function(node, bp) {
 	if(node == bp.element || node == bp.element) return false;
-	else if(node._wgo_scrollable || (node.scrollHeight > node.offsetHeight)) return true;
+	else if(node._wgo_scrollable || (node.scrollHeight > node.offsetHeight && window.getComputedStyle(node).overflow == "auto")) return true;
 	else return detect_scrolling(node.parentNode, bp);
 }
 
@@ -655,6 +655,7 @@ Player.default = {
 	unfrozen: undefined,
 	allowIllegalMoves: false,
 	markLastMove: true,
+	displayVariations: true
 }
 
 WGo.Player = Player;

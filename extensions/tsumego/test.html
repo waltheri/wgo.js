@@ -1,0 +1,38 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>WGo</title>
+	<script type="text/javascript" src="../../wgo/wgo.js"></script>
+	<script type="text/javascript" src="../../wgo/kifu.js"></script>
+	<script type="text/javascript" src="../../wgo/sgfparser.js"></script>
+	<script type="text/javascript" src="../../wgo/player.js"></script>
+	<script type="text/javascript" src="../../wgo/basicplayer.js"></script>
+	<script type="text/javascript" src="../../wgo/basicplayer.component.js"></script>
+	<script type="text/javascript" src="../../wgo/basicplayer.infobox.js"></script>
+	<script type="text/javascript" src="../../wgo/basicplayer.commentbox.js"></script>
+	<script type="text/javascript" src="../../wgo/basicplayer.control.js"></script>
+	<script type="text/javascript" src="../../wgo/player.editable.js"></script>
+	<script type="text/javascript" src="../../wgo/scoremode.js"></script>
+	<script type="text/javascript" src="../../wgo/player.permalink.js"></script>
+	<script type="text/javascript" src="tsumego.js"></script>
+	<!--link rel="stylesheet" type="text/css" href="../../wgo/wgo.player.css" -->
+	<link rel="stylesheet" type="text/css" href="tsumego.css">
+
+</head>
+<body>
+<h1 style="font-family: Consolas">WGo.js tsumego test</h1>
+
+<div style="width: 20%; margin: 0; background-color: #f9f9f9; padding: 10px; border-radius: 10px" id="tsumego_wrapper">
+Your browser doesn't support WGo Player. Use some modern browser like IE9, Google Chrome or Mozilla Firefox.
+</div>
+
+<script>
+var tsumego = new WGo.Tsumego(document.getElementById("tsumego_wrapper"), {
+	sgf: "(;FF[4]GM[1]VW[aa:jg]SZ[19]ST[2]EV[N° 1 .|. Level #2]AB[bb][cb][db][fb]AW[ea][eb][bc][cc][dc]C[Black to play]FG[1](;B[ec];W[fc];B[ed];W[gb](;B[fd];W[gc](;B[ab];W[ba](;B[bd];W[cd];B[ce];W[be](;B[dd];W[ad];B[ac]C[Correct!]TE[1])(;B[ac];W[ad];B[dd]C[Correct!]TE[1]))(;B[ce];W[ac]C[Fail!]))(;B[da];W[fa];B[ab];W[ba]C[Fail!]))(;B[ab];W[ba];B[fd];W[gc](;B[bd];W[cd];B[ce];W[be](;B[dd];W[ad];B[ac]C[Correct!]TE[1])(;B[ac];W[ad];B[dd]C[Correct!]TE[1]))(;B[ce];W[ac]C[Fail!]))(;B[da];W[fa];B[ab];W[ba]C[Fail!]))(;B[da];W[fc];B[ab];W[ba]C[Fail!]))",
+	debug: true, /* remove this line hide solution */
+});
+tsumego.setCoordinates(true);
+</script>
+		
+</body>
+</html>
