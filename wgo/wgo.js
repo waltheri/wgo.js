@@ -1153,12 +1153,12 @@ var getMousePos = function(e) {
 
 	var x, y;
 
-	x = e.layerX * this.pixelRatio;
+	x = e.offsetX * this.pixelRatio;
 	x -= this.left;
 	x /= this.fieldWidth;
 	x = Math.round(x);
 
-	y = e.layerY * this.pixelRatio;
+	y = e.offsetY * this.pixelRatio;
 	y -= this.top;
 	y /= this.fieldHeight;
 	y = Math.round(y);
