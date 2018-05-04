@@ -26,5 +26,5 @@ It is web viewer of Go games (SGF) built on top of the WGo.js library. You can e
 You can reference it in html directly or import it.
 
 ```
-import * as WGo from '../wgo/wgo'
+import * as WGo from 'wgo.js'
 ```
