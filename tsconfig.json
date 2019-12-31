@@ -1,0 +1,12 @@
+{
+  "include": [
+    "./src/**/*"
+  ],
+  "compilerOptions": {
+    "target": "ES5",
+    "sourceMap": true,
+    "declaration": true,
+    "strict": true,
+    "strictNullChecks": false,
+  }
+}

@@ -28,3 +28,4 @@ build/Release
 node_modules
 gh-pages
 temp
+/.rpt2_cache

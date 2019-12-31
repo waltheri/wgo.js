@@ -1,6 +1,9 @@
-// Place your settings in this file to overwrite default and user settings.
 {
-	"editor.insertSpaces": false,
-	"editor.wordWrap": "bounded",
-	"editor.wordWrapColumn": 150
+    "editor.tabSize": 2,
+    "cSpell.words": [
+        "KOMI",
+        "dont",
+        "jsgf",
+        "kifu"
+    ]
 }
