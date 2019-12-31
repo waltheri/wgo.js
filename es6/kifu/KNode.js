@@ -1,10 +1,11 @@
 import SGFParser, {SGFSyntaxError} from "../SGFParser";
 import propertyValueTypes from "./propertyValueTypes";
+import KifuError from "./KifuError";
 
 // jsgf helper
 var processJsgf = function(parent, jsgf, pos) {
 	if(jsgf[pos]) {
-		if(jsgf[pos].constructor == Array) {
+		if(Array.isArray(jsgf[pos])) {
 			// more children (fork)
 			jsgf[pos].forEach(function(jsgf2) {
 				processJsgf(parent, jsgf2, 0);
@@ -12,7 +13,7 @@ var processJsgf = function(parent, jsgf, pos) {
 		}
 		else {
 			// one child
-			var node = new KNode();
+			let node = new KNode();
 			node.setSGFProperties(jsgf[pos]);
 			parent.appendChild(node);
 			processJsgf(node, jsgf, pos+1);
@@ -85,13 +86,13 @@ export default class KNode {
 	/**
 	 * Insert a KNode as the last child node of this node.
 	 * 
-	 * @throws  {Error} when argument is invalid.
+	 * @throws  {KifuError} when argument is invalid.
 	 * @param   {KNode} node to append.
 	 * @returns {number} position(index) of appended node.
 	 */
 	
 	appendChild(node) {
-		if(node == null || !(node instanceof KNode) || node == this) throw new Error("Invalid argument passed to `appendChild` method, KNode was expected.");
+		if(node == null || !(node instanceof KNode) || node == this) throw new KifuError("Invalid argument passed to `appendChild` method, KNode was expected.");
 		
 		if(node.parent) node.parent.removeChild(node);
 		
@@ -106,7 +107,7 @@ export default class KNode {
 	 * @param {boolean}	appendToParent if set true, cloned node will be appended to this parent.
 	 * @returns {KNode}	cloned node                              
 	 */
-	 
+
 	cloneNode(appendToParent) {
 		var node = new KNode();
 		node.innerSGF = this.innerSGF;
@@ -132,14 +133,14 @@ export default class KNode {
 	/**
 	 * Inserts the first KNode given in a parameter immediately before the second, child of this KNode.
 	 * 
-	 * @throws  {Error}   when argument is invalid.
+	 * @throws  {KifuError}   when argument is invalid.
 	 * @param   {KNode}   newNode       node to be inserted
 	 * @param   {(KNode)} referenceNode reference node, if omitted, new node will be inserted at the end. 
 	 * @returns {KNode}   this node
 	 */
 	
 	insertBefore(newNode, referenceNode) {
-		if(newNode == null || !(newNode instanceof KNode) || newNode == this) throw new Error("Invalid argument passed to `insertBefore` method, KNode was expected.");
+		if(newNode == null || !(newNode instanceof KNode) || newNode == this) throw new KifuError("Invalid argument passed to `insertBefore` method, KNode was expected.");
 		else if(referenceNode == null) return this.appendChild(newNode);
 		
 		if(newNode.parent) newNode.parent.removeChild(newNode);
@@ -158,7 +159,13 @@ export default class KNode {
 	 */
 	
 	removeChild(child) {
-		this.children.splice(this.children.indexOf(child), 1);
+		var childPosition = this.children.indexOf(child);
+	
+		if(childPosition == -1) {
+			throw new KifuError("Argument passed to `removeChild` method is not child node of the node.");
+		}
+
+		this.children.splice(childPosition, 1);
 
 		child.parent = null;
 		
@@ -168,14 +175,14 @@ export default class KNode {
 	/**
 	 * Replaces one child Node of the current one with the second one given in parameter.
 	 * 
-	 * @throws  {Error} when argument is invalid
+	 * @throws  {KifuError} when argument is invalid
 	 * @param   {KNode} newChild node to be inserted
 	 * @param   {KNode} oldChild node to be replaced
 	 * @returns {KNode} this node
 	 */
 	
 	replaceChild(newChild, oldChild) {
-		if(newChild == null || !(newChild instanceof KNode) || newChild == this) throw new Error("Invalid argument passed to `replaceChild` method, KNode was expected.");
+		if(newChild == null || !(newChild instanceof KNode) || newChild == this) throw new KifuError("Invalid argument passed to `replaceChild` method, KNode was expected.");
 		
 		this.insertBefore(newChild, oldChild);
 		this.removeChild(oldChild);
@@ -191,7 +198,7 @@ export default class KNode {
 	 * @param   {string} 	propIdent - SGF property idetificator
 	 * @returns {any}		property value or values or undefined, if property is missing. 
 	 */
-	 
+
 	getProperty(propIdent) {
 		return this.SGFProperties[propIdent];
 	}
@@ -202,7 +209,7 @@ export default class KNode {
 	 * @param   {string}          propIdent - SGF property idetificator
 	 * @param   {string|string[]} value - property value or values
 	 */
-	 
+
 	setProperty(propIdent, value) {
 		if(value == null) delete this.SGFProperties[propIdent];
 		else this.SGFProperties[propIdent] = value;
@@ -218,7 +225,7 @@ export default class KNode {
 	 * @param   {string} propIdent SGF property identificator.
 	 * @returns {string} SGF property values or empty string, if node doesn't containg this property.
 	 */
-	 
+
 	getSGFProperty(propIdent) {
 		if(this.SGFProperties[propIdent] != null) {
 			let propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
@@ -243,7 +250,7 @@ export default class KNode {
 	 * @param   {string[]} propValue SGF property value
 	 * @returns {KNode}    this KNode for chaining
 	 */
-	 
+
 	setSGFProperty(propIdent, propValue) {
 		if(typeof propValue == "string") {
 			let parser = new SGFParser(propValue);
@@ -293,7 +300,7 @@ export default class KNode {
 	 * @param {string} sgf SGF text for current node. It must be without trailing `;`, however it can contain following nodes.
 	 * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
 	 */
-	 
+
 	setFromSGF(parser) {
 		// clean up
 		for(let i = this.children.length-1; i >= 0; i--) {

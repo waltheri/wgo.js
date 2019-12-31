@@ -14,7 +14,13 @@
         "no-implicit-globals": 1,
         "no-global-assign": 1,
         "no-use-before-define": 1,
-        "import/no-unresolved": 1,
-        "import/named": 1
+        "import/no-unresolved": 2,
+        "import/named": 2,
+        "no-unused-vars": 1
+    },
+    "globals": {
+        "it": true,
+        "describe": true,
+        "beforeEach": true
     }
 }

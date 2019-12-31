@@ -92,6 +92,16 @@ var updateDim = function (board) {
 	}
 }
 
+var objectMissing = function(objectsArray) {
+	return function(object) {
+		return !objectsArray.some(obj => {
+			if (object == obj) return true;
+
+			return Object.keys(object).every(key => object[key] == obj[key]);
+		});
+	}
+}
+
 export default class CanvasBoard {
 	/**
 	 * CanvasBoard class constructor - it creates a canvas board.
@@ -407,8 +417,10 @@ export default class CanvasBoard {
 		}
 	}
 
-	update(changes) {
-		var i;
+	update(fieldObjects) {
+		let changes = this.getChanges(fieldObjects);
+		let i;
+
 		if (changes.remove && changes.remove == "all") this.removeAllObjects();
 		else if (changes.remove) {
 			for (i = 0; i < changes.remove.length; i++) this.removeObject(changes.remove[i]);
@@ -417,6 +429,26 @@ export default class CanvasBoard {
 		if (changes.add) {
 			for (i = 0; i < changes.add.length; i++) this.addObject(changes.add[i]);
 		}
+	}
+
+	getChanges(fieldObjects) {
+		if (fieldObjects == this.fieldObjects) return {};
+
+		let add = [];
+		let remove = [];
+
+		for (let x = 0; x < this.size; x++) {
+			if (fieldObjects[x] != this.fieldObjects[x]) {
+				for (let y = 0; y < this.size; y++) {
+					if (fieldObjects[x][y] != this.fieldObjects[x][y] && (fieldObjects[x][y].length || this.fieldObjects[x][y].length)) {
+						add = add.concat(fieldObjects[x][y].filter(objectMissing(this.fieldObjects[x][y])));
+						remove = remove.concat(this.fieldObjects[x][y].filter(objectMissing(fieldObjects[x][y])));
+					}
+				}
+			}
+		}
+
+		return {add, remove};
 	}
 
 	addObject(obj) {

@@ -1,5 +1,218 @@
 /* Styling */
+@button-width: 40px;
+@button-height: 40px;
+@arrow-size: 25px;
 
 .wgo-board {
 	background-image: data-uri("../images/wood2.jpg");
 }
+
+.wgo-iframe-player {
+	border: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.wgo-player-iframe-content {
+	overflow: hidden;
+	font-family: Calibri, sans-serif;
+
+	input {
+		font-family: Calibri, sans-serif;
+	}
+}
+
+.wgo-player-iframe-content #player {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+}
+
+.wgo-player * {
+	box-sizing: border-box;
+}
+
+.wgo-board-wrapper {
+	width: 100%;
+	position: relative;
+
+	&:before {
+		content: "";
+		display: block;
+		padding-top: 100%;
+	}
+
+	.wgo-board-container {
+		position:  absolute;
+		top: 0;
+		left: 0;
+		bottom: 0;
+		right: 0;
+	}
+}
+
+.wgo-bottom {
+	margin-top: 10px;
+}
+
+.wgo-control {
+	text-align: center;
+}
+
+.wgo-move,
+.wgo-button {
+	width: @button-width;
+    height: @button-height;
+    border: none;
+    position: relative;
+    background: transparent;
+	vertical-align: middle;
+	cursor: pointer;
+
+	&:focus {
+		outline: 0;
+	}
+}
+
+.wgo-button {
+	transition: transform 0.25s;
+
+	&:hover {
+		transform: scale(1.1);
+	}
+
+	&:active {
+		transform: scale(1.3);
+	}
+}
+
+.wgo-move {
+    text-align: center;
+    font-size: 1.3em;
+    font-weight: bold;
+
+	&:focus {
+		text-decoration: underline;
+	}
+}
+
+.wgo-prev::after,
+.wgo-prev-10::before,
+.wgo-prev-10::after,
+.wgo-first::before,
+.wgo-first::after,
+.wgo-next::after,
+.wgo-next-10::before,
+.wgo-next-10::after,
+.wgo-last::before,
+.wgo-last::after {
+    content: "";
+    width: @arrow-size;
+    height: @arrow-size;
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    border-right: 5px solid black;
+    border-top: 5px solid black;
+	box-sizing: border-box;
+}
+
+.wgo-prev::after {
+	right: 2px;
+	transform: rotateZ(-135deg);
+}
+
+.wgo-first::before,
+.wgo-prev-10::before {
+	right: -5px;
+	transform: rotateZ(-135deg);
+}
+
+.wgo-prev-10::after {
+	right: 7px;
+	transform: rotateZ(-135deg);
+}
+
+.wgo-first::after {
+	right: 7px;
+	border-top: 0;
+	border-right: 0;
+	border-left: 5px solid black;
+	height: sqrt(2*@arrow-size*@arrow-size);
+}
+
+.wgo-next::after {
+	left: 2px;
+    transform: rotateZ(45deg);
+}
+
+.wgo-next-10::before,
+.wgo-last::before {
+	left: -5px;
+	transform: rotateZ(45deg);
+}
+
+.wgo-next-10::after {
+	left: 7px;
+	transform: rotateZ(45deg);
+}
+
+.wgo-last::after {
+	left: 7px;
+	border-top: 0;
+	height: sqrt(2*@arrow-size*@arrow-size);
+}
+
+.wgo-capture-info {
+	float: left;
+	width: @button-width;
+	height: @button-height;
+}
+
+.wgo-capture-box {
+	line-height: 20px;
+    font-size: 1.2em;
+    font-weight: bold;
+	position: relative;	
+	text-align: right;
+	padding: 0 2px;
+
+	&:before {
+		content: "";
+		width: 16px;
+		height: 16px;
+		border-radius: 50%;
+		position: absolute;
+		left: 2px;
+		top: 0;
+		bottom: 0;
+		margin: auto;
+		box-shadow: 1px 1px 2px #ccc;
+	}
+
+	&.wgo-capture-black:before {
+		background: radial-gradient(8px 8px at 5px 5px, #666, #000);
+	}
+
+	&.wgo-capture-white:before {
+		background: radial-gradient(10px 10px at 5px 5px, #fff, #eee);
+	}
+}
+
+.wgo-menu {
+	float: right;
+
+	.wgo-dot {
+		width: 7px;
+		height: 6px;
+		background: black;
+		display: block;
+		margin: 4px auto;
+		border-radius: 2px;
+	}
+}
+
