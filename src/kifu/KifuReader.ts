@@ -55,14 +55,24 @@ export default class KifuReader extends EventEmitter {
     const blackMove: Point = this.getProperty(PropIdent.BLACK_MOVE);
     const whiteMove: Point = this.getProperty(PropIdent.WHITE_MOVE);
 
-    if (blackMove && whiteMove) {
+    if (blackMove !== undefined && whiteMove !== undefined) {
       throw 'Some error';
     }
 
-    if (blackMove) {
-      this.game.position.applyMove(blackMove.x, blackMove.y, Color.BLACK, true, true);
-    } else if (whiteMove) {
-      this.game.position.applyMove(blackMove.x, blackMove.y, Color.WHITE, true, true);
+    if (blackMove !== undefined) {
+      if (blackMove) {
+        this.game.position.applyMove(blackMove.x, blackMove.y, Color.BLACK, true, true);
+      } else {
+        // pass
+        this.game.position.turn = Color.WHITE;
+      }
+    } else if (whiteMove !== undefined) {
+      if (whiteMove) {
+        this.game.position.applyMove(whiteMove.x, whiteMove.y, Color.WHITE, true, true);
+      } else {
+        // pass
+        this.game.position.turn = Color.BLACK;
+      }
     }
 
     // set turn

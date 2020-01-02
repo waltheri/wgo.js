@@ -20,30 +20,35 @@ export interface GoRules {
   repeating: Repeating;
   allowRewrite: boolean;
   allowSuicide: boolean;
+  komi: number;
 }
 
 export const JAPANESE_RULES: GoRules = {
   repeating: Repeating.KO,
   allowRewrite: false,
   allowSuicide: false,
+  komi: 6.5,
 };
 
 export const CHINESE_RULES: GoRules = {
   repeating: Repeating.NONE,
   allowRewrite: false,
   allowSuicide: false,
+  komi: 7.5,
 };
 
 export const ING_RULES: GoRules = {
   repeating: Repeating.NONE,
   allowRewrite: false,
   allowSuicide: true,
+  komi: 7.5,
 };
 
 export const NO_RULES: GoRules = {
   repeating: Repeating.ALL,
   allowRewrite: true,
   allowSuicide: true,
+  komi: 0,
 };
 
 export default {

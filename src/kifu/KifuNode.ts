@@ -4,14 +4,15 @@ import { SGFGameTree, SGFProperties } from '../SGFParser/sgfTypes';
 
 const processJSGF = function (gameTree: SGFGameTree) {
   const rootNode = new KifuNode();
+  rootNode.setSGFProperties(gameTree.sequence[0] || {});
+
   let lastNode = rootNode;
 
-  for (let i = 0; i < gameTree.sequence.length; i++) {
-    if (i !== 0) {
-      lastNode = new KifuNode();
-    }
-
-    lastNode.setSGFProperties(gameTree.sequence[i]);
+  for (let i = 1; i < gameTree.sequence.length; i++) {
+    const node = new KifuNode();
+    node.setSGFProperties(gameTree.sequence[i]);
+    lastNode.appendChild(node);
+    lastNode = node;
   }
 
   for (let i = 0; i < gameTree.children.length; i++) {
@@ -351,6 +352,7 @@ export default class KifuNode {
    * @param gameTree
    */
   static fromJS(gameTree: SGFGameTree) {
+    debugger;
     return processJSGF(gameTree);
   }
 

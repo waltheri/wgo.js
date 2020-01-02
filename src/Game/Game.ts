@@ -5,6 +5,7 @@ import { Color } from '../types';
 export default class Game {
   size: number;
   rules: GoRules;
+  komi: number;
   positionStack: Position[];
 
   /**
@@ -30,6 +31,7 @@ export default class Game {
   constructor(size: number = 19, rules: GoRules = JAPANESE_RULES) {
     this.size = size;
     this.rules = rules;
+    this.komi = rules.komi;
     this.positionStack = [new Position(size)];
   }
 

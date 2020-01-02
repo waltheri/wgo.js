@@ -5,8 +5,9 @@ import { Color } from '../src/types';
 import KifuNode from '../src/kifu/KifuNode';
 import { SGFSyntaxError } from '../src/SGFParser';
 import propertyValueTypes from '../src/kifu/propertyValueTypes';
+import { PropIdent } from '../src/SGFParser/sgfTypes';
 
-describe('SGF & KNode', () => {
+describe('SGF & KifuNode', () => {
   describe('Correct transformation of property values.', () => {
     it('No value properties (eg: KO)', () => {
       strictEqual(propertyValueTypes.KO.transformer.read(''), true);
@@ -56,10 +57,49 @@ describe('SGF & KNode', () => {
   });
 
   describe('KifuNode#getPath()', () => {
-    it('Returns correct depth');
+    it('Returns correct depth', () => {
+      const node1 = new KifuNode();
+      const node2 = new KifuNode();
+      const node3 = new KifuNode();
+      node1.appendChild(node2);
+      node2.appendChild(node3);
+
+      deepEqual(node1.getPath(), { depth: 0, forks: [] });
+      deepEqual(node2.getPath(), { depth: 1, forks: [] });
+      deepEqual(node3.getPath(), { depth: 2, forks: [] });
+    });
+
+    it('Returns correct forks', () => {
+      const node1 = new KifuNode();
+      const node11 = new KifuNode();
+      const node12 = new KifuNode();
+      const node111 = new KifuNode();
+      const node1111 = new KifuNode();
+      const node1112 = new KifuNode();
+      const node121 = new KifuNode();
+      const node122 = new KifuNode();
+
+      node1.appendChild(node11);
+      node1.appendChild(node12);
+
+      node11.appendChild(node111);
+      node12.appendChild(node121);
+      node12.appendChild(node122);
+
+      node111.appendChild(node1111);
+      node111.appendChild(node1112);
+
+      deepEqual(node11.getPath(), { depth: 1, forks: [0] });
+      deepEqual(node12.getPath(), { depth: 1, forks: [1] });
+      deepEqual(node111.getPath(), { depth: 2, forks: [0] });
+      deepEqual(node1111.getPath(), { depth: 3, forks: [0, 0] });
+      deepEqual(node1112.getPath(), { depth: 3, forks: [0, 1] });
+      deepEqual(node121.getPath(), { depth: 2, forks: [1, 0] });
+      deepEqual(node122.getPath(), { depth: 2, forks: [1, 1] });
+    });
   });
 
-  describe("KNode's node manipulation methods.", () => {
+  describe("KifuNode's node manipulation methods.", () => {
     let rootNode: KifuNode;
     let node1: KifuNode;
     let node2: KifuNode;
@@ -169,7 +209,7 @@ describe('SGF & KNode', () => {
     }*/);
   });
 
-  describe("KNode's setSGFProperty method", () => {
+  describe("KifuNode's setSGFProperty method", () => {
     let node: KifuNode;
     let move1: any;
     let move2: any;
@@ -263,11 +303,11 @@ describe('SGF & KNode', () => {
     });*/
   });
 
-  /*describe("KNode's getSGFProperty() method and innerSGF property getter", () => {
+  /*describe("KifuNode's getSGFProperty() method and innerSGF property getter", () => {
     let node;
 
     beforeEach(() => {
-      node = new KNode();
+      node = new KifuNode();
       node.setSGFProperties({
         AB: '[hm][fk]',
         IT: '[]',
@@ -301,15 +341,15 @@ describe('SGF & KNode', () => {
     });
 
     it('node.innerSGF with one child', () => {
-      const child = new KNode();
+      const child = new KifuNode();
       child.setSGFProperty('B', ['fk']);
       child.appendChild(node);
       strictEqual(child.innerSGF, 'B[fk];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]]');
     });
 
     it('node.innerSGF with more children', () => {
-      const child1 = new KNode();
-      const child2 = new KNode();
+      const child1 = new KifuNode();
+      const child2 = new KifuNode();
 
       child1.setSGFProperty('B', ['fk']);
       node.appendChild(child1);
@@ -321,13 +361,13 @@ describe('SGF & KNode', () => {
     });
   });*/
 
-  /*describe("(5) KNode's innerSGF property setter", () => {
-    let node: KNode;
+  /*describe("(5) KifuNode's innerSGF property setter", () => {
+    let node: KifuNode;
     let move1;
     let move2;
 
     beforeEach(() => {
-      node = new KNode();
+      node = new KifuNode();
       move1 = {
         s: 'fk',
         c: { x: 5, y: 10 },
@@ -357,7 +397,7 @@ describe('SGF & KNode', () => {
 
     it('Remove all old properties', () => {
       node.setSGFProperty('SQ', ['hm']);
-      node.appendChild(new KNode());
+      node.appendChild(new KifuNode());
 
       node.innerSGF = 'CR[' + move1.s + ']';
 
@@ -440,10 +480,25 @@ describe('SGF & KNode', () => {
     });
   });*/
 
-  describe('Static methods KNode.fromSGF() and KNode.toSGF()', () => {
-    it('KNode.fromSGF(sgf).toSGF() == sgf'/*, () => {
+  describe('Static methods KifuNode.fromSGF() and KifuNode.toSGF()', () => {
+    it('KifuNode#fromSGF()', () => {
+      const node = KifuNode.fromSGF('(;SZ[19];AB[dp]AW[pd];AE[dp][pd])');
+
+      equal(node.getProperty(PropIdent.BOARD_SIZE), 19);
+      equal(node.children.length, 1);
+      deepEqual(node.children[0].getProperty(PropIdent.ADD_BLACK), [{ x: 3, y: 15 }]);
+      deepEqual(node.children[0].getProperty(PropIdent.ADD_WHITE), [{ x: 15, y: 3 }]);
+      equal(node.children[0].children.length, 1);
+      deepEqual(node.children[0].children[0].getProperty(PropIdent.CLEAR_FIELD), [{ x: 3, y: 15 }, { x: 15, y: 3 }]);
+      equal(node.children[0].children[0].children.length, 0);
+    });
+
+    it('KifuNode.fromSGF(sgf).toSGF() == sgf', /*() => {
       // tslint:disable-next-line:max-line-length
-      strictEqual(KNode.fromSGF('(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))').toSGF(), '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))');
+      strictEqual(KifuNode.fromSGF(
+        '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))').toSGF(),
+        '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))'),
+      );
     }*/);
   });
 
@@ -451,7 +506,7 @@ describe('SGF & KNode', () => {
     var node;
 
     beforeEach(function() {
-      node = new KNode();
+      node = new KifuNode();
     });
 
     it("addSetup()", function() {
@@ -513,7 +568,7 @@ describe('SGF & KNode', () => {
   });*/
 
   /*describe("(2) SGF -> Kifu, Kifu -> SGF", function() {
-    it("KNode's innerSGF property.");
+    it("KifuNode's innerSGF property.");
     it("Parse SGF.");
     it("SGF to Kifu object.");
   });

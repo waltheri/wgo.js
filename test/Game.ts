@@ -14,6 +14,7 @@ describe('Game object', () => {
       equal(game.size, 19);
       deepEqual(game.rules, rules.Japanese);
       equal(game.position.turn, Color.BLACK);
+      equal(game.komi, 6.5);
       deepEqual(game.position.capCount, { black: 0, white: 0 });
       deepEqual(game.position, new Position());
     });
@@ -23,6 +24,7 @@ describe('Game object', () => {
       equal(game.size, 9);
       deepEqual(game.rules, rules.Chinese);
       equal(game.position.turn, Color.BLACK);
+      equal(game.komi, 7.5);
       deepEqual(game.position.capCount, { black: 0, white: 0 });
       deepEqual(game.position, new Position(9));
     });
