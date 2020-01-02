@@ -22,6 +22,16 @@ const processJSGF = function (gameTree: SGFGameTree) {
 };
 
 /**
+ * Contains path to certain node in game tree.
+ */
+export interface Path {
+  /** Depth of node (for root node it is 0) */
+  depth: number;
+  /** Array of children array indexes of all predecessors which have siblings. */
+  forks: number[];
+}
+
+/**
  * Class representing one kifu node.
  */
 export default class KifuNode {
@@ -67,6 +77,22 @@ export default class KifuNode {
     }
 
     return output;
+  }
+
+  getPath() {
+    const path: Path = { depth: 0, forks: [] };
+    // tslint:disable-next-line:no-this-assignment
+    let node: KifuNode = this;
+
+    while (node.parent) {
+      path.depth++;
+      if (node.parent.children.length > 1) {
+        path.forks.unshift(node.parent.children.indexOf(node));
+      }
+      node = node.parent;
+    }
+
+    return path;
   }
 
   /// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)

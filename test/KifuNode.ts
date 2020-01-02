@@ -7,7 +7,7 @@ import { SGFSyntaxError } from '../src/SGFParser';
 import propertyValueTypes from '../src/kifu/propertyValueTypes';
 
 describe('SGF & KNode', () => {
-  describe('(1) Correct transformation of property values.', () => {
+  describe('Correct transformation of property values.', () => {
     it('No value properties (eg: KO)', () => {
       strictEqual(propertyValueTypes.KO.transformer.read(''), true);
       strictEqual(propertyValueTypes.KO.transformer.write(true), '');
@@ -55,7 +55,11 @@ describe('SGF & KNode', () => {
     }*/);
   });
 
-  describe("(2) KNode's node manipulation methods.", () => {
+  describe('KifuNode#getPath()', () => {
+    it('Returns correct depth');
+  });
+
+  describe("KNode's node manipulation methods.", () => {
     let rootNode: KifuNode;
     let node1: KifuNode;
     let node2: KifuNode;
@@ -165,7 +169,7 @@ describe('SGF & KNode', () => {
     }*/);
   });
 
-  describe("(3) KNode's setSGFProperty method", () => {
+  describe("KNode's setSGFProperty method", () => {
     let node: KifuNode;
     let move1: any;
     let move2: any;
@@ -259,7 +263,7 @@ describe('SGF & KNode', () => {
     });*/
   });
 
-  /*describe("(4) KNode's getSGFProperty() method and innerSGF property getter", () => {
+  /*describe("KNode's getSGFProperty() method and innerSGF property getter", () => {
     let node;
 
     beforeEach(() => {
@@ -436,7 +440,7 @@ describe('SGF & KNode', () => {
     });
   });*/
 
-  describe('(6) Static methods KNode.fromSGF() and KNode.toSGF()', () => {
+  describe('Static methods KNode.fromSGF() and KNode.toSGF()', () => {
     it('KNode.fromSGF(sgf).toSGF() == sgf'/*, () => {
       // tslint:disable-next-line:max-line-length
       strictEqual(KNode.fromSGF('(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))').toSGF(), '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))');
