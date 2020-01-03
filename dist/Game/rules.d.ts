@@ -18,6 +18,7 @@ export interface GoRules {
     repeating: Repeating;
     allowRewrite: boolean;
     allowSuicide: boolean;
+    komi: number;
 }
 export declare const JAPANESE_RULES: GoRules;
 export declare const CHINESE_RULES: GoRules;

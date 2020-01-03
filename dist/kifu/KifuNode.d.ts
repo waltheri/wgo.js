@@ -1,5 +1,14 @@
 import { SGFGameTree, SGFProperties } from '../SGFParser/sgfTypes';
 /**
+ * Contains path to certain node in game tree.
+ */
+export interface Path {
+    /** Depth of node (for root node it is 0) */
+    depth: number;
+    /** Array of children array indexes of all predecessors which have siblings. */
+    forks: number[];
+}
+/**
  * Class representing one kifu node.
  */
 export default class KifuNode {
@@ -11,6 +20,7 @@ export default class KifuNode {
     constructor();
     readonly root: KifuNode;
     readonly innerSGF: string;
+    getPath(): Path;
     /**
      * Insert a KNode as the last child node of this node.
      *

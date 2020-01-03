@@ -4,6 +4,7 @@ import { Color } from '../types';
 export default class Game {
     size: number;
     rules: GoRules;
+    komi: number;
     positionStack: Position[];
     /**
      * Creates instance of game class.
