@@ -26,7 +26,6 @@ export default class CanvasBoard extends EventEmitter {
     topLeftFieldY: number;
     bottomRightFieldX: number;
     bottomRightFieldY: number;
-    stoneRadius: number;
     /**
        * CanvasBoard class constructor - it creates a canvas board.
        *
@@ -131,4 +130,9 @@ export default class CanvasBoard extends EventEmitter {
     removeAllObjects(): void;
     addCustomObject(handler: DrawHandler<BoardCustomObject>, args: any): void;
     removeCustomObject(handler: DrawHandler<BoardCustomObject>, args: any): boolean;
+    private calcFieldWidth;
+    private calcFieldHeight;
+    private calcLeftMargin;
+    private calcTopMargin;
+    private drawField;
 }

@@ -293,7 +293,7 @@
     var gridClearField = {
         draw: function (canvasCtx, args, board) {
             if (!isHereStone(board, args.x, args.y) && !args._nodraw) {
-                var stoneRadius = board.stoneRadius;
+                var stoneRadius = themeVariable('stoneSize', board);
                 canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
             }
         },
@@ -356,12 +356,12 @@
         };
         CanvasLayer.prototype.drawField = function (drawingFn, args, board) {
             var leftOffset = Math.round(board.left + args.x * board.fieldWidth);
-            var topOffset = board.top + args.y * board.fieldHeight;
+            var topOffset = Math.round(board.top + args.y * board.fieldHeight);
             // create a "sandbox" for drawing function
             this.context.save();
-            this.context.transform(1, 0, 0, 1, leftOffset, topOffset);
+            this.context.transform(board.fieldWidth - 1, 0, 0, board.fieldHeight - 1, leftOffset, topOffset);
             this.context.beginPath();
-            this.context.rect(-board.fieldWidth / 2, -board.fieldWidth / 2, board.fieldWidth, board.fieldHeight);
+            this.context.rect(-0.5, -0.5, 1, 1);
             this.context.clip();
             drawingFn(this.context, args, board);
             // restore context
@@ -380,7 +380,7 @@
                 // draw grid
                 var tmp;
                 canvasCtx.beginPath();
-                canvasCtx.lineWidth = themeVariable('gridLinesWidth', board);
+                canvasCtx.lineWidth = themeVariable('gridLinesWidth', board) * board.fieldWidth;
                 canvasCtx.strokeStyle = themeVariable('gridLinesColor', board);
                 var tx = Math.round(board.left);
                 var ty = Math.round(board.top);
@@ -401,7 +401,7 @@
                 if (board.config.starPoints[board.size]) {
                     for (var key in board.config.starPoints[board.size]) {
                         canvasCtx.beginPath();
-                        canvasCtx.arc(board.getX(board.config.starPoints[board.size][key].x), board.getY(board.config.starPoints[board.size][key].y), themeVariable('starSize', board), 0, 2 * Math.PI, true);
+                        canvasCtx.arc(board.getX(board.config.starPoints[board.size][key].x), board.getY(board.config.starPoints[board.size][key].y), themeVariable('starSize', board) * board.fieldWidth, 0, 2 * Math.PI, true);
                         canvasCtx.fill();
                     }
                 }
@@ -454,7 +454,7 @@
      */
     var shadow = {
         draw: function (canvasCtx, args, board) {
-            var stoneRadius = board.stoneRadius;
+            var stoneRadius = themeVariable('stoneSize', board);
             var blur = themeVariable('shadowBlur', board) || 0.00001;
             var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
             var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur;
@@ -479,7 +479,7 @@
         ctx.strokeStyle = 'rgba(64,64,64,0.2)';
         ctx.lineWidth = (r / 30) * thickness;
         ctx.beginPath();
-        var radius = r - Math.max(1, ctx.lineWidth);
+        var radius = r * 0.9;
         var x1 = x + radius * Math.cos(startAngle * Math.PI);
         var y1 = y + radius * Math.sin(startAngle * Math.PI);
         var x2 = x + radius * Math.cos(endAngle * Math.PI);
@@ -522,7 +522,7 @@
     var shellStone = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
+                var stoneRadius = themeVariable('stoneSize', board);
                 var radgrad;
                 if (args.c === Color.WHITE) {
                     radgrad = '#aaa';
@@ -532,7 +532,7 @@
                 }
                 canvasCtx.beginPath();
                 canvasCtx.fillStyle = radgrad;
-                canvasCtx.arc(0, 0, Math.max(0, stoneRadius - 0.5), 0, 2 * Math.PI, true);
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
                 // do shell magic here
                 if (args.c === Color.WHITE) {
@@ -593,7 +593,7 @@
                     canvasCtx.fillStyle = radgrad;
                     canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                     canvasCtx.fill();
-                    radgrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 1, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
+                    radgrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 0.05 * stoneRadius, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
                     radgrad.addColorStop(0, 'rgba(64,64,64,1)');
                     radgrad.addColorStop(1, 'rgba(0,0,0,0)');
                     canvasCtx.beginPath();
@@ -612,7 +612,7 @@
         stone: {
             // drawing function - args object contain info about drawing object, board is main board object
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
+                var stoneRadius = themeVariable('stoneSize', board);
                 var radgrad;
                 // set stone texture
                 if (args.c === Color.WHITE) {
@@ -640,15 +640,15 @@
     var paintedStone = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
+                var stoneRadius = themeVariable('stoneSize', board);
                 var radgrad;
                 if (args.c === Color.WHITE) {
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
                     radgrad.addColorStop(0, '#fff');
                     radgrad.addColorStop(1, '#ddd');
                 }
                 else {
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
                     radgrad.addColorStop(0, '#111');
                     radgrad.addColorStop(1, '#000');
                 }
@@ -677,8 +677,7 @@
     var simpleStone = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
-                var lw = themeVariable('markupLinesWidth', board) || 1;
+                var lw = themeVariable('markupLinesWidth', board);
                 if (args.c === Color.WHITE) {
                     canvasCtx.fillStyle = 'white';
                 }
@@ -686,7 +685,7 @@
                     canvasCtx.fillStyle = 'black';
                 }
                 canvasCtx.beginPath();
-                canvasCtx.arc(0, 0, Math.max(0, stoneRadius - lw), 0, 2 * Math.PI, true);
+                canvasCtx.arc(0, 0, Math.max(0, 1 - lw), 0, 2 * Math.PI, true);
                 canvasCtx.fill();
                 canvasCtx.lineWidth = lw;
                 canvasCtx.strokeStyle = 'black';
@@ -719,7 +718,7 @@
         return {
             stone: {
                 draw: function (canvasCtx, args, board) {
-                    var stoneRadius = board.stoneRadius;
+                    var stoneRadius = themeVariable('stoneSize', board);
                     var graphic = args.c === Color.WHITE ? graphics.whiteStoneGraphic : graphics.blackStoneGraphic;
                     var count = graphic.length;
                     var idx = randSeed % (count + args.x * board.size + args.y) % count;
@@ -759,11 +758,10 @@
     var circle = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
                 canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board) || 1;
+                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board);
                 canvasCtx.beginPath();
-                canvasCtx.arc(0, 0, Math.round(stoneRadius / 2), 0, 2 * Math.PI, true);
+                canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
             },
         },
@@ -774,11 +772,10 @@
     var square = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = Math.round(board.stoneRadius);
                 canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board) || 1;
+                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board);
                 canvasCtx.beginPath();
-                canvasCtx.rect(Math.round(-stoneRadius / 2), Math.round(-stoneRadius / 2), stoneRadius, stoneRadius);
+                canvasCtx.rect(-0.25, -0.25, 0.5, 0.5);
                 canvasCtx.stroke();
             },
         },
@@ -789,13 +786,12 @@
     var triangle = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
                 canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board) || 1;
+                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board);
                 canvasCtx.beginPath();
-                canvasCtx.moveTo(0, 0 - Math.round(stoneRadius / 2));
-                canvasCtx.lineTo(Math.round(-stoneRadius / 2), Math.round(stoneRadius / 3));
-                canvasCtx.lineTo(Math.round(+stoneRadius / 2), Math.round(stoneRadius / 3));
+                canvasCtx.moveTo(0, 0 - 0.25);
+                canvasCtx.lineTo(-0.25, 0.166666);
+                canvasCtx.lineTo(0.25, 0.166666);
                 canvasCtx.closePath();
                 canvasCtx.stroke();
             },
@@ -807,22 +803,20 @@
     var label = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
                 var font = args.font || themeVariable('font', board) || '';
                 canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
+                var fontSize = 0.5;
                 if (args.text.length === 1) {
-                    canvasCtx.font = Math.round(stoneRadius * 1.5) + "px " + font;
+                    fontSize = 0.75;
                 }
                 else if (args.text.length === 2) {
-                    canvasCtx.font = Math.round(stoneRadius * 1.2) + "px " + font;
-                }
-                else {
-                    canvasCtx.font = Math.round(stoneRadius) + "px " + font;
+                    fontSize = 0.6;
                 }
                 canvasCtx.beginPath();
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
-                canvasCtx.fillText(args.text, 0, 0, 2 * stoneRadius);
+                canvasCtx.font = fontSize + "px " + font;
+                canvasCtx.fillText(args.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
             },
         },
         grid: gridClearField,
@@ -832,10 +826,9 @@
     var dot = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
                 canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
                 canvasCtx.beginPath();
-                canvasCtx.rect(-stoneRadius / 2, -stoneRadius / 2, stoneRadius, stoneRadius);
+                canvasCtx.rect(-0.5, -0.5, 1, 1);
                 canvasCtx.fill();
             },
         },
@@ -846,15 +839,14 @@
     var xMark = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
                 canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
                 canvasCtx.lineCap = 'round';
-                canvasCtx.lineWidth = (args.lineWidth || themeVariable('markupLinesWidth', board) || 1) * 2 - 1;
+                canvasCtx.lineWidth = (args.lineWidth || themeVariable('markupLinesWidth', board)) * 1.5;
                 canvasCtx.beginPath();
-                canvasCtx.moveTo(Math.round(-stoneRadius / 2), Math.round(-stoneRadius / 2));
-                canvasCtx.lineTo(Math.round(stoneRadius / 2), Math.round(stoneRadius / 2));
-                canvasCtx.moveTo(Math.round(stoneRadius / 2) - 1, Math.round(-stoneRadius / 2));
-                canvasCtx.lineTo(Math.round(-stoneRadius / 2) - 1, Math.round(stoneRadius / 2));
+                canvasCtx.moveTo(-0.20, -0.20);
+                canvasCtx.lineTo(0.20, 0.20);
+                canvasCtx.moveTo(0.20, -0.20);
+                canvasCtx.lineTo(-0.20, 0.20);
                 canvasCtx.stroke();
                 canvasCtx.lineCap = 'butt';
             },
@@ -866,18 +858,17 @@
     var smileyFace = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = board.stoneRadius;
                 canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
                 canvasCtx.lineWidth = (args.lineWidth || themeVariable('markupLinesWidth', board) || 1) * 2;
                 canvasCtx.beginPath();
-                canvasCtx.arc(-stoneRadius / 3, -stoneRadius / 3, stoneRadius / 6, 0, 2 * Math.PI, true);
+                canvasCtx.arc(-0.5 / 3, -0.5 / 3, 0.5 / 6, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
                 canvasCtx.beginPath();
-                canvasCtx.arc(stoneRadius / 3, -stoneRadius / 3, stoneRadius / 6, 0, 2 * Math.PI, true);
+                canvasCtx.arc(0.5 / 3, -0.5 / 3, 0.5 / 6, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
                 canvasCtx.beginPath();
-                canvasCtx.moveTo(-stoneRadius / 1.5, 0);
-                canvasCtx.bezierCurveTo(-stoneRadius / 1.5, stoneRadius / 2, stoneRadius / 1.5, stoneRadius / 2, stoneRadius / 1.5, 0);
+                canvasCtx.moveTo(-0.5 / 1.5, 0);
+                canvasCtx.bezierCurveTo(-0.5 / 1.5, 0.5 / 2, 0.5 / 1.5, 0.5 / 2, 0.5 / 1.5, 0);
                 canvasCtx.stroke();
             },
         },
@@ -912,7 +903,7 @@
                 canvasCtx.fillStyle = themeVariable('coordinatesColor', board);
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
-                canvasCtx.font = board.stoneRadius + "px " + (board.config.theme.font || '');
+                canvasCtx.font = board.fieldHeight / 2 + "px " + (board.config.theme.font || '');
                 var xright = board.getX(-0.75);
                 var xleft = board.getX(board.size - 0.25);
                 var ytop = board.getY(-0.75);
@@ -961,27 +952,18 @@
                 'stones/black03_128.png',
             ],
         }, shellStone),
-        stoneSize: function (board) {
-            var fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
-            return /*8/17**/ 0.5 * fieldSize;
-        },
+        stoneSize: 0.5,
         // shadow
         shadowColor: 'rgba(62,32,32,0.5)',
         shadowTransparentColor: 'rgba(62,32,32,0)',
         shadowBlur: 0.5,
-        shadowOffsetX: function (board) {
-            return Math.round(board.stoneRadius / 7);
-        },
-        shadowOffsetY: function (board) {
-            return Math.round(board.stoneRadius / 3);
-        },
+        shadowOffsetX: 0.08,
+        shadowOffsetY: 0.16,
         // markup
         markupBlackColor: 'rgba(255,255,255,0.9)',
         markupWhiteColor: 'rgba(0,0,0,0.7)',
         markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLinesWidth: function (board) {
-            return board.stoneRadius / 7.5;
-        },
+        markupLinesWidth: 0.05,
         markupHandlers: {
             CR: circle,
             LB: label,
@@ -992,14 +974,10 @@
             SM: smileyFace,
         },
         // grid & star points
-        gridLinesWidth: function (board) {
-            return board.stoneRadius / 15;
-        },
+        gridLinesWidth: 0.03,
         gridLinesColor: '#654525',
         starColor: '#531',
-        starSize: function (board) {
-            return (board.stoneRadius / 8) + 1;
-        },
+        starSize: 0.06,
         // coordinates
         coordinatesHandler: coordinates,
         coordinatesColor: '#531',
@@ -1022,27 +1000,18 @@
     var modernTheme = {
         // stones
         stoneHandler: shellStone,
-        stoneSize: function (board) {
-            var fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
-            return 8 / 17 * fieldSize;
-        },
+        stoneSize: 0.47,
         // shadow
         shadowColor: 'rgba(62,32,32,0.5)',
         shadowTransparentColor: 'rgba(62,32,32,0)',
         shadowBlur: 0.25,
-        shadowOffsetX: function (board) {
-            return Math.round(board.stoneRadius / 7);
-        },
-        shadowOffsetY: function (board) {
-            return Math.round(board.stoneRadius / 7);
-        },
+        shadowOffsetX: 0.08,
+        shadowOffsetY: 0.16,
         // markup
         markupBlackColor: 'rgba(255,255,255,0.9)',
         markupWhiteColor: 'rgba(0,0,0,0.7)',
         markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLinesWidth: function (board) {
-            return board.stoneRadius / 7.5;
-        },
+        markupLinesWidth: 0.05,
         markupHandlers: {
             CR: circle,
             LB: label,
@@ -1053,14 +1022,10 @@
             SM: smileyFace,
         },
         // grid & star points
-        gridLinesWidth: function (board) {
-            return board.stoneRadius / 15;
-        },
+        gridLinesWidth: 0.03,
         gridLinesColor: '#654525',
         starColor: '#531',
-        starSize: function (board) {
-            return (board.stoneRadius / 8) + 1;
-        },
+        starSize: 0.05,
         // coordinates
         coordinatesHandler: coordinates,
         coordinatesColor: '#531',
@@ -1117,6 +1082,7 @@
         },
         coordinates: false,
         theme: realisticTheme,
+        marginSize: 0.25,
     };
     //# sourceMappingURL=defaultConfig.js.map
 
@@ -1179,10 +1145,13 @@
 
     /* global document, window */
     // Private methods of WGo.CanvasBoard
-    var calcLeftMargin = function (b) { return ((3 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2) - b.fieldWidth * b.topLeftFieldX); };
-    var calcTopMargin = function (b) { return ((3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY); };
-    var calcFieldWidth = function (b) { return ((4 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2)); };
-    var calcFieldHeight = function (b) { return ((4 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2)); };
+    /*const calcLeftMargin = (b: CanvasBoard) => (
+      //(3 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2) - b.fieldWidth * b.topLeftFieldX
+    );
+
+    const calcTopMargin = (b: CanvasBoard) => (
+      //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
+    );*/
     var clearField = function (board, x, y) {
         var handler;
         for (var z = 0; z < board.fieldObjects[x][y].length; z++) {
@@ -1198,25 +1167,6 @@
             }
             for (var layer in handler) {
                 board.layers[layer].drawField(handler[layer].clear ? handler[layer].clear : defaultFieldClear, obj, board);
-            }
-        }
-    };
-    // Draws all object on specified field
-    var drawField = function (board, x, y) {
-        var handler;
-        for (var z = 0; z < board.fieldObjects[x][y].length; z++) {
-            var obj = board.fieldObjects[x][y][z];
-            if (!obj.type) {
-                handler = themeVariable('stoneHandler', board);
-            }
-            else if (typeof obj.type === 'string') {
-                handler = themeVariable('markupHandlers', board)[obj.type];
-            }
-            else {
-                handler = obj.type;
-            }
-            for (var layer in handler) {
-                board.layers[layer].drawField(handler[layer].draw, obj, board);
             }
         }
     };
@@ -1355,36 +1305,35 @@
             var _this = this;
             this.element.style.width = (this.width / this.pixelRatio) + "px";
             this.element.style.height = (this.height / this.pixelRatio) + "px";
-            this.stoneRadius = themeVariable('stoneSize', this);
             Object.keys(this.layers).forEach(function (layer) {
                 _this.layers[layer].setDimensions(_this.width, _this.height, _this);
             });
         };
         CanvasBoard.prototype.setWidth = function (width) {
             this.width = width * this.pixelRatio;
-            this.fieldHeight = this.fieldWidth = calcFieldWidth(this);
-            this.left = calcLeftMargin(this);
+            this.fieldHeight = this.fieldWidth = this.calcFieldWidth();
+            this.left = this.calcLeftMargin();
             this.height = (this.bottomRightFieldY - this.topLeftFieldY + 1.5) * this.fieldHeight;
-            this.top = calcTopMargin(this);
+            this.top = this.calcTopMargin();
             this.updateDim();
             this.redraw();
         };
         CanvasBoard.prototype.setHeight = function (height) {
             this.height = height * this.pixelRatio;
-            this.fieldWidth = this.fieldHeight = calcFieldHeight(this);
-            this.top = calcTopMargin(this);
+            this.fieldWidth = this.fieldHeight = this.calcFieldHeight();
+            this.top = this.calcTopMargin();
             this.width = (this.bottomRightFieldX - this.topLeftFieldX + 1.5) * this.fieldWidth;
-            this.left = calcLeftMargin(this);
+            this.left = this.calcLeftMargin();
             this.updateDim();
             this.redraw();
         };
         CanvasBoard.prototype.setDimensions = function (width, height) {
             this.width = (width || parseInt(this.element.style.width, 10)) * this.pixelRatio;
             this.height = (height || parseInt(this.element.style.height, 10)) * this.pixelRatio;
-            this.fieldWidth = calcFieldWidth(this);
-            this.fieldHeight = calcFieldHeight(this);
-            this.left = calcLeftMargin(this);
-            this.top = calcTopMargin(this);
+            this.fieldWidth = this.calcFieldWidth();
+            this.fieldHeight = this.calcFieldHeight();
+            this.left = this.calcLeftMargin();
+            this.top = this.calcTopMargin();
             this.updateDim();
             this.redraw();
         };
@@ -1438,7 +1387,7 @@
                 // redraw field objects
                 for (var x = 0; x < this.size; x++) {
                     for (var y = 0; y < this.size; y++) {
-                        drawField(this, x, y);
+                        this.drawField(x, y);
                     }
                 }
                 // redraw custom objects
@@ -1557,7 +1506,7 @@
         };
         CanvasBoard.prototype.addObject = function (obj) {
             // handling multiple objects
-            if (obj.constructor === Array) {
+            if (Array.isArray(obj)) {
                 for (var i = 0; i < obj.length; i++) {
                     this.addObject(obj[i]);
                 }
@@ -1575,7 +1524,7 @@
                 for (var z = 0; z < layers.length; z++) {
                     if (layers[z].type === obj.type) {
                         layers[z] = obj;
-                        drawField(this, obj.x, obj.y);
+                        this.drawField(obj.x, obj.y);
                         return;
                     }
                 }
@@ -1587,7 +1536,7 @@
                     layers.push(obj);
                 }
                 // draw all objects
-                drawField(this, obj.x, obj.y);
+                this.drawField(obj.x, obj.y);
             }
             catch (err) {
                 // If the board is too small some canvas painting function can throw an exception,
@@ -1620,7 +1569,7 @@
                 // clear all objects on object's coordinates
                 clearField(this, obj.x, obj.y);
                 this.fieldObjects[obj.x][obj.y].splice(i, 1);
-                drawField(this, obj.x, obj.y);
+                this.drawField(obj.x, obj.y);
             }
             catch (err) {
                 // If the board is too small some canvas painting function can throw an exception,
@@ -1659,6 +1608,63 @@
                 }
             }
             return false;
+        };
+        /*on(type, callback) {
+          const evListener = {
+            type,
+            callback,
+            handleEvent: event => {
+              const coo = getMousePos(this, event);
+              callback(coo.x, coo.y, event);
+            },
+          };
+      
+          this.element.addEventListener(type, evListener, true);
+          this.listeners.push(evListener);
+        }
+      
+        off(type, callback) {
+          for (let i = 0; i < this.listeners.length; i++) {
+            const listener = this.listeners[i];
+            if (listener.type === type && listener.callback === callback) {
+              this.element.removeEventListener(listener.type, listener, true);
+              this.listeners.splice(i, 1);
+              return true;
+            }
+          }
+          return false;
+        }*/
+        CanvasBoard.prototype.calcFieldWidth = function () {
+            // field width = board width / (number of fields + 1 for margin)
+            return this.width / (this.bottomRightFieldX - this.topLeftFieldX + 1 + this.config.marginSize * 2);
+        };
+        CanvasBoard.prototype.calcFieldHeight = function () {
+            // field height = board height / (number of fields + 1 for margin)
+            return this.height / (this.bottomRightFieldY - this.topLeftFieldY + 1 + this.config.marginSize * 2);
+        };
+        CanvasBoard.prototype.calcLeftMargin = function () {
+            return this.calcFieldWidth() * (0.5 + this.config.marginSize);
+        };
+        CanvasBoard.prototype.calcTopMargin = function () {
+            return this.calcFieldHeight() * (0.5 + this.config.marginSize);
+        };
+        CanvasBoard.prototype.drawField = function (x, y) {
+            var handler;
+            for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
+                var obj = this.fieldObjects[x][y][z];
+                if (!obj.type) {
+                    handler = themeVariable('stoneHandler', this);
+                }
+                else if (typeof obj.type === 'string') {
+                    handler = themeVariable('markupHandlers', this)[obj.type];
+                }
+                else {
+                    handler = obj.type;
+                }
+                for (var layer in handler) {
+                    this.layers[layer].drawField(handler[layer].draw, obj, this);
+                }
+            }
         };
         return CanvasBoard;
     }(EventEmitter));

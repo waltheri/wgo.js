@@ -1,13 +1,14 @@
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
 import { Color } from '../../types';
+import { themeVariable } from '../helpers';
 
 export default {
     // draw handler for stone layer
   stone: {
         // drawing function - args object contain info about drawing object, board is main board object
     draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      const stoneRadius = board.stoneRadius;
+      const stoneRadius = themeVariable('stoneSize', board);
       let radgrad;
 
             // set stone texture

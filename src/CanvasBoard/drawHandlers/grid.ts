@@ -8,7 +8,7 @@ export default {
       let tmp;
 
       canvasCtx.beginPath();
-      canvasCtx.lineWidth = themeVariable('gridLinesWidth', board);
+      canvasCtx.lineWidth = themeVariable('gridLinesWidth', board) * board.fieldWidth;
       canvasCtx.strokeStyle = themeVariable('gridLinesColor', board);
 
       const tx = Math.round(board.left);
@@ -39,7 +39,7 @@ export default {
           canvasCtx.arc(
             board.getX(board.config.starPoints[board.size][key].x),
             board.getY(board.config.starPoints[board.size][key].y),
-            themeVariable('starSize', board), 0, 2 * Math.PI, true,
+            themeVariable('starSize', board) * board.fieldWidth, 0, 2 * Math.PI, true,
           );
           canvasCtx.fill();
         }

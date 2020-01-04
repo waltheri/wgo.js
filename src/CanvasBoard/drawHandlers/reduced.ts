@@ -7,14 +7,9 @@ export default function (drawHandler: DrawHandler) {
   return {
     stone: {
       draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-        const stoneRadius = board.stoneRadius;
-
-        // temporary reduce stone radius
-        board.stoneRadius = board.stoneRadius / 2;
+        canvasCtx.scale(0.5, 0.5);
         drawHandler.stone.draw.call(null, canvasCtx, args, board);
-
-        // revert it
-        board.stoneRadius = stoneRadius;
+        canvasCtx.scale(2, 2);
       },
     },
   };

@@ -4,24 +4,23 @@ import CanvasBoard from '..';
 export default {
   stone: {
     draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      const stoneRadius = board.stoneRadius;
       const font = args.font || themeVariable('font', board) || '';
 
       canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
 
+      let fontSize = 0.5;
+
       if (args.text.length === 1) {
-        canvasCtx.font = `${Math.round(stoneRadius * 1.5)}px ${font}`;
+        fontSize = 0.75;
       } else if (args.text.length === 2) {
-        canvasCtx.font = `${Math.round(stoneRadius * 1.2)}px ${font}`;
-      } else {
-        canvasCtx.font = `${Math.round(stoneRadius)}px ${font}`;
+        fontSize = 0.6;
       }
 
       canvasCtx.beginPath();
       canvasCtx.textBaseline = 'middle';
       canvasCtx.textAlign = 'center';
-      canvasCtx.fillText(args.text, 0, 0, 2 * stoneRadius);
-
+      canvasCtx.font = `${fontSize}px ${font}`;
+      canvasCtx.fillText(args.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
     },
   },
   grid: gridClearField,

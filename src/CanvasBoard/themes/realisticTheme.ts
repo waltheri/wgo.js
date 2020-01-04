@@ -32,29 +32,20 @@ const realisticTheme: CanvasBoardTheme = {
       'stones/black03_128.png',
     ],
   }, drawHandlers.shellStone),
-  stoneSize (board: CanvasBoard) {
-    const fieldSize = Math.min(board.fieldWidth, board.fieldHeight);
-    return /*8/17**/0.5 * fieldSize;
-  },
+  stoneSize: 0.5,
 
   // shadow
   shadowColor: 'rgba(62,32,32,0.5)',
   shadowTransparentColor: 'rgba(62,32,32,0)',
   shadowBlur: 0.5,
-  shadowOffsetX (board: CanvasBoard) {
-    return Math.round(board.stoneRadius / 7);
-  },
-  shadowOffsetY (board: CanvasBoard) {
-    return Math.round(board.stoneRadius / 3);
-  },
+  shadowOffsetX: 0.08,
+  shadowOffsetY: 0.16,
 
   // markup
   markupBlackColor: 'rgba(255,255,255,0.9)',
   markupWhiteColor: 'rgba(0,0,0,0.7)',
   markupNoneColor: 'rgba(0,0,0,0.7)',
-  markupLinesWidth (board: CanvasBoard) {
-    return board.stoneRadius / 7.5;
-  },
+  markupLinesWidth: 0.05,
   markupHandlers: {
     CR: drawHandlers.circle,
     LB: drawHandlers.label,
@@ -66,14 +57,10 @@ const realisticTheme: CanvasBoardTheme = {
   },
 
   // grid & star points
-  gridLinesWidth (board: CanvasBoard) {
-    return board.stoneRadius / 15;
-  },
+  gridLinesWidth: 0.03,
   gridLinesColor: '#654525',
   starColor: '#531',
-  starSize (board: CanvasBoard) {
-    return (board.stoneRadius / 8) + 1;
-  },
+  starSize: 0.06,
 
   // coordinates
   coordinatesHandler: coordinates,

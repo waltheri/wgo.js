@@ -26,7 +26,7 @@ export default function (graphics: {whiteStoneGraphic: any[], blackStoneGraphic:
   return {
     stone: {
       draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-        const stoneRadius = board.stoneRadius;
+        const stoneRadius = themeVariable('stoneSize', board);
         const graphic = args.c === Color.WHITE ? graphics.whiteStoneGraphic : graphics.blackStoneGraphic;
         const count = graphic.length;
         const idx = randSeed % (count + args.x * board.size + args.y) % count;

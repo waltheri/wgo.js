@@ -33,7 +33,7 @@ export function defaultFieldClear(canvasCtx: CanvasRenderingContext2D, _args: an
 export let gridClearField = {
   draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
     if (!isHereStone(board, args.x, args.y) && !args._nodraw) {
-      const stoneRadius = board.stoneRadius;
+      const stoneRadius = themeVariable('stoneSize', board);
 
       canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
     }

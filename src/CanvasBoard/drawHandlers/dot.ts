@@ -4,11 +4,9 @@ import CanvasBoard from '..';
 export default {
   stone: {
     draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      const stoneRadius = board.stoneRadius;
-
       canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
       canvasCtx.beginPath();
-      canvasCtx.rect(-stoneRadius / 2, -stoneRadius / 2, stoneRadius, stoneRadius);
+      canvasCtx.rect(-0.5, -0.5, 1, 1);
       canvasCtx.fill();
     },
   },

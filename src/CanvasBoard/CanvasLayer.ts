@@ -64,14 +64,14 @@ export default class CanvasLayer {
 
   drawField<P>(drawingFn: DrawFunction<P>, args: any, board: CanvasBoard) {
     const leftOffset = Math.round(board.left + args.x * board.fieldWidth);
-    const topOffset = board.top + args.y * board.fieldHeight;
+    const topOffset = Math.round(board.top + args.y * board.fieldHeight);
 
     // create a "sandbox" for drawing function
     this.context.save();
 
-    this.context.transform(1, 0, 0, 1, leftOffset, topOffset);
+    this.context.transform(board.fieldWidth - 1, 0, 0, board.fieldHeight - 1, leftOffset, topOffset);
     this.context.beginPath();
-    this.context.rect(-board.fieldWidth / 2, -board.fieldWidth / 2, board.fieldWidth, board.fieldHeight);
+    this.context.rect(-0.5, -0.5, 1, 1);
     this.context.clip();
     drawingFn(this.context, args, board);
 

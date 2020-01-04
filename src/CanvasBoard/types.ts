@@ -66,6 +66,9 @@ export interface CanvasBoardConfig {
   viewport: BoardViewport;
   coordinates: boolean;
   theme: CanvasBoardTheme;
+
+  /** Size of board margin relative to field size */
+  marginSize: number;
 }
 
 export interface DrawFunction<P> {

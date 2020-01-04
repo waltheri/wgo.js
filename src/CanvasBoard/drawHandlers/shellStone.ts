@@ -1,6 +1,7 @@
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
 import { Color } from '../../types';
+import { themeVariable } from '../helpers';
 
 // shell stone helping functions
 const shellSeed = Math.ceil(Math.random() * 9999999);
@@ -12,7 +13,7 @@ const drawShellLine = function (ctx: CanvasRenderingContext2D, x: number, y: num
   ctx.lineWidth = (r / 30) * thickness;
   ctx.beginPath();
 
-  const radius = r - Math.max(1, ctx.lineWidth);
+  const radius = r * 0.9;
 
   const x1 = x + radius * Math.cos(startAngle * Math.PI);
   const y1 = y + radius * Math.sin(startAngle * Math.PI);
@@ -63,7 +64,7 @@ const drawShell = function (arg: any) {
 export default {
   stone: {
     draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      const stoneRadius = board.stoneRadius;
+      const stoneRadius = themeVariable('stoneSize', board);
       let radgrad;
 
       if (args.c === Color.WHITE) {
@@ -74,7 +75,7 @@ export default {
 
       canvasCtx.beginPath();
       canvasCtx.fillStyle = radgrad;
-      canvasCtx.arc(0, 0, Math.max(0, stoneRadius - 0.5), 0, 2 * Math.PI, true);
+      canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
       canvasCtx.fill();
 
       // do shell magic here
@@ -138,7 +139,8 @@ export default {
         radgrad = canvasCtx.createRadialGradient(
           0.4 * stoneRadius,
           0.4 * stoneRadius,
-          0, 0.5 * stoneRadius,
+          0,
+          0.5 * stoneRadius,
           0.5 * stoneRadius,
           stoneRadius,
         );
@@ -160,7 +162,7 @@ export default {
         radgrad = canvasCtx.createRadialGradient(
           -0.4 * stoneRadius,
           -0.4 * stoneRadius,
-          1,
+          0.05 * stoneRadius,
           -0.5 * stoneRadius,
           -0.5 * stoneRadius,
           1.5 * stoneRadius,

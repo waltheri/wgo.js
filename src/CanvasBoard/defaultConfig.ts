@@ -34,6 +34,7 @@ const canvasBoardDefaultConfig: CanvasBoardConfig = {
   },
   coordinates: false,
   theme: realisticTheme,
+  marginSize: 0.25,
 };
 
 export default canvasBoardDefaultConfig;

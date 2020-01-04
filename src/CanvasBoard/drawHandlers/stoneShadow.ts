@@ -11,7 +11,7 @@ import CanvasBoard from '..';
 
 export default {
   draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-    const stoneRadius = board.stoneRadius;
+    const stoneRadius = themeVariable('stoneSize', board);
     const blur = themeVariable('shadowBlur', board) || 0.00001;
 
     const startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);

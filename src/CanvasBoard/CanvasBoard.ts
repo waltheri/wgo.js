@@ -16,21 +16,13 @@ import EventEmitter from '../utils/EventEmitter';
 
 // Private methods of WGo.CanvasBoard
 
-const calcLeftMargin = (b: CanvasBoard) => (
-  (3 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2) - b.fieldWidth * b.topLeftFieldX
+/*const calcLeftMargin = (b: CanvasBoard) => (
+  //(3 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2) - b.fieldWidth * b.topLeftFieldX
 );
 
 const calcTopMargin = (b: CanvasBoard) => (
-  (3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
-);
-
-const calcFieldWidth = (b: CanvasBoard) => (
-  (4 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2)
-);
-
-const calcFieldHeight = (b: CanvasBoard) => (
-  (4 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2)
-);
+  //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
+);*/
 
 const clearField = (board: CanvasBoard, x: number, y: number) => {
   let handler: DrawHandler<any>;
@@ -46,26 +38,6 @@ const clearField = (board: CanvasBoard, x: number, y: number) => {
 
     for (const layer in handler) {
       board.layers[layer].drawField(handler[layer].clear ? handler[layer].clear : defaultFieldClear, obj, board);
-    }
-  }
-};
-
-// Draws all object on specified field
-const drawField = function (board: CanvasBoard, x: number, y: number) {
-  let handler;
-  for (let z = 0; z < board.fieldObjects[x][y].length; z++) {
-    const obj = board.fieldObjects[x][y][z];
-
-    if (!obj.type) {
-      handler = themeVariable('stoneHandler', board);
-    } else if (typeof obj.type === 'string') {
-      handler = themeVariable('markupHandlers', board)[obj.type];
-    } else {
-      handler = obj.type;
-    }
-
-    for (const layer in handler) {
-      board.layers[layer].drawField(handler[layer].draw, obj, board);
     }
   }
 };
@@ -128,7 +100,6 @@ export default class CanvasBoard extends EventEmitter {
   topLeftFieldY: number;
   bottomRightFieldX: number;
   bottomRightFieldY: number;
-  stoneRadius: number;
 
   /**
 	 * CanvasBoard class constructor - it creates a canvas board.
@@ -241,8 +212,6 @@ export default class CanvasBoard extends EventEmitter {
     this.element.style.width = `${(this.width / this.pixelRatio)}px`;
     this.element.style.height = `${(this.height / this.pixelRatio)}px`;
 
-    this.stoneRadius = themeVariable('stoneSize', this);
-
     Object.keys(this.layers).forEach((layer) => {
       this.layers[layer].setDimensions(this.width, this.height, this);
     });
@@ -251,11 +220,11 @@ export default class CanvasBoard extends EventEmitter {
   setWidth(width: number) {
     this.width = width * this.pixelRatio;
 
-    this.fieldHeight = this.fieldWidth = calcFieldWidth(this);
-    this.left = calcLeftMargin(this);
+    this.fieldHeight = this.fieldWidth = this.calcFieldWidth();
+    this.left = this.calcLeftMargin();
 
     this.height = (this.bottomRightFieldY - this.topLeftFieldY + 1.5) * this.fieldHeight;
-    this.top = calcTopMargin(this);
+    this.top = this.calcTopMargin();
 
     this.updateDim();
     this.redraw();
@@ -263,11 +232,11 @@ export default class CanvasBoard extends EventEmitter {
 
   setHeight(height: number) {
     this.height = height * this.pixelRatio;
-    this.fieldWidth = this.fieldHeight = calcFieldHeight(this);
-    this.top = calcTopMargin(this);
+    this.fieldWidth = this.fieldHeight = this.calcFieldHeight();
+    this.top = this.calcTopMargin();
 
     this.width = (this.bottomRightFieldX - this.topLeftFieldX + 1.5) * this.fieldWidth;
-    this.left = calcLeftMargin(this);
+    this.left = this.calcLeftMargin();
 
     this.updateDim();
     this.redraw();
@@ -277,10 +246,10 @@ export default class CanvasBoard extends EventEmitter {
     this.width = (width || parseInt(this.element.style.width, 10)) * this.pixelRatio;
     this.height = (height || parseInt(this.element.style.height, 10)) * this.pixelRatio;
 
-    this.fieldWidth = calcFieldWidth(this);
-    this.fieldHeight = calcFieldHeight(this);
-    this.left = calcLeftMargin(this);
-    this.top = calcTopMargin(this);
+    this.fieldWidth = this.calcFieldWidth();
+    this.fieldHeight = this.calcFieldHeight();
+    this.left = this.calcLeftMargin();
+    this.top = this.calcTopMargin();
 
     this.updateDim();
     this.redraw();
@@ -344,7 +313,7 @@ export default class CanvasBoard extends EventEmitter {
       // redraw field objects
       for (let x = 0; x < this.size; x++) {
         for (let y = 0; y < this.size; y++) {
-          drawField(this, x, y);
+          this.drawField(x, y);
         }
       }
 
@@ -483,7 +452,7 @@ export default class CanvasBoard extends EventEmitter {
 
   addObject(obj: BoardFieldObject) {
     // handling multiple objects
-    if (obj.constructor === Array) {
+    if (Array.isArray(obj)) {
       for (let i = 0; i < obj.length; i++) { this.addObject(obj[i]); }
       return;
     }
@@ -500,7 +469,7 @@ export default class CanvasBoard extends EventEmitter {
       for (let z = 0; z < layers.length; z++) {
         if (layers[z].type === obj.type) {
           layers[z] = obj;
-          drawField(this, obj.x, obj.y);
+          this.drawField(obj.x, obj.y);
           return;
         }
       }
@@ -510,7 +479,7 @@ export default class CanvasBoard extends EventEmitter {
       else { layers.push(obj); }
 
       // draw all objects
-      drawField(this, obj.x, obj.y);
+      this.drawField(obj.x, obj.y);
     } catch (err) {
       // If the board is too small some canvas painting function can throw an exception,
       // but we don't want to break our app
@@ -542,7 +511,7 @@ export default class CanvasBoard extends EventEmitter {
 
       this.fieldObjects[obj.x][obj.y].splice(i, 1);
 
-      drawField(this, obj.x, obj.y);
+      this.drawField(obj.x, obj.y);
     } catch (err) {
       // If the board is too small some canvas painting function can throw an exception,
       // but we don't want to break our app
@@ -608,4 +577,41 @@ export default class CanvasBoard extends EventEmitter {
     }
     return false;
   }*/
+
+  private calcFieldWidth() {
+    // field width = board width / (number of fields + 1 for margin)
+    return this.width / (this.bottomRightFieldX - this.topLeftFieldX + 1 + this.config.marginSize * 2);
+  }
+
+  private calcFieldHeight() {
+    // field height = board height / (number of fields + 1 for margin)
+    return this.height / (this.bottomRightFieldY - this.topLeftFieldY + 1 + this.config.marginSize * 2);
+  }
+
+  private calcLeftMargin() {
+    return this.calcFieldWidth() * (0.5 + this.config.marginSize);
+  }
+
+  private calcTopMargin() {
+    return this.calcFieldHeight() * (0.5 + this.config.marginSize);
+  }
+
+  private drawField(x: number, y: number) {
+    let handler;
+    for (let z = 0; z < this.fieldObjects[x][y].length; z++) {
+      const obj = this.fieldObjects[x][y][z];
+
+      if (!obj.type) {
+        handler = themeVariable('stoneHandler', this);
+      } else if (typeof obj.type === 'string') {
+        handler = themeVariable('markupHandlers', this)[obj.type];
+      } else {
+        handler = obj.type;
+      }
+
+      for (const layer in handler) {
+        this.layers[layer].drawField(handler[layer].draw, obj, this);
+      }
+    }
+  }
 }

@@ -1,18 +1,19 @@
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
 import { Color } from '../../types';
+import { themeVariable } from '../helpers';
 
 export default {
   stone: {
     draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      const stoneRadius = board.stoneRadius;
+      const stoneRadius = themeVariable('stoneSize', board);
       let radgrad;
 
       if (args.c === Color.WHITE) {
         radgrad = canvasCtx.createRadialGradient(
           -2 * stoneRadius / 5,
           -2 * stoneRadius / 5,
-          2,
+          2 * stoneRadius / 5,
           -stoneRadius / 5,
           -stoneRadius / 5,
           4 * stoneRadius / 5,
@@ -23,8 +24,9 @@ export default {
         radgrad = canvasCtx.createRadialGradient(
           -2 * stoneRadius / 5,
           -2 * stoneRadius / 5,
-          1,
-          -stoneRadius / 5, -stoneRadius / 5,
+          1 * stoneRadius / 5,
+          -stoneRadius / 5,
+          -stoneRadius / 5,
           4 * stoneRadius / 5,
         );
         radgrad.addColorStop(0, '#111');

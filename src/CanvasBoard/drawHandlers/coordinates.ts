@@ -13,7 +13,7 @@ export default {
       canvasCtx.fillStyle = themeVariable('coordinatesColor', board);
       canvasCtx.textBaseline = 'middle';
       canvasCtx.textAlign = 'center';
-      canvasCtx.font = `${board.stoneRadius}px ${board.config.theme.font || ''}`;
+      canvasCtx.font = `${board.fieldHeight / 2}px ${board.config.theme.font || ''}`;
 
       const xright = board.getX(-0.75);
       const xleft = board.getX(board.size - 0.25);

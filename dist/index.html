@@ -10,7 +10,105 @@
 <div id="board"></div>
 <script src="index.js"></script>
 <script>
-window.board = new WGo.CanvasBoard(document.getElementById('board'), { width: 700, height: 700 });
+
+var board = new WGo.CanvasBoard(document.getElementById('board'), { width: 800, height: 800 });
+
+/*board.addObject({ x: 3, y: 3, c: 1 });
+board.addObject({ x: 15, y: 3, c: -1 });
+board.addObject({ x: 3, y: 15, type: 'CR' });
+board.addObject({ x: 4, y: 15, type: 'LB', text: '😋' });
+board.addObject({ x: 5, y: 15, type: 'LB', text: '12' });
+board.addObject({ x: 6, y: 15, type: 'LB', text: '123' });
+board.addObject({ x: 7, y: 15, type: 'SQ' });
+board.addObject({ x: 8, y: 15, type: 'TR' });
+board.addObject({ x: 9, y: 15, type: 'MA' });
+board.addObject({ x: 10, y: 15, type: 'SL' });
+board.addObject({ x: 11, y: 15, type: 'SM' });
+
+board.addObject({ x: 3, y: 13, c: 1 });
+board.addObject({ x: 4, y: 13, c: 1 });
+board.addObject({ x: 5, y: 13, c: 1 });
+board.addObject({ x: 6, y: 13, c: 1 });
+board.addObject({ x: 7, y: 13, c: 1 });
+board.addObject({ x: 8, y: 13, c: 1 });
+board.addObject({ x: 9, y: 13, c: 1 });
+board.addObject({ x: 10, y: 13, c: 1 });
+board.addObject({ x: 11, y: 13, c: 1 });
+
+board.addObject({ x: 3, y: 13, type: 'CR' });
+board.addObject({ x: 4, y: 13, type: 'LB', text: '😋' });
+board.addObject({ x: 5, y: 13, type: 'LB', text: '12' });
+board.addObject({ x: 6, y: 13, type: 'LB', text: '123' });
+board.addObject({ x: 7, y: 13, type: 'SQ' });
+board.addObject({ x: 8, y: 13, type: 'TR' });
+board.addObject({ x: 9, y: 13, type: 'MA' });
+board.addObject({ x: 10, y: 13, type: 'SL' });
+board.addObject({ x: 11, y: 13, type: 'SM' });
+
+board.addObject({ x: 3, y: 11, c: -1 });
+board.addObject({ x: 4, y: 11, c: -1 });
+board.addObject({ x: 5, y: 11, c: -1 });
+board.addObject({ x: 6, y: 11, c: -1 });
+board.addObject({ x: 7, y: 11, c: -1 });
+board.addObject({ x: 8, y: 11, c: -1 });
+board.addObject({ x: 9, y: 11, c: -1 });
+board.addObject({ x: 10, y: 11, c: -1 });
+board.addObject({ x: 11, y: 11, c: -1 });
+
+board.addObject({ x: 3, y: 11, type: 'CR' });
+board.addObject({ x: 4, y: 11, type: 'LB', text: '😋' });
+board.addObject({ x: 5, y: 11, type: 'LB', text: '12' });
+board.addObject({ x: 6, y: 11, type: 'LB', text: '123' });
+board.addObject({ x: 7, y: 11, type: 'SQ' });
+board.addObject({ x: 8, y: 11, type: 'TR' });
+board.addObject({ x: 9, y: 11, type: 'MA' });
+board.addObject({ x: 10, y: 11, type: 'SL' });
+board.addObject({ x: 11, y: 11, type: 'SM' });*/
+
+const custom = {
+  stone: {
+    draw(canvasCtx, args, board) {
+      //canvasCtx.beginPath();
+      //canvasCtx.rect(0, 0, 10, 10);
+      //canvasCtx.beginPath();
+
+      canvasCtx.fillRect(-0.5, -0.5, 1, 1);
+      //canvasCtx.fill();
+
+      //canvasCtx.beginPath();
+      //canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldWidth / 2, board.fieldWidth, board.fieldHeight);
+      //canvasCtx.fill();
+    },
+  },
+};
+
+board.addObject({ x: 9, y: 9, type: custom });
+board.addObject({ x: 1, y: 0, type: custom });
+board.addObject({ x: 2, y: 0, type: custom });
+
+board.addObject({ x: 0, y: 2, type: custom });
+board.addObject({ x: 0, y: 3, type: custom });
+
+board.addObject({ x: 5, y: 5, type: 'CR' });
+board.addObject({ x: 5, y: 7, type: 'SL' });
+board.addObject({ x: 5, y: 8, type: 'SL' });
+board.addObject({ x: 6, y: 7, type: 'SL' });
+board.addObject({ x: 6, y: 8, type: 'SL' });
+
+board.addObject({ x: 6, y: 7, type: 'LB', text: '123', c: 'white' });
+board.addObject({ x: 6, y: 8, type: 'LB', text: '1', c: 'white' });
+
+board.addObject({ x: 11, y: 11, type: 'SM' });
+board.addObject({ x: 11, y: 10, type: 'SQ' });
+board.addObject({ x: 12, y: 12, type: 'TR' });
+board.addObject({ x: 12, y: 10, type: 'MA' });
+
+board.addObject({ x: 13, y: 13, c: 1 });
+board.addObject({ x: 13, y: 14, c: 1 });
+board.addObject({ x: 14, y: 14, c: -1 });
+board.addObject({ x: 14, y: 13, c: -1 });
+board.addObject({ x: 14, y: 13, type: 'MA' });
+
 </script>
 </body>
 </html>
