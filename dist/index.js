@@ -268,22 +268,6 @@
     })(Color || (Color = {}));
     //# sourceMappingURL=types.js.map
 
-    /**
-     * Utilities methods for Canvas board
-     */
-    function themeVariable(key, board) {
-        var theme = board.config.theme;
-        return typeof theme[key] === 'function' ? theme[key](board) : theme[key];
-    }
-    function getMarkupColor(board, x, y) {
-        if (board.fieldObjects[x][y][0].c === Color.BLACK) {
-            return themeVariable('markupBlackColor', board);
-        }
-        if (board.fieldObjects[x][y][0].c === Color.WHITE) {
-            return themeVariable('markupWhiteColor', board);
-        }
-        return themeVariable('markupNoneColor', board);
-    }
     function isHereStone(b, x, y) {
         return (b.fieldObjects[x][y][0] && b.fieldObjects[x][y][0].c === Color.W || b.fieldObjects[x][y][0].c === Color.B);
     }
@@ -293,7 +277,7 @@
     var gridClearField = {
         draw: function (canvasCtx, args, board) {
             if (!isHereStone(board, args.x, args.y) && !args._nodraw) {
-                var stoneRadius = themeVariable('stoneSize', board);
+                var stoneRadius = board.config.theme.stoneSize;
                 canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
             }
         },
@@ -309,7 +293,6 @@
     };
     //# sourceMappingURL=helpers.js.map
 
-    /* global document, window */
     /**
      * @class
      * Implements one layer of the HTML5 canvas
@@ -326,7 +309,7 @@
             this.context.save();
         }
         CanvasLayer.prototype.setDimensions = function (width, height, board) {
-            var linesShift = themeVariable('linesShift', board);
+            var linesShift = board.config.theme.linesShift;
             this.element.width = width;
             this.element.style.width = width / this.pixelRatio + "px";
             this.element.height = height;
@@ -380,8 +363,8 @@
                 // draw grid
                 var tmp;
                 canvasCtx.beginPath();
-                canvasCtx.lineWidth = themeVariable('gridLinesWidth', board) * board.fieldWidth;
-                canvasCtx.strokeStyle = themeVariable('gridLinesColor', board);
+                canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldWidth;
+                canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
                 var tx = Math.round(board.left);
                 var ty = Math.round(board.top);
                 var bw = Math.round(board.fieldWidth * (board.size - 1));
@@ -397,11 +380,11 @@
                 }
                 canvasCtx.stroke();
                 // draw stars
-                canvasCtx.fillStyle = themeVariable('starColor', board);
+                canvasCtx.fillStyle = board.config.theme.starColor;
                 if (board.config.starPoints[board.size]) {
                     for (var key in board.config.starPoints[board.size]) {
                         canvasCtx.beginPath();
-                        canvasCtx.arc(board.getX(board.config.starPoints[board.size][key].x), board.getY(board.config.starPoints[board.size][key].y), themeVariable('starSize', board) * board.fieldWidth, 0, 2 * Math.PI, true);
+                        canvasCtx.arc(board.getX(board.config.starPoints[board.size][key].x), board.getY(board.config.starPoints[board.size][key].y), board.config.theme.starSize * board.fieldWidth, 0, 2 * Math.PI, true);
                         canvasCtx.fill();
                     }
                 }
@@ -439,7 +422,7 @@
         }
         ShadowLayer.prototype.setDimensions = function (width, height, board) {
             _super.prototype.setDimensions.call(this, width, height, board);
-            this.context.transform(1, 0, 0, 1, themeVariable('shadowOffsetX', board), themeVariable('shadowOffsetY', board));
+            this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX, board.config.theme.shadowOffsetY);
         };
         return ShadowLayer;
     }(CanvasLayer));
@@ -454,23 +437,48 @@
      */
     var shadow = {
         draw: function (canvasCtx, args, board) {
-            var stoneRadius = themeVariable('stoneSize', board);
-            var blur = themeVariable('shadowBlur', board) || 0.00001;
+            var stoneRadius = board.config.theme.stoneSize;
+            var blur = board.config.theme.shadowBlur;
             var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
             var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur;
             var gradient = canvasCtx.createRadialGradient(0, 0, startRadius, 0, 0, stopRadius);
-            gradient.addColorStop(0, themeVariable('shadowColor', board));
-            gradient.addColorStop(1, themeVariable('shadowTransparentColor', board));
+            gradient.addColorStop(0, board.config.theme.shadowColor);
+            gradient.addColorStop(1, board.config.theme.shadowTransparentColor);
             canvasCtx.beginPath();
             canvasCtx.fillStyle = gradient;
             canvasCtx.arc(0, 0, stopRadius, 0, 2 * Math.PI, true);
             canvasCtx.fill();
-            // canvasCtx.beginPath();
-            // canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-            // canvasCtx.stroke();
         },
     };
     //# sourceMappingURL=stoneShadow.js.map
+
+    var shellStoneBlack = {
+        stone: {
+            draw: function (canvasCtx, args, board) {
+                var stoneRadius = board.config.theme.stoneSize;
+                canvasCtx.beginPath();
+                canvasCtx.fillStyle = '#000';
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+                canvasCtx.fill();
+                var radGrad = canvasCtx.createRadialGradient(0.4 * stoneRadius, 0.4 * stoneRadius, 0, 0.5 * stoneRadius, 0.5 * stoneRadius, stoneRadius);
+                radGrad.addColorStop(0, 'rgba(32,32,32,1)');
+                radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                canvasCtx.beginPath();
+                canvasCtx.fillStyle = radGrad;
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+                canvasCtx.fill();
+                radGrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 0.05 * stoneRadius, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
+                radGrad.addColorStop(0, 'rgba(64,64,64,1)');
+                radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                canvasCtx.beginPath();
+                canvasCtx.fillStyle = radGrad;
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+                canvasCtx.fill();
+            },
+        },
+        shadow: shadow,
+    };
+    //# sourceMappingURL=shellStoneBlack.js.map
 
     // shell stone helping functions
     var shellSeed = Math.ceil(Math.random() * 9999999);
@@ -519,113 +527,77 @@
             drawShellLine(arg.ctx, arg.x, arg.y, arg.radius, fromAngle, toAngle, arg.factor, arg.thickness);
         }
     };
-    var shellStone = {
+    var shellStoneWhite = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = themeVariable('stoneSize', board);
-                var radgrad;
-                if (args.c === Color.WHITE) {
-                    radgrad = '#aaa';
-                }
-                else {
-                    radgrad = '#000';
-                }
+                var stoneRadius = board.config.theme.stoneSize;
                 canvasCtx.beginPath();
-                canvasCtx.fillStyle = radgrad;
+                canvasCtx.fillStyle = '#aaa';
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
                 // do shell magic here
-                if (args.c === Color.WHITE) {
-                    // do shell magic here
-                    var type = shellSeed % (3 + args.x * board.size + args.y) % 3;
-                    var z = board.size * board.size + args.x * board.size + args.y;
-                    var angle = (2 / z) * (shellSeed % z);
-                    if (type === 0) {
-                        drawShell({
-                            ctx: canvasCtx,
-                            x: 0,
-                            y: 0,
-                            radius: stoneRadius,
-                            angle: angle,
-                            lines: [0.10, 0.12, 0.11, 0.10, 0.09, 0.09, 0.09, 0.09],
-                            factor: 0.25,
-                            thickness: 1.75,
-                        });
-                    }
-                    else if (type === 1) {
-                        drawShell({
-                            ctx: canvasCtx,
-                            x: 0,
-                            y: 0,
-                            radius: stoneRadius,
-                            angle: angle,
-                            lines: [0.10, 0.09, 0.08, 0.07, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06],
-                            factor: 0.2,
-                            thickness: 1.5,
-                        });
-                    }
-                    else {
-                        drawShell({
-                            ctx: canvasCtx,
-                            x: 0,
-                            y: 0,
-                            radius: stoneRadius,
-                            angle: angle,
-                            lines: [0.12, 0.14, 0.13, 0.12, 0.12, 0.12],
-                            factor: 0.3,
-                            thickness: 2,
-                        });
-                    }
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
-                    radgrad.addColorStop(0, 'rgba(255,255,255,0.9)');
-                    radgrad.addColorStop(1, 'rgba(255,255,255,0)');
-                    // add radial gradient //
-                    canvasCtx.beginPath();
-                    canvasCtx.fillStyle = radgrad;
-                    canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                    canvasCtx.fill();
+                var type = shellSeed % (3 + args.x * board.size + args.y) % 3;
+                var z = board.size * board.size + args.x * board.size + args.y;
+                var angle = (2 / z) * (shellSeed % z);
+                if (type === 0) {
+                    drawShell({
+                        ctx: canvasCtx,
+                        x: 0,
+                        y: 0,
+                        radius: stoneRadius,
+                        angle: angle,
+                        lines: [0.10, 0.12, 0.11, 0.10, 0.09, 0.09, 0.09, 0.09],
+                        factor: 0.25,
+                        thickness: 1.75,
+                    });
+                }
+                else if (type === 1) {
+                    drawShell({
+                        ctx: canvasCtx,
+                        x: 0,
+                        y: 0,
+                        radius: stoneRadius,
+                        angle: angle,
+                        lines: [0.10, 0.09, 0.08, 0.07, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06],
+                        factor: 0.2,
+                        thickness: 1.5,
+                    });
                 }
                 else {
-                    radgrad = canvasCtx.createRadialGradient(0.4 * stoneRadius, 0.4 * stoneRadius, 0, 0.5 * stoneRadius, 0.5 * stoneRadius, stoneRadius);
-                    radgrad.addColorStop(0, 'rgba(32,32,32,1)');
-                    radgrad.addColorStop(1, 'rgba(0,0,0,0)');
-                    canvasCtx.beginPath();
-                    canvasCtx.fillStyle = radgrad;
-                    canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                    canvasCtx.fill();
-                    radgrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 0.05 * stoneRadius, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
-                    radgrad.addColorStop(0, 'rgba(64,64,64,1)');
-                    radgrad.addColorStop(1, 'rgba(0,0,0,0)');
-                    canvasCtx.beginPath();
-                    canvasCtx.fillStyle = radgrad;
-                    canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                    canvasCtx.fill();
+                    drawShell({
+                        ctx: canvasCtx,
+                        x: 0,
+                        y: 0,
+                        radius: stoneRadius,
+                        angle: angle,
+                        lines: [0.12, 0.14, 0.13, 0.12, 0.12, 0.12],
+                        factor: 0.3,
+                        thickness: 2,
+                    });
                 }
+                var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
+                radGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+                radGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                // add radial gradient //
+                canvasCtx.beginPath();
+                canvasCtx.fillStyle = radGrad;
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+                canvasCtx.fill();
             },
         },
         shadow: shadow,
     };
-    //# sourceMappingURL=shellStone.js.map
+    //# sourceMappingURL=shellStoneWhite.js.map
 
-    var glassStone = {
+    var glassStoneBlack = {
         // draw handler for stone layer
         stone: {
             // drawing function - args object contain info about drawing object, board is main board object
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = themeVariable('stoneSize', board);
-                var radgrad;
-                // set stone texture
-                if (args.c === Color.WHITE) {
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
-                    radgrad.addColorStop(0, '#fff');
-                    radgrad.addColorStop(1, '#aaa');
-                }
-                else {
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
-                    radgrad.addColorStop(0, '#666');
-                    radgrad.addColorStop(1, '#000');
-                }
-                // paint stone
+                var stoneRadius = board.config.theme.stoneSize;
+                var radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+                radgrad.addColorStop(0, '#666');
+                radgrad.addColorStop(1, '#000');
                 canvasCtx.beginPath();
                 canvasCtx.fillStyle = radgrad;
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
@@ -635,64 +607,88 @@
         // adding shadow
         shadow: shadow,
     };
-    //# sourceMappingURL=glassStone.js.map
+    //# sourceMappingURL=glassStoneBlack.js.map
 
-    var paintedStone = {
+    var glassStoneWhite = {
+        // draw handler for stone layer
         stone: {
+            // drawing function - args object contain info about drawing object, board is main board object
             draw: function (canvasCtx, args, board) {
-                var stoneRadius = themeVariable('stoneSize', board);
-                var radgrad;
-                if (args.c === Color.WHITE) {
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
-                    radgrad.addColorStop(0, '#fff');
-                    radgrad.addColorStop(1, '#ddd');
-                }
-                else {
-                    radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
-                    radgrad.addColorStop(0, '#111');
-                    radgrad.addColorStop(1, '#000');
-                }
+                var stoneRadius = board.config.theme.stoneSize;
+                var radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
+                radgrad.addColorStop(0, '#fff');
+                radgrad.addColorStop(1, '#aaa');
                 canvasCtx.beginPath();
                 canvasCtx.fillStyle = radgrad;
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
+            },
+        },
+        // adding shadow
+        shadow: shadow,
+    };
+    //# sourceMappingURL=glassStoneWhite.js.map
+
+    var paintedStoneBlack = {
+        stone: {
+            draw: function (canvasCtx, args, board) {
+                var stoneRadius = board.config.theme.stoneSize;
+                var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+                radGrad.addColorStop(0, '#111');
+                radGrad.addColorStop(1, '#000');
+                canvasCtx.beginPath();
+                canvasCtx.fillStyle = radGrad;
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+                canvasCtx.fill();
                 canvasCtx.beginPath();
                 canvasCtx.lineWidth = stoneRadius / 6;
-                if (args.c === Color.WHITE) {
-                    canvasCtx.strokeStyle = '#999';
-                    canvasCtx.arc(stoneRadius / 8, stoneRadius / 8, stoneRadius / 2, 0, Math.PI / 2, false);
-                }
-                else {
-                    canvasCtx.strokeStyle = '#ccc';
-                    canvasCtx.arc(-stoneRadius / 8, -stoneRadius / 8, stoneRadius / 2, Math.PI, 1.5 * Math.PI);
-                }
+                canvasCtx.strokeStyle = '#ccc';
+                canvasCtx.arc(-stoneRadius / 8, -stoneRadius / 8, stoneRadius / 2, Math.PI, 1.5 * Math.PI);
                 canvasCtx.stroke();
             },
         },
         shadow: shadow,
     };
-    //# sourceMappingURL=paintedStone.js.map
+    //# sourceMappingURL=paintedStoneBlack.js.map
 
-    // Black and white stone
-    var simpleStone = {
+    var paintedStoneWhite = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var lw = themeVariable('markupLinesWidth', board);
-                if (args.c === Color.WHITE) {
-                    canvasCtx.fillStyle = 'white';
-                }
-                else {
-                    canvasCtx.fillStyle = 'black';
-                }
+                var stoneRadius = board.config.theme.stoneSize;
+                var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+                radGrad.addColorStop(0, '#fff');
+                radGrad.addColorStop(1, '#ddd');
                 canvasCtx.beginPath();
-                canvasCtx.arc(0, 0, Math.max(0, 1 - lw), 0, 2 * Math.PI, true);
+                canvasCtx.fillStyle = radGrad;
+                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
-                canvasCtx.lineWidth = lw;
-                canvasCtx.strokeStyle = 'black';
+                canvasCtx.beginPath();
+                canvasCtx.lineWidth = stoneRadius / 6;
+                canvasCtx.strokeStyle = '#999';
+                canvasCtx.arc(stoneRadius / 8, stoneRadius / 8, stoneRadius / 2, 0, Math.PI / 2, false);
                 canvasCtx.stroke();
             },
         },
+        shadow: shadow,
     };
+    //# sourceMappingURL=paintedStoneWhite.js.map
+
+    function simpleStone (color) {
+        return {
+            stone: {
+                draw: function (canvasCtx, args, board) {
+                    var lw = board.config.theme.markupLinesWidth;
+                    canvasCtx.fillStyle = color;
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(0, 0, Math.max(0, 1 - lw), 0, 2 * Math.PI, true);
+                    canvasCtx.fill();
+                    canvasCtx.lineWidth = lw;
+                    canvasCtx.strokeStyle = 'black';
+                    canvasCtx.stroke();
+                },
+            },
+        };
+    }
     //# sourceMappingURL=simpleStone.js.map
 
     /* global window */
@@ -710,16 +706,15 @@
         }
         return true;
     }
-    // Shadow handler for the 'REALISITC' rendering mode
+    // Shadow handler for the 'REALISTIC' rendering mode
     // handler for image based stones
-    function realisticStone (graphics, fallback) {
+    function realisticStone (graphic, fallback) {
         var randSeed = Math.ceil(Math.random() * 9999999);
         var redrawRequest;
         return {
             stone: {
                 draw: function (canvasCtx, args, board) {
-                    var stoneRadius = themeVariable('stoneSize', board);
-                    var graphic = args.c === Color.WHITE ? graphics.whiteStoneGraphic : graphics.blackStoneGraphic;
+                    var stoneRadius = board.config.theme.stoneSize;
                     var count = graphic.length;
                     var idx = randSeed % (count + args.x * board.size + args.y) % count;
                     if (typeof graphic[idx] === 'string') {
@@ -738,7 +733,7 @@
                                 redrawRequest = null;
                             }, 1);
                         };
-                        stoneGraphic.src = themeVariable('imageFolder', board) + graphic[idx];
+                        stoneGraphic.src = board.config.theme.imageFolder + graphic[idx];
                         graphic[idx] = stoneGraphic;
                     }
                     if (isOkay(graphic[idx])) {
@@ -758,8 +753,8 @@
     var circle = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board);
+                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth;
                 canvasCtx.beginPath();
                 canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
@@ -772,8 +767,8 @@
     var square = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board);
+                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth;
                 canvasCtx.beginPath();
                 canvasCtx.rect(-0.25, -0.25, 0.5, 0.5);
                 canvasCtx.stroke();
@@ -786,8 +781,8 @@
     var triangle = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = args.lineWidth || themeVariable('markupLinesWidth', board);
+                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth;
                 canvasCtx.beginPath();
                 canvasCtx.moveTo(0, 0 - 0.25);
                 canvasCtx.lineTo(-0.25, 0.166666);
@@ -803,8 +798,8 @@
     var label = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                var font = args.font || themeVariable('font', board) || '';
-                canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
+                var font = args.font || board.config.theme.font || '';
+                canvasCtx.fillStyle = args.color || board.config.theme.markupNoneColor;
                 var fontSize = 0.5;
                 if (args.text.length === 1) {
                     fontSize = 0.75;
@@ -826,7 +821,7 @@
     var dot = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
+                canvasCtx.fillStyle = args.color || board.config.theme.markupNoneColor;
                 canvasCtx.beginPath();
                 canvasCtx.rect(-0.5, -0.5, 1, 1);
                 canvasCtx.fill();
@@ -839,9 +834,9 @@
     var xMark = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
+                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth * 1.5;
                 canvasCtx.lineCap = 'round';
-                canvasCtx.lineWidth = (args.lineWidth || themeVariable('markupLinesWidth', board)) * 1.5;
                 canvasCtx.beginPath();
                 canvasCtx.moveTo(-0.20, -0.20);
                 canvasCtx.lineTo(0.20, 0.20);
@@ -858,8 +853,8 @@
     var smileyFace = {
         stone: {
             draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.c || getMarkupColor(board, args.x, args.y);
-                canvasCtx.lineWidth = (args.lineWidth || themeVariable('markupLinesWidth', board) || 1) * 2;
+                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = (args.lineWidth || board.config.theme.markupLinesWidth) * 2;
                 canvasCtx.beginPath();
                 canvasCtx.arc(-0.5 / 3, -0.5 / 3, 0.5 / 6, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
@@ -879,9 +874,12 @@
     //# sourceMappingURL=index.js.map
 
     var index = /*#__PURE__*/Object.freeze({
-        shellStone: shellStone,
-        glassStone: glassStone,
-        paintedStone: paintedStone,
+        shellStoneBlack: shellStoneBlack,
+        shellStoneWhite: shellStoneWhite,
+        glassStoneBlack: glassStoneBlack,
+        glassStoneWhite: glassStoneWhite,
+        paintedStoneBlack: paintedStoneBlack,
+        paintedStoneWhite: paintedStoneWhite,
         simpleStone: simpleStone,
         realisticStone: realisticStone,
         circle: circle,
@@ -900,7 +898,7 @@
         grid: {
             draw: function (canvasCtx, args, board) {
                 var t;
-                canvasCtx.fillStyle = themeVariable('coordinatesColor', board);
+                canvasCtx.fillStyle = board.config.theme.coordinatesColor;
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
                 canvasCtx.font = board.fieldHeight / 2 + "px " + (board.config.theme.font || '');
@@ -908,8 +906,8 @@
                 var xleft = board.getX(board.size - 0.25);
                 var ytop = board.getY(-0.75);
                 var ybottom = board.getY(board.size - 0.25);
-                var coordinatesX = themeVariable('coordinatesX', board);
-                var coordinatesY = themeVariable('coordinatesY', board);
+                var coordinatesX = board.config.theme.coordinatesX;
+                var coordinatesY = board.config.theme.coordinatesY;
                 for (var i = 0; i < board.size; i++) {
                     t = board.getY(i);
                     canvasCtx.fillText(coordinatesX[i], xright, t);
@@ -930,9 +928,43 @@
      * Theme object doesn't set board and stone textures - they are set separately.
      */
     var realisticTheme = {
-        // stones
-        stoneHandler: realisticStone({
-            whiteStoneGraphic: [
+        // markup
+        markupBlackColor: 'rgba(255,255,255,0.9)',
+        markupWhiteColor: 'rgba(0,0,0,0.7)',
+        markupNoneColor: 'rgba(0,0,0,0.7)',
+        markupLinesWidth: 0.05,
+        // grid & star points
+        stoneSize: 0.5,
+        gridLinesWidth: 0.03,
+        gridLinesColor: '#654525',
+        starColor: '#531',
+        starSize: 0.07,
+        // shadow
+        shadowColor: 'rgba(62,32,32,0.5)',
+        shadowTransparentColor: 'rgba(62,32,32,0)',
+        shadowBlur: 0.5,
+        shadowOffsetX: 0.08,
+        shadowOffsetY: 0.16,
+        // coordinates
+        coordinatesHandler: coordinates,
+        coordinatesColor: '#531',
+        coordinatesX: 'ABCDEFGHJKLMNOPQRSTUV',
+        coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        // other
+        variationColor: 'rgba(0,32,128,0.8)',
+        font: 'calibri',
+        linesShift: -0.5,
+        imageFolder: '../images/',
+        backgroundColor: '#CEB053',
+        backgroundImage: '',
+        drawHandlers: {
+            B: realisticStone([
+                'stones/black00_128.png',
+                'stones/black01_128.png',
+                'stones/black02_128.png',
+                'stones/black03_128.png',
+            ], shellStoneBlack),
+            W: realisticStone([
                 'stones/white00_128.png',
                 'stones/white01_128.png',
                 'stones/white02_128.png',
@@ -944,27 +976,7 @@
                 'stones/white08_128.png',
                 'stones/white09_128.png',
                 'stones/white10_128.png',
-            ],
-            blackStoneGraphic: [
-                'stones/black00_128.png',
-                'stones/black01_128.png',
-                'stones/black02_128.png',
-                'stones/black03_128.png',
-            ],
-        }, shellStone),
-        stoneSize: 0.5,
-        // shadow
-        shadowColor: 'rgba(62,32,32,0.5)',
-        shadowTransparentColor: 'rgba(62,32,32,0)',
-        shadowBlur: 0.5,
-        shadowOffsetX: 0.08,
-        shadowOffsetY: 0.16,
-        // markup
-        markupBlackColor: 'rgba(255,255,255,0.9)',
-        markupWhiteColor: 'rgba(0,0,0,0.7)',
-        markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLinesWidth: 0.05,
-        markupHandlers: {
+            ], shellStoneWhite),
             CR: circle,
             LB: label,
             SQ: square,
@@ -973,23 +985,6 @@
             SL: dot,
             SM: smileyFace,
         },
-        // grid & star points
-        gridLinesWidth: 0.03,
-        gridLinesColor: '#654525',
-        starColor: '#531',
-        starSize: 0.06,
-        // coordinates
-        coordinatesHandler: coordinates,
-        coordinatesColor: '#531',
-        coordinatesX: 'ABCDEFGHJKLMNOPQRSTUV',
-        coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        // other
-        variationColor: 'rgba(0,32,128,0.8)',
-        font: 'calibri',
-        linesShift: -0.25,
-        imageFolder: '../images/',
-        backgroundColor: '#CEB053',
-        backgroundImage: '',
     };
 
     /**
@@ -998,34 +993,22 @@
      * Theme object doesn't set board and stone textures - they are set separately.
      */
     var modernTheme = {
-        // stones
-        stoneHandler: shellStone,
-        stoneSize: 0.47,
-        // shadow
-        shadowColor: 'rgba(62,32,32,0.5)',
-        shadowTransparentColor: 'rgba(62,32,32,0)',
-        shadowBlur: 0.25,
-        shadowOffsetX: 0.08,
-        shadowOffsetY: 0.16,
-        // markup
-        markupBlackColor: 'rgba(255,255,255,0.9)',
-        markupWhiteColor: 'rgba(0,0,0,0.7)',
-        markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLinesWidth: 0.05,
-        markupHandlers: {
-            CR: circle,
-            LB: label,
-            SQ: square,
-            TR: triangle,
-            MA: xMark,
-            SL: dot,
-            SM: smileyFace,
-        },
         // grid & star points
         gridLinesWidth: 0.03,
         gridLinesColor: '#654525',
         starColor: '#531',
         starSize: 0.05,
+        stoneSize: 0.47,
+        // markup
+        markupBlackColor: 'rgba(255,255,255,0.9)',
+        markupWhiteColor: 'rgba(0,0,0,0.7)',
+        markupNoneColor: 'rgba(0,0,0,0.7)',
+        markupLinesWidth: 0.05,
+        shadowColor: 'rgba(62,32,32,0.5)',
+        shadowTransparentColor: 'rgba(62,32,32,0)',
+        shadowBlur: 0.25,
+        shadowOffsetX: 0.08,
+        shadowOffsetY: 0.16,
         // coordinates
         coordinatesHandler: coordinates,
         coordinatesColor: '#531',
@@ -1038,6 +1021,17 @@
         imageFolder: '../images/',
         backgroundColor: '',
         backgroundImage: '',
+        drawHandlers: {
+            B: shellStoneBlack,
+            W: shellStoneWhite,
+            CR: circle,
+            LB: label,
+            SQ: square,
+            TR: triangle,
+            MA: xMark,
+            SL: dot,
+            SM: smileyFace,
+        },
     };
     //# sourceMappingURL=modernTheme.js.map
 
@@ -1156,11 +1150,8 @@
         var handler;
         for (var z = 0; z < board.fieldObjects[x][y].length; z++) {
             var obj = board.fieldObjects[x][y][z];
-            if (!obj.type) {
-                handler = themeVariable('stoneHandler', board);
-            }
-            else if (typeof obj.type === 'string') {
-                handler = themeVariable('markupHandlers', board)[obj.type];
+            if (typeof obj.type === 'string') {
+                handler = board.config.theme.drawHandlers[obj.type];
             }
             else {
                 handler = obj.type;
@@ -1286,9 +1277,9 @@
             this.element = document.createElement('div');
             this.element.className = 'wgo-board';
             this.element.style.position = 'relative';
-            this.element.style.backgroundColor = themeVariable('backgroundColor', this);
+            this.element.style.backgroundColor = this.config.theme.backgroundColor;
             if (this.config.theme.backgroundImage) {
-                this.element.style.backgroundImage = "url(\"" + themeVariable('backgroundImage', this) + "\")";
+                this.element.style.backgroundImage = "url(\"" + this.config.theme.backgroundImage + "\")";
             }
             this.layers = {
                 grid: new GridLayer(),
@@ -1417,11 +1408,8 @@
                     for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
                         var obj = this.fieldObjects[x][y][z];
                         var handler = void 0;
-                        if (!obj.type) {
-                            handler = themeVariable('stoneHandler', this);
-                        }
-                        else if (typeof obj.type === 'string') {
-                            handler = themeVariable('markupHandlers', this)[obj.type];
+                        if (typeof obj.type === 'string') {
+                            handler = this.config.theme.drawHandlers[obj.type];
                         }
                         else {
                             handler = obj.type;
@@ -1652,11 +1640,8 @@
             var handler;
             for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
                 var obj = this.fieldObjects[x][y][z];
-                if (!obj.type) {
-                    handler = themeVariable('stoneHandler', this);
-                }
-                else if (typeof obj.type === 'string') {
-                    handler = themeVariable('markupHandlers', this)[obj.type];
+                if (typeof obj.type === 'string') {
+                    handler = this.config.theme.drawHandlers[obj.type];
                 }
                 else {
                     handler = obj.type;

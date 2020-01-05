@@ -95,18 +95,21 @@ board.addObject({ x: 5, y: 8, type: 'SL' });
 board.addObject({ x: 6, y: 7, type: 'SL' });
 board.addObject({ x: 6, y: 8, type: 'SL' });
 
-board.addObject({ x: 6, y: 7, type: 'LB', text: '123', c: 'white' });
-board.addObject({ x: 6, y: 8, type: 'LB', text: '1', c: 'white' });
+board.addObject({ x: 6, y: 7, type: 'LB', text: '123', color: 'white' });
+board.addObject({ x: 6, y: 8, type: 'LB', text: '1', color: 'white' });
 
 board.addObject({ x: 11, y: 11, type: 'SM' });
-board.addObject({ x: 11, y: 10, type: 'SQ' });
-board.addObject({ x: 12, y: 12, type: 'TR' });
+board.addObject({ x: 11, y: 10, type: 'SQ', color: 'green' });
+board.addObject({ x: 13, y: 12, type: 'TR', lineWidth: 0.025 });
+board.addObject({ x: 12, y: 12, type: 'TR', lineWidth: 0.05 });
+board.addObject({ x: 11, y: 12, type: 'TR', lineWidth: 0.1 });
+board.addObject({ x: 10, y: 12, type: 'TR', lineWidth: 0.15 });
 board.addObject({ x: 12, y: 10, type: 'MA' });
 
-board.addObject({ x: 13, y: 13, c: 1 });
-board.addObject({ x: 13, y: 14, c: 1 });
-board.addObject({ x: 14, y: 14, c: -1 });
-board.addObject({ x: 14, y: 13, c: -1 });
+board.addObject({ x: 13, y: 13, type: 'B' });
+board.addObject({ x: 13, y: 14, type: 'B' });
+board.addObject({ x: 14, y: 14, type: 'W' });
+board.addObject({ x: 14, y: 13, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'MA' });
 
 </script>

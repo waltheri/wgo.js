@@ -1,12 +1,12 @@
-import { getMarkupColor, themeVariable, gridClearField } from '../helpers';
+import { gridClearField } from '../helpers';
 import CanvasBoard from '..';
 
 export default {
   stone: {
     draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      const font = args.font || themeVariable('font', board) || '';
+      const font = args.font || board.config.theme.font || '';
 
-      canvasCtx.fillStyle = args.c || getMarkupColor(board, args.x, args.y);
+      canvasCtx.fillStyle = args.color || board.config.theme.markupNoneColor;
 
       let fontSize = 0.5;
 

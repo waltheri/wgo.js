@@ -1,5 +1,4 @@
 /* global document, window */
-import { themeVariable } from './helpers';
 import CanvasBoard from './CanvasBoard';
 import { DrawFunction } from './types';
 
@@ -26,7 +25,7 @@ export default class CanvasLayer {
   }
 
   setDimensions(width: number, height: number, board: CanvasBoard) {
-    const linesShift = themeVariable('linesShift', board);
+    const linesShift = board.config.theme.linesShift;
 
     this.element.width = width;
     this.element.style.width = `${width / this.pixelRatio}px`;

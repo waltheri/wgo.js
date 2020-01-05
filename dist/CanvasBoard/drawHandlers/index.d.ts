@@ -1,6 +1,9 @@
-import shellStone from './shellStone';
-import glassStone from './glassStone';
-import paintedStone from './paintedStone';
+import shellStoneBlack from './shellStoneBlack';
+import shellStoneWhite from './shellStoneWhite';
+import glassStoneBlack from './glassStoneBlack';
+import glassStoneWhite from './glassStoneWhite';
+import paintedStoneBlack from './paintedStoneBlack';
+import paintedStoneWhite from './paintedStoneWhite';
 import simpleStone from './simpleStone';
 import realisticStone from './realisticStone';
 import circle from './circle';
@@ -10,4 +13,4 @@ import label from './label';
 import dot from './dot';
 import xMark from './xMark';
 import smileyFace from './smileyFace';
-export { shellStone, glassStone, paintedStone, simpleStone, realisticStone, circle, square, triangle, label, dot, xMark, smileyFace, };
+export { shellStoneBlack, shellStoneWhite, glassStoneBlack, glassStoneWhite, paintedStoneBlack, paintedStoneWhite, simpleStone, realisticStone, circle, square, triangle, label, dot, xMark, smileyFace, };

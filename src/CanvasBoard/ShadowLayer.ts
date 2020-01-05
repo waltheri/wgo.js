@@ -1,5 +1,4 @@
 import CanvasLayer from './CanvasLayer';
-import { themeVariable } from './helpers';
 import CanvasBoard from './CanvasBoard';
 
 /**
@@ -11,6 +10,6 @@ import CanvasBoard from './CanvasBoard';
 export default class ShadowLayer extends CanvasLayer {
   setDimensions(width: number, height: number, board: CanvasBoard) {
     super.setDimensions(width, height, board);
-    this.context.transform(1, 0, 0, 1, themeVariable('shadowOffsetX', board), themeVariable('shadowOffsetY', board));
+    this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX, board.config.theme.shadowOffsetY);
   }
 }

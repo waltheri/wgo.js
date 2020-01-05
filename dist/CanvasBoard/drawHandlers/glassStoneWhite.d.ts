@@ -1,6 +1,5 @@
 import CanvasBoard from '..';
-import { DrawHandler } from '../types';
-export default function (graphic: any[], fallback: DrawHandler): {
+declare const _default: {
     stone: {
         draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
     };
@@ -8,3 +7,4 @@ export default function (graphic: any[], fallback: DrawHandler): {
         draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
     };
 };
+export default _default;

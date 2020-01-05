@@ -1,6 +1,5 @@
 /* global window */
 
-import { themeVariable } from '../helpers';
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
 import { Color } from '../../types';
@@ -17,17 +16,16 @@ function isOkay(img: any) {
   return true;
 }
 
-// Shadow handler for the 'REALISITC' rendering mode
+// Shadow handler for the 'REALISTIC' rendering mode
 // handler for image based stones
-export default function (graphics: {whiteStoneGraphic: any[], blackStoneGraphic: any[] }, fallback: DrawHandler) {
+export default function (graphic: any[], fallback: DrawHandler) {
   const randSeed = Math.ceil(Math.random() * 9999999);
   let redrawRequest: number;
 
   return {
     stone: {
       draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-        const stoneRadius = themeVariable('stoneSize', board);
-        const graphic = args.c === Color.WHITE ? graphics.whiteStoneGraphic : graphics.blackStoneGraphic;
+        const stoneRadius = board.config.theme.stoneSize;
         const count = graphic.length;
         const idx = randSeed % (count + args.x * board.size + args.y) % count;
 
@@ -47,7 +45,7 @@ export default function (graphics: {whiteStoneGraphic: any[], blackStoneGraphic:
               redrawRequest = null;
             }, 1);
           };
-          stoneGraphic.src = themeVariable('imageFolder', board) + graphic[idx];
+          stoneGraphic.src = board.config.theme.imageFolder + graphic[idx];
           graphic[idx] = stoneGraphic;
         }
 

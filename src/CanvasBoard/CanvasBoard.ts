@@ -5,7 +5,7 @@
  * @module CanvasBoard
  */
 
-import { themeVariable, defaultFieldClear } from './helpers';
+import { defaultFieldClear } from './helpers';
 import GridLayer from './GridLayer';
 import ShadowLayer from './ShadowLayer';
 import CanvasLayer from './CanvasLayer';
@@ -28,10 +28,8 @@ const clearField = (board: CanvasBoard, x: number, y: number) => {
   let handler: DrawHandler<any>;
   for (let z = 0; z < board.fieldObjects[x][y].length; z++) {
     const obj = board.fieldObjects[x][y][z];
-    if (!obj.type) {
-      handler = themeVariable('stoneHandler', board);
-    } else if (typeof obj.type === 'string') {
-      handler = themeVariable('markupHandlers', board)[obj.type];
+    if (typeof obj.type === 'string') {
+      handler = board.config.theme.drawHandlers[obj.type];
     } else {
       handler = obj.type;
     }
@@ -188,10 +186,10 @@ export default class CanvasBoard extends EventEmitter {
     this.element.className = 'wgo-board';
     this.element.style.position = 'relative';
 
-    this.element.style.backgroundColor = themeVariable('backgroundColor', this);
+    this.element.style.backgroundColor = this.config.theme.backgroundColor;
 
     if (this.config.theme.backgroundImage) {
-      this.element.style.backgroundImage = `url("${themeVariable('backgroundImage', this)}")`;
+      this.element.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
     }
 
     this.layers = {
@@ -347,10 +345,8 @@ export default class CanvasBoard extends EventEmitter {
         for (let z = 0; z < this.fieldObjects[x][y].length; z++) {
           const obj = this.fieldObjects[x][y][z];
           let handler: any;
-          if (!obj.type) {
-            handler = themeVariable('stoneHandler', this);
-          } else if (typeof obj.type === 'string') {
-            handler = themeVariable('markupHandlers', this)[obj.type];
+          if (typeof obj.type === 'string') {
+            handler = this.config.theme.drawHandlers[obj.type];
           } else {
             handler = obj.type;
           }
@@ -601,10 +597,8 @@ export default class CanvasBoard extends EventEmitter {
     for (let z = 0; z < this.fieldObjects[x][y].length; z++) {
       const obj = this.fieldObjects[x][y][z];
 
-      if (!obj.type) {
-        handler = themeVariable('stoneHandler', this);
-      } else if (typeof obj.type === 'string') {
-        handler = themeVariable('markupHandlers', this)[obj.type];
+      if (typeof obj.type === 'string') {
+        handler = this.config.theme.drawHandlers[obj.type];
       } else {
         handler = obj.type;
       }

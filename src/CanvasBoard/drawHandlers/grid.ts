@@ -1,4 +1,3 @@
-import { themeVariable } from '../helpers';
 import CanvasBoard from '..';
 
 export default {
@@ -8,8 +7,8 @@ export default {
       let tmp;
 
       canvasCtx.beginPath();
-      canvasCtx.lineWidth = themeVariable('gridLinesWidth', board) * board.fieldWidth;
-      canvasCtx.strokeStyle = themeVariable('gridLinesColor', board);
+      canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldWidth;
+      canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
 
       const tx = Math.round(board.left);
       const ty = Math.round(board.top);
@@ -31,7 +30,7 @@ export default {
       canvasCtx.stroke();
 
       // draw stars
-      canvasCtx.fillStyle = themeVariable('starColor', board);
+      canvasCtx.fillStyle = board.config.theme.starColor;
 
       if (board.config.starPoints[board.size]) {
         for (const key in board.config.starPoints[board.size]) {
@@ -39,7 +38,7 @@ export default {
           canvasCtx.arc(
             board.getX(board.config.starPoints[board.size][key].x),
             board.getY(board.config.starPoints[board.size][key].y),
-            themeVariable('starSize', board) * board.fieldWidth, 0, 2 * Math.PI, true,
+            board.config.theme.starSize * board.fieldWidth, 0, 2 * Math.PI, true,
           );
           canvasCtx.fill();
         }

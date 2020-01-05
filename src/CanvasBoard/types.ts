@@ -8,10 +8,19 @@ export interface BoardViewport {
   left: number;
 }
 
-interface CanvasBoardThemeBase {
-  // stones
-  stoneHandler: DrawHandler<BoardFieldObject>;
+export interface CanvasBoardTheme {
+  // grid & star points
+  gridLinesWidth: number;
+  gridLinesColor: string;
+  starColor: string;
+  starSize: number;
   stoneSize: number;
+
+  // markup
+  markupBlackColor: string;
+  markupWhiteColor: string;
+  markupNoneColor: string;
+  markupLinesWidth: number;
 
   // shadow
   shadowColor: string;
@@ -19,21 +28,6 @@ interface CanvasBoardThemeBase {
   shadowBlur: number;
   shadowOffsetX: number;
   shadowOffsetY: number;
-
-  // markup
-  markupBlackColor: string;
-  markupWhiteColor: string;
-  markupNoneColor: string;
-  markupLinesWidth: number;
-  markupHandlers: {
-    [key: string]: DrawHandler<BoardFieldObject>;
-  };
-
-  // grid & star points
-  gridLinesWidth: number;
-  gridLinesColor: string;
-  starColor: string;
-  starSize: number;
 
   // coordinates
   coordinatesHandler: DrawHandler;
@@ -50,11 +44,11 @@ interface CanvasBoardThemeBase {
   // background
   backgroundColor: string;
   backgroundImage: string;
-}
 
-export type CanvasBoardTheme = {
-  [key in keyof CanvasBoardThemeBase]: CanvasBoardThemeBase[key] | ((board: CanvasBoard) => CanvasBoardThemeBase[key]);
-};
+  drawHandlers: {
+    [key: string]: DrawHandler<BoardFieldObject>;
+  };
+}
 
 export interface CanvasBoardConfig {
   size: number;
