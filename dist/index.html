@@ -11,7 +11,7 @@
 <script src="index.js"></script>
 <script>
 
-var board = new WGo.CanvasBoard(document.getElementById('board'), { width: 800, height: 800 });
+var board = new WGo.CanvasBoard(document.getElementById('board'), { width: 750, height: 750 });
 
 /*board.addObject({ x: 3, y: 3, c: 1 });
 board.addObject({ x: 15, y: 3, c: -1 });
@@ -90,6 +90,11 @@ board.addObject({ x: 0, y: 2, type: custom });
 board.addObject({ x: 0, y: 3, type: custom });
 
 board.addObject({ x: 5, y: 5, type: 'CR' });
+board.addObject({ x: 5, y: 5, type: 'gridFieldClear' });
+board.addObject({ x: 7, y: 5, type: 'gridFieldClear' });
+board.addObject({ x: 8, y: 5, type: 'gridFieldClear' });
+board.addObject({ x: 7, y: 4, type: 'gridFieldClear' });
+board.addObject({ x: 8, y: 4, type: 'gridFieldClear' });
 board.addObject({ x: 5, y: 7, type: 'SL' });
 board.addObject({ x: 5, y: 8, type: 'SL' });
 board.addObject({ x: 6, y: 7, type: 'SL' });
@@ -99,15 +104,16 @@ board.addObject({ x: 6, y: 7, type: 'LB', text: '123', color: 'white' });
 board.addObject({ x: 6, y: 8, type: 'LB', text: '1', color: 'white' });
 
 board.addObject({ x: 11, y: 11, type: 'SM' });
-board.addObject({ x: 11, y: 10, type: 'SQ', color: 'green' });
+board.addObject({ x: 11, y: 10, type: 'SQ', color: 'green', fillColor: 'rgba(0,128,0,0.2)'  });
 board.addObject({ x: 13, y: 12, type: 'TR', lineWidth: 0.025 });
-board.addObject({ x: 12, y: 12, type: 'TR', lineWidth: 0.05 });
+board.addObject({ x: 12, y: 12, type: 'TR', lineWidth: 0.05, fillColor: 'rgba(0,0,0,0.2)' });
 board.addObject({ x: 11, y: 12, type: 'TR', lineWidth: 0.1 });
 board.addObject({ x: 10, y: 12, type: 'TR', lineWidth: 0.15 });
 board.addObject({ x: 12, y: 10, type: 'MA' });
 
 board.addObject({ x: 13, y: 13, type: 'B' });
 board.addObject({ x: 13, y: 14, type: 'B' });
+board.addObject({ x: 13, y: 14, type: 'CR', lineWidth: 0.05, color: 'red', fillColor: 'rgba(128,0,0,0.8)' });
 board.addObject({ x: 14, y: 14, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'MA' });

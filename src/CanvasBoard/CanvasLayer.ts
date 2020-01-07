@@ -32,8 +32,6 @@ export default class CanvasLayer {
     this.element.height = height;
     this.element.style.height = `${height / this.pixelRatio}px`;
 
-    this.context.restore();
-    this.context.save();
     this.context.transform(1, 0, 0, 1, linesShift, linesShift);
   }
 

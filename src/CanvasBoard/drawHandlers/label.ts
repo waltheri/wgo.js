@@ -1,4 +1,3 @@
-import { gridClearField } from '../helpers';
 import CanvasBoard from '..';
 
 export default {
@@ -23,5 +22,4 @@ export default {
       canvasCtx.fillText(args.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
     },
   },
-  grid: gridClearField,
 };

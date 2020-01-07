@@ -1,4 +1,3 @@
-import {  gridClearField } from '../helpers';
 import CanvasBoard from '..';
 
 export default {
@@ -16,5 +15,4 @@ export default {
       canvasCtx.lineCap = 'butt';
     },
   },
-  grid: gridClearField,
 };

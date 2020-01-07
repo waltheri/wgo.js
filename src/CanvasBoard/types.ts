@@ -36,10 +36,8 @@ export interface CanvasBoardTheme {
   coordinatesY: string | (string | number)[];
 
   // other
-  variationColor: string;
   font: string;
   linesShift: number;
-  imageFolder: string;
 
   // background
   backgroundColor: string;

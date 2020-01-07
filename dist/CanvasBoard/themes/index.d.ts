@@ -1,3 +1,4 @@
 import realisticTheme from './realisticTheme';
 import modernTheme from './modernTheme';
-export { realisticTheme, modernTheme };
+import baseTheme from './baseTheme';
+export { baseTheme, realisticTheme, modernTheme };

@@ -33,6 +33,17 @@
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     }
 
+    var __assign = function() {
+        __assign = Object.assign || function __assign(t) {
+            for (var s, i = 1, n = arguments.length; i < n; i++) {
+                s = arguments[i];
+                for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p)) t[p] = s[p];
+            }
+            return t;
+        };
+        return __assign.apply(this, arguments);
+    };
+
     /**
      * Class for syntax errors in SGF string.
      * @ extends Error
@@ -268,29 +279,9 @@
     })(Color || (Color = {}));
     //# sourceMappingURL=types.js.map
 
-    function isHereStone(b, x, y) {
-        return (b.fieldObjects[x][y][0] && b.fieldObjects[x][y][0].c === Color.W || b.fieldObjects[x][y][0].c === Color.B);
-    }
     function defaultFieldClear(canvasCtx, _args, board) {
         canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
     }
-    var gridClearField = {
-        draw: function (canvasCtx, args, board) {
-            if (!isHereStone(board, args.x, args.y) && !args._nodraw) {
-                var stoneRadius = board.config.theme.stoneSize;
-                canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
-            }
-        },
-        clear: function (canvasCtx, args, board) {
-            if (!isHereStone(board, args.x, args.y)) {
-                args._nodraw = true;
-                canvasCtx.restore(); // small hack for now
-                board.redrawLayer('grid');
-                canvasCtx.save();
-                delete args._nodraw;
-            }
-        },
-    };
     //# sourceMappingURL=helpers.js.map
 
     /**
@@ -314,8 +305,6 @@
             this.element.style.width = width / this.pixelRatio + "px";
             this.element.height = height;
             this.element.style.height = height / this.pixelRatio + "px";
-            this.context.restore();
-            this.context.save();
             this.context.transform(1, 0, 0, 1, linesShift, linesShift);
         };
         CanvasLayer.prototype.appendTo = function (element, weight) {
@@ -422,7 +411,7 @@
         }
         ShadowLayer.prototype.setDimensions = function (width, height, board) {
             _super.prototype.setDimensions.call(this, width, height, board);
-            this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX, board.config.theme.shadowOffsetY);
+            this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX * board.fieldWidth, board.config.theme.shadowOffsetY * board.fieldHeight);
         };
         return ShadowLayer;
     }(CanvasLayer));
@@ -677,10 +666,11 @@
         return {
             stone: {
                 draw: function (canvasCtx, args, board) {
+                    var stoneSize = board.config.theme.stoneSize;
                     var lw = board.config.theme.markupLinesWidth;
                     canvasCtx.fillStyle = color;
                     canvasCtx.beginPath();
-                    canvasCtx.arc(0, 0, Math.max(0, 1 - lw), 0, 2 * Math.PI, true);
+                    canvasCtx.arc(0, 0, stoneSize, 0, 2 * Math.PI, true);
                     canvasCtx.fill();
                     canvasCtx.lineWidth = lw;
                     canvasCtx.strokeStyle = 'black';
@@ -758,9 +748,12 @@
                 canvasCtx.beginPath();
                 canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
+                if (args.fillColor) {
+                    canvasCtx.fillStyle = args.fillColor;
+                    canvasCtx.fill();
+                }
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=circle.js.map
 
@@ -772,9 +765,12 @@
                 canvasCtx.beginPath();
                 canvasCtx.rect(-0.25, -0.25, 0.5, 0.5);
                 canvasCtx.stroke();
+                if (args.fillColor) {
+                    canvasCtx.fillStyle = args.fillColor;
+                    canvasCtx.fill();
+                }
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=square.js.map
 
@@ -789,9 +785,12 @@
                 canvasCtx.lineTo(0.25, 0.166666);
                 canvasCtx.closePath();
                 canvasCtx.stroke();
+                if (args.fillColor) {
+                    canvasCtx.fillStyle = args.fillColor;
+                    canvasCtx.fill();
+                }
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=triangle.js.map
 
@@ -814,7 +813,6 @@
                 canvasCtx.fillText(args.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=label.js.map
 
@@ -827,7 +825,6 @@
                 canvasCtx.fill();
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=dot.js.map
 
@@ -846,7 +843,6 @@
                 canvasCtx.lineCap = 'butt';
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=xMark.js.map
 
@@ -867,7 +863,6 @@
                 canvasCtx.stroke();
             },
         },
-        grid: gridClearField,
     };
     //# sourceMappingURL=smileyFace.js.map
 
@@ -922,77 +917,23 @@
     };
     //# sourceMappingURL=coordinates.js.map
 
-    /**
-     * Object containing default graphical properties of a board.
-     * A value of all properties can be even static value or function, returning final value.
-     * Theme object doesn't set board and stone textures - they are set separately.
-     */
-    var realisticTheme = {
-        // markup
-        markupBlackColor: 'rgba(255,255,255,0.9)',
-        markupWhiteColor: 'rgba(0,0,0,0.7)',
-        markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLinesWidth: 0.05,
-        // grid & star points
-        stoneSize: 0.5,
-        gridLinesWidth: 0.03,
-        gridLinesColor: '#654525',
-        starColor: '#531',
-        starSize: 0.07,
-        // shadow
-        shadowColor: 'rgba(62,32,32,0.5)',
-        shadowTransparentColor: 'rgba(62,32,32,0)',
-        shadowBlur: 0.5,
-        shadowOffsetX: 0.08,
-        shadowOffsetY: 0.16,
-        // coordinates
-        coordinatesHandler: coordinates,
-        coordinatesColor: '#531',
-        coordinatesX: 'ABCDEFGHJKLMNOPQRSTUV',
-        coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
-        // other
-        variationColor: 'rgba(0,32,128,0.8)',
-        font: 'calibri',
-        linesShift: -0.5,
-        imageFolder: '../images/',
-        backgroundColor: '#CEB053',
-        backgroundImage: '',
-        drawHandlers: {
-            B: realisticStone([
-                'stones/black00_128.png',
-                'stones/black01_128.png',
-                'stones/black02_128.png',
-                'stones/black03_128.png',
-            ], shellStoneBlack),
-            W: realisticStone([
-                'stones/white00_128.png',
-                'stones/white01_128.png',
-                'stones/white02_128.png',
-                'stones/white03_128.png',
-                'stones/white04_128.png',
-                'stones/white05_128.png',
-                'stones/white06_128.png',
-                'stones/white07_128.png',
-                'stones/white08_128.png',
-                'stones/white09_128.png',
-                'stones/white10_128.png',
-            ], shellStoneWhite),
-            CR: circle,
-            LB: label,
-            SQ: square,
-            TR: triangle,
-            MA: xMark,
-            SL: dot,
-            SM: smileyFace,
+    var gridFieldClear = {
+        grid: {
+            draw: function (canvasCtx, args, board) {
+                var stoneRadius = board.config.theme.stoneSize;
+                canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+            },
+            clear: function (canvasCtx, args, board) {
+                args._nodraw = true;
+                canvasCtx.restore(); // small hack for now
+                board.redrawLayer('grid');
+                canvasCtx.save();
+                delete args._nodraw;
+            },
         },
     };
 
-    /**
-     * Object containing default graphical properties of a board.
-     * A value of all properties can be even static value or function, returning final value.
-     * Theme object doesn't set board and stone textures - they are set separately.
-     */
-    var modernTheme = {
+    var baseTheme = {
         // grid & star points
         gridLinesWidth: 0.03,
         gridLinesColor: '#654525',
@@ -1012,18 +953,16 @@
         // coordinates
         coordinatesHandler: coordinates,
         coordinatesColor: '#531',
-        coordinatesX: 'ABCDEFGHJKLMNOPQRSTUV',
-        coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21],
+        coordinatesX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+        coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         // other
-        variationColor: 'rgba(0,32,128,0.8)',
-        font: 'calibri',
-        linesShift: -0.25,
-        imageFolder: '../images/',
-        backgroundColor: '',
+        font: 'monospace',
+        linesShift: -0.5,
+        backgroundColor: '#CEB053',
         backgroundImage: '',
         drawHandlers: {
-            B: shellStoneBlack,
-            W: shellStoneWhite,
+            B: simpleStone('#222'),
+            W: simpleStone('#eee'),
             CR: circle,
             LB: label,
             SQ: square,
@@ -1031,14 +970,39 @@
             MA: xMark,
             SL: dot,
             SM: smileyFace,
+            gridFieldClear: gridFieldClear,
         },
     };
+    //# sourceMappingURL=baseTheme.js.map
+
+    var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: realisticStone([
+                'stones/black00_128.png',
+                'stones/black01_128.png',
+                'stones/black02_128.png',
+                'stones/black03_128.png',
+            ], shellStoneBlack), W: realisticStone([
+                'stones/white00_128.png',
+                'stones/white01_128.png',
+                'stones/white02_128.png',
+                'stones/white03_128.png',
+                'stones/white04_128.png',
+                'stones/white05_128.png',
+                'stones/white06_128.png',
+                'stones/white07_128.png',
+                'stones/white08_128.png',
+                'stones/white09_128.png',
+                'stones/white10_128.png',
+            ], shellStoneWhite) }) });
+    //# sourceMappingURL=realisticTheme.js.map
+
+    var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: shellStoneBlack, W: shellStoneWhite }) });
     //# sourceMappingURL=modernTheme.js.map
 
     // add here all themes, which should be publicly exposed
     //# sourceMappingURL=index.js.map
 
     var index$1 = /*#__PURE__*/Object.freeze({
+        baseTheme: baseTheme,
         realisticTheme: realisticTheme,
         modernTheme: modernTheme
     });
@@ -1075,7 +1039,7 @@
             left: 0,
         },
         coordinates: false,
-        theme: realisticTheme,
+        theme: baseTheme,
         marginSize: 0.25,
     };
     //# sourceMappingURL=defaultConfig.js.map

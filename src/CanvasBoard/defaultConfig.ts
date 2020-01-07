@@ -1,4 +1,4 @@
-import { realisticTheme } from './themes';
+import { baseTheme } from './themes';
 import { CanvasBoardConfig } from './types';
 
 const canvasBoardDefaultConfig: CanvasBoardConfig = {
@@ -33,7 +33,7 @@ const canvasBoardDefaultConfig: CanvasBoardConfig = {
     left: 0,
   },
   coordinates: false,
-  theme: realisticTheme,
+  theme: baseTheme,
   marginSize: 0.25,
 };
 

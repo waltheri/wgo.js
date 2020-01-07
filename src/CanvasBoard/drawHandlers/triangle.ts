@@ -1,4 +1,3 @@
-import { gridClearField } from '../helpers';
 import CanvasBoard from '..';
 
 export default {
@@ -12,7 +11,11 @@ export default {
       canvasCtx.lineTo(0.25, 0.166666);
       canvasCtx.closePath();
       canvasCtx.stroke();
+
+      if (args.fillColor) {
+        canvasCtx.fillStyle = args.fillColor;
+        canvasCtx.fill();
+      }
     },
   },
-  grid: gridClearField,
 };
