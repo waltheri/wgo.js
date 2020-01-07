@@ -69,8 +69,8 @@ export default {
       canvasCtx.fill();
 
       // do shell magic here
-      const type = shellSeed % (3 + args.x * board.size + args.y) % 3;
-      const z = board.size * board.size + args.x * board.size + args.y;
+      const type = shellSeed % (3 + args.x * board.config.size + args.y) % 3;
+      const z = board.config.size * board.config.size + args.x * board.config.size + args.y;
       const angle = (2 / z) * (shellSeed % z);
 
       if (type === 0) {

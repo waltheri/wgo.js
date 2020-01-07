@@ -15,8 +15,8 @@ export default class ShadowLayer extends CanvasLayer {
       0,
       0,
       1,
-      board.config.theme.shadowOffsetX * board.fieldWidth,
-      board.config.theme.shadowOffsetY * board.fieldHeight,
+      board.config.theme.shadowOffsetX * board.fieldSize,
+      board.config.theme.shadowOffsetY * board.fieldSize,
     );
   }
 }

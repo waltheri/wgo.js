@@ -26,7 +26,7 @@ export default function (graphic: any[], fallback: DrawHandler) {
       draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
         const stoneRadius = board.config.theme.stoneSize;
         const count = graphic.length;
-        const idx = randSeed % (count + args.x * board.size + args.y) % count;
+        const idx = randSeed % (count + args.x * board.config.size + args.y) % count;
 
         if (typeof graphic[idx] === 'string') {
           // The image has not been loaded yet

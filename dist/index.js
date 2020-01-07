@@ -275,8 +275,6 @@
             this.context = this.element.getContext('2d');
             // Adjust pixel ratio for HDPI screens (e.g. Retina)
             this.pixelRatio = window.devicePixelRatio || 1;
-            // this.context.scale(this.pixelRatio, this.pixelRatio);
-            // this.context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
             this.context.scale(this.pixelRatio, this.pixelRatio);
             this.context.save();
         }
@@ -291,6 +289,11 @@
         CanvasLayer.prototype.appendTo = function (element, weight) {
             this.element.style.position = 'absolute';
             this.element.style.zIndex = weight.toString(10);
+            this.element.style.top = '0';
+            this.element.style.bottom = '0';
+            this.element.style.left = '0';
+            this.element.style.right = '0';
+            this.element.style.margin = 'auto';
             element.appendChild(this.element);
         };
         CanvasLayer.prototype.removeFrom = function (element) {
@@ -308,11 +311,11 @@
             this.context.restore();
         };
         CanvasLayer.prototype.drawField = function (drawingFn, args, board) {
-            var leftOffset = Math.round(board.left + args.x * board.fieldWidth);
-            var topOffset = Math.round(board.top + args.y * board.fieldHeight);
+            var leftOffset = Math.round(board.getX(args.x));
+            var topOffset = Math.round(board.getY(args.y));
             // create a "sandbox" for drawing function
             this.context.save();
-            this.context.transform(board.fieldWidth - 1, 0, 0, board.fieldHeight - 1, leftOffset, topOffset);
+            this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
             this.context.beginPath();
             this.context.rect(-0.5, -0.5, 1, 1);
             this.context.clip();
@@ -333,14 +336,14 @@
                 // draw grid
                 var tmp;
                 canvasCtx.beginPath();
-                canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldWidth;
+                canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldSize;
                 canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
-                var tx = Math.round(board.left);
-                var ty = Math.round(board.top);
-                var bw = Math.round(board.fieldWidth * (board.size - 1));
-                var bh = Math.round(board.fieldHeight * (board.size - 1));
+                var tx = Math.round(board.margin);
+                var ty = Math.round(board.margin);
+                var bw = Math.round(board.fieldSize * (board.config.size - 1));
+                var bh = Math.round(board.fieldSize * (board.config.size - 1));
                 canvasCtx.strokeRect(tx, ty, bw, bh);
-                for (var i = 1; i < board.size - 1; i++) {
+                for (var i = 1; i < board.config.size - 1; i++) {
                     tmp = Math.round(board.getX(i));
                     canvasCtx.moveTo(tmp, ty);
                     canvasCtx.lineTo(tmp, ty + bh);
@@ -351,10 +354,10 @@
                 canvasCtx.stroke();
                 // draw stars
                 canvasCtx.fillStyle = board.config.theme.starColor;
-                if (board.config.starPoints[board.size]) {
-                    for (var key in board.config.starPoints[board.size]) {
+                if (board.config.starPoints[board.config.size]) {
+                    for (var key in board.config.starPoints[board.config.size]) {
                         canvasCtx.beginPath();
-                        canvasCtx.arc(board.getX(board.config.starPoints[board.size][key].x), board.getY(board.config.starPoints[board.size][key].y), board.config.theme.starSize * board.fieldWidth, 0, 2 * Math.PI, true);
+                        canvasCtx.arc(board.getX(board.config.starPoints[board.config.size][key].x), board.getY(board.config.starPoints[board.config.size][key].y), board.config.theme.starSize * board.fieldSize, 0, 2 * Math.PI, true);
                         canvasCtx.fill();
                     }
                 }
@@ -392,7 +395,7 @@
         }
         ShadowLayer.prototype.setDimensions = function (width, height, board) {
             _super.prototype.setDimensions.call(this, width, height, board);
-            this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX * board.fieldWidth, board.config.theme.shadowOffsetY * board.fieldHeight);
+            this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX * board.fieldSize, board.config.theme.shadowOffsetY * board.fieldSize);
         };
         return ShadowLayer;
     }(CanvasLayer));
@@ -506,8 +509,8 @@
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
                 // do shell magic here
-                var type = shellSeed % (3 + args.x * board.size + args.y) % 3;
-                var z = board.size * board.size + args.x * board.size + args.y;
+                var type = shellSeed % (3 + args.x * board.config.size + args.y) % 3;
+                var z = board.config.size * board.config.size + args.x * board.config.size + args.y;
                 var angle = (2 / z) * (shellSeed % z);
                 if (type === 0) {
                     drawShell({
@@ -687,7 +690,7 @@
                 draw: function (canvasCtx, args, board) {
                     var stoneRadius = board.config.theme.stoneSize;
                     var count = graphic.length;
-                    var idx = randSeed % (count + args.x * board.size + args.y) % count;
+                    var idx = randSeed % (count + args.x * board.config.size + args.y) % count;
                     if (typeof graphic[idx] === 'string') {
                         // The image has not been loaded yet
                         var stoneGraphic = new Image();
@@ -719,6 +722,7 @@
             shadow: shadow,
         };
     }
+    //# sourceMappingURL=realisticStone.js.map
 
     var circle = {
         stone: {
@@ -876,14 +880,14 @@
                 canvasCtx.fillStyle = board.config.theme.coordinatesColor;
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
-                canvasCtx.font = board.fieldHeight / 2 + "px " + (board.config.theme.font || '');
+                canvasCtx.font = board.fieldSize / 2 + "px " + (board.config.theme.font || '');
                 var xright = board.getX(-0.75);
-                var xleft = board.getX(board.size - 0.25);
+                var xleft = board.getX(board.config.size - 0.25);
                 var ytop = board.getY(-0.75);
-                var ybottom = board.getY(board.size - 0.25);
+                var ybottom = board.getY(board.config.size - 0.25);
                 var coordinatesX = board.config.theme.coordinatesX;
                 var coordinatesY = board.config.theme.coordinatesY;
-                for (var i = 0; i < board.size; i++) {
+                for (var i = 0; i < board.config.size; i++) {
                     t = board.getY(i);
                     canvasCtx.fillText(coordinatesX[i], xright, t);
                     canvasCtx.fillText(coordinatesX[i], xleft, t);
@@ -1092,7 +1096,7 @@
       //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
     );*/
     function defaultFieldClear(canvasCtx, _args, board) {
-        canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
+        canvasCtx.clearRect(-board.fieldSize / 2, -board.fieldSize / 2, board.fieldSize, board.fieldSize);
     }
     var clearField = function (board, x, y) {
         var handler;
@@ -1196,26 +1200,11 @@
                     _this.fieldObjects[x][y] = [];
                 }
             }
-            // init params - TODO: remove - should be computed as needed
-            _this.size = _this.config.size;
-            _this.viewport = _this.config.viewport;
-            _this.topLeftFieldX = _this.config.viewport.left;
-            _this.topLeftFieldY = _this.config.viewport.top;
-            _this.bottomRightFieldX = _this.size - 1 - _this.config.viewport.right;
-            _this.bottomRightFieldY = _this.size - 1 - _this.config.viewport.bottom;
             // init board html
             _this.init(elem);
             // set the pixel ratio for HDPI (e.g. Retina) screens
             _this.pixelRatio = window.devicePixelRatio || 1;
-            if (config.width && config.height) {
-                _this.setDimensions(config.width, config.height);
-            }
-            else if (config.width) {
-                _this.setWidth(config.width);
-            }
-            else if (config.height) {
-                _this.setHeight(config.height);
-            }
+            _this.resize();
             return _this;
         }
         /**
@@ -1240,76 +1229,122 @@
             // append to element
             elem.appendChild(this.element);
         };
-        CanvasBoard.prototype.updateDim = function () {
+        /**
+         * Updates dimensions and redraws everything
+         */
+        CanvasBoard.prototype.resize = function () {
             var _this = this;
+            var countX = this.getCountX();
+            var countY = this.getCountY();
+            if (this.config.width && this.config.height) {
+                // exact dimensions
+                this.width = this.config.width * this.pixelRatio;
+                this.height = this.config.height * this.pixelRatio;
+                this.fieldSize = Math.min(this.height / (countY + 2 * this.config.marginSize), this.width / (countX + 2 * this.config.marginSize));
+                if (this.resizeCallback) {
+                    window.removeEventListener('resize', this.resizeCallback);
+                }
+            }
+            else if (this.config.width) {
+                this.width = this.config.width * this.pixelRatio;
+                this.fieldSize = this.width / (countX + 2 * this.config.marginSize);
+                this.height = this.fieldSize * (countY + 2 * this.config.marginSize) * this.pixelRatio;
+                if (this.resizeCallback) {
+                    window.removeEventListener('resize', this.resizeCallback);
+                }
+            }
+            else if (this.config.height) {
+                this.height = this.config.height * this.pixelRatio;
+                this.fieldSize = this.height / (countY + 2 * this.config.marginSize);
+                this.width = this.fieldSize * (countX + 2 * this.config.marginSize) * this.pixelRatio;
+                if (this.resizeCallback) {
+                    window.removeEventListener('resize', this.resizeCallback);
+                }
+            }
+            else {
+                this.element.style.width = 'auto';
+                this.width = this.element.offsetWidth * this.pixelRatio;
+                this.fieldSize = this.width / (countX + 2 * this.config.marginSize);
+                this.height = this.fieldSize * (countY + 2 * this.config.marginSize) * this.pixelRatio;
+                if (!this.resizeCallback) {
+                    this.resizeCallback = function () {
+                        _this.resize();
+                    };
+                    window.addEventListener('resize', this.resizeCallback);
+                }
+            }
+            this.margin = this.fieldSize * (this.config.marginSize + 0.5);
             this.element.style.width = (this.width / this.pixelRatio) + "px";
             this.element.style.height = (this.height / this.pixelRatio) + "px";
             Object.keys(this.layers).forEach(function (layer) {
-                _this.layers[layer].setDimensions(_this.width, _this.height, _this);
+                _this.layers[layer].setDimensions((countX + 2 * _this.config.marginSize) * _this.fieldSize, (countY + 2 * _this.config.marginSize) * _this.fieldSize, _this);
             });
-        };
-        CanvasBoard.prototype.setWidth = function (width) {
-            this.width = width * this.pixelRatio;
-            this.fieldHeight = this.fieldWidth = this.calcFieldWidth();
-            this.left = this.calcLeftMargin();
-            this.height = (this.bottomRightFieldY - this.topLeftFieldY + 1.5) * this.fieldHeight;
-            this.top = this.calcTopMargin();
-            this.updateDim();
             this.redraw();
         };
-        CanvasBoard.prototype.setHeight = function (height) {
-            this.height = height * this.pixelRatio;
-            this.fieldWidth = this.fieldHeight = this.calcFieldHeight();
-            this.top = this.calcTopMargin();
-            this.width = (this.bottomRightFieldX - this.topLeftFieldX + 1.5) * this.fieldWidth;
-            this.left = this.calcLeftMargin();
-            this.updateDim();
-            this.redraw();
+        CanvasBoard.prototype.getCountX = function () {
+            return this.config.size - this.config.viewport.left - this.config.viewport.right;
         };
-        CanvasBoard.prototype.setDimensions = function (width, height) {
-            this.width = (width || parseInt(this.element.style.width, 10)) * this.pixelRatio;
-            this.height = (height || parseInt(this.element.style.height, 10)) * this.pixelRatio;
-            this.fieldWidth = this.calcFieldWidth();
-            this.fieldHeight = this.calcFieldHeight();
-            this.left = this.calcLeftMargin();
-            this.top = this.calcTopMargin();
-            this.updateDim();
-            this.redraw();
+        CanvasBoard.prototype.getCountY = function () {
+            return this.config.size - this.config.viewport.top - this.config.viewport.bottom;
         };
+        /*setWidth(width: number) {
+          this.width = width * this.pixelRatio;
+      
+          this.fieldHeight = this.fieldWidth = this.calcFieldWidth();
+          this.left = this.calcLeftMargin();
+      
+          this.height = (this.bottomRightFieldY - this.topLeftFieldY + 1.5) * this.fieldHeight;
+          this.top = this.calcTopMargin();
+      
+          this.updateDim();
+          this.redraw();
+        }
+      
+        setHeight(height: number) {
+          this.height = height * this.pixelRatio;
+          this.fieldWidth = this.fieldHeight = this.calcFieldHeight();
+          this.top = this.calcTopMargin();
+      
+          this.width = (this.bottomRightFieldX - this.topLeftFieldX + 1.5) * this.fieldWidth;
+          this.left = this.calcLeftMargin();
+      
+          this.updateDim();
+          this.redraw();
+        }
+      
+        setDimensions(width?: number, height?: number) {
+          this.width = (width || parseInt(this.element.style.width, 10)) * this.pixelRatio;
+          this.height = (height || parseInt(this.element.style.height, 10)) * this.pixelRatio;
+      
+          this.fieldWidth = this.calcFieldWidth();
+          this.fieldHeight = this.calcFieldHeight();
+          this.left = this.calcLeftMargin();
+          this.top = this.calcTopMargin();
+      
+          this.updateDim();
+          this.redraw();
+        }*/
         /**
            * Get currently visible section of the board
            */
         CanvasBoard.prototype.getViewport = function () {
-            return this.viewport;
+            return this.config.viewport;
         };
         /**
            * Set section of the board to be displayed
            */
         CanvasBoard.prototype.setViewport = function (viewport) {
-            this.viewport = viewport;
-            this.topLeftFieldX = this.viewport.left;
-            this.topLeftFieldY = this.viewport.top;
-            this.bottomRightFieldX = this.size - 1 - this.viewport.right;
-            this.bottomRightFieldY = this.size - 1 - this.viewport.bottom;
-            this.setDimensions();
+            this.config.viewport = viewport;
+            this.resize();
         };
         CanvasBoard.prototype.getSize = function () {
-            return this.size;
+            return this.config.size;
         };
         CanvasBoard.prototype.setSize = function (size) {
             if (size === void 0) { size = 19; }
-            if (size !== this.size) {
-                this.size = size;
-                this.fieldObjects = [];
-                for (var i = 0; i < this.size; i++) {
-                    this.fieldObjects[i] = [];
-                    for (var j = 0; j < this.size; j++) {
-                        this.fieldObjects[i][j] = [];
-                    }
-                }
-                this.bottomRightFieldX = this.size - 1 - this.viewport.right;
-                this.bottomRightFieldY = this.size - 1 - this.viewport.bottom;
-                this.setDimensions();
+            if (size !== this.config.size) {
+                this.config.size = size;
+                this.resize();
             }
         };
         /**
@@ -1324,8 +1359,8 @@
                     _this.layers[layer].initialDraw(_this);
                 });
                 // redraw field objects
-                for (var x = 0; x < this.size; x++) {
-                    for (var y = 0; y < this.size; y++) {
+                for (var x = 0; x < this.config.size; x++) {
+                    for (var y = 0; y < this.config.size; y++) {
                         this.drawField(x, y);
                     }
                 }
@@ -1351,8 +1386,8 @@
         CanvasBoard.prototype.redrawLayer = function (layer) {
             this.layers[layer].clear(this);
             this.layers[layer].initialDraw(this);
-            for (var x = 0; x < this.size; x++) {
-                for (var y = 0; y < this.size; y++) {
+            for (var x = 0; x < this.config.size; x++) {
+                for (var y = 0; y < this.config.size; y++) {
                     for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
                         var obj = this.fieldObjects[x][y][z];
                         var handler = void 0;
@@ -1382,7 +1417,7 @@
            * @param {number} x relative coordinate
            */
         CanvasBoard.prototype.getX = function (x) {
-            return this.left + x * this.fieldWidth;
+            return this.margin + x * this.fieldSize;
         };
         /**
            * Get absolute Y coordinate
@@ -1390,7 +1425,7 @@
            * @param {number} y relative coordinate
            */
         CanvasBoard.prototype.getY = function (y) {
-            return this.top + y * this.fieldHeight;
+            return this.margin + y * this.fieldSize;
         };
         /**
            * Add layer to the board. It is meant to be only for canvas layers.
@@ -1427,9 +1462,9 @@
             }
             var add = [];
             var remove = [];
-            for (var x = 0; x < this.size; x++) {
+            for (var x = 0; x < this.config.size; x++) {
                 if (fieldObjects[x] !== this.fieldObjects[x]) {
-                    for (var y = 0; y < this.size; y++) {
+                    for (var y = 0; y < this.config.size; y++) {
                         // tslint:disable-next-line:max-line-length
                         if (fieldObjects[x][y] !== this.fieldObjects[x][y] && (fieldObjects[x][y].length || this.fieldObjects[x][y].length)) {
                             add = add.concat(fieldObjects[x][y].filter(objectMissing(this.fieldObjects[x][y])));
@@ -1449,7 +1484,7 @@
                 return;
             }
             // TODO: should be warning or error
-            if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) {
+            if (obj.x < 0 || obj.y < 0 || obj.x >= this.config.size || obj.y >= this.config.size) {
                 return;
             }
             try {
@@ -1488,7 +1523,7 @@
                 }
                 return;
             }
-            if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) {
+            if (obj.x < 0 || obj.y < 0 || obj.x >= this.config.size || obj.y >= this.config.size) {
                 return;
             }
             try {
@@ -1522,9 +1557,9 @@
         };
         CanvasBoard.prototype.removeAllObjects = function () {
             this.fieldObjects = [];
-            for (var i = 0; i < this.size; i++) {
+            for (var i = 0; i < this.config.size; i++) {
                 this.fieldObjects[i] = [];
-                for (var j = 0; j < this.size; j++) {
+                for (var j = 0; j < this.config.size; j++) {
                     this.fieldObjects[i][j] = [];
                 }
             }
@@ -1570,20 +1605,6 @@
           }
           return false;
         }*/
-        CanvasBoard.prototype.calcFieldWidth = function () {
-            // field width = board width / (number of fields + 1 for margin)
-            return this.width / (this.bottomRightFieldX - this.topLeftFieldX + 1 + this.config.marginSize * 2);
-        };
-        CanvasBoard.prototype.calcFieldHeight = function () {
-            // field height = board height / (number of fields + 1 for margin)
-            return this.height / (this.bottomRightFieldY - this.topLeftFieldY + 1 + this.config.marginSize * 2);
-        };
-        CanvasBoard.prototype.calcLeftMargin = function () {
-            return this.calcFieldWidth() * (0.5 + this.config.marginSize);
-        };
-        CanvasBoard.prototype.calcTopMargin = function () {
-            return this.calcFieldHeight() * (0.5 + this.config.marginSize);
-        };
         CanvasBoard.prototype.drawField = function (x, y) {
             var handler;
             for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
@@ -1601,7 +1622,6 @@
         };
         return CanvasBoard;
     }(EventEmitter));
-    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 

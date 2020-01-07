@@ -24,7 +24,7 @@ const calcTopMargin = (b: CanvasBoard) => (
 );*/
 
 function defaultFieldClear(canvasCtx: CanvasRenderingContext2D, _args: any, board: CanvasBoard) {
-  canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
+  canvasCtx.clearRect(-board.fieldSize / 2, -board.fieldSize / 2, board.fieldSize, board.fieldSize);
 }
 
 const clearField = (board: CanvasBoard, x: number, y: number) => {
@@ -88,19 +88,12 @@ export default class CanvasBoard extends EventEmitter {
     [key: string]: CanvasLayer;
   };
 
-  // following props are temporary and should be removed
-  viewport: BoardViewport;
+  // following props are computed in resize() method for performance
   width: number;
   height: number;
-  fieldWidth: number;
-  fieldHeight: number;
-  left: number;
-  top: number;
-  size: number;
-  topLeftFieldX: number;
-  topLeftFieldY: number;
-  bottomRightFieldX: number;
-  bottomRightFieldY: number;
+  margin: number;
+  fieldSize: number;
+  resizeCallback: (this: Window, ev: UIEvent) => any;
 
   /**
 	 * CanvasBoard class constructor - it creates a canvas board.
@@ -157,27 +150,13 @@ export default class CanvasBoard extends EventEmitter {
       }
     }
 
-    // init params - TODO: remove - should be computed as needed
-    this.size = this.config.size;
-    this.viewport = this.config.viewport;
-    this.topLeftFieldX = this.config.viewport.left;
-    this.topLeftFieldY = this.config.viewport.top;
-    this.bottomRightFieldX = this.size - 1 - this.config.viewport.right;
-    this.bottomRightFieldY = this.size - 1 - this.config.viewport.bottom;
-
     // init board html
     this.init(elem);
 
     // set the pixel ratio for HDPI (e.g. Retina) screens
     this.pixelRatio = window.devicePixelRatio || 1;
 
-    if (config.width && config.height) {
-      this.setDimensions(config.width, config.height);
-    } else if (config.width) {
-      this.setWidth(config.width);
-    } else if (config.height) {
-      this.setHeight(config.height);
-    }
+    this.resize();
   }
 
   /**
@@ -209,16 +188,80 @@ export default class CanvasBoard extends EventEmitter {
     elem.appendChild(this.element);
   }
 
-  private updateDim() {
+  /**
+   * Updates dimensions and redraws everything
+   */
+  resize() {
+    const countX = this.getCountX();
+    const countY = this.getCountY();
+
+    if (this.config.width && this.config.height) {
+      // exact dimensions
+      this.width = this.config.width * this.pixelRatio;
+      this.height = this.config.height * this.pixelRatio;
+      this.fieldSize = Math.min(
+        this.height / (countY + 2 * this.config.marginSize),
+        this.width / (countX + 2 * this.config.marginSize),
+      );
+
+      if (this.resizeCallback) {
+        window.removeEventListener('resize', this.resizeCallback);
+      }
+    } else if (this.config.width) {
+      this.width = this.config.width * this.pixelRatio;
+      this.fieldSize = this.width / (countX + 2 * this.config.marginSize);
+      this.height = this.fieldSize * (countY + 2 * this.config.marginSize) * this.pixelRatio;
+
+      if (this.resizeCallback) {
+        window.removeEventListener('resize', this.resizeCallback);
+      }
+    } else if (this.config.height) {
+      this.height = this.config.height * this.pixelRatio;
+      this.fieldSize = this.height / (countY + 2 * this.config.marginSize);
+      this.width = this.fieldSize * (countX + 2 * this.config.marginSize) * this.pixelRatio;
+
+      if (this.resizeCallback) {
+        window.removeEventListener('resize', this.resizeCallback);
+      }
+    } else {
+      this.element.style.width = 'auto';
+      this.width = this.element.offsetWidth * this.pixelRatio;
+      this.fieldSize = this.width / (countX + 2 * this.config.marginSize);
+      this.height = this.fieldSize * (countY + 2 * this.config.marginSize) * this.pixelRatio;
+
+      if (!this.resizeCallback) {
+        this.resizeCallback = () => {
+          this.resize();
+        };
+        window.addEventListener('resize', this.resizeCallback);
+      }
+    }
+
+    this.margin = this.fieldSize * (this.config.marginSize + 0.5);
+
     this.element.style.width = `${(this.width / this.pixelRatio)}px`;
     this.element.style.height = `${(this.height / this.pixelRatio)}px`;
 
     Object.keys(this.layers).forEach((layer) => {
-      this.layers[layer].setDimensions(this.width, this.height, this);
+      this.layers[layer].setDimensions(
+        (countX + 2 * this.config.marginSize) * this.fieldSize,
+        (countY + 2 * this.config.marginSize) * this.fieldSize,
+        this,
+      );
     });
+
+    this.redraw();
   }
 
-  setWidth(width: number) {
+  getCountX() {
+    return this.config.size - this.config.viewport.left - this.config.viewport.right;
+  }
+
+  getCountY() {
+    return this.config.size - this.config.viewport.top - this.config.viewport.bottom;
+  }
+
+  /*setWidth(width: number) {
     this.width = width * this.pixelRatio;
 
     this.fieldHeight = this.fieldWidth = this.calcFieldWidth();
@@ -254,14 +297,14 @@ export default class CanvasBoard extends EventEmitter {
 
     this.updateDim();
     this.redraw();
-  }
+  }*/
 
   /**
 	 * Get currently visible section of the board
 	 */
 
   getViewport() {
-    return this.viewport;
+    return this.config.viewport;
   }
 
   /**
@@ -269,33 +312,18 @@ export default class CanvasBoard extends EventEmitter {
 	 */
 
   setViewport(viewport: BoardViewport) {
-    this.viewport = viewport;
-
-    this.topLeftFieldX = this.viewport.left;
-    this.topLeftFieldY = this.viewport.top;
-    this.bottomRightFieldX = this.size - 1 - this.viewport.right;
-    this.bottomRightFieldY = this.size - 1 - this.viewport.bottom;
-
-    this.setDimensions();
+    this.config.viewport = viewport;
+    this.resize();
   }
 
   getSize() {
-    return this.size;
+    return this.config.size;
   }
 
   setSize(size: number = 19) {
-    if (size !== this.size) {
-      this.size = size;
-
-      this.fieldObjects = [];
-      for (let i = 0; i < this.size; i++) {
-        this.fieldObjects[i] = [];
-        for (let j = 0; j < this.size; j++) { this.fieldObjects[i][j] = []; }
-      }
-
-      this.bottomRightFieldX = this.size - 1 - this.viewport.right;
-      this.bottomRightFieldY = this.size - 1 - this.viewport.bottom;
-      this.setDimensions();
+    if (size !== this.config.size) {
+      this.config.size = size;
+      this.resize();
     }
   }
 
@@ -312,8 +340,8 @@ export default class CanvasBoard extends EventEmitter {
       });
 
       // redraw field objects
-      for (let x = 0; x < this.size; x++) {
-        for (let y = 0; y < this.size; y++) {
+      for (let x = 0; x < this.config.size; x++) {
+        for (let y = 0; y < this.config.size; y++) {
           this.drawField(x, y);
         }
       }
@@ -343,8 +371,8 @@ export default class CanvasBoard extends EventEmitter {
     this.layers[layer].clear(this);
     this.layers[layer].initialDraw(this);
 
-    for (let x = 0; x < this.size; x++) {
-      for (let y = 0; y < this.size; y++) {
+    for (let x = 0; x < this.config.size; x++) {
+      for (let y = 0; y < this.config.size; y++) {
         for (let z = 0; z < this.fieldObjects[x][y].length; z++) {
           const obj = this.fieldObjects[x][y][z];
           let handler: any;
@@ -378,7 +406,7 @@ export default class CanvasBoard extends EventEmitter {
 	 */
 
   getX(x: number) {
-    return this.left + x * this.fieldWidth;
+    return this.margin + x * this.fieldSize;
   }
 
   /**
@@ -388,7 +416,7 @@ export default class CanvasBoard extends EventEmitter {
 	 */
 
   getY(y: number) {
-    return this.top + y * this.fieldHeight;
+    return this.margin + y * this.fieldSize;
   }
 
   /**
@@ -434,9 +462,9 @@ export default class CanvasBoard extends EventEmitter {
     let add: BoardFieldObject[] = [];
     let remove: BoardFieldObject[] = [];
 
-    for (let x = 0; x < this.size; x++) {
+    for (let x = 0; x < this.config.size; x++) {
       if (fieldObjects[x] !== this.fieldObjects[x]) {
-        for (let y = 0; y < this.size; y++) {
+        for (let y = 0; y < this.config.size; y++) {
           // tslint:disable-next-line:max-line-length
           if (fieldObjects[x][y] !== this.fieldObjects[x][y] && (fieldObjects[x][y].length || this.fieldObjects[x][y].length)) {
             add = add.concat(fieldObjects[x][y].filter(objectMissing(this.fieldObjects[x][y])));
@@ -457,7 +485,7 @@ export default class CanvasBoard extends EventEmitter {
     }
 
     // TODO: should be warning or error
-    if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) { return; }
+    if (obj.x < 0 || obj.y < 0 || obj.x >= this.config.size || obj.y >= this.config.size) { return; }
 
     try {
       // clear all objects on object's coordinates
@@ -493,7 +521,7 @@ export default class CanvasBoard extends EventEmitter {
       return;
     }
 
-    if (obj.x < 0 || obj.y < 0 || obj.x >= this.size || obj.y >= this.size) { return; }
+    if (obj.x < 0 || obj.y < 0 || obj.x >= this.config.size || obj.y >= this.config.size) { return; }
 
     try {
       let i;
@@ -527,9 +555,9 @@ export default class CanvasBoard extends EventEmitter {
 
   removeAllObjects() {
     this.fieldObjects = [];
-    for (let i = 0; i < this.size; i++) {
+    for (let i = 0; i < this.config.size; i++) {
       this.fieldObjects[i] = [];
-      for (let j = 0; j < this.size; j++) { this.fieldObjects[i][j] = []; }
+      for (let j = 0; j < this.config.size; j++) { this.fieldObjects[i][j] = []; }
     }
     this.redraw();
   }
@@ -576,24 +604,6 @@ export default class CanvasBoard extends EventEmitter {
     }
     return false;
   }*/
-
-  private calcFieldWidth() {
-    // field width = board width / (number of fields + 1 for margin)
-    return this.width / (this.bottomRightFieldX - this.topLeftFieldX + 1 + this.config.marginSize * 2);
-  }
-
-  private calcFieldHeight() {
-    // field height = board height / (number of fields + 1 for margin)
-    return this.height / (this.bottomRightFieldY - this.topLeftFieldY + 1 + this.config.marginSize * 2);
-  }
-
-  private calcLeftMargin() {
-    return this.calcFieldWidth() * (0.5 + this.config.marginSize);
-  }
-
-  private calcTopMargin() {
-    return this.calcFieldHeight() * (0.5 + this.config.marginSize);
-  }
 
   private drawField(x: number, y: number) {
     let handler;

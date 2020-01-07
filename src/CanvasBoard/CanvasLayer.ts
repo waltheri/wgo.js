@@ -18,8 +18,6 @@ export default class CanvasLayer {
 
     // Adjust pixel ratio for HDPI screens (e.g. Retina)
     this.pixelRatio = window.devicePixelRatio || 1;
-    // this.context.scale(this.pixelRatio, this.pixelRatio);
-    // this.context.setTransform(this.pixelRatio, 0, 0, this.pixelRatio, 0, 0);
     this.context.scale(this.pixelRatio, this.pixelRatio);
     this.context.save();
   }
@@ -38,6 +36,11 @@ export default class CanvasLayer {
   appendTo(element: HTMLElement, weight: number) {
     this.element.style.position = 'absolute';
     this.element.style.zIndex = weight.toString(10);
+    this.element.style.top = '0';
+    this.element.style.bottom = '0';
+    this.element.style.left = '0';
+    this.element.style.right = '0';
+    this.element.style.margin = 'auto';
     element.appendChild(this.element);
   }
 
@@ -60,13 +63,13 @@ export default class CanvasLayer {
   }
 
   drawField<P>(drawingFn: DrawFunction<P>, args: any, board: CanvasBoard) {
-    const leftOffset = Math.round(board.left + args.x * board.fieldWidth);
-    const topOffset = Math.round(board.top + args.y * board.fieldHeight);
+    const leftOffset = Math.round(board.getX(args.x));
+    const topOffset = Math.round(board.getY(args.y));
 
     // create a "sandbox" for drawing function
     this.context.save();
 
-    this.context.transform(board.fieldWidth - 1, 0, 0, board.fieldHeight - 1, leftOffset, topOffset);
+    this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
     this.context.beginPath();
     this.context.rect(-0.5, -0.5, 1, 1);
     this.context.clip();

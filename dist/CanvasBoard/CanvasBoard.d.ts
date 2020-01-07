@@ -14,18 +14,11 @@ export default class CanvasBoard extends EventEmitter {
         stone: CanvasLayer;
         [key: string]: CanvasLayer;
     };
-    viewport: BoardViewport;
     width: number;
     height: number;
-    fieldWidth: number;
-    fieldHeight: number;
-    left: number;
-    top: number;
-    size: number;
-    topLeftFieldX: number;
-    topLeftFieldY: number;
-    bottomRightFieldX: number;
-    bottomRightFieldY: number;
+    margin: number;
+    fieldSize: number;
+    resizeCallback: (this: Window, ev: UIEvent) => any;
     /**
        * CanvasBoard class constructor - it creates a canvas board.
        *
@@ -71,10 +64,12 @@ export default class CanvasBoard extends EventEmitter {
      * Initialization method, it is called in constructor. You shouldn't call it, but you can alter it.
      */
     private init;
-    private updateDim;
-    setWidth(width: number): void;
-    setHeight(height: number): void;
-    setDimensions(width?: number, height?: number): void;
+    /**
+     * Updates dimensions and redraws everything
+     */
+    resize(): void;
+    getCountX(): number;
+    getCountY(): number;
     /**
        * Get currently visible section of the board
        */
@@ -130,9 +125,5 @@ export default class CanvasBoard extends EventEmitter {
     removeAllObjects(): void;
     addCustomObject(handler: DrawHandler<BoardCustomObject>, args: any): void;
     removeCustomObject(handler: DrawHandler<BoardCustomObject>, args: any): boolean;
-    private calcFieldWidth;
-    private calcFieldHeight;
-    private calcLeftMargin;
-    private calcTopMargin;
     private drawField;
 }
