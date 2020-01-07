@@ -2,7 +2,6 @@
 
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
-import { Color } from '../../types';
 import { DrawHandler } from '../types';
 
 // Check if image has been loaded properly
@@ -45,7 +44,7 @@ export default function (graphic: any[], fallback: DrawHandler) {
               redrawRequest = null;
             }, 1);
           };
-          stoneGraphic.src = board.config.theme.imageFolder + graphic[idx];
+          stoneGraphic.src = graphic[idx];
           graphic[idx] = stoneGraphic;
         }
 

@@ -5,7 +5,6 @@
  * @module CanvasBoard
  */
 
-import { defaultFieldClear } from './helpers';
 import GridLayer from './GridLayer';
 import ShadowLayer from './ShadowLayer';
 import CanvasLayer from './CanvasLayer';
@@ -23,6 +22,10 @@ import EventEmitter from '../utils/EventEmitter';
 const calcTopMargin = (b: CanvasBoard) => (
   //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
 );*/
+
+function defaultFieldClear(canvasCtx: CanvasRenderingContext2D, _args: any, board: CanvasBoard) {
+  canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
+}
 
 const clearField = (board: CanvasBoard, x: number, y: number) => {
   let handler: DrawHandler<any>;

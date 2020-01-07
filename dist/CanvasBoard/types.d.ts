@@ -27,7 +27,6 @@ export interface CanvasBoardTheme {
     coordinatesY: string | (string | number)[];
     font: string;
     linesShift: number;
-    imageFolder: string;
     backgroundColor: string;
     backgroundImage: string;
     drawHandlers: {

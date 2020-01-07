@@ -266,25 +266,6 @@
     //# sourceMappingURL=index.js.map
 
     /**
-     * Enumeration representing stone color, can be used for representing board position.
-     */
-    var Color;
-    (function (Color) {
-        Color[Color["BLACK"] = 1] = "BLACK";
-        Color[Color["B"] = 1] = "B";
-        Color[Color["WHITE"] = -1] = "WHITE";
-        Color[Color["W"] = -1] = "W";
-        Color[Color["EMPTY"] = 0] = "EMPTY";
-        Color[Color["E"] = 0] = "E";
-    })(Color || (Color = {}));
-    //# sourceMappingURL=types.js.map
-
-    function defaultFieldClear(canvasCtx, _args, board) {
-        canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
-    }
-    //# sourceMappingURL=helpers.js.map
-
-    /**
      * @class
      * Implements one layer of the HTML5 canvas
      */
@@ -723,7 +704,7 @@
                                 redrawRequest = null;
                             }, 1);
                         };
-                        stoneGraphic.src = board.config.theme.imageFolder + graphic[idx];
+                        stoneGraphic.src = graphic[idx];
                         graphic[idx] = stoneGraphic;
                     }
                     if (isOkay(graphic[idx])) {
@@ -738,7 +719,6 @@
             shadow: shadow,
         };
     }
-    //# sourceMappingURL=realisticStone.js.map
 
     var circle = {
         stone: {
@@ -932,6 +912,7 @@
             },
         },
     };
+    //# sourceMappingURL=gridFieldClear.js.map
 
     var baseTheme = {
         // grid & star points
@@ -1110,6 +1091,9 @@
     const calcTopMargin = (b: CanvasBoard) => (
       //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
     );*/
+    function defaultFieldClear(canvasCtx, _args, board) {
+        canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldHeight / 2, board.fieldWidth, board.fieldHeight);
+    }
     var clearField = function (board, x, y) {
         var handler;
         for (var z = 0; z < board.fieldObjects[x][y].length; z++) {
@@ -1669,6 +1653,20 @@
         Chinese: CHINESE_RULES,
     };
     //# sourceMappingURL=rules.js.map
+
+    /**
+     * Enumeration representing stone color, can be used for representing board position.
+     */
+    var Color;
+    (function (Color) {
+        Color[Color["BLACK"] = 1] = "BLACK";
+        Color[Color["B"] = 1] = "B";
+        Color[Color["WHITE"] = -1] = "WHITE";
+        Color[Color["W"] = -1] = "W";
+        Color[Color["EMPTY"] = 0] = "EMPTY";
+        Color[Color["E"] = 0] = "E";
+    })(Color || (Color = {}));
+    //# sourceMappingURL=types.js.map
 
     /**
      * Contains implementation of go position class.
