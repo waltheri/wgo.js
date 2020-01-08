@@ -70,6 +70,26 @@ export default class CanvasBoard extends EventEmitter {
     resize(): void;
     getCountX(): number;
     getCountY(): number;
+    getMargin(): number;
+    /**
+     * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
+     *
+     * @param width
+     */
+    setWidth(width: number): void;
+    /**
+     * Sets height of the board, width will be automatically computed. Then everything will be redrawn.
+     *
+     * @param height
+     */
+    setHeight(height: number): void;
+    /**
+     * Sets exact dimensions of the board. Then everything will be redrawn.
+     *
+     * @param width
+     * @param height
+     */
+    setDimensions(width: number, height: number): void;
     /**
        * Get currently visible section of the board
        */
@@ -80,6 +100,8 @@ export default class CanvasBoard extends EventEmitter {
     setViewport(viewport: BoardViewport): void;
     getSize(): number;
     setSize(size?: number): void;
+    getCoordinates(): boolean;
+    setCoordinates(coordinates: boolean): void;
     /**
      * Redraw everything.
      */

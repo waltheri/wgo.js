@@ -12,6 +12,7 @@ import defaultConfig from './defaultConfig';
 import { CanvasBoardConfig, BoardViewport, BoardFieldObject, BoardCustomObject, DrawHandler } from './types';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
+import coordinates from './drawHandlers/coordinates';
 
 // Private methods of WGo.CanvasBoard
 
@@ -42,6 +43,8 @@ const clearField = (board: CanvasBoard, x: number, y: number) => {
     }
   }
 };
+
+const coordinatesObject = { handler: coordinates };
 
 /*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
   // new hopefully better translation of coordinates
@@ -194,14 +197,15 @@ export default class CanvasBoard extends EventEmitter {
   resize() {
     const countX = this.getCountX();
     const countY = this.getCountY();
+    const margins = 2 * this.getMargin();
 
     if (this.config.width && this.config.height) {
       // exact dimensions
       this.width = this.config.width * this.pixelRatio;
       this.height = this.config.height * this.pixelRatio;
       this.fieldSize = Math.min(
-        this.height / (countY + 2 * this.config.marginSize),
-        this.width / (countX + 2 * this.config.marginSize),
+        this.height / (countY + margins),
+        this.width / (countX + margins),
       );
 
       if (this.resizeCallback) {
@@ -209,16 +213,16 @@ export default class CanvasBoard extends EventEmitter {
       }
     } else if (this.config.width) {
       this.width = this.config.width * this.pixelRatio;
-      this.fieldSize = this.width / (countX + 2 * this.config.marginSize);
-      this.height = this.fieldSize * (countY + 2 * this.config.marginSize) * this.pixelRatio;
+      this.fieldSize = this.width / (countX + margins);
+      this.height = this.fieldSize * (countY + margins);
 
       if (this.resizeCallback) {
         window.removeEventListener('resize', this.resizeCallback);
       }
     } else if (this.config.height) {
       this.height = this.config.height * this.pixelRatio;
-      this.fieldSize = this.height / (countY + 2 * this.config.marginSize);
-      this.width = this.fieldSize * (countX + 2 * this.config.marginSize) * this.pixelRatio;
+      this.fieldSize = this.height / (countY + margins);
+      this.width = this.fieldSize * (countX + margins);
 
       if (this.resizeCallback) {
         window.removeEventListener('resize', this.resizeCallback);
@@ -226,8 +230,8 @@ export default class CanvasBoard extends EventEmitter {
     } else {
       this.element.style.width = 'auto';
       this.width = this.element.offsetWidth * this.pixelRatio;
-      this.fieldSize = this.width / (countX + 2 * this.config.marginSize);
-      this.height = this.fieldSize * (countY + 2 * this.config.marginSize) * this.pixelRatio;
+      this.fieldSize = this.width / (countX + margins);
+      this.height = this.fieldSize * (countY + margins);
 
       if (!this.resizeCallback) {
         this.resizeCallback = () => {
@@ -237,15 +241,15 @@ export default class CanvasBoard extends EventEmitter {
       }
     }
 
-    this.margin = this.fieldSize * (this.config.marginSize + 0.5);
+    this.margin = this.fieldSize * (this.getMargin() + 0.5);
 
     this.element.style.width = `${(this.width / this.pixelRatio)}px`;
     this.element.style.height = `${(this.height / this.pixelRatio)}px`;
 
     Object.keys(this.layers).forEach((layer) => {
       this.layers[layer].setDimensions(
-        (countX + 2 * this.config.marginSize) * this.fieldSize,
-        (countY + 2 * this.config.marginSize) * this.fieldSize,
+        (countX + margins) * this.fieldSize,
+        (countY + margins) * this.fieldSize,
         this,
       );
     });
@@ -261,43 +265,43 @@ export default class CanvasBoard extends EventEmitter {
     return this.config.size - this.config.viewport.top - this.config.viewport.bottom;
   }
 
-  /*setWidth(width: number) {
-    this.width = width * this.pixelRatio;
-
-    this.fieldHeight = this.fieldWidth = this.calcFieldWidth();
-    this.left = this.calcLeftMargin();
-
-    this.height = (this.bottomRightFieldY - this.topLeftFieldY + 1.5) * this.fieldHeight;
-    this.top = this.calcTopMargin();
-
-    this.updateDim();
-    this.redraw();
+  getMargin() {
+    return this.config.marginSize + (this.config.coordinates ? 0.5 : 0);
   }
 
+  /**
+   * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
+   *
+   * @param width
+   */
+  setWidth(width: number) {
+    this.config.width = width;
+    this.config.height = 0;
+    this.resize();
+  }
+
+  /**
+   * Sets height of the board, width will be automatically computed. Then everything will be redrawn.
+   *
+   * @param height
+   */
   setHeight(height: number) {
-    this.height = height * this.pixelRatio;
-    this.fieldWidth = this.fieldHeight = this.calcFieldHeight();
-    this.top = this.calcTopMargin();
-
-    this.width = (this.bottomRightFieldX - this.topLeftFieldX + 1.5) * this.fieldWidth;
-    this.left = this.calcLeftMargin();
-
-    this.updateDim();
-    this.redraw();
+    this.config.width = 0;
+    this.config.height = height;
+    this.resize();
   }
 
-  setDimensions(width?: number, height?: number) {
-    this.width = (width || parseInt(this.element.style.width, 10)) * this.pixelRatio;
-    this.height = (height || parseInt(this.element.style.height, 10)) * this.pixelRatio;
-
-    this.fieldWidth = this.calcFieldWidth();
-    this.fieldHeight = this.calcFieldHeight();
-    this.left = this.calcLeftMargin();
-    this.top = this.calcTopMargin();
-
-    this.updateDim();
-    this.redraw();
-  }*/
+  /**
+   * Sets exact dimensions of the board. Then everything will be redrawn.
+   *
+   * @param width
+   * @param height
+   */
+  setDimensions(width: number, height: number) {
+    this.config.width = width;
+    this.config.height = height;
+    this.resize();
+  }
 
   /**
 	 * Get currently visible section of the board
@@ -327,6 +331,17 @@ export default class CanvasBoard extends EventEmitter {
     }
   }
 
+  getCoordinates() {
+    return this.config.coordinates;
+  }
+
+  setCoordinates(coordinates: boolean) {
+    if (this.config.coordinates !== coordinates) {
+      this.config.coordinates = coordinates;
+      this.resize();
+    }
+  }
+
   /**
    * Redraw everything.
    */
@@ -338,6 +353,14 @@ export default class CanvasBoard extends EventEmitter {
         this.layers[layer].clear(this);
         this.layers[layer].initialDraw(this);
       });
+
+      if (this.config.coordinates && this.customObjects.indexOf(coordinatesObject) === -1) {
+        // add coordinates handler if there should be coordinates
+        this.customObjects.push(coordinatesObject);
+      } else if (!this.config.coordinates && this.customObjects.indexOf(coordinatesObject) >= 0) {
+        // remove coordinates handler if there should not be coordinates
+        this.customObjects = this.customObjects.filter(obj => coordinatesObject !== obj);
+      }
 
       // redraw field objects
       for (let x = 0; x < this.config.size; x++) {

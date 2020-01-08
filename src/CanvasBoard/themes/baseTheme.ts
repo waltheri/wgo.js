@@ -8,7 +8,7 @@ const baseTheme: CanvasBoardTheme = {
   gridLinesWidth: 0.03,
   gridLinesColor: '#654525',
   starColor: '#531',
-  starSize: 0.05,
+  starSize: 0.07,
   stoneSize: 0.47,
 
   // markup
