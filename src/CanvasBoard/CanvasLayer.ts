@@ -1,6 +1,7 @@
 /* global document, window */
 import CanvasBoard from './CanvasBoard';
-import { DrawFunction } from './types';
+import { DrawFunction, BoardFieldObject, BoardFreeObject } from './types';
+import { Point } from '../types';
 
 /**
  * @class
@@ -52,34 +53,56 @@ export default class CanvasLayer {
     return this.context;
   }
 
-  initialDraw(_board: CanvasBoard) {
-    // no op
+  draw<P extends BoardFreeObject>(drawingFn: DrawFunction<P>, args: P, board: CanvasBoard) {
+    try {
+      this.context.save();
+      drawingFn(this.context, args, board);
+      this.context.restore();
+    } catch (err) {
+      // If the board is too small some canvas painting function can throw an exception, but we don't
+      // want to break our app
+      // tslint:disable-next-line:no-console
+      console.error(`Object couldn't be rendered. Error: ${err.message}`, args);
+    }
   }
 
-  draw<P>(drawingFn: DrawFunction<P>, args: P, board: CanvasBoard) {
-    this.context.save();
-    drawingFn(this.context, args, board);
-    this.context.restore();
-  }
+  drawField<P extends BoardFieldObject>(drawingFn: DrawFunction<P>, args: P, board: CanvasBoard) {
+    try {
+      const leftOffset = Math.round(board.getX(args.field.x));
+      const topOffset = Math.round(board.getY(args.field.y));
 
-  drawField<P>(drawingFn: DrawFunction<P>, args: any, board: CanvasBoard) {
-    const leftOffset = Math.round(board.getX(args.x));
-    const topOffset = Math.round(board.getY(args.y));
+      // create a "sandbox" for drawing function
+      this.context.save();
 
-    // create a "sandbox" for drawing function
-    this.context.save();
+      this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
+      this.context.beginPath();
+      this.context.rect(-0.5, -0.5, 1, 1);
+      this.context.clip();
+      drawingFn(this.context, args, board);
 
-    this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
-    this.context.beginPath();
-    this.context.rect(-0.5, -0.5, 1, 1);
-    this.context.clip();
-    drawingFn(this.context, args, board);
-
-    // restore context
-    this.context.restore();
+      // restore context
+      this.context.restore();
+    } catch (err) {
+      // If the board is too small some canvas painting function can throw an exception, but we don't
+      // want to break our app
+      // tslint:disable-next-line:no-console
+      console.error(`Object couldn't be rendered. Error: ${err.message}`, args);
+    }
   }
 
   clear(_board: CanvasBoard) {
     this.context.clearRect(0, 0, this.element.width, this.element.height);
+  }
+
+  clearField(field: Point, board: CanvasBoard) {
+    const leftOffset = Math.round(board.getX(field.x));
+    const topOffset = Math.round(board.getY(field.y));
+
+    this.context.clearRect(
+      leftOffset - board.fieldSize / 2,
+      topOffset - board.fieldSize / 2,
+      board.fieldSize,
+      board.fieldSize,
+    );
   }
 }

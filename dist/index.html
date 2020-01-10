@@ -82,7 +82,17 @@ const custom = {
   },
 };
 
-board.addObject({ x: 9, y: 9, type: custom });
+board.addObject({ type: 'B', field: { x: 9, y: 9 } });
+board.addObject({ type: 'W', field: { x: 10, y: 9 } });
+board.addObject({ type: 'B', field: { x: 10, y: 10 } });
+board.addObject({ type: 'W', field: { x: 9, y: 10 } });
+
+board.addObject({ type: 'CR', field: { x: 9, y: 9 }, params: { color: 'white' } });
+
+board.addObject({ type: 'TR', field: { x: 5, y: 5 } });
+board.addObject({ type: 'gridFieldClear', field: { x: 5, y: 5 } });
+
+/*board.addObject({ x: 9, y: 9, type: custom });
 board.addObject({ x: 1, y: 0, type: custom });
 board.addObject({ x: 2, y: 0, type: custom });
 
@@ -116,7 +126,7 @@ board.addObject({ x: 13, y: 14, type: 'B' });
 board.addObject({ x: 13, y: 14, type: 'CR', lineWidth: 0.05, color: 'red', fillColor: 'rgba(128,0,0,0.8)' });
 board.addObject({ x: 14, y: 14, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'W' });
-board.addObject({ x: 14, y: 13, type: 'MA' });
+board.addObject({ x: 14, y: 13, type: 'MA' });*/
 
 </script>
 </body>

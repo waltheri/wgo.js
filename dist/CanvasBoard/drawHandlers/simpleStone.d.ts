@@ -1,6 +1,7 @@
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 export default function (color: string): {
-    stone: {
-        draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
+    drawField: {
+        stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard): void;
     };
 };

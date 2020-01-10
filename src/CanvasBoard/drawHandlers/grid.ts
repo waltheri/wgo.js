@@ -1,8 +1,9 @@
 import CanvasBoard from '..';
+import { BoardFreeObject } from '../types';
 
 export default {
-  grid: {
-    draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
+  drawFree: {
+    grid(canvasCtx: CanvasRenderingContext2D, args: BoardFreeObject, board: CanvasBoard) {
       // draw grid
       let tmp;
 

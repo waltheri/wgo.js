@@ -2,7 +2,7 @@
 
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
-import { DrawHandler } from '../types';
+import { FieldDrawHandler, BoardFieldObject } from '../types';
 
 // Check if image has been loaded properly
 // see https://stereochro.me/ideas/detecting-broken-images-js
@@ -17,16 +17,16 @@ function isOkay(img: any) {
 
 // Shadow handler for the 'REALISTIC' rendering mode
 // handler for image based stones
-export default function (graphic: any[], fallback: DrawHandler) {
+export default function (graphic: any[], fallback: FieldDrawHandler) {
   const randSeed = Math.ceil(Math.random() * 9999999);
   let redrawRequest: number;
 
   return {
-    stone: {
-      draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
+    drawField: {
+      stone (canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
         const stoneRadius = board.config.theme.stoneSize;
         const count = graphic.length;
-        const idx = randSeed % (count + args.x * board.config.size + args.y) % count;
+        const idx = randSeed % (count + args.field.x * board.config.size + args.field.y) % count;
 
         if (typeof graphic[idx] === 'string') {
           // The image has not been loaded yet
@@ -52,7 +52,7 @@ export default function (graphic: any[], fallback: DrawHandler) {
           canvasCtx.drawImage(graphic[idx], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
         } else {
           // Fall back to SHELL handler if there was a problem loading the image
-          fallback.stone.draw(canvasCtx, args, board);
+          fallback.drawField.stone(canvasCtx, args, board);
         }
       },
     },

@@ -1,8 +1,8 @@
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 declare const _default: {
-    grid: {
-        draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
-        clear(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
+    drawField: {
+        grid(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard): void;
     };
 };
 export default _default;

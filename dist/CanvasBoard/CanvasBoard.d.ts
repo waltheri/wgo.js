@@ -1,13 +1,12 @@
 import CanvasLayer from './CanvasLayer';
-import { CanvasBoardConfig, BoardViewport, BoardFieldObject, BoardCustomObject, DrawHandler } from './types';
+import { CanvasBoardConfig, BoardViewport, BoardObject, DrawHandler } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 export default class CanvasBoard extends EventEmitter {
     config: CanvasBoardConfig;
     element: HTMLElement;
     pixelRatio: number;
-    fieldObjects: BoardFieldObject[][][];
-    customObjects: BoardCustomObject[];
+    objects: BoardObject[];
     layers: {
         grid: CanvasLayer;
         shadow: CanvasLayer;
@@ -72,6 +71,18 @@ export default class CanvasBoard extends EventEmitter {
     getCountY(): number;
     getMargin(): number;
     /**
+       * Get absolute X coordinate
+       *
+       * @param {number} x relative coordinate
+       */
+    getX(x: number): number;
+    /**
+       * Get absolute Y coordinate
+       *
+       * @param {number} y relative coordinate
+       */
+    getY(y: number): number;
+    /**
      * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
      *
      * @param width
@@ -103,27 +114,6 @@ export default class CanvasBoard extends EventEmitter {
     getCoordinates(): boolean;
     setCoordinates(coordinates: boolean): void;
     /**
-     * Redraw everything.
-     */
-    redraw(): void;
-    /**
-       * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
-       * For complete redrawing use method redraw().
-       */
-    redrawLayer(layer: string): void;
-    /**
-       * Get absolute X coordinate
-       *
-       * @param {number} x relative coordinate
-       */
-    getX(x: number): number;
-    /**
-       * Get absolute Y coordinate
-       *
-       * @param {number} y relative coordinate
-       */
-    getY(y: number): number;
-    /**
        * Add layer to the board. It is meant to be only for canvas layers.
        *
        * @param {CanvasBoard.CanvasLayer} layer to add
@@ -136,16 +126,29 @@ export default class CanvasBoard extends EventEmitter {
        * @param {CanvasBoard.CanvasLayer} layer to remove
        */
     removeLayer(layer: CanvasLayer): void;
-    update(fieldObjects: BoardFieldObject[][][]): void;
-    getChanges(fieldObjects: BoardFieldObject[][][]): {
-        add: BoardFieldObject[];
-        remove: BoardFieldObject[];
-    };
-    addObject(obj: BoardFieldObject): void;
-    removeObject(obj: BoardFieldObject): void;
+    getObjectHandler(boardObject: BoardObject): DrawHandler;
+    /**
+     * Redraw everything.
+     */
+    redraw(): void;
+    /**
+       * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
+       * For complete redrawing use method redraw().
+       */
+    redrawLayer(layer: string): void;
+    /**
+     * Add board object. Main function for adding graphics on the board.
+     *
+     * @param boardObject
+     */
+    addObject(boardObject: BoardObject | BoardObject[]): void;
+    /**
+     * Remove board object. Main function for removing graphics on the board.
+     *
+     * @param boardObject
+     */
+    removeObject(boardObject: BoardObject | BoardObject[]): void;
     removeObjectsAt(x: number, y: number): void;
     removeAllObjects(): void;
-    addCustomObject(handler: DrawHandler<BoardCustomObject>, args: any): void;
-    removeCustomObject(handler: DrawHandler<BoardCustomObject>, args: any): boolean;
-    private drawField;
+    getObjectsToDraw(): BoardObject[];
 }

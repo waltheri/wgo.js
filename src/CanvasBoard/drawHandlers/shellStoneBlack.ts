@@ -1,9 +1,10 @@
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 
 export default {
-  stone: {
-    draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
+  drawField: {
+    stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
       const stoneRadius = board.config.theme.stoneSize;
 
       canvasCtx.beginPath();
@@ -57,6 +58,6 @@ export default {
       );
       canvasCtx.fill();
     },
+    shadow,
   },
-  shadow,
 };

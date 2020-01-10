@@ -1,17 +1,11 @@
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 
 export default {
-  grid: {
-    draw (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
+  drawField: {
+    grid (canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
       const stoneRadius = board.config.theme.stoneSize;
       canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
-    },
-    clear (canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      args._nodraw = true;
-      canvasCtx.restore(); // small hack for now
-      board.redrawLayer('grid');
-      canvasCtx.save();
-      delete args._nodraw;
     },
   },
 };

@@ -1,18 +1,20 @@
 import CanvasBoard from '..';
-import { DrawHandler } from '../types';
+import { FieldDrawHandler, BoardFieldObject } from '../types';
 
 // transparent modificator
 
-export default function (drawHandler: DrawHandler) {
+export default function (drawHandler: FieldDrawHandler) {
   return {
-    stone: {
-      draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-        if (args.alpha) {
-          canvasCtx.globalAlpha = args.alpha;
+    drawField: {
+      stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
+        const params = args.params || {};
+
+        if (params.alpha) {
+          canvasCtx.globalAlpha = params.alpha;
         } else {
           canvasCtx.globalAlpha = 0.3;
         }
-        drawHandler.stone.draw.call(null, canvasCtx, args, board);
+        drawHandler.drawField.stone.call(null, canvasCtx, args, board);
         canvasCtx.globalAlpha = 1;
       },
     },

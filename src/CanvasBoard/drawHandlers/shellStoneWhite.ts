@@ -1,5 +1,6 @@
 import shadow from './stoneShadow';
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 
 // shell stone helping functions
 const shellSeed = Math.ceil(Math.random() * 9999999);
@@ -60,8 +61,8 @@ const drawShell = function (arg: any) {
 };
 
 export default {
-  stone: {
-    draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
+  drawField: {
+    stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
       const stoneRadius = board.config.theme.stoneSize;
       canvasCtx.beginPath();
       canvasCtx.fillStyle = '#aaa';
@@ -69,8 +70,8 @@ export default {
       canvasCtx.fill();
 
       // do shell magic here
-      const type = shellSeed % (3 + args.x * board.config.size + args.y) % 3;
-      const z = board.config.size * board.config.size + args.x * board.config.size + args.y;
+      const type = shellSeed % (3 + args.field.x * board.config.size + args.field.y) % 3;
+      const z = board.config.size * board.config.size + args.field.x * board.config.size + args.field.y;
       const angle = (2 / z) * (shellSeed % z);
 
       if (type === 0) {
@@ -125,6 +126,6 @@ export default {
       canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
       canvasCtx.fill();
     },
+    shadow,
   },
-  shadow,
 };

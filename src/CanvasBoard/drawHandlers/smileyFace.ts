@@ -1,10 +1,13 @@
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 
 export default {
-  stone: {
-    draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard) {
-      canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
-      canvasCtx.lineWidth = (args.lineWidth || board.config.theme.markupLinesWidth) * 2;
+  drawField: {
+    stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
+      const params = args.params || {};
+
+      canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
+      canvasCtx.lineWidth = (params.lineWidth || board.config.theme.markupLinesWidth) * 2;
       canvasCtx.beginPath();
       canvasCtx.arc(
         -0.5 / 3,

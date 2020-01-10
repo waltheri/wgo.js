@@ -302,86 +302,51 @@
         CanvasLayer.prototype.getContext = function () {
             return this.context;
         };
-        CanvasLayer.prototype.initialDraw = function (_board) {
-            // no op
-        };
         CanvasLayer.prototype.draw = function (drawingFn, args, board) {
-            this.context.save();
-            drawingFn(this.context, args, board);
-            this.context.restore();
+            try {
+                this.context.save();
+                drawingFn(this.context, args, board);
+                this.context.restore();
+            }
+            catch (err) {
+                // If the board is too small some canvas painting function can throw an exception, but we don't
+                // want to break our app
+                // tslint:disable-next-line:no-console
+                console.error("Object couldn't be rendered. Error: " + err.message, args);
+            }
         };
         CanvasLayer.prototype.drawField = function (drawingFn, args, board) {
-            var leftOffset = Math.round(board.getX(args.x));
-            var topOffset = Math.round(board.getY(args.y));
-            // create a "sandbox" for drawing function
-            this.context.save();
-            this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
-            this.context.beginPath();
-            this.context.rect(-0.5, -0.5, 1, 1);
-            this.context.clip();
-            drawingFn(this.context, args, board);
-            // restore context
-            this.context.restore();
+            try {
+                var leftOffset = Math.round(board.getX(args.field.x));
+                var topOffset = Math.round(board.getY(args.field.y));
+                // create a "sandbox" for drawing function
+                this.context.save();
+                this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
+                this.context.beginPath();
+                this.context.rect(-0.5, -0.5, 1, 1);
+                this.context.clip();
+                drawingFn(this.context, args, board);
+                // restore context
+                this.context.restore();
+            }
+            catch (err) {
+                // If the board is too small some canvas painting function can throw an exception, but we don't
+                // want to break our app
+                // tslint:disable-next-line:no-console
+                console.error("Object couldn't be rendered. Error: " + err.message, args);
+            }
         };
         CanvasLayer.prototype.clear = function (_board) {
             this.context.clearRect(0, 0, this.element.width, this.element.height);
         };
+        CanvasLayer.prototype.clearField = function (field, board) {
+            var leftOffset = Math.round(board.getX(field.x));
+            var topOffset = Math.round(board.getY(field.y));
+            this.context.clearRect(leftOffset - board.fieldSize / 2, topOffset - board.fieldSize / 2, board.fieldSize, board.fieldSize);
+        };
         return CanvasLayer;
     }());
     //# sourceMappingURL=CanvasLayer.js.map
-
-    var gridHandler = {
-        grid: {
-            draw: function (canvasCtx, args, board) {
-                // draw grid
-                var tmp;
-                canvasCtx.beginPath();
-                canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldSize;
-                canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
-                var tx = Math.round(board.margin);
-                var ty = Math.round(board.margin);
-                var bw = Math.round(board.fieldSize * (board.config.size - 1));
-                var bh = Math.round(board.fieldSize * (board.config.size - 1));
-                canvasCtx.strokeRect(tx, ty, bw, bh);
-                for (var i = 1; i < board.config.size - 1; i++) {
-                    tmp = Math.round(board.getX(i));
-                    canvasCtx.moveTo(tmp, ty);
-                    canvasCtx.lineTo(tmp, ty + bh);
-                    tmp = Math.round(board.getY(i));
-                    canvasCtx.moveTo(tx, tmp);
-                    canvasCtx.lineTo(tx + bw, tmp);
-                }
-                canvasCtx.stroke();
-                // draw stars
-                canvasCtx.fillStyle = board.config.theme.starColor;
-                if (board.config.starPoints[board.config.size]) {
-                    for (var key in board.config.starPoints[board.config.size]) {
-                        canvasCtx.beginPath();
-                        canvasCtx.arc(board.getX(board.config.starPoints[board.config.size][key].x), board.getY(board.config.starPoints[board.config.size][key].y), board.config.theme.starSize * board.fieldSize, 0, 2 * Math.PI, true);
-                        canvasCtx.fill();
-                    }
-                }
-            },
-        },
-    };
-    //# sourceMappingURL=grid.js.map
-
-    /**
-     * @class
-     * @extends WGo.CanvasBoard.CanvasLayer
-     * Layer which renders board grid.
-     */
-    var GridLayer = /** @class */ (function (_super) {
-        __extends(GridLayer, _super);
-        function GridLayer() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        GridLayer.prototype.initialDraw = function (board) {
-            gridHandler.grid.draw(this.context, {}, board);
-        };
-        return GridLayer;
-    }(CanvasLayer));
-    //# sourceMappingURL=GridLayer.js.map
 
     /**
      * @class
@@ -408,26 +373,24 @@
      * 0 - no blur - createRadialGradient(0, 0, stoneRadius, 0, 0, stoneRadius)
      * 1 - maximal blur - createRadialGradient(0, 0, 0, 0, 0, 8/7*stoneRadius)
      */
-    var shadow = {
-        draw: function (canvasCtx, args, board) {
-            var stoneRadius = board.config.theme.stoneSize;
-            var blur = board.config.theme.shadowBlur;
-            var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
-            var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur;
-            var gradient = canvasCtx.createRadialGradient(0, 0, startRadius, 0, 0, stopRadius);
-            gradient.addColorStop(0, board.config.theme.shadowColor);
-            gradient.addColorStop(1, board.config.theme.shadowTransparentColor);
-            canvasCtx.beginPath();
-            canvasCtx.fillStyle = gradient;
-            canvasCtx.arc(0, 0, stopRadius, 0, 2 * Math.PI, true);
-            canvasCtx.fill();
-        },
-    };
+    function shadow (canvasCtx, args, board) {
+        var stoneRadius = board.config.theme.stoneSize;
+        var blur = board.config.theme.shadowBlur;
+        var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
+        var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur;
+        var gradient = canvasCtx.createRadialGradient(0, 0, startRadius, 0, 0, stopRadius);
+        gradient.addColorStop(0, board.config.theme.shadowColor);
+        gradient.addColorStop(1, board.config.theme.shadowTransparentColor);
+        canvasCtx.beginPath();
+        canvasCtx.fillStyle = gradient;
+        canvasCtx.arc(0, 0, stopRadius, 0, 2 * Math.PI, true);
+        canvasCtx.fill();
+    }
     //# sourceMappingURL=stoneShadow.js.map
 
     var shellStoneBlack = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
+        drawField: {
+            stone: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 canvasCtx.beginPath();
                 canvasCtx.fillStyle = '#000';
@@ -448,8 +411,8 @@
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
             },
+            shadow: shadow,
         },
-        shadow: shadow,
     };
     //# sourceMappingURL=shellStoneBlack.js.map
 
@@ -501,16 +464,16 @@
         }
     };
     var shellStoneWhite = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
+        drawField: {
+            stone: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 canvasCtx.beginPath();
                 canvasCtx.fillStyle = '#aaa';
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
                 // do shell magic here
-                var type = shellSeed % (3 + args.x * board.config.size + args.y) % 3;
-                var z = board.config.size * board.config.size + args.x * board.config.size + args.y;
+                var type = shellSeed % (3 + args.field.x * board.config.size + args.field.y) % 3;
+                var z = board.config.size * board.config.size + args.field.x * board.config.size + args.field.y;
                 var angle = (2 / z) * (shellSeed % z);
                 if (type === 0) {
                     drawShell({
@@ -557,16 +520,16 @@
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
             },
+            shadow: shadow,
         },
-        shadow: shadow,
     };
     //# sourceMappingURL=shellStoneWhite.js.map
 
     var glassStoneBlack = {
         // draw handler for stone layer
-        stone: {
+        drawField: {
             // drawing function - args object contain info about drawing object, board is main board object
-            draw: function (canvasCtx, args, board) {
+            stone: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 var radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
                 radgrad.addColorStop(0, '#666');
@@ -576,17 +539,16 @@
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
             },
+            shadow: shadow,
         },
-        // adding shadow
-        shadow: shadow,
     };
     //# sourceMappingURL=glassStoneBlack.js.map
 
     var glassStoneWhite = {
         // draw handler for stone layer
-        stone: {
+        drawField: {
             // drawing function - args object contain info about drawing object, board is main board object
-            draw: function (canvasCtx, args, board) {
+            stone: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 var radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
                 radgrad.addColorStop(0, '#fff');
@@ -596,15 +558,14 @@
                 canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
                 canvasCtx.fill();
             },
+            shadow: shadow,
         },
-        // adding shadow
-        shadow: shadow,
     };
     //# sourceMappingURL=glassStoneWhite.js.map
 
     var paintedStoneBlack = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
+        drawField: {
+            stone: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
                 radGrad.addColorStop(0, '#111');
@@ -619,14 +580,14 @@
                 canvasCtx.arc(-stoneRadius / 8, -stoneRadius / 8, stoneRadius / 2, Math.PI, 1.5 * Math.PI);
                 canvasCtx.stroke();
             },
+            shadow: shadow,
         },
-        shadow: shadow,
     };
     //# sourceMappingURL=paintedStoneBlack.js.map
 
     var paintedStoneWhite = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
+        drawField: {
+            stone: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
                 radGrad.addColorStop(0, '#fff');
@@ -641,15 +602,15 @@
                 canvasCtx.arc(stoneRadius / 8, stoneRadius / 8, stoneRadius / 2, 0, Math.PI / 2, false);
                 canvasCtx.stroke();
             },
+            shadow: shadow,
         },
-        shadow: shadow,
     };
     //# sourceMappingURL=paintedStoneWhite.js.map
 
     function simpleStone (color) {
         return {
-            stone: {
-                draw: function (canvasCtx, args, board) {
+            drawField: {
+                stone: function (canvasCtx, args, board) {
                     var stoneSize = board.config.theme.stoneSize;
                     var lw = board.config.theme.markupLinesWidth;
                     canvasCtx.fillStyle = color;
@@ -686,11 +647,11 @@
         var randSeed = Math.ceil(Math.random() * 9999999);
         var redrawRequest;
         return {
-            stone: {
-                draw: function (canvasCtx, args, board) {
+            drawField: {
+                stone: function (canvasCtx, args, board) {
                     var stoneRadius = board.config.theme.stoneSize;
                     var count = graphic.length;
-                    var idx = randSeed % (count + args.x * board.config.size + args.y) % count;
+                    var idx = randSeed % (count + args.field.x * board.config.size + args.field.y) % count;
                     if (typeof graphic[idx] === 'string') {
                         // The image has not been loaded yet
                         var stoneGraphic = new Image();
@@ -715,25 +676,25 @@
                     }
                     else {
                         // Fall back to SHELL handler if there was a problem loading the image
-                        fallback.stone.draw(canvasCtx, args, board);
+                        fallback.drawField.stone(canvasCtx, args, board);
                     }
                 },
             },
             shadow: shadow,
         };
     }
-    //# sourceMappingURL=realisticStone.js.map
 
     var circle = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth;
                 canvasCtx.beginPath();
                 canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
-                if (args.fillColor) {
-                    canvasCtx.fillStyle = args.fillColor;
+                if (params.fillColor) {
+                    canvasCtx.fillStyle = params.fillColor;
                     canvasCtx.fill();
                 }
             },
@@ -742,15 +703,16 @@
     //# sourceMappingURL=circle.js.map
 
     var square = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth;
                 canvasCtx.beginPath();
                 canvasCtx.rect(-0.25, -0.25, 0.5, 0.5);
                 canvasCtx.stroke();
-                if (args.fillColor) {
-                    canvasCtx.fillStyle = args.fillColor;
+                if (params.fillColor) {
+                    canvasCtx.fillStyle = params.fillColor;
                     canvasCtx.fill();
                 }
             },
@@ -759,18 +721,19 @@
     //# sourceMappingURL=square.js.map
 
     var triangle = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth;
                 canvasCtx.beginPath();
                 canvasCtx.moveTo(0, 0 - 0.25);
                 canvasCtx.lineTo(-0.25, 0.166666);
                 canvasCtx.lineTo(0.25, 0.166666);
                 canvasCtx.closePath();
                 canvasCtx.stroke();
-                if (args.fillColor) {
-                    canvasCtx.fillStyle = args.fillColor;
+                if (params.fillColor) {
+                    canvasCtx.fillStyle = params.fillColor;
                     canvasCtx.fill();
                 }
             },
@@ -779,31 +742,33 @@
     //# sourceMappingURL=triangle.js.map
 
     var label = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                var font = args.font || board.config.theme.font || '';
-                canvasCtx.fillStyle = args.color || board.config.theme.markupNoneColor;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                var font = params.font || board.config.theme.font || '';
+                canvasCtx.fillStyle = params.color || board.config.theme.markupNoneColor;
                 var fontSize = 0.5;
-                if (args.text.length === 1) {
+                if (params.text.length === 1) {
                     fontSize = 0.75;
                 }
-                else if (args.text.length === 2) {
+                else if (params.text.length === 2) {
                     fontSize = 0.6;
                 }
                 canvasCtx.beginPath();
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
                 canvasCtx.font = fontSize + "px " + font;
-                canvasCtx.fillText(args.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
+                canvasCtx.fillText(params.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
             },
         },
     };
     //# sourceMappingURL=label.js.map
 
     var dot = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                canvasCtx.fillStyle = args.color || board.config.theme.markupNoneColor;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                canvasCtx.fillStyle = params.color || board.config.theme.markupNoneColor;
                 canvasCtx.beginPath();
                 canvasCtx.rect(-0.5, -0.5, 1, 1);
                 canvasCtx.fill();
@@ -813,10 +778,11 @@
     //# sourceMappingURL=dot.js.map
 
     var xMark = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = args.lineWidth || board.config.theme.markupLinesWidth * 1.5;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth * 1.5;
                 canvasCtx.lineCap = 'round';
                 canvasCtx.beginPath();
                 canvasCtx.moveTo(-0.20, -0.20);
@@ -831,10 +797,11 @@
     //# sourceMappingURL=xMark.js.map
 
     var smileyFace = {
-        stone: {
-            draw: function (canvasCtx, args, board) {
-                canvasCtx.strokeStyle = args.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = (args.lineWidth || board.config.theme.markupLinesWidth) * 2;
+        drawField: {
+            stone: function (canvasCtx, args, board) {
+                var params = args.params || {};
+                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
+                canvasCtx.lineWidth = (params.lineWidth || board.config.theme.markupLinesWidth) * 2;
                 canvasCtx.beginPath();
                 canvasCtx.arc(-0.5 / 3, -0.5 / 3, 0.5 / 6, 0, 2 * Math.PI, true);
                 canvasCtx.stroke();
@@ -874,8 +841,8 @@
      * Draws coordinates on the board
      */
     var coordinates = {
-        grid: {
-            draw: function (canvasCtx, args, board) {
+        drawFree: {
+            grid: function (canvasCtx, args, board) {
                 var t;
                 canvasCtx.fillStyle = board.config.theme.coordinatesColor;
                 canvasCtx.textBaseline = 'middle';
@@ -902,17 +869,10 @@
     //# sourceMappingURL=coordinates.js.map
 
     var gridFieldClear = {
-        grid: {
-            draw: function (canvasCtx, args, board) {
+        drawField: {
+            grid: function (canvasCtx, args, board) {
                 var stoneRadius = board.config.theme.stoneSize;
                 canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
-            },
-            clear: function (canvasCtx, args, board) {
-                args._nodraw = true;
-                canvasCtx.restore(); // small hack for now
-                board.redrawLayer('grid');
-                canvasCtx.save();
-                delete args._nodraw;
             },
         },
     };
@@ -1086,6 +1046,42 @@
     }());
     //# sourceMappingURL=EventEmitter.js.map
 
+    var grid = {
+        drawFree: {
+            grid: function (canvasCtx, args, board) {
+                // draw grid
+                var tmp;
+                canvasCtx.beginPath();
+                canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldSize;
+                canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
+                var tx = Math.round(board.margin);
+                var ty = Math.round(board.margin);
+                var bw = Math.round(board.fieldSize * (board.config.size - 1));
+                var bh = Math.round(board.fieldSize * (board.config.size - 1));
+                canvasCtx.strokeRect(tx, ty, bw, bh);
+                for (var i = 1; i < board.config.size - 1; i++) {
+                    tmp = Math.round(board.getX(i));
+                    canvasCtx.moveTo(tmp, ty);
+                    canvasCtx.lineTo(tmp, ty + bh);
+                    tmp = Math.round(board.getY(i));
+                    canvasCtx.moveTo(tx, tmp);
+                    canvasCtx.lineTo(tx + bw, tmp);
+                }
+                canvasCtx.stroke();
+                // draw stars
+                canvasCtx.fillStyle = board.config.theme.starColor;
+                if (board.config.starPoints[board.config.size]) {
+                    for (var key in board.config.starPoints[board.config.size]) {
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(board.getX(board.config.starPoints[board.config.size][key].x), board.getY(board.config.starPoints[board.config.size][key].y), board.config.theme.starSize * board.fieldSize, 0, 2 * Math.PI, true);
+                        canvasCtx.fill();
+                    }
+                }
+            },
+        },
+    };
+    //# sourceMappingURL=grid.js.map
+
     /* global document, window */
     // Private methods of WGo.CanvasBoard
     /*const calcLeftMargin = (b: CanvasBoard) => (
@@ -1095,56 +1091,12 @@
     const calcTopMargin = (b: CanvasBoard) => (
       //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
     );*/
-    function defaultFieldClear(canvasCtx, _args, board) {
-        canvasCtx.clearRect(-board.fieldSize / 2, -board.fieldSize / 2, board.fieldSize, board.fieldSize);
+    function affectsLayer(layer) {
+        return function (handler) { return !!('drawFree' in handler && handler.drawFree[layer]); };
     }
-    var clearField = function (board, x, y) {
-        var handler;
-        for (var z = 0; z < board.fieldObjects[x][y].length; z++) {
-            var obj = board.fieldObjects[x][y][z];
-            if (typeof obj.type === 'string') {
-                handler = board.config.theme.drawHandlers[obj.type];
-            }
-            else {
-                handler = obj.type;
-            }
-            for (var layer in handler) {
-                board.layers[layer].drawField(handler[layer].clear ? handler[layer].clear : defaultFieldClear, obj, board);
-            }
-        }
-    };
-    var coordinatesObject = { handler: coordinates };
-    /*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
-      // new hopefully better translation of coordinates
-
-      let x: number;
-      let y: number;
-
-      x = e.layerX * board.pixelRatio;
-      x -= board.left;
-      x /= board.fieldWidth;
-      x = Math.round(x);
-
-      y = e.layerY * board.pixelRatio;
-      y -= board.top;
-      y /= board.fieldHeight;
-      y = Math.round(y);
-
-      return {
-        x: x >= board.size ? -1 : x,
-        y: y >= board.size ? -1 : y,
-      };
-    };*/
-    var objectMissing = function (objectsArray) {
-        return function (object) {
-            return !objectsArray.some(function (obj) {
-                if (object === obj) {
-                    return true;
-                }
-                return Object.keys(object).every(function (key) { return object[key] === obj[key]; });
-            });
-        };
-    };
+    function isSameField(field1, field2) {
+        return field1.x === field2.x && field1.y === field2.y;
+    }
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
         /**
@@ -1190,17 +1142,9 @@
         function CanvasBoard(elem, config) {
             if (config === void 0) { config = {}; }
             var _this = _super.call(this) || this;
-            _this.fieldObjects = [];
-            _this.customObjects = [];
+            _this.objects = [];
             // merge user config with default
             _this.config = makeConfig(canvasBoardDefaultConfig, config);
-            // create array for field objects (as 3d array)
-            for (var x = 0; x < _this.config.size; x++) {
-                _this.fieldObjects[x] = [];
-                for (var y = 0; y < _this.config.size; y++) {
-                    _this.fieldObjects[x][y] = [];
-                }
-            }
             // init board html
             _this.init(elem);
             // set the pixel ratio for HDPI (e.g. Retina) screens
@@ -1220,7 +1164,7 @@
                 this.element.style.backgroundImage = "url(\"" + this.config.theme.backgroundImage + "\")";
             }
             this.layers = {
-                grid: new GridLayer(),
+                grid: new CanvasLayer(),
                 shadow: new ShadowLayer(),
                 stone: new CanvasLayer(),
             };
@@ -1293,6 +1237,22 @@
             return this.config.marginSize + (this.config.coordinates ? 0.5 : 0);
         };
         /**
+           * Get absolute X coordinate
+           *
+           * @param {number} x relative coordinate
+           */
+        CanvasBoard.prototype.getX = function (x) {
+            return this.margin + x * this.fieldSize;
+        };
+        /**
+           * Get absolute Y coordinate
+           *
+           * @param {number} y relative coordinate
+           */
+        CanvasBoard.prototype.getY = function (y) {
+            return this.margin + y * this.fieldSize;
+        };
+        /**
          * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
          *
          * @param width
@@ -1356,94 +1316,6 @@
             }
         };
         /**
-         * Redraw everything.
-         */
-        CanvasBoard.prototype.redraw = function () {
-            var _this = this;
-            try {
-                // redraw layers
-                Object.keys(this.layers).forEach(function (layer) {
-                    _this.layers[layer].clear(_this);
-                    _this.layers[layer].initialDraw(_this);
-                });
-                if (this.config.coordinates && this.customObjects.indexOf(coordinatesObject) === -1) {
-                    // add coordinates handler if there should be coordinates
-                    this.customObjects.push(coordinatesObject);
-                }
-                else if (!this.config.coordinates && this.customObjects.indexOf(coordinatesObject) >= 0) {
-                    // remove coordinates handler if there should not be coordinates
-                    this.customObjects = this.customObjects.filter(function (obj) { return coordinatesObject !== obj; });
-                }
-                // redraw field objects
-                for (var x = 0; x < this.config.size; x++) {
-                    for (var y = 0; y < this.config.size; y++) {
-                        this.drawField(x, y);
-                    }
-                }
-                // redraw custom objects
-                for (var i = 0; i < this.customObjects.length; i++) {
-                    var obj = this.customObjects[i];
-                    var handler = obj.handler;
-                    for (var layer in handler) {
-                        this.layers[layer].draw(handler[layer].draw, obj, this);
-                    }
-                }
-            }
-            catch (err) {
-                // If the board is too small some canvas painting function can throw an exception, but we don't
-                // want to break our app
-                console.error("WGo board failed to render. Error: " + err.message);
-            }
-        };
-        /**
-           * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
-           * For complete redrawing use method redraw().
-           */
-        CanvasBoard.prototype.redrawLayer = function (layer) {
-            this.layers[layer].clear(this);
-            this.layers[layer].initialDraw(this);
-            for (var x = 0; x < this.config.size; x++) {
-                for (var y = 0; y < this.config.size; y++) {
-                    for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
-                        var obj = this.fieldObjects[x][y][z];
-                        var handler = void 0;
-                        if (typeof obj.type === 'string') {
-                            handler = this.config.theme.drawHandlers[obj.type];
-                        }
-                        else {
-                            handler = obj.type;
-                        }
-                        if (handler[layer]) {
-                            this.layers[layer].drawField(handler[layer].draw, obj, this);
-                        }
-                    }
-                }
-            }
-            for (var i = 0; i < this.customObjects.length; i++) {
-                var obj = this.customObjects[i];
-                var handler = obj.handler;
-                if (handler[layer]) {
-                    this.layers[layer].draw(handler[layer].draw, obj, this);
-                }
-            }
-        };
-        /**
-           * Get absolute X coordinate
-           *
-           * @param {number} x relative coordinate
-           */
-        CanvasBoard.prototype.getX = function (x) {
-            return this.margin + x * this.fieldSize;
-        };
-        /**
-           * Get absolute Y coordinate
-           *
-           * @param {number} y relative coordinate
-           */
-        CanvasBoard.prototype.getY = function (y) {
-            return this.margin + y * this.fieldSize;
-        };
-        /**
            * Add layer to the board. It is meant to be only for canvas layers.
            *
            * @param {CanvasBoard.CanvasLayer} layer to add
@@ -1460,184 +1332,142 @@
         CanvasBoard.prototype.removeLayer = function (layer) {
             layer.removeFrom(this.element);
         };
-        CanvasBoard.prototype.update = function (fieldObjects) {
-            var changes = this.getChanges(fieldObjects);
-            if (!changes) {
+        CanvasBoard.prototype.getObjectHandler = function (boardObject) {
+            return boardObject.type ? this.config.theme.drawHandlers[boardObject.type] : boardObject.handler;
+        };
+        /**
+         * Redraw everything.
+         */
+        CanvasBoard.prototype.redraw = function () {
+            var _this = this;
+            // redraw all layers
+            Object.keys(this.layers).forEach(function (layer) {
+                _this.redrawLayer(layer);
+            });
+        };
+        /**
+           * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
+           * For complete redrawing use method redraw().
+           */
+        CanvasBoard.prototype.redrawLayer = function (layer) {
+            var _this = this;
+            this.layers[layer].clear(this);
+            this.getObjectsToDraw().forEach(function (boardObject) {
+                var handler = _this.getObjectHandler(boardObject);
+                if ('drawField' in handler && handler.drawField[layer]) {
+                    _this.layers[layer].drawField(handler.drawField[layer], boardObject, _this);
+                }
+                if ('drawFree' in handler && handler.drawFree[layer]) {
+                    _this.layers[layer].draw(handler.drawFree[layer], boardObject, _this);
+                }
+            });
+        };
+        /**
+         * Add board object. Main function for adding graphics on the board.
+         *
+         * @param boardObject
+         */
+        CanvasBoard.prototype.addObject = function (boardObject) {
+            var _this = this;
+            // handling multiple objects
+            if (Array.isArray(boardObject)) {
+                for (var i = 0; i < boardObject.length; i++) {
+                    this.addObject(boardObject[i]);
+                }
                 return;
             }
-            for (var i = 0; i < changes.remove.length; i++) {
-                this.removeObject(changes.remove[i]);
+            var handler = this.getObjectHandler(boardObject);
+            if (!handler) {
+                throw new TypeError('Board object has invalid or missing `handler` draw function and cannot be added.');
             }
-            for (var i = 0; i < changes.add.length; i++) {
-                this.addObject(changes.add[i]);
+            if ('drawField' in handler) {
+                if (!('field' in boardObject)) {
+                    throw new TypeError('Board object has field draw `handler` but `field` property is missing.');
+                }
+                this.objects.push(boardObject);
+                Object.keys(this.layers).forEach(function (layer) {
+                    if (handler.drawField[layer]) {
+                        _this.layers[layer].drawField(handler.drawField[layer], boardObject, _this);
+                    }
+                });
+            }
+            if ('drawFree' in handler) {
+                this.objects.push(boardObject);
+                Object.keys(this.layers).forEach(function (layer) {
+                    if (handler.drawFree[layer]) {
+                        _this.layers[layer].draw(handler.drawFree[layer], boardObject, _this);
+                    }
+                });
             }
         };
-        CanvasBoard.prototype.getChanges = function (fieldObjects) {
-            if (fieldObjects === this.fieldObjects) {
-                return null;
+        /**
+         * Remove board object. Main function for removing graphics on the board.
+         *
+         * @param boardObject
+         */
+        CanvasBoard.prototype.removeObject = function (boardObject) {
+            var _this = this;
+            // handling multiple objects
+            if (Array.isArray(boardObject)) {
+                for (var i = 0; i < boardObject.length; i++) {
+                    this.removeObject(boardObject[i]);
+                }
+                return;
             }
-            var add = [];
-            var remove = [];
-            for (var x = 0; x < this.config.size; x++) {
-                if (fieldObjects[x] !== this.fieldObjects[x]) {
-                    for (var y = 0; y < this.config.size; y++) {
-                        // tslint:disable-next-line:max-line-length
-                        if (fieldObjects[x][y] !== this.fieldObjects[x][y] && (fieldObjects[x][y].length || this.fieldObjects[x][y].length)) {
-                            add = add.concat(fieldObjects[x][y].filter(objectMissing(this.fieldObjects[x][y])));
-                            remove = remove.concat(this.fieldObjects[x][y].filter(objectMissing(fieldObjects[x][y])));
+            var objectPos = this.objects.indexOf(boardObject);
+            if (objectPos === -1) {
+                // object isn't on the board, ignore it
+                return;
+            }
+            this.objects.splice(objectPos, 1);
+            var objects = this.getObjectsToDraw();
+            var objectHandler = this.getObjectHandler(boardObject);
+            var handlers = objects.map(function (obj) { return _this.getObjectHandler(obj); });
+            Object.keys(this.layers).forEach(function (layer) {
+                // if there is a free object affecting the layer, we must redraw layer completely
+                var affectsCurrentLayer = affectsLayer(layer);
+                if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
+                    _this.redrawLayer(layer);
+                    return;
+                }
+                _this.layers[layer].clearField(boardObject.field, _this);
+                for (var i = 0; i < objects.length; i++) {
+                    var obj = objects[i];
+                    if ('field' in obj && isSameField(obj.field, boardObject.field)) {
+                        var handler = handlers[i];
+                        if ('drawField' in handler && handler.drawField[layer]) {
+                            _this.layers[layer].drawField(handler.drawField[layer], obj, _this);
                         }
                     }
                 }
-            }
-            return { add: add, remove: remove };
-        };
-        CanvasBoard.prototype.addObject = function (obj) {
-            // handling multiple objects
-            if (Array.isArray(obj)) {
-                for (var i = 0; i < obj.length; i++) {
-                    this.addObject(obj[i]);
-                }
-                return;
-            }
-            // TODO: should be warning or error
-            if (obj.x < 0 || obj.y < 0 || obj.x >= this.config.size || obj.y >= this.config.size) {
-                return;
-            }
-            try {
-                // clear all objects on object's coordinates
-                clearField(this, obj.x, obj.y);
-                // if object of this type is on the board, replace it
-                var layers = this.fieldObjects[obj.x][obj.y];
-                for (var z = 0; z < layers.length; z++) {
-                    if (layers[z].type === obj.type) {
-                        layers[z] = obj;
-                        this.drawField(obj.x, obj.y);
-                        return;
-                    }
-                }
-                // if object is a stone, add it at the beginning, otherwise at the end
-                if (!obj.type) {
-                    layers.unshift(obj);
-                }
-                else {
-                    layers.push(obj);
-                }
-                // draw all objects
-                this.drawField(obj.x, obj.y);
-            }
-            catch (err) {
-                // If the board is too small some canvas painting function can throw an exception,
-                // but we don't want to break our app
-                console.error('WGo board failed to render. Error: ' + err.message);
-            }
-        };
-        CanvasBoard.prototype.removeObject = function (obj) {
-            // handling multiple objects
-            if (obj.constructor === Array) {
-                for (var n = 0; n < obj.length; n++) {
-                    this.removeObject(obj[n]);
-                }
-                return;
-            }
-            if (obj.x < 0 || obj.y < 0 || obj.x >= this.config.size || obj.y >= this.config.size) {
-                return;
-            }
-            try {
-                var i = void 0;
-                for (var j = 0; j < this.fieldObjects[obj.x][obj.y].length; j++) {
-                    if (this.fieldObjects[obj.x][obj.y][j].type === obj.type) {
-                        i = j;
-                        break;
-                    }
-                }
-                if (i == null) {
-                    return;
-                }
-                // clear all objects on object's coordinates
-                clearField(this, obj.x, obj.y);
-                this.fieldObjects[obj.x][obj.y].splice(i, 1);
-                this.drawField(obj.x, obj.y);
-            }
-            catch (err) {
-                // If the board is too small some canvas painting function can throw an exception,
-                // but we don't want to break our app
-                console.error('WGo board failed to render. Error: ' + err.message);
-            }
+            });
         };
         CanvasBoard.prototype.removeObjectsAt = function (x, y) {
-            if (!this.fieldObjects[x][y].length) {
-                return;
-            }
-            clearField(this, x, y);
-            this.fieldObjects[x][y] = [];
+            var toRemove = [];
+            var field = { x: x, y: y };
+            this.objects.forEach(function (obj) {
+                if ('field' in obj && isSameField(obj.field, field)) {
+                    toRemove.push(obj);
+                }
+            });
+            this.removeObject(toRemove);
         };
         CanvasBoard.prototype.removeAllObjects = function () {
-            this.fieldObjects = [];
-            for (var i = 0; i < this.config.size; i++) {
-                this.fieldObjects[i] = [];
-                for (var j = 0; j < this.config.size; j++) {
-                    this.fieldObjects[i][j] = [];
-                }
-            }
+            this.objects = [];
             this.redraw();
         };
-        CanvasBoard.prototype.addCustomObject = function (handler, args) {
-            this.customObjects.push({ handler: handler, args: args });
-            this.redraw();
-        };
-        CanvasBoard.prototype.removeCustomObject = function (handler, args) {
-            for (var i = 0; i < this.customObjects.length; i++) {
-                var obj = this.customObjects[i];
-                if (obj.handler === handler && obj.args === args) {
-                    this.customObjects.splice(i, 1);
-                    this.redraw();
-                    return true;
-                }
+        CanvasBoard.prototype.getObjectsToDraw = function () {
+            // add grid
+            var fixedObjects = [{ handler: grid }];
+            // add coordinates
+            if (this.config.coordinates) {
+                fixedObjects.push({ handler: coordinates });
             }
-            return false;
-        };
-        /*on(type, callback) {
-          const evListener = {
-            type,
-            callback,
-            handleEvent: event => {
-              const coo = getMousePos(this, event);
-              callback(coo.x, coo.y, event);
-            },
-          };
-      
-          this.element.addEventListener(type, evListener, true);
-          this.listeners.push(evListener);
-        }
-      
-        off(type, callback) {
-          for (let i = 0; i < this.listeners.length; i++) {
-            const listener = this.listeners[i];
-            if (listener.type === type && listener.callback === callback) {
-              this.element.removeEventListener(listener.type, listener, true);
-              this.listeners.splice(i, 1);
-              return true;
-            }
-          }
-          return false;
-        }*/
-        CanvasBoard.prototype.drawField = function (x, y) {
-            var handler;
-            for (var z = 0; z < this.fieldObjects[x][y].length; z++) {
-                var obj = this.fieldObjects[x][y][z];
-                if (typeof obj.type === 'string') {
-                    handler = this.config.theme.drawHandlers[obj.type];
-                }
-                else {
-                    handler = obj.type;
-                }
-                for (var layer in handler) {
-                    this.layers[layer].drawField(handler[layer].draw, obj, this);
-                }
-            }
+            return fixedObjects.concat(this.objects);
         };
         return CanvasBoard;
     }(EventEmitter));
+    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 

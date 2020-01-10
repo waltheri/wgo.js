@@ -1,10 +1,10 @@
+import shadow from './stoneShadow';
 import CanvasBoard from '..';
+import { BoardFieldObject } from '../types';
 declare const _default: {
-    stone: {
-        draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
-    };
-    shadow: {
-        draw(canvasCtx: CanvasRenderingContext2D, args: any, board: CanvasBoard): void;
+    drawField: {
+        stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard): void;
+        shadow: typeof shadow;
     };
 };
 export default _default;

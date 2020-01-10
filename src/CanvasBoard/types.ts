@@ -44,7 +44,7 @@ export interface CanvasBoardTheme {
   backgroundImage: string;
 
   drawHandlers: {
-    [key: string]: DrawHandler<BoardFieldObject>;
+    [key: string]: DrawHandler;
   };
 }
 
@@ -67,7 +67,7 @@ export interface DrawFunction<P> {
   (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
 }
 
-export interface DrawHandler<P = any> {
+/*export interface DrawHandler<P = any> {
   [layer: string]: {
     draw: DrawFunction<P>;
     clear?: DrawFunction<P>;
@@ -84,4 +84,32 @@ export interface BoardFieldObject {
 export interface BoardCustomObject {
   handler: DrawHandler<BoardCustomObject>;
   [key: string]: any;
+}*/
+
+export interface FieldDrawHandler {
+  drawField: {
+    [layer: string]: DrawFunction<BoardFieldObject>;
+  };
 }
+
+export interface FreeDrawHandler {
+  drawFree: {
+    [layer: string]: DrawFunction<BoardFreeObject>;
+  };
+}
+
+export type DrawHandler = FieldDrawHandler | FreeDrawHandler;
+
+export interface BoardObjectBase {
+  params?: {
+    [key: string]: any;
+  };
+}
+
+export type BoardFieldObject = ({ type?: string, handler?: FieldDrawHandler }) & BoardObjectBase & {
+  field: Point;
+};
+
+export type BoardFreeObject = ({ type?: string, handler?: FreeDrawHandler }) & BoardObjectBase;
+
+export type BoardObject = BoardFieldObject | BoardFreeObject;

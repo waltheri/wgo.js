@@ -1,4 +1,4 @@
-import { Point, Color } from '../types';
+import { Point } from '../types';
 import CanvasBoard from './CanvasBoard';
 export interface BoardViewport {
     top: number;
@@ -30,7 +30,7 @@ export interface CanvasBoardTheme {
     backgroundColor: string;
     backgroundImage: string;
     drawHandlers: {
-        [key: string]: DrawHandler<BoardFieldObject>;
+        [key: string]: DrawHandler;
     };
 }
 export interface CanvasBoardConfig {
@@ -49,19 +49,30 @@ export interface CanvasBoardConfig {
 export interface DrawFunction<P> {
     (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
 }
-export interface DrawHandler<P = any> {
-    [layer: string]: {
-        draw: DrawFunction<P>;
-        clear?: DrawFunction<P>;
+export interface FieldDrawHandler {
+    drawField: {
+        [layer: string]: DrawFunction<BoardFieldObject>;
     };
 }
-export interface BoardFieldObject {
-    x: number;
-    y: number;
-    c?: Color;
-    [key: string]: any;
+export interface FreeDrawHandler {
+    drawFree: {
+        [layer: string]: DrawFunction<BoardFreeObject>;
+    };
 }
-export interface BoardCustomObject {
-    handler: DrawHandler<BoardCustomObject>;
-    [key: string]: any;
+export declare type DrawHandler = FieldDrawHandler | FreeDrawHandler;
+export interface BoardObjectBase {
+    params?: {
+        [key: string]: any;
+    };
 }
+export declare type BoardFieldObject = ({
+    type?: string;
+    handler?: FieldDrawHandler;
+}) & BoardObjectBase & {
+    field: Point;
+};
+export declare type BoardFreeObject = ({
+    type?: string;
+    handler?: FreeDrawHandler;
+}) & BoardObjectBase;
+export declare type BoardObject = BoardFieldObject | BoardFreeObject;
