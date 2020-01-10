@@ -16,6 +16,7 @@ import {
   BoardFreeObject,
   DrawHandler,
   FreeDrawHandler,
+  FieldDrawHandler,
 } from './types';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
@@ -443,6 +444,24 @@ export default class CanvasBoard extends EventEmitter {
         }
       });
     }
+  }
+
+  /**
+   * Shortcut method to add field object.
+   */
+  addFieldObject(x: number, y: number, handler: string | FieldDrawHandler, params?: { [key: string]: any }) {
+    const object: BoardFieldObject = {
+      field: { x, y },
+      params,
+    };
+
+    if (typeof handler === 'string') {
+      object.type = handler;
+    } else {
+      object.handler = handler;
+    }
+
+    this.addObject(object);
   }
 
   /**

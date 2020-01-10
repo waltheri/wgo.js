@@ -66,8 +66,8 @@ board.addObject({ x: 10, y: 11, type: 'SL' });
 board.addObject({ x: 11, y: 11, type: 'SM' });*/
 
 const custom = {
-  stone: {
-    draw(canvasCtx, args, board) {
+  drawField: {
+    stone(canvasCtx, args, board) {
       //canvasCtx.beginPath();
       //canvasCtx.rect(0, 0, 10, 10);
       //canvasCtx.beginPath();
@@ -92,6 +92,13 @@ board.addObject({ type: 'CR', field: { x: 9, y: 9 }, params: { color: 'white' } 
 board.addObject({ type: 'TR', field: { x: 5, y: 5 } });
 board.addObject({ type: 'gridFieldClear', field: { x: 5, y: 5 } });
 
+board.addFieldObject(5, 7, custom);
+board.addFieldObject(6, 7, custom);
+board.addFieldObject(7, 7, custom);
+board.addFieldObject(6, 8, custom);
+board.addFieldObject(6, 6, custom);
+board.addFieldObject(6, 7, 'LB', { text: '123', color: 'white' });
+
 /*board.addObject({ x: 9, y: 9, type: custom });
 board.addObject({ x: 1, y: 0, type: custom });
 board.addObject({ x: 2, y: 0, type: custom });
@@ -110,7 +117,7 @@ board.addObject({ x: 5, y: 8, type: 'SL' });
 board.addObject({ x: 6, y: 7, type: 'SL' });
 board.addObject({ x: 6, y: 8, type: 'SL' });
 
-board.addObject({ x: 6, y: 7, type: 'LB', text: '123', color: 'white' });
+
 board.addObject({ x: 6, y: 8, type: 'LB', text: '1', color: 'white' });
 
 board.addObject({ x: 11, y: 11, type: 'SM' });

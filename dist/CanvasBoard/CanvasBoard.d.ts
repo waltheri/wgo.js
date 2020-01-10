@@ -1,5 +1,5 @@
 import CanvasLayer from './CanvasLayer';
-import { CanvasBoardConfig, BoardViewport, BoardObject, DrawHandler } from './types';
+import { CanvasBoardConfig, BoardViewport, BoardObject, DrawHandler, FieldDrawHandler } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 export default class CanvasBoard extends EventEmitter {
@@ -142,6 +142,12 @@ export default class CanvasBoard extends EventEmitter {
      * @param boardObject
      */
     addObject(boardObject: BoardObject | BoardObject[]): void;
+    /**
+     * Shortcut method to add field object.
+     */
+    addFieldObject(x: number, y: number, handler: string | FieldDrawHandler, params?: {
+        [key: string]: any;
+    }): void;
     /**
      * Remove board object. Main function for removing graphics on the board.
      *

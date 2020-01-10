@@ -683,6 +683,7 @@
             shadow: shadow,
         };
     }
+    //# sourceMappingURL=realisticStone.js.map
 
     var circle = {
         drawField: {
@@ -1401,6 +1402,22 @@
             }
         };
         /**
+         * Shortcut method to add field object.
+         */
+        CanvasBoard.prototype.addFieldObject = function (x, y, handler, params) {
+            var object = {
+                field: { x: x, y: y },
+                params: params,
+            };
+            if (typeof handler === 'string') {
+                object.type = handler;
+            }
+            else {
+                object.handler = handler;
+            }
+            this.addObject(object);
+        };
+        /**
          * Remove board object. Main function for removing graphics on the board.
          *
          * @param boardObject
@@ -1467,7 +1484,6 @@
         };
         return CanvasBoard;
     }(EventEmitter));
-    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 
