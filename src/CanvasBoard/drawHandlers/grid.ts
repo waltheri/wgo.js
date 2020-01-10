@@ -6,10 +6,11 @@ export default {
     grid(canvasCtx: CanvasRenderingContext2D, args: BoardFreeObject, board: CanvasBoard) {
       // draw grid
       let tmp;
+      const params = args.params;
 
       canvasCtx.beginPath();
-      canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldSize;
-      canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
+      canvasCtx.lineWidth = params.linesWidth * board.fieldSize;
+      canvasCtx.strokeStyle = params.linesColor;
 
       const tx = Math.round(board.margin);
       const ty = Math.round(board.margin);
@@ -31,7 +32,7 @@ export default {
       canvasCtx.stroke();
 
       // draw stars
-      canvasCtx.fillStyle = board.config.theme.starColor;
+      canvasCtx.fillStyle = params.starColor;
 
       if (board.config.starPoints[board.config.size]) {
         for (const key in board.config.starPoints[board.config.size]) {
@@ -39,7 +40,7 @@ export default {
           canvasCtx.arc(
             board.getX(board.config.starPoints[board.config.size][key].x),
             board.getY(board.config.starPoints[board.config.size][key].y),
-            board.config.theme.starSize * board.fieldSize, 0, 2 * Math.PI, true,
+            params.starSize * board.fieldSize, 0, 2 * Math.PI, true,
           );
           canvasCtx.fill();
         }

@@ -9,12 +9,18 @@ export interface BoardViewport {
 }
 
 export interface CanvasBoardTheme {
-  // grid & star points
-  gridLinesWidth: number;
-  gridLinesColor: string;
-  starColor: string;
-  starSize: number;
   stoneSize: number;
+
+  // grid & star points
+  grid: {
+    handler: DrawHandler;
+    params: {
+      linesWidth: number;
+      linesColor: string;
+      starColor: string;
+      starSize: number;
+    }
+  };
 
   // markup
   markupBlackColor: string;
@@ -30,10 +36,14 @@ export interface CanvasBoardTheme {
   shadowOffsetY: number;
 
   // coordinates
-  coordinatesHandler: DrawHandler;
-  coordinatesColor: string;
-  coordinatesX: string | (string | number)[];
-  coordinatesY: string | (string | number)[];
+  coordinates: {
+    handler: DrawHandler;
+    params: {
+      color: string;
+      x: string | (string | number)[];
+      y: string | (string | number)[];
+    }
+  };
 
   // other
   font: string;
@@ -67,32 +77,16 @@ export interface DrawFunction<P> {
   (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
 }
 
-/*export interface DrawHandler<P = any> {
-  [layer: string]: {
-    draw: DrawFunction<P>;
-    clear?: DrawFunction<P>;
-  };
+export interface DrawHandlerBase {
 }
 
-export interface BoardFieldObject {
-  x: number;
-  y: number;
-  c?: Color;
-  [key: string]: any;
-}
-
-export interface BoardCustomObject {
-  handler: DrawHandler<BoardCustomObject>;
-  [key: string]: any;
-}*/
-
-export interface FieldDrawHandler {
+export interface FieldDrawHandler extends DrawHandlerBase {
   drawField: {
     [layer: string]: DrawFunction<BoardFieldObject>;
   };
 }
 
-export interface FreeDrawHandler {
+export interface FreeDrawHandler extends DrawHandlerBase {
   drawFree: {
     [layer: string]: DrawFunction<BoardFreeObject>;
   };
@@ -101,15 +95,16 @@ export interface FreeDrawHandler {
 export type DrawHandler = FieldDrawHandler | FreeDrawHandler;
 
 export interface BoardObjectBase {
+  type?: string;
   params?: {
     [key: string]: any;
   };
 }
 
-export type BoardFieldObject = ({ type?: string, handler?: FieldDrawHandler }) & BoardObjectBase & {
+export type BoardFieldObject = ({ type?: string, handler?: DrawHandler }) & BoardObjectBase & {
   field: Point;
 };
 
-export type BoardFreeObject = ({ type?: string, handler?: FreeDrawHandler }) & BoardObjectBase;
+export type BoardFreeObject = ({ type?: string, handler?: DrawHandler }) & BoardObjectBase;
 
 export type BoardObject = BoardFieldObject | BoardFreeObject;

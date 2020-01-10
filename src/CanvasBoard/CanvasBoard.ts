@@ -42,7 +42,6 @@ function isSameField(field1: Point, field2: Point) {
   return field1.x === field2.x && field1.y === field2.y;
 }
 
-
 /*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
   // new hopefully better translation of coordinates
 
@@ -513,6 +512,22 @@ export default class CanvasBoard extends EventEmitter {
     });
   }
 
+  /**
+   * Shortcut method to remove field object.
+   */
+  removeFieldObject(x: number, y: number, handler: string | FieldDrawHandler) {
+    const toRemove: BoardObject[] = [];
+    const field = { x, y };
+
+    this.objects.forEach((obj) => {
+      if ('field' in obj && isSameField(obj.field, field) && (obj.handler === handler || obj.type === handler)) {
+        toRemove.push(obj);
+      }
+    });
+
+    this.removeObject(toRemove);
+  }
+
   removeObjectsAt(x: number, y: number) {
     const toRemove: BoardObject[] = [];
     const field = { x, y };
@@ -533,11 +548,11 @@ export default class CanvasBoard extends EventEmitter {
 
   getObjectsToDraw() {
     // add grid
-    const fixedObjects: BoardObject[] = [{ handler: grid }];
+    const fixedObjects: BoardObject[] = [this.config.theme.grid];
 
     // add coordinates
     if (this.config.coordinates) {
-      fixedObjects.push({ handler: coordinates });
+      fixedObjects.push(this.config.theme.coordinates);
     }
 
     return fixedObjects.concat(this.objects);

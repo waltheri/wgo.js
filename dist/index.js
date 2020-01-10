@@ -841,11 +841,12 @@
     /**
      * Draws coordinates on the board
      */
-    var coordinates = {
+    var coordinatesHandler = {
         drawFree: {
             grid: function (canvasCtx, args, board) {
                 var t;
-                canvasCtx.fillStyle = board.config.theme.coordinatesColor;
+                var params = args.params;
+                canvasCtx.fillStyle = params.color;
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
                 canvasCtx.font = board.fieldSize / 2 + "px " + (board.config.theme.font || '');
@@ -853,8 +854,8 @@
                 var xleft = board.getX(board.config.size - 0.25);
                 var ytop = board.getY(-0.75);
                 var ybottom = board.getY(board.config.size - 0.25);
-                var coordinatesX = board.config.theme.coordinatesX;
-                var coordinatesY = board.config.theme.coordinatesY;
+                var coordinatesX = params.x;
+                var coordinatesY = params.y;
                 for (var i = 0; i < board.config.size; i++) {
                     t = board.getY(i);
                     canvasCtx.fillText(coordinatesX[i], xright, t);
@@ -867,7 +868,6 @@
             },
         },
     };
-    //# sourceMappingURL=coordinates.js.map
 
     var gridFieldClear = {
         drawField: {
@@ -879,33 +879,81 @@
     };
     //# sourceMappingURL=gridFieldClear.js.map
 
+    var gridHandler = {
+        drawFree: {
+            grid: function (canvasCtx, args, board) {
+                // draw grid
+                var tmp;
+                var params = args.params;
+                canvasCtx.beginPath();
+                canvasCtx.lineWidth = params.linesWidth * board.fieldSize;
+                canvasCtx.strokeStyle = params.linesColor;
+                var tx = Math.round(board.margin);
+                var ty = Math.round(board.margin);
+                var bw = Math.round(board.fieldSize * (board.config.size - 1));
+                var bh = Math.round(board.fieldSize * (board.config.size - 1));
+                canvasCtx.strokeRect(tx, ty, bw, bh);
+                for (var i = 1; i < board.config.size - 1; i++) {
+                    tmp = Math.round(board.getX(i));
+                    canvasCtx.moveTo(tmp, ty);
+                    canvasCtx.lineTo(tmp, ty + bh);
+                    tmp = Math.round(board.getY(i));
+                    canvasCtx.moveTo(tx, tmp);
+                    canvasCtx.lineTo(tx + bw, tmp);
+                }
+                canvasCtx.stroke();
+                // draw stars
+                canvasCtx.fillStyle = params.starColor;
+                if (board.config.starPoints[board.config.size]) {
+                    for (var key in board.config.starPoints[board.config.size]) {
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(board.getX(board.config.starPoints[board.config.size][key].x), board.getY(board.config.starPoints[board.config.size][key].y), params.starSize * board.fieldSize, 0, 2 * Math.PI, true);
+                        canvasCtx.fill();
+                    }
+                }
+            },
+        },
+    };
+    //# sourceMappingURL=grid.js.map
+
     var baseTheme = {
-        // grid & star points
-        gridLinesWidth: 0.03,
-        gridLinesColor: '#654525',
-        starColor: '#531',
-        starSize: 0.07,
+        // basic
         stoneSize: 0.47,
         // markup
         markupBlackColor: 'rgba(255,255,255,0.9)',
         markupWhiteColor: 'rgba(0,0,0,0.7)',
         markupNoneColor: 'rgba(0,0,0,0.7)',
         markupLinesWidth: 0.05,
+        // shadows
         shadowColor: 'rgba(62,32,32,0.5)',
         shadowTransparentColor: 'rgba(62,32,32,0)',
         shadowBlur: 0.25,
         shadowOffsetX: 0.08,
         shadowOffsetY: 0.16,
-        // coordinates
-        coordinatesHandler: coordinates,
-        coordinatesColor: '#531',
-        coordinatesX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-        coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         // other
         font: 'monospace',
         linesShift: -0.5,
         backgroundColor: '#CEB053',
         backgroundImage: '',
+        // grid
+        grid: {
+            handler: gridHandler,
+            params: {
+                linesWidth: 0.03,
+                linesColor: '#654525',
+                starColor: '#531',
+                starSize: 0.07,
+            },
+        },
+        // coordinates
+        coordinates: {
+            handler: coordinatesHandler,
+            params: {
+                color: '#531',
+                x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+                y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+            },
+        },
         drawHandlers: {
             B: simpleStone('#222'),
             W: simpleStone('#eee'),
@@ -1046,42 +1094,6 @@
         return EventEmitter;
     }());
     //# sourceMappingURL=EventEmitter.js.map
-
-    var grid = {
-        drawFree: {
-            grid: function (canvasCtx, args, board) {
-                // draw grid
-                var tmp;
-                canvasCtx.beginPath();
-                canvasCtx.lineWidth = board.config.theme.gridLinesWidth * board.fieldSize;
-                canvasCtx.strokeStyle = board.config.theme.gridLinesColor;
-                var tx = Math.round(board.margin);
-                var ty = Math.round(board.margin);
-                var bw = Math.round(board.fieldSize * (board.config.size - 1));
-                var bh = Math.round(board.fieldSize * (board.config.size - 1));
-                canvasCtx.strokeRect(tx, ty, bw, bh);
-                for (var i = 1; i < board.config.size - 1; i++) {
-                    tmp = Math.round(board.getX(i));
-                    canvasCtx.moveTo(tmp, ty);
-                    canvasCtx.lineTo(tmp, ty + bh);
-                    tmp = Math.round(board.getY(i));
-                    canvasCtx.moveTo(tx, tmp);
-                    canvasCtx.lineTo(tx + bw, tmp);
-                }
-                canvasCtx.stroke();
-                // draw stars
-                canvasCtx.fillStyle = board.config.theme.starColor;
-                if (board.config.starPoints[board.config.size]) {
-                    for (var key in board.config.starPoints[board.config.size]) {
-                        canvasCtx.beginPath();
-                        canvasCtx.arc(board.getX(board.config.starPoints[board.config.size][key].x), board.getY(board.config.starPoints[board.config.size][key].y), board.config.theme.starSize * board.fieldSize, 0, 2 * Math.PI, true);
-                        canvasCtx.fill();
-                    }
-                }
-            },
-        },
-    };
-    //# sourceMappingURL=grid.js.map
 
     /* global document, window */
     // Private methods of WGo.CanvasBoard
@@ -1459,6 +1471,19 @@
                 }
             });
         };
+        /**
+         * Shortcut method to remove field object.
+         */
+        CanvasBoard.prototype.removeFieldObject = function (x, y, handler) {
+            var toRemove = [];
+            var field = { x: x, y: y };
+            this.objects.forEach(function (obj) {
+                if ('field' in obj && isSameField(obj.field, field) && (obj.handler === handler || obj.type === handler)) {
+                    toRemove.push(obj);
+                }
+            });
+            this.removeObject(toRemove);
+        };
         CanvasBoard.prototype.removeObjectsAt = function (x, y) {
             var toRemove = [];
             var field = { x: x, y: y };
@@ -1475,15 +1500,16 @@
         };
         CanvasBoard.prototype.getObjectsToDraw = function () {
             // add grid
-            var fixedObjects = [{ handler: grid }];
+            var fixedObjects = [this.config.theme.grid];
             // add coordinates
             if (this.config.coordinates) {
-                fixedObjects.push({ handler: coordinates });
+                fixedObjects.push(this.config.theme.coordinates);
             }
             return fixedObjects.concat(this.objects);
         };
         return CanvasBoard;
     }(EventEmitter));
+    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 

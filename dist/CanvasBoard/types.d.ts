@@ -7,11 +7,16 @@ export interface BoardViewport {
     left: number;
 }
 export interface CanvasBoardTheme {
-    gridLinesWidth: number;
-    gridLinesColor: string;
-    starColor: string;
-    starSize: number;
     stoneSize: number;
+    grid: {
+        handler: DrawHandler;
+        params: {
+            linesWidth: number;
+            linesColor: string;
+            starColor: string;
+            starSize: number;
+        };
+    };
     markupBlackColor: string;
     markupWhiteColor: string;
     markupNoneColor: string;
@@ -49,30 +54,33 @@ export interface CanvasBoardConfig {
 export interface DrawFunction<P> {
     (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
 }
-export interface FieldDrawHandler {
+export interface DrawHandlerBase {
+}
+export interface FieldDrawHandler extends DrawHandlerBase {
     drawField: {
         [layer: string]: DrawFunction<BoardFieldObject>;
     };
 }
-export interface FreeDrawHandler {
+export interface FreeDrawHandler extends DrawHandlerBase {
     drawFree: {
         [layer: string]: DrawFunction<BoardFreeObject>;
     };
 }
 export declare type DrawHandler = FieldDrawHandler | FreeDrawHandler;
 export interface BoardObjectBase {
+    type?: string;
     params?: {
         [key: string]: any;
     };
 }
 export declare type BoardFieldObject = ({
     type?: string;
-    handler?: FieldDrawHandler;
+    handler?: DrawHandler;
 }) & BoardObjectBase & {
     field: Point;
 };
 export declare type BoardFreeObject = ({
     type?: string;
-    handler?: FreeDrawHandler;
+    handler?: DrawHandler;
 }) & BoardObjectBase;
 export declare type BoardObject = BoardFieldObject | BoardFreeObject;

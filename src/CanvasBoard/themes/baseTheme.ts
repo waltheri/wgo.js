@@ -1,14 +1,11 @@
 import * as drawHandlers from '../drawHandlers';
-import coordinates from '../drawHandlers/coordinates';
+import coordinatesHandler from '../drawHandlers/coordinates';
 import { CanvasBoardTheme } from '../types';
 import gridFieldClear from '../drawHandlers/gridFieldClear';
+import gridHandler from '../drawHandlers/grid';
 
 const baseTheme: CanvasBoardTheme = {
-  // grid & star points
-  gridLinesWidth: 0.03,
-  gridLinesColor: '#654525',
-  starColor: '#531',
-  starSize: 0.07,
+  // basic
   stoneSize: 0.47,
 
   // markup
@@ -17,23 +14,39 @@ const baseTheme: CanvasBoardTheme = {
   markupNoneColor: 'rgba(0,0,0,0.7)',
   markupLinesWidth: 0.05,
 
+  // shadows
   shadowColor: 'rgba(62,32,32,0.5)',
   shadowTransparentColor: 'rgba(62,32,32,0)',
   shadowBlur: 0.25,
   shadowOffsetX: 0.08,
   shadowOffsetY: 0.16,
 
-  // coordinates
-  coordinatesHandler: coordinates,
-  coordinatesColor: '#531',
-  coordinatesX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-  coordinatesY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
-
   // other
   font: 'monospace',
   linesShift: -0.5,
   backgroundColor: '#CEB053',
   backgroundImage: '',
+
+  // grid
+  grid: {
+    handler: gridHandler,
+    params: {
+      linesWidth: 0.03,
+      linesColor: '#654525',
+      starColor: '#531',
+      starSize: 0.07,
+    },
+  },
+
+  // coordinates
+  coordinates: {
+    handler: coordinatesHandler,
+    params: {
+      color: '#531',
+      x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+      y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+    },
+  },
 
   drawHandlers: {
     B: drawHandlers.simpleStone('#222'),

@@ -154,6 +154,10 @@ export default class CanvasBoard extends EventEmitter {
      * @param boardObject
      */
     removeObject(boardObject: BoardObject | BoardObject[]): void;
+    /**
+     * Shortcut method to remove field object.
+     */
+    removeFieldObject(x: number, y: number, handler: string | FieldDrawHandler): void;
     removeObjectsAt(x: number, y: number): void;
     removeAllObjects(): void;
     getObjectsToDraw(): BoardObject[];
