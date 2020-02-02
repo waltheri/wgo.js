@@ -2,7 +2,7 @@ import { PartialRecursive } from '../utils/makeConfig';
 import { PlayerConfig } from './types';
 import CanvasBoard from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
-import { BoardFieldObject } from '../CanvasBoard/types';
+import { BoardFieldObject, BoardObject } from '../CanvasBoard/types';
 import EventEmitter from '../utils/EventEmitter';
 export default class Player extends EventEmitter {
     element: HTMLElement;
@@ -10,9 +10,15 @@ export default class Player extends EventEmitter {
     board: CanvasBoard;
     kifuReader: KifuReader;
     stoneBoardsObjects: BoardFieldObject[];
+    markupBoardObjects: BoardObject[];
     constructor(element: HTMLElement, config?: PartialRecursive<PlayerConfig>);
     init(): void;
     updateBoard(): void;
     next(): void;
     previous(): void;
+    /**
+     * Adds temporary board object, which will be removed during next position/node update.
+     * @param boardObject
+     */
+    addTemporaryBoardObject(boardObject: BoardObject): void;
 }

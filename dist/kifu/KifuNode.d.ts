@@ -14,7 +14,7 @@ export interface Path {
 export default class KifuNode {
     parent: KifuNode | null;
     children: KifuNode[];
-    SGFProperties: {
+    properties: {
         [key: string]: any;
     };
     constructor();

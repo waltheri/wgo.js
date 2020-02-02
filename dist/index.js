@@ -310,10 +310,10 @@
                 var topOffset = this.board.getY(args.field.y);
                 // create a "sandbox" for drawing function
                 this.context.save();
-                this.context.transform(this.board.fieldSize - 1, 0, 0, this.board.fieldSize - 1, leftOffset, topOffset);
-                this.context.beginPath();
-                this.context.rect(-0.5, -0.5, 1, 1);
-                this.context.clip();
+                this.context.transform(this.board.fieldSize, 0, 0, this.board.fieldSize, leftOffset, topOffset);
+                //this.context.beginPath();
+                //this.context.rect(-0.5, -0.5, 1, 1);
+                //this.context.clip();
                 drawingFn(this.context, args, this.board);
                 // restore context
                 this.context.restore();
@@ -995,6 +995,7 @@
             gridFieldClear: gridFieldClear,
         },
     };
+    //# sourceMappingURL=baseTheme.js.map
 
     var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: realisticStone([
                 'stones/black00_128.png',
@@ -1123,6 +1124,9 @@
     //# sourceMappingURL=EventEmitter.js.map
 
     /* global document, window */
+    function affectsLayer(layer) {
+        return function (handler) { return !!('drawFree' in handler && handler.drawFree[layer]); };
+    }
     function isSameField(field1, field2) {
         return field1.x === field2.x && field1.y === field2.y;
     }
@@ -1478,24 +1482,22 @@
             var handlers = objects.map(function (obj) { return _this.getObjectHandler(obj); });
             Object.keys(this.layers).forEach(function (layer) {
                 // if there is a free object affecting the layer, we must redraw layer completely
-                _this.redrawLayer(layer);
-                /*const affectsCurrentLayer = affectsLayer(layer);
+                //this.redrawLayer(layer);
+                var affectsCurrentLayer = affectsLayer(layer);
                 if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
-                  this.redrawLayer(layer);
-                  return;
+                    _this.redrawLayer(layer);
+                    return;
                 }
-          
-                this.layers[layer].clearField((boardObject as BoardFieldObject).field);
-          
-                for (let i = 0; i < objects.length; i++) {
-                  const obj = objects[i];
-                  if ('field' in obj && isSameField(obj.field, (boardObject as BoardFieldObject).field)) {
-                    const handler = handlers[i];
-                    if ('drawField' in handler && handler.drawField[layer]) {
-                      this.layers[layer].drawField(handler.drawField[layer], obj);
+                _this.layers[layer].clearField(boardObject.field);
+                for (var i = 0; i < objects.length; i++) {
+                    var obj = objects[i];
+                    if ('field' in obj && isSameField(obj.field, boardObject.field)) {
+                        var handler = handlers[i];
+                        if ('drawField' in handler && handler.drawField[layer]) {
+                            _this.layers[layer].drawField(handler.drawField[layer], obj);
+                        }
                     }
-                  }
-                }*/
+                }
             });
         };
         /**
@@ -1561,7 +1563,6 @@
         };
         return CanvasBoard;
     }(EventEmitter));
-    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -2636,7 +2637,7 @@
         function KifuNode() {
             this.parent = null;
             this.children = [];
-            this.SGFProperties = {};
+            this.properties = {};
         }
         Object.defineProperty(KifuNode.prototype, "root", {
             get: function () {
@@ -2656,8 +2657,8 @@
             }*/
             get: function () {
                 var output = ';';
-                for (var propIdent in this.SGFProperties) {
-                    if (this.SGFProperties.hasOwnProperty(propIdent)) {
+                for (var propIdent in this.properties) {
+                    if (this.properties.hasOwnProperty(propIdent)) {
                         output += propIdent + this.getSGFProperty(propIdent);
                     }
                 }
@@ -2789,7 +2790,7 @@
          * @returns {any}    property value or values or undefined, if property is missing.
          */
         KifuNode.prototype.getProperty = function (propIdent) {
-            return this.SGFProperties[propIdent];
+            return this.properties[propIdent];
         };
         /**
          * Sets property by SGF property identificator.
@@ -2799,10 +2800,10 @@
          */
         KifuNode.prototype.setProperty = function (propIdent, value) {
             if (value == null) {
-                delete this.SGFProperties[propIdent];
+                delete this.properties[propIdent];
             }
             else {
-                this.SGFProperties[propIdent] = value;
+                this.properties[propIdent] = value;
             }
             return this;
         };
@@ -2814,12 +2815,12 @@
          * @returns {string[]} Array of SGF property values or null if there is not such property.
          */
         KifuNode.prototype.getSGFProperty = function (propIdent) {
-            if (this.SGFProperties[propIdent] != null) {
+            if (this.properties[propIdent] != null) {
                 var propertyValueType_1 = propertyValueTypes[propIdent] || propertyValueTypes._default;
-                if (Array.isArray(this.SGFProperties[propIdent])) {
-                    return this.SGFProperties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue).replace(/\]/g, '\\]'); });
+                if (Array.isArray(this.properties[propIdent])) {
+                    return this.properties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue).replace(/\]/g, '\\]'); });
                 }
-                return [propertyValueType_1.transformer.write(this.SGFProperties[propIdent]).replace(/\]/g, '\\]')];
+                return [propertyValueType_1.transformer.write(this.properties[propIdent]).replace(/\]/g, '\\]')];
             }
             return null;
         };
@@ -2833,14 +2834,14 @@
         KifuNode.prototype.setSGFProperty = function (propIdent, propValues) {
             var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
             if (propValues == null) {
-                delete this.SGFProperties[propIdent];
+                delete this.properties[propIdent];
                 return this;
             }
             if (propertyValueType.multiple) {
-                this.SGFProperties[propIdent] = propValues.map(function (val) { return propertyValueType.transformer.read(val); });
+                this.properties[propIdent] = propValues.map(function (val) { return propertyValueType.transformer.read(val); });
             }
             else {
-                this.SGFProperties[propIdent] = propertyValueType.transformer.read(propValues[0]);
+                this.properties[propIdent] = propertyValueType.transformer.read(propValues[0]);
             }
             return this;
         };
@@ -3176,6 +3177,16 @@
     }(EventEmitter));
     //# sourceMappingURL=KifuReader.js.map
 
+    var propertyHandlers = {
+        B: function (player, propIdent, propValue) {
+            player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'white' } });
+        },
+        W: function (player, propIdent, propValue) {
+            player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'black' } });
+        },
+    };
+    //# sourceMappingURL=propertyHandlers.js.map
+
     var colorsMap = {
         B: Color.BLACK,
         W: Color.WHITE,
@@ -3197,6 +3208,7 @@
                 theme: this.config.boardTheme,
             });
             this.stoneBoardsObjects = [];
+            this.markupBoardObjects = [];
             if (this.config.sgf) {
                 this.kifuReader = new KifuReader(KifuNode.fromSGF(this.config.sgf));
             }
@@ -3238,6 +3250,15 @@
             for (var x = 0; x < position.size; x++) {
                 _loop_1(x);
             }
+            // Remove all markup
+            this.markupBoardObjects.forEach(function (boardObject) { return _this.board.removeObject(boardObject); });
+            this.markupBoardObjects = [];
+            Object.keys(this.kifuReader.currentNode.properties).forEach(function (propIdent) {
+                if (propertyHandlers[propIdent]) {
+                    propertyHandlers[propIdent](_this, propIdent, _this.kifuReader.currentNode.properties[propIdent]);
+                }
+            });
+            this.markupBoardObjects.forEach(function (boardObject) { return _this.board.addObject(boardObject); });
         };
         Player.prototype.next = function () {
             this.kifuReader.next();
@@ -3246,6 +3267,13 @@
         Player.prototype.previous = function () {
             this.kifuReader.previous();
             this.updateBoard();
+        };
+        /**
+         * Adds temporary board object, which will be removed during next position/node update.
+         * @param boardObject
+         */
+        Player.prototype.addTemporaryBoardObject = function (boardObject) {
+            this.markupBoardObjects.push(boardObject);
         };
         return Player;
     }(EventEmitter));

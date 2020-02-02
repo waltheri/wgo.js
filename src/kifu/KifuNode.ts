@@ -38,12 +38,12 @@ export interface Path {
 export default class KifuNode {
   parent: KifuNode | null;
   children: KifuNode[];
-  SGFProperties: {[key: string]: any};
+  properties: {[key: string]: any};
 
   constructor() {
     this.parent = null;
     this.children = [];
-    this.SGFProperties = {};
+    this.properties = {};
   }
 
   get root() {
@@ -64,8 +64,8 @@ export default class KifuNode {
   get innerSGF(): string {
     let output = ';';
 
-    for (const propIdent in this.SGFProperties) {
-      if (this.SGFProperties.hasOwnProperty(propIdent)) {
+    for (const propIdent in this.properties) {
+      if (this.properties.hasOwnProperty(propIdent)) {
         output += propIdent + this.getSGFProperty(propIdent);
       }
     }
@@ -226,7 +226,7 @@ export default class KifuNode {
    */
 
   getProperty(propIdent: string): any {
-    return this.SGFProperties[propIdent];
+    return this.properties[propIdent];
   }
 
   /**
@@ -238,9 +238,9 @@ export default class KifuNode {
 
   setProperty(propIdent: string, value?: any) {
     if (value == null) {
-      delete this.SGFProperties[propIdent];
+      delete this.properties[propIdent];
     } else {
-      this.SGFProperties[propIdent] = value;
+      this.properties[propIdent] = value;
     }
 
     return this;
@@ -256,16 +256,16 @@ export default class KifuNode {
    */
 
   getSGFProperty(propIdent: string): string[] {
-    if (this.SGFProperties[propIdent] != null) {
+    if (this.properties[propIdent] != null) {
       const propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
 
-      if (Array.isArray(this.SGFProperties[propIdent])) {
-        return this.SGFProperties[propIdent].map(
+      if (Array.isArray(this.properties[propIdent])) {
+        return this.properties[propIdent].map(
           (propValue: any) => propertyValueType.transformer.write(propValue).replace(/\]/g, '\\]'),
         );
       }
 
-      return [propertyValueType.transformer.write(this.SGFProperties[propIdent]).replace(/\]/g, '\\]')];
+      return [propertyValueType.transformer.write(this.properties[propIdent]).replace(/\]/g, '\\]')];
     }
 
     return null;
@@ -283,14 +283,14 @@ export default class KifuNode {
     const propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
 
     if (propValues == null) {
-      delete this.SGFProperties[propIdent];
+      delete this.properties[propIdent];
       return this;
     }
 
     if (propertyValueType.multiple) {
-      this.SGFProperties[propIdent] = propValues.map(val => propertyValueType.transformer.read(val));
+      this.properties[propIdent] = propValues.map(val => propertyValueType.transformer.read(val));
     } else {
-      this.SGFProperties[propIdent] = propertyValueType.transformer.read(propValues[0]);
+      this.properties[propIdent] = propertyValueType.transformer.read(propValues[0]);
     }
 
     return this;

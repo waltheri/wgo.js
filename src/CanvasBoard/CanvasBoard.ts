@@ -449,8 +449,8 @@ export default class CanvasBoard extends EventEmitter {
 
     Object.keys(this.layers).forEach((layer) => {
       // if there is a free object affecting the layer, we must redraw layer completely
-      this.redrawLayer(layer);
-      /*const affectsCurrentLayer = affectsLayer(layer);
+      //this.redrawLayer(layer);
+      const affectsCurrentLayer = affectsLayer(layer);
       if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
         this.redrawLayer(layer);
         return;
@@ -466,7 +466,7 @@ export default class CanvasBoard extends EventEmitter {
             this.layers[layer].drawField(handler.drawField[layer], obj);
           }
         }
-      }*/
+      }
     });
   }
 

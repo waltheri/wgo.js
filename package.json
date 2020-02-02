@@ -1,6 +1,6 @@
 {
   "name": "wgo",
-  "version": "3.0.0-alpha.3",
+  "version": "3.0.0-alpha.4",
   "description": "JavaScript library for game of Go",
   "main": "dist/index.js",
   "scripts": {

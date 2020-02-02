@@ -63,10 +63,10 @@ export default class CanvasLayer {
       // create a "sandbox" for drawing function
       this.context.save();
 
-      this.context.transform(this.board.fieldSize - 1, 0, 0, this.board.fieldSize - 1, leftOffset, topOffset);
-      this.context.beginPath();
-      this.context.rect(-0.5, -0.5, 1, 1);
-      this.context.clip();
+      this.context.transform(this.board.fieldSize, 0, 0, this.board.fieldSize, leftOffset, topOffset);
+      //this.context.beginPath();
+      //this.context.rect(-0.5, -0.5, 1, 1);
+      //this.context.clip();
       drawingFn(this.context, args, this.board);
 
       // restore context

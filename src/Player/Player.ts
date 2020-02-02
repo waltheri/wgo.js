@@ -4,9 +4,10 @@ import playerDefaultConfig from './defaultConfig';
 import CanvasBoard from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
 import KifuNode from '../kifu/KifuNode';
-import { BoardFieldObject } from '../CanvasBoard/types';
+import { BoardFieldObject, BoardObject } from '../CanvasBoard/types';
 import { Color } from '../types';
 import EventEmitter from '../utils/EventEmitter';
+import propertyHandlers from './propertyHandlers';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
@@ -19,6 +20,7 @@ export default class Player extends EventEmitter {
   board: CanvasBoard;
   kifuReader: KifuReader;
   stoneBoardsObjects: BoardFieldObject[];
+  markupBoardObjects: BoardObject[];
 
   // handleBoardClick(event: UIEvent, point: Point): void;
 
@@ -37,6 +39,7 @@ export default class Player extends EventEmitter {
       theme: this.config.boardTheme,
     });
     this.stoneBoardsObjects = [];
+    this.markupBoardObjects = [];
 
     if (this.config.sgf) {
       this.kifuReader = new KifuReader(KifuNode.fromSGF(this.config.sgf));
@@ -78,6 +81,18 @@ export default class Player extends EventEmitter {
         }
       }
     }
+
+    // Remove all markup
+    this.markupBoardObjects.forEach(boardObject => this.board.removeObject(boardObject));
+    this.markupBoardObjects = [];
+
+    Object.keys(this.kifuReader.currentNode.properties).forEach((propIdent) => {
+      if (propertyHandlers[propIdent]) {
+        propertyHandlers[propIdent](this, propIdent, this.kifuReader.currentNode.properties[propIdent]);
+      }
+    });
+
+    this.markupBoardObjects.forEach(boardObject => this.board.addObject(boardObject));
   }
 
   next() {
@@ -88,5 +103,13 @@ export default class Player extends EventEmitter {
   previous() {
     this.kifuReader.previous();
     this.updateBoard();
+  }
+
+  /**
+   * Adds temporary board object, which will be removed during next position/node update.
+   * @param boardObject
+   */
+  addTemporaryBoardObject(boardObject: BoardObject) {
+    this.markupBoardObjects.push(boardObject);
   }
 }

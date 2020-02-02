@@ -268,7 +268,10 @@ PW[cez]WR[3d?]PB[krabicka]BR[5d?]RE[B+R]DT[2019-12-03]PC[IGS-PandaNet]
 `;
 
 window.player = new WGo.Player(document.getElementById('board'), {
-  sgf
+  sgf,
+  boardTheme: {
+    stoneSize: 0.48,
+  }
 });
 
 window.addEventListener('mousewheel', (e) => {
