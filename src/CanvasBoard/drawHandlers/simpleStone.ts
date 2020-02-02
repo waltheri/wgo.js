@@ -12,7 +12,7 @@ export default function (color: string) {
         canvasCtx.fillStyle = color;
 
         canvasCtx.beginPath();
-        canvasCtx.arc(0, 0, stoneSize, 0, 2 * Math.PI, true);
+        canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
         canvasCtx.fill();
 
         canvasCtx.lineWidth = lw;

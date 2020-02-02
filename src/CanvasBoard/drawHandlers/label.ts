@@ -22,7 +22,7 @@ export default {
       canvasCtx.textBaseline = 'middle';
       canvasCtx.textAlign = 'center';
       canvasCtx.font = `${fontSize}px ${font}`;
-      canvasCtx.fillText(params.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
+      canvasCtx.fillText(params.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 1);
     },
   },
 };

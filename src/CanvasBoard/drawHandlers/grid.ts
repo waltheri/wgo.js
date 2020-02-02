@@ -12,10 +12,10 @@ export default {
       canvasCtx.lineWidth = params.linesWidth * board.fieldSize;
       canvasCtx.strokeStyle = params.linesColor;
 
-      const tx = Math.round(board.margin);
-      const ty = Math.round(board.margin);
-      const bw = Math.round(board.fieldSize * (board.config.size - 1));
-      const bh = Math.round(board.fieldSize * (board.config.size - 1));
+      const tx = Math.round(board.getX(0));
+      const ty = Math.round(board.getY(0));
+      const bw = Math.round((board.config.size - 1) * board.fieldSize);
+      const bh = Math.round((board.config.size - 1) * board.fieldSize);
 
       canvasCtx.strokeRect(tx, ty, bw, bh);
 

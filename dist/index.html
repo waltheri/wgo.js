@@ -11,7 +11,17 @@
 <script src="index.js"></script>
 <script>
 
-var board = new WGo.CanvasBoard(document.getElementById('board'), { width: 700, coordinates: true, theme: { coordinates: { params: { color: 'black' } } } });
+var board = new WGo.CanvasBoard(document.getElementById('board'), {
+  width: 700,
+  height: 500,
+  coordinates: true,
+  theme: {
+    stoneSize: 0.5,
+    coordinates: {
+      params: { color: '#663300' },
+    }
+  }
+});
 
 /*board.addObject({ x: 3, y: 3, c: 1 });
 board.addObject({ x: 15, y: 3, c: -1 });
@@ -82,6 +92,51 @@ const custom = {
   },
 };
 
+const candidate = {
+  drawField: {
+    stone(canvasCtx, args, board) {
+      const stoneSize = board.config.theme.stoneSize;
+      const lw = board.config.theme.markupLinesWidth;
+      const params = args.params;
+
+      if (params.value > 55) {
+        canvasCtx.fillStyle = 'rgba(0, 128, 0, 0.25)';
+      } else if (params.value < 45) {
+        canvasCtx.fillStyle = 'rgba(128, 0, 0, 0.25)';
+      } else {
+        canvasCtx.fillStyle = 'rgba(256, 256, 0, 0.25)';
+      }
+      
+      //canvasCtx.strokeStyle = 'rgba(0, 128, 0, 0.75)';
+      canvasCtx.beginPath();
+      canvasCtx.arc(0, 0, 0.5, 0, 2 * Math.PI, true);
+      canvasCtx.fill();
+      //canvasCtx.lineWidth = lw/2;
+      //canvasCtx.stroke();
+      
+      const font = params.font || board.config.theme.font || '';
+
+      canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+
+      canvasCtx.beginPath();
+      canvasCtx.textBaseline = 'middle';
+      canvasCtx.textAlign = 'center';
+      canvasCtx.font = `0.45px ${font}`;
+
+      canvasCtx.fillText(params.value+'%', 0, -0.1, 0.9);
+
+      canvasCtx.font = `0.3px ${font}`;
+
+      canvasCtx.fillText(params.playouts, 0, 0.25 , 0.9);
+    },
+    grid: WGo.drawHandlers.gridFieldClear.drawField.grid,
+  },
+};
+
+board.addObject({ handler: candidate, field: { x: 3, y: 3 }, params: { value: 57.2, playouts: '1.82k' } });
+board.addObject({ handler: candidate, field: { x: 4, y: 4 }, params: { value: 48.7, playouts: '187' } });
+board.addObject({ handler: candidate, field: { x: 3, y: 4 }, params: { value: 44.4, playouts: '572' } });
+
 board.addObject({ type: 'B', field: { x: 9, y: 9 } });
 board.addObject({ type: 'W', field: { x: 10, y: 9 } });
 board.addObject({ type: 'B', field: { x: 10, y: 10 } });
@@ -92,12 +147,23 @@ board.addObject({ type: 'CR', field: { x: 9, y: 9 }, params: { color: 'white' } 
 board.addObject({ type: 'TR', field: { x: 5, y: 5 } });
 board.addObject({ type: 'gridFieldClear', field: { x: 5, y: 5 } });
 
+board.addObject({ type: 'gridFieldClear', field: { x: 13, y: 13 } });
+board.addFieldObject(13, 13, 'LB', { text: '76.2%', color: 'green', font: 'calibri' });
+
 board.addFieldObject(5, 7, custom);
 board.addFieldObject(6, 7, custom);
 board.addFieldObject(7, 7, custom);
 board.addFieldObject(6, 8, custom);
 board.addFieldObject(6, 6, custom);
 board.addFieldObject(6, 7, 'LB', { text: '123', color: 'white' });
+
+/*for (let i = 0; i < 1000; i++) {
+  const x = Math.floor(Math.random() * 19);
+  const y = Math.floor(Math.random() * 19);
+
+  const obj = { handler: WGo.drawHandlers.transparent(WGo.drawHandlers.shellStoneWhite), field: { x, y }, params: { alpha: 0.2 } };
+  board.addObject(obj);
+}*/
 
 /*board.addObject({ x: 9, y: 9, type: custom });
 board.addObject({ x: 1, y: 0, type: custom });
@@ -134,6 +200,38 @@ board.addObject({ x: 13, y: 14, type: 'CR', lineWidth: 0.05, color: 'red', fillC
 board.addObject({ x: 14, y: 14, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'MA' });*/
+
+let lastX;
+let lastY;
+let obj;
+
+board.on('mousemove', (evt, pos) => {
+  if (pos && (pos.x !== lastX || pos.y !== lastY)) {
+    if (obj) {
+      board.removeObject(obj);
+    }
+    lastX = pos.x;
+    lastY = pos.y;
+    obj = { handler: WGo.drawHandlers.transparent(WGo.drawHandlers.simpleStone('black')), field: pos };
+    board.addObject(obj);
+  } else if (!pos && obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('mouseout', (evt, pos) => {
+  if (obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('click', (evt, pos) => {
+  board.addObject({ type: 'B', field: pos });
+});
 
 </script>
 </body>

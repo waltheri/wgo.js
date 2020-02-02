@@ -15,6 +15,10 @@ import dot from './dot';
 import xMark from './xMark';
 import smileyFace from './smileyFace';
 
+import transparent from './transparent';
+import reduced from './reduced';
+import gridFieldClear from './gridFieldClear';
+
 export {
   shellStoneBlack,
   shellStoneWhite,
@@ -31,4 +35,7 @@ export {
   dot,
   xMark,
   smileyFace,
+  transparent,
+  reduced,
+  gridFieldClear,
 };

@@ -270,42 +270,31 @@
      * Implements one layer of the HTML5 canvas
      */
     var CanvasLayer = /** @class */ (function () {
-        function CanvasLayer() {
-            this.element = document.createElement('canvas');
-            this.context = this.element.getContext('2d');
-            // Adjust pixel ratio for HDPI screens (e.g. Retina)
-            this.pixelRatio = window.devicePixelRatio || 1;
-            this.context.scale(this.pixelRatio, this.pixelRatio);
-            this.context.save();
+        function CanvasLayer(board) {
+            this.board = board;
+            this.init();
         }
-        CanvasLayer.prototype.setDimensions = function (width, height, board) {
-            var linesShift = board.config.theme.linesShift;
+        CanvasLayer.prototype.init = function () {
+            this.element = document.createElement('canvas');
+            this.element.style.position = 'absolute';
+            // this.element.style.zIndex = weight.toString(10);
+            this.element.style.width = '100%';
+            this.element.style.height = '100%';
+            this.context = this.element.getContext('2d');
+            this.context.scale(this.board.pixelRatio, this.board.pixelRatio);
+            this.context.save();
+            this.board.boardElement.appendChild(this.element);
+        };
+        CanvasLayer.prototype.resize = function (width, height) {
+            var linesShift = this.board.config.theme.linesShift;
             this.element.width = width;
-            this.element.style.width = width / this.pixelRatio + "px";
             this.element.height = height;
-            this.element.style.height = height / this.pixelRatio + "px";
             this.context.transform(1, 0, 0, 1, linesShift, linesShift);
         };
-        CanvasLayer.prototype.appendTo = function (element, weight) {
-            this.element.style.position = 'absolute';
-            this.element.style.zIndex = weight.toString(10);
-            this.element.style.top = '0';
-            this.element.style.bottom = '0';
-            this.element.style.left = '0';
-            this.element.style.right = '0';
-            this.element.style.margin = 'auto';
-            element.appendChild(this.element);
-        };
-        CanvasLayer.prototype.removeFrom = function (element) {
-            element.removeChild(this.element);
-        };
-        CanvasLayer.prototype.getContext = function () {
-            return this.context;
-        };
-        CanvasLayer.prototype.draw = function (drawingFn, args, board) {
+        CanvasLayer.prototype.draw = function (drawingFn, args) {
             try {
                 this.context.save();
-                drawingFn(this.context, args, board);
+                drawingFn(this.context, args, this.board);
                 this.context.restore();
             }
             catch (err) {
@@ -315,17 +304,17 @@
                 console.error("Object couldn't be rendered. Error: " + err.message, args);
             }
         };
-        CanvasLayer.prototype.drawField = function (drawingFn, args, board) {
+        CanvasLayer.prototype.drawField = function (drawingFn, args) {
             try {
-                var leftOffset = Math.round(board.getX(args.field.x));
-                var topOffset = Math.round(board.getY(args.field.y));
+                var leftOffset = this.board.getX(args.field.x);
+                var topOffset = this.board.getY(args.field.y);
                 // create a "sandbox" for drawing function
                 this.context.save();
-                this.context.transform(board.fieldSize - 1, 0, 0, board.fieldSize - 1, leftOffset, topOffset);
+                this.context.transform(this.board.fieldSize - 1, 0, 0, this.board.fieldSize - 1, leftOffset, topOffset);
                 this.context.beginPath();
                 this.context.rect(-0.5, -0.5, 1, 1);
                 this.context.clip();
-                drawingFn(this.context, args, board);
+                drawingFn(this.context, args, this.board);
                 // restore context
                 this.context.restore();
             }
@@ -336,13 +325,13 @@
                 console.error("Object couldn't be rendered. Error: " + err.message, args);
             }
         };
-        CanvasLayer.prototype.clear = function (_board) {
+        CanvasLayer.prototype.clear = function () {
             this.context.clearRect(0, 0, this.element.width, this.element.height);
         };
-        CanvasLayer.prototype.clearField = function (field, board) {
-            var leftOffset = Math.round(board.getX(field.x));
-            var topOffset = Math.round(board.getY(field.y));
-            this.context.clearRect(leftOffset - board.fieldSize / 2, topOffset - board.fieldSize / 2, board.fieldSize, board.fieldSize);
+        CanvasLayer.prototype.clearField = function (field) {
+            var leftOffset = this.board.getX(field.x);
+            var topOffset = this.board.getY(field.y);
+            this.context.clearRect(leftOffset - this.board.fieldSize / 2, topOffset - this.board.fieldSize / 2, this.board.fieldSize, this.board.fieldSize);
         };
         return CanvasLayer;
     }());
@@ -358,9 +347,9 @@
         function ShadowLayer() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        ShadowLayer.prototype.setDimensions = function (width, height, board) {
-            _super.prototype.setDimensions.call(this, width, height, board);
-            this.context.transform(1, 0, 0, 1, board.config.theme.shadowOffsetX * board.fieldSize, board.config.theme.shadowOffsetY * board.fieldSize);
+        ShadowLayer.prototype.resize = function (width, height) {
+            _super.prototype.resize.call(this, width, height);
+            this.context.transform(1, 0, 0, 1, this.board.config.theme.shadowOffsetX * this.board.fieldSize, this.board.config.theme.shadowOffsetY * this.board.fieldSize);
         };
         return ShadowLayer;
     }(CanvasLayer));
@@ -615,7 +604,7 @@
                     var lw = board.config.theme.markupLinesWidth;
                     canvasCtx.fillStyle = color;
                     canvasCtx.beginPath();
-                    canvasCtx.arc(0, 0, stoneSize, 0, 2 * Math.PI, true);
+                    canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
                     canvasCtx.fill();
                     canvasCtx.lineWidth = lw;
                     canvasCtx.strokeStyle = 'black';
@@ -759,7 +748,7 @@
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
                 canvasCtx.font = fontSize + "px " + font;
-                canvasCtx.fillText(params.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 2);
+                canvasCtx.fillText(params.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 1);
             },
         },
     };
@@ -818,6 +807,50 @@
     };
     //# sourceMappingURL=smileyFace.js.map
 
+    // transparent modificator
+    function transparent (drawHandler) {
+        return {
+            drawField: {
+                stone: function (canvasCtx, args, board) {
+                    var params = args.params || {};
+                    if (params.alpha) {
+                        canvasCtx.globalAlpha = params.alpha;
+                    }
+                    else {
+                        canvasCtx.globalAlpha = 0.3;
+                    }
+                    drawHandler.drawField.stone.call(null, canvasCtx, args, board);
+                    canvasCtx.globalAlpha = 1;
+                },
+            },
+        };
+    }
+    //# sourceMappingURL=transparent.js.map
+
+    // size reducing modifier
+    function reduced (drawHandler) {
+        return {
+            drawField: {
+                stone: function (canvasCtx, args, board) {
+                    canvasCtx.scale(0.5, 0.5);
+                    drawHandler.drawField.stone.call(null, canvasCtx, args, board);
+                    canvasCtx.scale(2, 2);
+                },
+            },
+        };
+    }
+    //# sourceMappingURL=reduced.js.map
+
+    var gridFieldClear = {
+        drawField: {
+            grid: function (canvasCtx, args, board) {
+                var stoneRadius = board.config.theme.stoneSize;
+                canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+            },
+        },
+    };
+    //# sourceMappingURL=gridFieldClear.js.map
+
     //# sourceMappingURL=index.js.map
 
     var index = /*#__PURE__*/Object.freeze({
@@ -835,7 +868,10 @@
         label: label,
         dot: dot,
         xMark: xMark,
-        smileyFace: smileyFace
+        smileyFace: smileyFace,
+        transparent: transparent,
+        reduced: reduced,
+        gridFieldClear: gridFieldClear
     });
 
     /**
@@ -849,7 +885,7 @@
                 canvasCtx.fillStyle = params.color;
                 canvasCtx.textBaseline = 'middle';
                 canvasCtx.textAlign = 'center';
-                canvasCtx.font = board.fieldSize / 2 + "px " + (board.config.theme.font || '');
+                canvasCtx.font = "" + (params.bold ? 'bold ' : '') + board.fieldSize / 2 + "px " + (board.config.theme.font || '');
                 var xright = board.getX(-0.75);
                 var xleft = board.getX(board.config.size - 0.25);
                 var ytop = board.getY(-0.75);
@@ -868,16 +904,7 @@
             },
         },
     };
-
-    var gridFieldClear = {
-        drawField: {
-            grid: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
-            },
-        },
-    };
-    //# sourceMappingURL=gridFieldClear.js.map
+    //# sourceMappingURL=coordinates.js.map
 
     var gridHandler = {
         drawFree: {
@@ -888,10 +915,10 @@
                 canvasCtx.beginPath();
                 canvasCtx.lineWidth = params.linesWidth * board.fieldSize;
                 canvasCtx.strokeStyle = params.linesColor;
-                var tx = Math.round(board.margin);
-                var ty = Math.round(board.margin);
-                var bw = Math.round(board.fieldSize * (board.config.size - 1));
-                var bh = Math.round(board.fieldSize * (board.config.size - 1));
+                var tx = Math.round(board.getX(0));
+                var ty = Math.round(board.getY(0));
+                var bw = Math.round((board.config.size - 1) * board.fieldSize);
+                var bh = Math.round((board.config.size - 1) * board.fieldSize);
                 canvasCtx.strokeRect(tx, ty, bw, bh);
                 for (var i = 1; i < board.config.size - 1; i++) {
                     tmp = Math.round(board.getX(i));
@@ -931,7 +958,7 @@
         shadowOffsetX: 0.08,
         shadowOffsetY: 0.16,
         // other
-        font: 'monospace',
+        font: 'calibri',
         linesShift: -0.5,
         backgroundColor: '#CEB053',
         backgroundImage: '',
@@ -950,6 +977,7 @@
             handler: coordinatesHandler,
             params: {
                 color: '#531',
+                bold: false,
                 x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
                 y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
             },
@@ -967,7 +995,6 @@
             gridFieldClear: gridFieldClear,
         },
     };
-    //# sourceMappingURL=baseTheme.js.map
 
     var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: realisticStone([
                 'stones/black00_128.png',
@@ -1096,20 +1123,30 @@
     //# sourceMappingURL=EventEmitter.js.map
 
     /* global document, window */
-    // Private methods of WGo.CanvasBoard
-    /*const calcLeftMargin = (b: CanvasBoard) => (
-      //(3 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2) - b.fieldWidth * b.topLeftFieldX
-    );
-
-    const calcTopMargin = (b: CanvasBoard) => (
-      //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
-    );*/
-    function affectsLayer(layer) {
-        return function (handler) { return !!('drawFree' in handler && handler.drawFree[layer]); };
-    }
     function isSameField(field1, field2) {
         return field1.x === field2.x && field1.y === field2.y;
     }
+    /*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
+      // new hopefully better translation of coordinates
+
+      let x: number;
+      let y: number;
+
+      x = e.layerX * board.pixelRatio;
+      x -= board.left;
+      x /= board.fieldWidth;
+      x = Math.round(x);
+
+      y = e.layerY * board.pixelRatio;
+      y -= board.top;
+      y /= board.fieldHeight;
+      y = Math.round(y);
+
+      return {
+        x: x >= board.size ? -1 : x,
+        y: y >= board.size ? -1 : y,
+      };
+    };*/
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
         /**
@@ -1172,50 +1209,53 @@
             this.element = document.createElement('div');
             this.element.className = 'wgo-board';
             this.element.style.position = 'relative';
-            this.element.style.backgroundColor = this.config.theme.backgroundColor;
-            if (this.config.theme.backgroundImage) {
-                this.element.style.backgroundImage = "url(\"" + this.config.theme.backgroundImage + "\")";
-            }
-            this.layers = {
-                grid: new CanvasLayer(),
-                shadow: new ShadowLayer(),
-                stone: new CanvasLayer(),
-            };
-            this.addLayer(this.layers.grid, 100);
-            this.addLayer(this.layers.shadow, 200);
-            this.addLayer(this.layers.stone, 300);
-            // append to element
             elem.appendChild(this.element);
+            this.boardElement = document.createElement('div');
+            this.boardElement.style.position = 'absolute';
+            this.boardElement.style.left = '0';
+            this.boardElement.style.top = '0';
+            this.boardElement.style.right = '0';
+            this.boardElement.style.bottom = '0';
+            this.boardElement.style.margin = 'auto';
+            this.element.appendChild(this.boardElement);
+            this.layers = {
+                grid: new CanvasLayer(this),
+                shadow: new ShadowLayer(this),
+                stone: new CanvasLayer(this),
+            };
         };
         /**
          * Updates dimensions and redraws everything
          */
         CanvasBoard.prototype.resize = function () {
             var _this = this;
-            var countX = this.getCountX();
-            var countY = this.getCountY();
-            var margins = 2 * this.getMargin();
+            var countX = this.config.size - this.config.viewport.left - this.config.viewport.right;
+            var countY = this.config.size - this.config.viewport.top - this.config.viewport.bottom;
+            var topOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.top ? 0.5 : 0);
+            var rightOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.right ? 0.5 : 0);
+            var bottomOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.bottom ? 0.5 : 0);
+            var leftOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.left ? 0.5 : 0);
             if (this.config.width && this.config.height) {
                 // exact dimensions
                 this.width = this.config.width * this.pixelRatio;
                 this.height = this.config.height * this.pixelRatio;
-                this.fieldSize = Math.min(this.height / (countY + margins), this.width / (countX + margins));
+                this.fieldSize = Math.min(this.width / (countX + leftOffset + rightOffset), this.height / (countY + topOffset + bottomOffset));
                 if (this.resizeCallback) {
                     window.removeEventListener('resize', this.resizeCallback);
                 }
             }
             else if (this.config.width) {
                 this.width = this.config.width * this.pixelRatio;
-                this.fieldSize = this.width / (countX + margins);
-                this.height = this.fieldSize * (countY + margins);
+                this.fieldSize = this.width / (countX + leftOffset + rightOffset);
+                this.height = this.fieldSize * (countY + topOffset + bottomOffset);
                 if (this.resizeCallback) {
                     window.removeEventListener('resize', this.resizeCallback);
                 }
             }
             else if (this.config.height) {
                 this.height = this.config.height * this.pixelRatio;
-                this.fieldSize = this.height / (countY + margins);
-                this.width = this.fieldSize * (countX + margins);
+                this.fieldSize = this.height / (countY + topOffset + bottomOffset);
+                this.width = this.fieldSize * (countX + leftOffset + rightOffset);
                 if (this.resizeCallback) {
                     window.removeEventListener('resize', this.resizeCallback);
                 }
@@ -1223,8 +1263,8 @@
             else {
                 this.element.style.width = 'auto';
                 this.width = this.element.offsetWidth * this.pixelRatio;
-                this.fieldSize = this.width / (countX + margins);
-                this.height = this.fieldSize * (countY + margins);
+                this.fieldSize = this.width / (countX + leftOffset + rightOffset);
+                this.height = this.fieldSize * (countY + topOffset + bottomOffset);
                 if (!this.resizeCallback) {
                     this.resizeCallback = function () {
                         _this.resize();
@@ -1232,22 +1272,18 @@
                     window.addEventListener('resize', this.resizeCallback);
                 }
             }
-            this.margin = this.fieldSize * (this.getMargin() + 0.5);
+            this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
+            this.topOffset = this.fieldSize * (topOffset + 0.5 - this.config.viewport.top);
             this.element.style.width = (this.width / this.pixelRatio) + "px";
             this.element.style.height = (this.height / this.pixelRatio) + "px";
+            var boardWidth = (countX + leftOffset + rightOffset) * this.fieldSize;
+            var boardHeight = (countY + topOffset + bottomOffset) * this.fieldSize;
+            this.boardElement.style.width = (boardWidth / this.pixelRatio) + "px";
+            this.boardElement.style.height = (boardHeight / this.pixelRatio) + "px";
             Object.keys(this.layers).forEach(function (layer) {
-                _this.layers[layer].setDimensions((countX + margins) * _this.fieldSize, (countY + margins) * _this.fieldSize, _this);
+                _this.layers[layer].resize(boardWidth, boardHeight);
             });
             this.redraw();
-        };
-        CanvasBoard.prototype.getCountX = function () {
-            return this.config.size - this.config.viewport.left - this.config.viewport.right;
-        };
-        CanvasBoard.prototype.getCountY = function () {
-            return this.config.size - this.config.viewport.top - this.config.viewport.bottom;
-        };
-        CanvasBoard.prototype.getMargin = function () {
-            return this.config.marginSize + (this.config.coordinates ? 0.5 : 0);
         };
         /**
            * Get absolute X coordinate
@@ -1255,7 +1291,7 @@
            * @param {number} x relative coordinate
            */
         CanvasBoard.prototype.getX = function (x) {
-            return this.margin + x * this.fieldSize;
+            return this.leftOffset + x * this.fieldSize;
         };
         /**
            * Get absolute Y coordinate
@@ -1263,7 +1299,7 @@
            * @param {number} y relative coordinate
            */
         CanvasBoard.prototype.getY = function (y) {
-            return this.margin + y * this.fieldSize;
+            return this.topOffset + y * this.fieldSize;
         };
         /**
          * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
@@ -1328,23 +1364,6 @@
                 this.resize();
             }
         };
-        /**
-           * Add layer to the board. It is meant to be only for canvas layers.
-           *
-           * @param {CanvasBoard.CanvasLayer} layer to add
-           * @param {number} weight layer with biggest weight is on the top
-           */
-        CanvasBoard.prototype.addLayer = function (layer, weight) {
-            layer.appendTo(this.element, weight);
-        };
-        /**
-           * Remove layer from the board.
-           *
-           * @param {CanvasBoard.CanvasLayer} layer to remove
-           */
-        CanvasBoard.prototype.removeLayer = function (layer) {
-            layer.removeFrom(this.element);
-        };
         CanvasBoard.prototype.getObjectHandler = function (boardObject) {
             return boardObject.type ? this.config.theme.drawHandlers[boardObject.type] : boardObject.handler;
         };
@@ -1353,6 +1372,11 @@
          */
         CanvasBoard.prototype.redraw = function () {
             var _this = this;
+            // set correct background
+            this.boardElement.style.backgroundColor = this.config.theme.backgroundColor;
+            if (this.config.theme.backgroundImage) {
+                this.boardElement.style.backgroundImage = "url(\"" + this.config.theme.backgroundImage + "\")";
+            }
             // redraw all layers
             Object.keys(this.layers).forEach(function (layer) {
                 _this.redrawLayer(layer);
@@ -1364,14 +1388,14 @@
            */
         CanvasBoard.prototype.redrawLayer = function (layer) {
             var _this = this;
-            this.layers[layer].clear(this);
+            this.layers[layer].clear();
             this.getObjectsToDraw().forEach(function (boardObject) {
                 var handler = _this.getObjectHandler(boardObject);
                 if ('drawField' in handler && handler.drawField[layer]) {
-                    _this.layers[layer].drawField(handler.drawField[layer], boardObject, _this);
+                    _this.layers[layer].drawField(handler.drawField[layer], boardObject);
                 }
                 if ('drawFree' in handler && handler.drawFree[layer]) {
-                    _this.layers[layer].draw(handler.drawFree[layer], boardObject, _this);
+                    _this.layers[layer].draw(handler.drawFree[layer], boardObject);
                 }
             });
         };
@@ -1400,7 +1424,7 @@
                 this.objects.push(boardObject);
                 Object.keys(this.layers).forEach(function (layer) {
                     if (handler.drawField[layer]) {
-                        _this.layers[layer].drawField(handler.drawField[layer], boardObject, _this);
+                        _this.layers[layer].drawField(handler.drawField[layer], boardObject);
                     }
                 });
             }
@@ -1408,7 +1432,7 @@
                 this.objects.push(boardObject);
                 Object.keys(this.layers).forEach(function (layer) {
                     if (handler.drawFree[layer]) {
-                        _this.layers[layer].draw(handler.drawFree[layer], boardObject, _this);
+                        _this.layers[layer].draw(handler.drawFree[layer], boardObject);
                     }
                 });
             }
@@ -1454,21 +1478,24 @@
             var handlers = objects.map(function (obj) { return _this.getObjectHandler(obj); });
             Object.keys(this.layers).forEach(function (layer) {
                 // if there is a free object affecting the layer, we must redraw layer completely
-                var affectsCurrentLayer = affectsLayer(layer);
+                _this.redrawLayer(layer);
+                /*const affectsCurrentLayer = affectsLayer(layer);
                 if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
-                    _this.redrawLayer(layer);
-                    return;
+                  this.redrawLayer(layer);
+                  return;
                 }
-                _this.layers[layer].clearField(boardObject.field, _this);
-                for (var i = 0; i < objects.length; i++) {
-                    var obj = objects[i];
-                    if ('field' in obj && isSameField(obj.field, boardObject.field)) {
-                        var handler = handlers[i];
-                        if ('drawField' in handler && handler.drawField[layer]) {
-                            _this.layers[layer].drawField(handler.drawField[layer], obj, _this);
-                        }
+          
+                this.layers[layer].clearField((boardObject as BoardFieldObject).field);
+          
+                for (let i = 0; i < objects.length; i++) {
+                  const obj = objects[i];
+                  if ('field' in obj && isSameField(obj.field, (boardObject as BoardFieldObject).field)) {
+                    const handler = handlers[i];
+                    if ('drawField' in handler && handler.drawField[layer]) {
+                      this.layers[layer].drawField(handler.drawField[layer], obj);
                     }
-                }
+                  }
+                }*/
             });
         };
         /**
@@ -1506,6 +1533,31 @@
                 fixedObjects.push(this.config.theme.coordinates);
             }
             return fixedObjects.concat(this.objects);
+        };
+        CanvasBoard.prototype.on = function (type, callback) {
+            _super.prototype.on.call(this, type, callback);
+            this.registerBoardListener(type);
+        };
+        CanvasBoard.prototype.registerBoardListener = function (type) {
+            var _this = this;
+            this.boardElement.addEventListener(type, function (evt) {
+                if (evt.layerX != null) {
+                    var pos = _this.getRelativeCoordinates(evt.layerX, evt.layerY);
+                    _this.emit(type, evt, pos);
+                }
+                else {
+                    _this.emit(type, evt);
+                }
+            });
+        };
+        CanvasBoard.prototype.getRelativeCoordinates = function (absoluteX, absoluteY) {
+            // new hopefully better translation of coordinates
+            var x = Math.round((absoluteX * this.pixelRatio - this.leftOffset) / this.fieldSize);
+            var y = Math.round((absoluteY * this.pixelRatio - this.topOffset) / this.fieldSize);
+            if (x < 0 || x >= this.config.size || y < 0 || y >= this.config.size) {
+                return null;
+            }
+            return { x: x, y: y };
         };
         return CanvasBoard;
     }(EventEmitter));
@@ -1553,7 +1605,7 @@
         allowSuicide: true,
         komi: 0,
     };
-    var rules = {
+    var goRules = {
         Japanese: JAPANESE_RULES,
         GOE: ING_RULES,
         NZ: ING_RULES,
@@ -2356,6 +2408,851 @@
 
     //# sourceMappingURL=index.js.map
 
+    var playerDefaultConfig = {
+        boardTheme: canvasBoardDefaultConfig.theme,
+        sgf: null,
+    };
+    //# sourceMappingURL=defaultConfig.js.map
+
+    /**
+     * From SGF specification, there are these types of property values:
+     *
+     * CValueType = (ValueType | *Compose*)
+     * ValueType  = (*None* | *Number* | *Real* | *Double* | *Color* | *SimpleText* | *Text* | *Point*  | *Move* | *Stone*)
+     *
+     * WGo's kifu node (KNode object) implements similar types with few exceptions:
+     *
+     * - Types `Number`, `Real` and `Double` are implemented by javascript's `number`.
+     * - Types `SimpleText` and `Text` are considered as the same.
+     * - Types `Point`, `Move` and `Stone` are all the same, implemented as simple object with `x` and `y` coordinates.
+     * - Type `None` is implemented as `true`
+     *
+     * Each `Compose` type, which is used in SGF, has its own type.
+     *
+     * - `Point ':' Point` (used in AR property) has special type `Line` - object with two sets of coordinates.
+     * - `Point ':' Simpletext` (used in LB property) has special type `Label` - object with coordinates and text property
+     * - `Simpletext ":" Simpletext` (used in AP property) - not implemented
+     * - `Number ":" SimpleText` (used in FG property) - not implemented
+     *
+     * Moreover each property value has these settings:
+     *
+     * - *Single value* / *Array* (more values)
+     * - *Not empty* / *Empty* (value or array can be empty)
+     *
+     * {@link http://www.red-bean.com/sgf/sgf4.html}
+     */
+    var NONE = {
+        read: function (str) { return true; },
+        write: function (value) { return ''; },
+    };
+    var NUMBER = {
+        read: function (str) { return parseFloat(str); },
+        write: function (value) { return value.toString(10); },
+    };
+    var TEXT = {
+        read: function (str) { return str; },
+        write: function (value) { return value; },
+    };
+    var COLOR = {
+        read: function (str) { return (str === 'w' || str === 'W' ? Color.WHITE : Color.BLACK); },
+        write: function (value) { return (value === Color.WHITE ? 'W' : 'B'); },
+    };
+    var POINT = {
+        read: function (str) { return str ? {
+            x: str.charCodeAt(0) - 97,
+            y: str.charCodeAt(1) - 97,
+        } : null; },
+        write: function (value) { return value ? String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) : ''; },
+    };
+    var LABEL = {
+        read: function (str) { return ({
+            x: str.charCodeAt(0) - 97,
+            y: str.charCodeAt(1) - 97,
+            text: str.substr(3),
+        }); },
+        write: function (value) { return (String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) + ":" + value.text); },
+    };
+    var LINE_SEGMENT = {
+        read: function (str) { return ({
+            point1: {
+                x: str.charCodeAt(0) - 97,
+                y: str.charCodeAt(1) - 97,
+            },
+            point2: {
+                x: str.charCodeAt(3) - 97,
+                y: str.charCodeAt(4) - 97,
+            },
+        }); },
+        write: function (value) { return (
+        // tslint:disable-next-line:max-line-length
+        String.fromCharCode(value.point1.x + 97) + String.fromCharCode(value.point1.y + 97) + ":" + (String.fromCharCode(value.point2.x + 97) + String.fromCharCode(value.point2.y + 97))); },
+    };
+    var propertyValueTypes = {
+        _default: {
+            transformer: TEXT,
+            multiple: false,
+            notEmpty: true,
+        },
+    };
+    /// Move properties -------------------------------------------------------------------------------
+    propertyValueTypes.B = propertyValueTypes.W = {
+        transformer: POINT,
+        multiple: false,
+        notEmpty: false,
+    };
+    propertyValueTypes.KO = {
+        transformer: NONE,
+        multiple: false,
+        notEmpty: false,
+    };
+    propertyValueTypes.MN = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Setup properties ------------------------------------------------------------------------------
+    propertyValueTypes.AB = propertyValueTypes.AW = propertyValueTypes.AE = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.PL = {
+        transformer: COLOR,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Node annotation properties --------------------------------------------------------------------
+    propertyValueTypes.C = propertyValueTypes.N = {
+        transformer: TEXT,
+        multiple: false,
+        notEmpty: true,
+    };
+    // tslint:disable-next-line:max-line-length
+    propertyValueTypes.DM = propertyValueTypes.GB = propertyValueTypes.GW = propertyValueTypes.HO = propertyValueTypes.UC = propertyValueTypes.V = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Move annotation properties --------------------------------------------------------------------
+    propertyValueTypes.BM = propertyValueTypes.TE = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    propertyValueTypes.DO = propertyValueTypes.IT = {
+        transformer: NONE,
+        multiple: false,
+        notEmpty: false,
+    };
+    /// Markup properties -----------------------------------------------------------------------------
+    // tslint:disable-next-line:max-line-length
+    propertyValueTypes.CR = propertyValueTypes.MA = propertyValueTypes.SL = propertyValueTypes.SQ = propertyValueTypes.TR = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.LB = {
+        transformer: LABEL,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.AR = propertyValueTypes.LN = {
+        transformer: LINE_SEGMENT,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.DD = propertyValueTypes.TB = propertyValueTypes.TW = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: false,
+    };
+    /// Root properties -------------------------------------------------------------------------------
+    propertyValueTypes.AP = propertyValueTypes.CA = {
+        transformer: TEXT,
+        multiple: false,
+        notEmpty: true,
+    };
+    // note: rectangular board is not implemented (in SZ property)
+    propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = propertyValueTypes.SZ = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Game info properties --------------------------------------------------------------------------
+    propertyValueTypes.AN = propertyValueTypes.BR = propertyValueTypes.BT =
+        propertyValueTypes.CP = propertyValueTypes.DT = propertyValueTypes.EV =
+            propertyValueTypes.GN = propertyValueTypes.GC = propertyValueTypes.GN =
+                propertyValueTypes.ON = propertyValueTypes.OT = propertyValueTypes.PB =
+                    propertyValueTypes.PC = propertyValueTypes.PW = propertyValueTypes.RE =
+                        propertyValueTypes.RO = propertyValueTypes.RU = propertyValueTypes.SO =
+                            propertyValueTypes.US = propertyValueTypes.WR = propertyValueTypes.WT = {
+                                transformer: TEXT,
+                                multiple: false,
+                                notEmpty: true,
+                            };
+    propertyValueTypes.TM = propertyValueTypes.HA = propertyValueTypes.KM = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Timing properties -----------------------------------------------------------------------------
+    propertyValueTypes.BL = propertyValueTypes.WL = propertyValueTypes.OB = propertyValueTypes.OW = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Miscellaneous properties ----------------------------------------------------------------------
+    propertyValueTypes.PM = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    propertyValueTypes.VW = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: false,
+    };
+    //# sourceMappingURL=propertyValueTypes.js.map
+
+    var processJSGF = function (gameTree) {
+        var rootNode = new KifuNode();
+        rootNode.setSGFProperties(gameTree.sequence[0] || {});
+        var lastNode = rootNode;
+        for (var i = 1; i < gameTree.sequence.length; i++) {
+            var node = new KifuNode();
+            node.setSGFProperties(gameTree.sequence[i]);
+            lastNode.appendChild(node);
+            lastNode = node;
+        }
+        for (var i = 0; i < gameTree.children.length; i++) {
+            lastNode.appendChild(processJSGF(gameTree.children[i]));
+        }
+        return rootNode;
+    };
+    /**
+     * Class representing one kifu node.
+     */
+    var KifuNode = /** @class */ (function () {
+        function KifuNode() {
+            this.parent = null;
+            this.children = [];
+            this.SGFProperties = {};
+        }
+        Object.defineProperty(KifuNode.prototype, "root", {
+            get: function () {
+                // tslint:disable-next-line:no-this-assignment
+                var node = this;
+                while (node.parent != null) {
+                    node = node.parent;
+                }
+                return node;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(KifuNode.prototype, "innerSGF", {
+            /*set innerSGF(sgf: string) {
+              this.setFromSGF(sgf);
+            }*/
+            get: function () {
+                var output = ';';
+                for (var propIdent in this.SGFProperties) {
+                    if (this.SGFProperties.hasOwnProperty(propIdent)) {
+                        output += propIdent + this.getSGFProperty(propIdent);
+                    }
+                }
+                if (this.children.length === 1) {
+                    return output + ";" + this.children[0].innerSGF;
+                }
+                if (this.children.length > 1) {
+                    return this.children.reduce(function (prev, current) { return prev + "(;" + current.innerSGF + ")"; }, output);
+                }
+                return output;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        KifuNode.prototype.getPath = function () {
+            var path = { depth: 0, forks: [] };
+            // tslint:disable-next-line:no-this-assignment
+            var node = this;
+            while (node.parent) {
+                path.depth++;
+                if (node.parent.children.length > 1) {
+                    path.forks.unshift(node.parent.children.indexOf(node));
+                }
+                node = node.parent;
+            }
+            return path;
+        };
+        /// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)
+        /**
+         * Insert a KNode as the last child node of this node.
+         *
+         * @throws  {Error} when argument is invalid.
+         * @param   {KifuNode} node to append.
+         * @returns {number} position(index) of appended node.
+         */
+        KifuNode.prototype.appendChild = function (node) {
+            if (node == null || !(node instanceof KifuNode) || node === this) {
+                throw new Error('Invalid argument passed to `appendChild` method, KNode was expected.');
+            }
+            if (node.parent) {
+                node.parent.removeChild(node);
+            }
+            node.parent = this;
+            return this.children.push(node) - 1;
+        };
+        /**
+         * Hard clones a KNode and all of its contents.
+         *
+         * @param {boolean}  appendToParent if set true, cloned node will be appended to this parent.
+         * @returns {KifuNode}  cloned node
+         */
+        /*cloneNode(appendToParent?: boolean): KNode {
+          const node = new KNode();
+          node.innerSGF = this.innerSGF;
+      
+          if (appendToParent && this.parent) {
+            this.parent.appendChild(node);
+          }
+      
+          return node;
+        }*/
+        /**
+         * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
+         *
+         * @param   {KifuNode}   node to be tested
+         * @returns {boolean} true, if this node contains given node.
+         */
+        KifuNode.prototype.contains = function (node) {
+            if (this.children.indexOf(node) >= 0) {
+                return true;
+            }
+            return this.children.some(function (child) { return child.contains(node); });
+        };
+        /**
+         * Inserts the first KNode given in a parameter immediately before the second, child of this KNode.
+         *
+         * @throws  {Error}   when argument is invalid.
+         * @param   {KifuNode}   newNode       node to be inserted
+         * @param   {(KifuNode)} referenceNode reference node, if omitted, new node will be inserted at the end.
+         * @returns {KifuNode}   this node
+         */
+        KifuNode.prototype.insertBefore = function (newNode, referenceNode) {
+            if (newNode == null || !(newNode instanceof KifuNode) || newNode === this) {
+                throw new Error('Invalid argument passed to `insertBefore` method, KNode was expected.');
+            }
+            if (referenceNode == null) {
+                this.appendChild(newNode);
+                return this;
+            }
+            if (newNode.parent) {
+                newNode.parent.removeChild(newNode);
+            }
+            newNode.parent = this;
+            this.children.splice(this.children.indexOf(referenceNode), 0, newNode);
+            return this;
+        };
+        /**
+         * Removes a child node from the current element, which must be a child of the current node.
+         *
+         * @param   {KifuNode} child node to be removed
+         * @returns {KifuNode}  this node
+         */
+        KifuNode.prototype.removeChild = function (child) {
+            this.children.splice(this.children.indexOf(child), 1);
+            child.parent = null;
+            return this;
+        };
+        /**
+         * Replaces one child Node of the current one with the second one given in parameter.
+         *
+         * @throws  {Error} when argument is invalid
+         * @param   {KifuNode} newChild node to be inserted
+         * @param   {KifuNode} oldChild node to be replaced
+         * @returns {KifuNode} this node
+         */
+        KifuNode.prototype.replaceChild = function (newChild, oldChild) {
+            if (newChild == null || !(newChild instanceof KifuNode) || newChild === this) {
+                throw new Error('Invalid argument passed to `replaceChild` method, KNode was expected.');
+            }
+            this.insertBefore(newChild, oldChild);
+            this.removeChild(oldChild);
+            return this;
+        };
+        /// BASIC PROPERTY GETTER and SETTER
+        /**
+         * Gets property by SGF property identificator. Returns property value (type depends on property type)
+         *
+         * @param   {string}   propIdent - SGF property idetificator
+         * @returns {any}    property value or values or undefined, if property is missing.
+         */
+        KifuNode.prototype.getProperty = function (propIdent) {
+            return this.SGFProperties[propIdent];
+        };
+        /**
+         * Sets property by SGF property identificator.
+         *
+         * @param   {string}  propIdent - SGF property idetificator
+         * @param   {any}     value - property value or values
+         */
+        KifuNode.prototype.setProperty = function (propIdent, value) {
+            if (value == null) {
+                delete this.SGFProperties[propIdent];
+            }
+            else {
+                this.SGFProperties[propIdent] = value;
+            }
+            return this;
+        };
+        /// SGF RAW METHODS
+        /**
+         * Gets one SGF property value as string (with brackets `[` and `]`).
+         *
+         * @param   {string} propIdent SGF property identificator.
+         * @returns {string[]} Array of SGF property values or null if there is not such property.
+         */
+        KifuNode.prototype.getSGFProperty = function (propIdent) {
+            if (this.SGFProperties[propIdent] != null) {
+                var propertyValueType_1 = propertyValueTypes[propIdent] || propertyValueTypes._default;
+                if (Array.isArray(this.SGFProperties[propIdent])) {
+                    return this.SGFProperties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue).replace(/\]/g, '\\]'); });
+                }
+                return [propertyValueType_1.transformer.write(this.SGFProperties[propIdent]).replace(/\]/g, '\\]')];
+            }
+            return null;
+        };
+        /**
+         * Sets one SGF property.
+         *
+         * @param   {string}   propIdent SGF property identificator
+         * @param   {string[]} propValues SGF property values
+         * @returns {KifuNode}    this KNode for chaining
+         */
+        KifuNode.prototype.setSGFProperty = function (propIdent, propValues) {
+            var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
+            if (propValues == null) {
+                delete this.SGFProperties[propIdent];
+                return this;
+            }
+            if (propertyValueType.multiple) {
+                this.SGFProperties[propIdent] = propValues.map(function (val) { return propertyValueType.transformer.read(val); });
+            }
+            else {
+                this.SGFProperties[propIdent] = propertyValueType.transformer.read(propValues[0]);
+            }
+            return this;
+        };
+        /**
+         * Sets multiple SGF properties.
+         *
+         * @param   {Object}   properties - map with signature propIdent -> propValues.
+         * @returns {KifuNode}    this KNode for chaining
+         */
+        KifuNode.prototype.setSGFProperties = function (properties) {
+            for (var ident in properties) {
+                if (properties.hasOwnProperty(ident)) {
+                    this.setSGFProperty(ident, properties[ident]);
+                }
+            }
+            return this;
+        };
+        /**
+         * Sets properties of Kifu node based on the sgf string. Usually you won't use this method directly,
+         * but use innerSGF property instead.
+         *
+         * Basically it parsers the sgf, takes properties from it and adds them to the node.
+         * Then if there are other nodes in the string, they will be appended to the node as well.
+         *
+         * @param {string} sgf SGF text for current node. It must be without trailing `;`,
+         *                     however it can contain following nodes.
+         * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
+         */
+        /*setFromSGF(sgf: string) {
+          // clean up
+          for (let i = this.children.length - 1; i >= 0; i--) {
+            this.removeChild(this.children[i]);
+          }
+          this.SGFProperties = {};
+      
+          // sgf sequence to parse must start with ;
+          const sgfSequence = sgf[0] === ';' ? sgf : `;${sgf}`;
+      
+          const parser = new SGFParser(sgfSequence);
+      
+          const sequence = parser.parseSequence();
+        }*/
+        /**
+         * Transforms KNode object to standard SGF string.
+         */
+        KifuNode.prototype.toSGF = function () {
+            return "(" + this.innerSGF + ")";
+        };
+        /**
+         * Creates KNode object from SGF transformed to JavaScript object.
+         * @param gameTree
+         */
+        KifuNode.fromJS = function (gameTree) {
+            return processJSGF(gameTree);
+        };
+        /**
+         * Creates KNode object from SGF string.
+         *
+         * @param sgf
+         * @param gameNo
+         */
+        KifuNode.fromSGF = function (sgf, gameNo) {
+            if (gameNo === void 0) { gameNo = 0; }
+            var parser = new SGFParser(sgf);
+            return KifuNode.fromJS(parser.parseCollection()[gameNo]);
+        };
+        return KifuNode;
+    }());
+    //# sourceMappingURL=KifuNode.js.map
+
+    var PropIdent;
+    (function (PropIdent) {
+        // Move Properties
+        PropIdent["BLACK_MOVE"] = "B";
+        PropIdent["EXECUTE_ILLEGAL"] = "KO";
+        PropIdent["MOVE_NUMBER"] = "MN";
+        PropIdent["WHITE_MOVE"] = "W";
+        // Setup Properties
+        PropIdent["ADD_BLACK"] = "AB";
+        PropIdent["CLEAR_FIELD"] = "AE";
+        PropIdent["ADD_WHITE"] = "AW";
+        PropIdent["SET_TURN"] = "PL";
+        // Node Annotation Properties
+        PropIdent["COMMENT"] = "C";
+        PropIdent["EVEN_POSITION"] = "DM";
+        PropIdent["GOOD_FOR_BLACK"] = "GB";
+        PropIdent["GOOD_FOR_WHITE"] = "GW";
+        PropIdent["HOTSPOT"] = "HO";
+        PropIdent["NODE_NAME"] = "N";
+        PropIdent["UNCLEAR_POSITION"] = "UC";
+        PropIdent["NODE_VALUE"] = "V";
+        // Move Annotation Properties
+        PropIdent["BAD_MOVE"] = "BM";
+        PropIdent["DOUBTFUL_MOVE"] = "DM";
+        PropIdent["INTERESTING_MOVE"] = "IT";
+        PropIdent["GOOD_MOVE"] = "TE";
+        // Markup Properties
+        PropIdent["ARROW"] = "AR";
+        PropIdent["CIRCLE"] = "CR";
+        PropIdent["DIM"] = "DD";
+        PropIdent["LABEL"] = "LB";
+        PropIdent["LINE"] = "LN";
+        PropIdent["X_MARK"] = "MA";
+        PropIdent["SELECTED"] = "SL";
+        PropIdent["SQUARE"] = "SQ";
+        PropIdent["TRIANGLE"] = "TR";
+        // Root Properties
+        PropIdent["APPLICATION"] = "AP";
+        PropIdent["CHARSET"] = "CA";
+        PropIdent["SGF_VERSION"] = "FF";
+        PropIdent["GAME_TYPE"] = "GM";
+        PropIdent["VARIATIONS_STYLE"] = "ST";
+        PropIdent["BOARD_SIZE"] = "SZ";
+        // Game Info Properties
+        PropIdent["ANNOTATOR"] = "AN";
+        PropIdent["BLACK_RANK"] = "BR";
+        PropIdent["BLACK_TEAM"] = "BT";
+        PropIdent["COPYRIGHT"] = "CP";
+        PropIdent["DATE"] = "DT";
+        PropIdent["EVENT"] = "EV";
+        PropIdent["GAME_NAME"] = "GN";
+        PropIdent["GAME_COMMENT"] = "GC";
+        PropIdent["OPENING_INFO"] = "ON";
+        PropIdent["OVER_TIME"] = "OT";
+        PropIdent["BLACK_NAME"] = "BN";
+        PropIdent["PLACE"] = "PC";
+        PropIdent["WHITE_NAME"] = "PW";
+        PropIdent["RESULT"] = "RE";
+        PropIdent["ROUND"] = "RO";
+        PropIdent["RULES"] = "RU";
+        PropIdent["SOURCE"] = "SO";
+        PropIdent["TIME_LIMITS"] = "TM";
+        PropIdent["AUTHOR"] = "US";
+        PropIdent["WHITE_RANK"] = "WR";
+        PropIdent["WHITE_TEAM"] = "WT";
+        // Timing Properties
+        PropIdent["BLACK_TIME_LEFT"] = "BL";
+        PropIdent["BLACK_STONES_LEFT"] = "OB";
+        PropIdent["WHITE_STONES_LEFT"] = "OW";
+        PropIdent["WHITE_TIME_LEFT"] = "WL";
+        // Miscellaneous Properties
+        PropIdent["FIGURE"] = "FG";
+        PropIdent["PRINT_MOVE_NUMBERS"] = "PM";
+        PropIdent["BOARD_SECTION"] = "VW";
+        PropIdent["HANDICAP"] = "HA";
+        // GO specific Properties
+        PropIdent["KOMI"] = "KM";
+        PropIdent["BLACK_TERRITORY"] = "TB";
+        PropIdent["WHITE_TERRITORY"] = "TW";
+    })(PropIdent || (PropIdent = {}));
+    //# sourceMappingURL=sgfTypes.js.map
+
+    /**
+     * Contains functionality to create, edit and manipulate go game record. It is basically virtual player
+     * with API without board and any UI.
+     */
+    var KifuReader = /** @class */ (function (_super) {
+        __extends(KifuReader, _super);
+        function KifuReader(rootNode) {
+            if (rootNode === void 0) { rootNode = new KifuNode(); }
+            var _this = _super.call(this) || this;
+            _this.rootNode = rootNode;
+            _this.currentNode = rootNode;
+            _this.executeRootNode();
+            _this.executeNode();
+            return _this;
+        }
+        /**
+         * This will execute root node (root properties) once and initialize Game object
+         */
+        KifuReader.prototype.executeRootNode = function () {
+            var size = this.getRootProperty(PropIdent.BOARD_SIZE) || 19;
+            var rules = goRules[this.getRootProperty(PropIdent.RULES)] || JAPANESE_RULES;
+            var handicap = this.getRootProperty(PropIdent.HANDICAP) || 0;
+            this.game = new Game(size, rules);
+            if (handicap > 1) {
+                this.game.turn = Color.WHITE;
+            }
+        };
+        /**
+         * Executes node. It will go through its properties and make changes in game object.
+         */
+        KifuReader.prototype.executeNode = function () {
+            var _this = this;
+            // first process setup
+            var addBlack = this.getProperty(PropIdent.ADD_BLACK) || [];
+            var addWhite = this.getProperty(PropIdent.ADD_WHITE) || [];
+            var clear = this.getProperty(PropIdent.CLEAR_FIELD) || [];
+            addBlack.forEach(function (p) { return _this.game.setStone(p.x, p.y, Color.BLACK); });
+            addWhite.forEach(function (p) { return _this.game.setStone(p.x, p.y, Color.WHITE); });
+            clear.forEach(function (p) { return _this.game.setStone(p.x, p.y, Color.EMPTY); });
+            // then play a move
+            var blackMove = this.getProperty(PropIdent.BLACK_MOVE);
+            var whiteMove = this.getProperty(PropIdent.WHITE_MOVE);
+            if (blackMove !== undefined && whiteMove !== undefined) {
+                throw 'Some error';
+            }
+            if (blackMove !== undefined) {
+                if (blackMove) {
+                    this.game.position.applyMove(blackMove.x, blackMove.y, Color.BLACK, true, true);
+                }
+                else {
+                    // pass
+                    this.game.position.turn = Color.WHITE;
+                }
+            }
+            else if (whiteMove !== undefined) {
+                if (whiteMove) {
+                    this.game.position.applyMove(whiteMove.x, whiteMove.y, Color.WHITE, true, true);
+                }
+                else {
+                    // pass
+                    this.game.position.turn = Color.BLACK;
+                }
+            }
+            // set turn
+            var turn = this.getProperty(PropIdent.SET_TURN);
+            if (turn) {
+                this.game.turn = turn;
+            }
+        };
+        /**
+         * This will revert game changes of current node and re-execute it. Use this, after KifuNode properties are updated.
+         */
+        KifuReader.prototype.resetNode = function () {
+            if (this.currentNode.parent) {
+                // update normal node
+                this.game.popPosition();
+                this.game.pushPosition(this.game.position.clone());
+                this.executeNode();
+            }
+            else {
+                // update root node
+                this.executeRootNode();
+                this.executeNode();
+            }
+        };
+        /**
+         * Gets property of current node.
+         *
+         * @param propIdent
+         */
+        KifuReader.prototype.getProperty = function (propIdent) {
+            return this.currentNode.getProperty(propIdent);
+        };
+        /**
+         * Gets property of root node.
+         *
+         * @param propIdent
+         */
+        KifuReader.prototype.getRootProperty = function (propIdent) {
+            return this.rootNode.getProperty(propIdent);
+        };
+        /**
+         * Returns array of next nodes (children).
+         */
+        KifuReader.prototype.getNextNodes = function () {
+            return this.currentNode.children;
+        };
+        /**
+         * Go to a next node and executes it (updates game object).
+         * @param node
+         */
+        KifuReader.prototype.next = function (node) {
+            if (node === void 0) { node = 0; }
+            if (this.currentNode.children.length) {
+                var i = void 0;
+                if (typeof node === 'number') {
+                    i = node;
+                }
+                else {
+                    i = this.currentNode.children.indexOf(node);
+                }
+                if (this.currentNode.children[i]) {
+                    this.game.pushPosition(this.game.position.clone());
+                    this.currentNode = this.currentNode.children[i];
+                    this.executeNode();
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+         * Go to the previous node.
+         */
+        KifuReader.prototype.previous = function () {
+            if (this.currentNode.parent) {
+                this.game.popPosition();
+                this.currentNode = this.currentNode.parent;
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Go to the first position - root node.
+         */
+        KifuReader.prototype.first = function () {
+            this.game.clear();
+            this.currentNode = this.rootNode;
+        };
+        /**
+         * Go to the last position.
+         */
+        KifuReader.prototype.last = function () {
+            while (this.next()) { }
+        };
+        /**
+         * Go to specified path.
+         */
+        KifuReader.prototype.goTo = function (pathOrMoveNumber) {
+            var path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
+            this.first();
+            for (var i = 0, j = 0; i < path.depth; i++) {
+                if (this.currentNode.children.length > 1) {
+                    this.next(path.forks[j++]);
+                }
+                else {
+                    this.next();
+                }
+            }
+        };
+        /**
+           * Go to previous fork (a node with more than one child).
+           */
+        KifuReader.prototype.previousFork = function () {
+            while (this.previous()) {
+                if (this.currentNode.children.length > 1) {
+                    return;
+                }
+            }
+        };
+        return KifuReader;
+    }(EventEmitter));
+    //# sourceMappingURL=KifuReader.js.map
+
+    var colorsMap = {
+        B: Color.BLACK,
+        W: Color.WHITE,
+    };
+    var Player = /** @class */ (function (_super) {
+        __extends(Player, _super);
+        // handleBoardClick(event: UIEvent, point: Point): void;
+        function Player(element, config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this) || this;
+            // merge user config with default
+            _this.element = element;
+            _this.config = makeConfig(playerDefaultConfig, config);
+            _this.init();
+            return _this;
+        }
+        Player.prototype.init = function () {
+            this.board = new CanvasBoard(this.element, {
+                theme: this.config.boardTheme,
+            });
+            this.stoneBoardsObjects = [];
+            if (this.config.sgf) {
+                this.kifuReader = new KifuReader(KifuNode.fromSGF(this.config.sgf));
+            }
+            else {
+                this.kifuReader = new KifuReader();
+            }
+            this.updateBoard();
+            // this.handleBoardClick = (_e, point) => {
+            //
+            // };
+            // this.board.on('click', )
+        };
+        Player.prototype.updateBoard = function () {
+            var _this = this;
+            // Remove missing stones in current position
+            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
+                if (_this.kifuReader.game.getStone(boardObject.field.x, boardObject.field.y) !== colorsMap[boardObject.type]) {
+                    _this.board.removeObject(boardObject);
+                    return false;
+                }
+                return true;
+            });
+            // Add new stones from current position
+            var position = this.kifuReader.game.position;
+            var _loop_1 = function (x) {
+                var _loop_2 = function (y) {
+                    var c = position.get(x, y);
+                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.field.x === x && boardObject.field.y === y && c === colorsMap[boardObject.type]; })) {
+                        var boardObject = { type: c === Color.B ? 'B' : 'W', field: { x: x, y: y } };
+                        this_1.board.addObject(boardObject);
+                        this_1.stoneBoardsObjects.push(boardObject);
+                    }
+                };
+                for (var y = 0; y < position.size; y++) {
+                    _loop_2(y);
+                }
+            };
+            var this_1 = this;
+            for (var x = 0; x < position.size; x++) {
+                _loop_1(x);
+            }
+        };
+        Player.prototype.next = function () {
+            this.kifuReader.next();
+            this.updateBoard();
+        };
+        Player.prototype.previous = function () {
+            this.kifuReader.previous();
+            this.updateBoard();
+        };
+        return Player;
+    }(EventEmitter));
+    //# sourceMappingURL=Player.js.map
+
+    //# sourceMappingURL=index.js.map
+
     // All public API is exported here
     //# sourceMappingURL=index.js.map
 
@@ -2365,12 +3262,13 @@
     exports.ING_RULES = ING_RULES;
     exports.JAPANESE_RULES = JAPANESE_RULES;
     exports.NO_RULES = NO_RULES;
+    exports.Player = Player;
     exports.Position = Position;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
-    exports.defaultConfig = canvasBoardDefaultConfig;
+    exports.defaultBoardConfig = canvasBoardDefaultConfig;
     exports.drawHandlers = index;
-    exports.goRules = rules;
+    exports.goRules = goRules;
     exports.themes = index$1;
 
     Object.defineProperty(exports, '__esModule', { value: true });

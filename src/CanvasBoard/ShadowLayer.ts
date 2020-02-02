@@ -8,15 +8,15 @@ import CanvasBoard from './CanvasBoard';
  */
 
 export default class ShadowLayer extends CanvasLayer {
-  setDimensions(width: number, height: number, board: CanvasBoard) {
-    super.setDimensions(width, height, board);
+  resize(width: number, height: number) {
+    super.resize(width, height);
     this.context.transform(
       1,
       0,
       0,
       1,
-      board.config.theme.shadowOffsetX * board.fieldSize,
-      board.config.theme.shadowOffsetY * board.fieldSize,
+      this.board.config.theme.shadowOffsetX * this.board.fieldSize,
+      this.board.config.theme.shadowOffsetY * this.board.fieldSize,
     );
   }
 }

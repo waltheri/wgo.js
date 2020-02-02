@@ -26,10 +26,15 @@ export interface CanvasBoardTheme {
     shadowBlur: number;
     shadowOffsetX: number;
     shadowOffsetY: number;
-    coordinatesHandler: DrawHandler;
-    coordinatesColor: string;
-    coordinatesX: string | (string | number)[];
-    coordinatesY: string | (string | number)[];
+    coordinates: {
+        handler: DrawHandler;
+        params: {
+            color: string;
+            bold: boolean;
+            x: string | (string | number)[];
+            y: string | (string | number)[];
+        };
+    };
     font: string;
     linesShift: number;
     backgroundColor: string;

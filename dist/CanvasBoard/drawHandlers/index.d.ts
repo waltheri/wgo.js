@@ -13,4 +13,7 @@ import label from './label';
 import dot from './dot';
 import xMark from './xMark';
 import smileyFace from './smileyFace';
-export { shellStoneBlack, shellStoneWhite, glassStoneBlack, glassStoneWhite, paintedStoneBlack, paintedStoneWhite, simpleStone, realisticStone, circle, square, triangle, label, dot, xMark, smileyFace, };
+import transparent from './transparent';
+import reduced from './reduced';
+import gridFieldClear from './gridFieldClear';
+export { shellStoneBlack, shellStoneWhite, glassStoneBlack, glassStoneWhite, paintedStoneBlack, paintedStoneWhite, simpleStone, realisticStone, circle, square, triangle, label, dot, xMark, smileyFace, transparent, reduced, gridFieldClear, };

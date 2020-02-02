@@ -14,7 +14,7 @@ export default {
       canvasCtx.fillStyle = params.color;
       canvasCtx.textBaseline = 'middle';
       canvasCtx.textAlign = 'center';
-      canvasCtx.font = `${board.fieldSize / 2}px ${board.config.theme.font || ''}`;
+      canvasCtx.font = `${params.bold ? 'bold ' : ''}${board.fieldSize / 2}px ${board.config.theme.font || ''}`;
 
       const xright = board.getX(-0.75);
       const xleft = board.getX(board.config.size - 0.25);

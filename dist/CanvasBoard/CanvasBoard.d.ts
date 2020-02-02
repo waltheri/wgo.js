@@ -2,9 +2,11 @@ import CanvasLayer from './CanvasLayer';
 import { CanvasBoardConfig, BoardViewport, BoardObject, DrawHandler, FieldDrawHandler } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
+import { Point } from '../types';
 export default class CanvasBoard extends EventEmitter {
     config: CanvasBoardConfig;
     element: HTMLElement;
+    boardElement: HTMLElement;
     pixelRatio: number;
     objects: BoardObject[];
     layers: {
@@ -15,7 +17,8 @@ export default class CanvasBoard extends EventEmitter {
     };
     width: number;
     height: number;
-    margin: number;
+    leftOffset: number;
+    topOffset: number;
     fieldSize: number;
     resizeCallback: (this: Window, ev: UIEvent) => any;
     /**
@@ -67,9 +70,6 @@ export default class CanvasBoard extends EventEmitter {
      * Updates dimensions and redraws everything
      */
     resize(): void;
-    getCountX(): number;
-    getCountY(): number;
-    getMargin(): number;
     /**
        * Get absolute X coordinate
        *
@@ -113,19 +113,6 @@ export default class CanvasBoard extends EventEmitter {
     setSize(size?: number): void;
     getCoordinates(): boolean;
     setCoordinates(coordinates: boolean): void;
-    /**
-       * Add layer to the board. It is meant to be only for canvas layers.
-       *
-       * @param {CanvasBoard.CanvasLayer} layer to add
-       * @param {number} weight layer with biggest weight is on the top
-       */
-    addLayer(layer: CanvasLayer, weight: number): void;
-    /**
-       * Remove layer from the board.
-       *
-       * @param {CanvasBoard.CanvasLayer} layer to remove
-       */
-    removeLayer(layer: CanvasLayer): void;
     getObjectHandler(boardObject: BoardObject): DrawHandler;
     /**
      * Redraw everything.
@@ -161,4 +148,10 @@ export default class CanvasBoard extends EventEmitter {
     removeObjectsAt(x: number, y: number): void;
     removeAllObjects(): void;
     getObjectsToDraw(): BoardObject[];
+    on(type: string, callback: (event: UIEvent, point: Point) => void): void;
+    registerBoardListener(type: string): void;
+    getRelativeCoordinates(absoluteX: number, absoluteY: number): {
+        x: number;
+        y: number;
+    };
 }

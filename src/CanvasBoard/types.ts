@@ -40,6 +40,7 @@ export interface CanvasBoardTheme {
     handler: DrawHandler;
     params: {
       color: string;
+      bold: boolean;
       x: string | (string | number)[];
       y: string | (string | number)[];
     }

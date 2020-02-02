@@ -22,7 +22,7 @@ const baseTheme: CanvasBoardTheme = {
   shadowOffsetY: 0.16,
 
   // other
-  font: 'monospace',
+  font: 'calibri',
   linesShift: -0.5,
   backgroundColor: '#CEB053',
   backgroundImage: '',
@@ -43,6 +43,7 @@ const baseTheme: CanvasBoardTheme = {
     handler: coordinatesHandler,
     params: {
       color: '#531',
+      bold: false,
       x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
       y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
     },

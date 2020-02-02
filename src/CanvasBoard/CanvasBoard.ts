@@ -20,19 +20,7 @@ import {
 } from './types';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
-import coordinates from './drawHandlers/coordinates';
-import grid from './drawHandlers/grid';
 import { Point } from '../types';
-
-// Private methods of WGo.CanvasBoard
-
-/*const calcLeftMargin = (b: CanvasBoard) => (
-  //(3 * b.width) / (4 * (b.bottomRightFieldX + 1 - b.topLeftFieldX) + 2) - b.fieldWidth * b.topLeftFieldX
-);
-
-const calcTopMargin = (b: CanvasBoard) => (
-  //(3 * b.height) / (4 * (b.bottomRightFieldY + 1 - b.topLeftFieldY) + 2) - b.fieldHeight * b.topLeftFieldY
-);*/
 
 function affectsLayer(layer: string) {
   return (handler: DrawHandler): handler is FreeDrawHandler => !!('drawFree' in handler && handler.drawFree[layer]);
@@ -64,19 +52,10 @@ function isSameField(field1: Point, field2: Point) {
   };
 };*/
 
-const objectMissing = function (objectsArray: any[]) {
-  return function (object: any) {
-    return !objectsArray.some((obj: any) => {
-      if (object === obj) { return true; }
-
-      return Object.keys(object).every(key => object[key] === obj[key]);
-    });
-  };
-};
-
 export default class CanvasBoard extends EventEmitter {
   config: CanvasBoardConfig;
   element: HTMLElement;
+  boardElement: HTMLElement;
   pixelRatio: number;
   objects: BoardObject[] = [];
   layers: {
@@ -89,7 +68,8 @@ export default class CanvasBoard extends EventEmitter {
   // following props are computed in resize() method for performance
   width: number;
   height: number;
-  margin: number;
+  leftOffset: number;
+  topOffset: number;
   fieldSize: number;
   resizeCallback: (this: Window, ev: UIEvent) => any;
 
@@ -157,42 +137,42 @@ export default class CanvasBoard extends EventEmitter {
     this.element = document.createElement('div');
     this.element.className = 'wgo-board';
     this.element.style.position = 'relative';
+    elem.appendChild(this.element);
 
-    this.element.style.backgroundColor = this.config.theme.backgroundColor;
-
-    if (this.config.theme.backgroundImage) {
-      this.element.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
-    }
+    this.boardElement = document.createElement('div');
+    this.boardElement.style.position = 'absolute';
+    this.boardElement.style.left = '0';
+    this.boardElement.style.top = '0';
+    this.boardElement.style.right = '0';
+    this.boardElement.style.bottom = '0';
+    this.boardElement.style.margin = 'auto';
+    this.element.appendChild(this.boardElement);
 
     this.layers = {
-      grid: new CanvasLayer(),
-      shadow: new ShadowLayer(),
-      stone: new CanvasLayer(),
+      grid: new CanvasLayer(this),
+      shadow: new ShadowLayer(this),
+      stone: new CanvasLayer(this),
     };
-
-    this.addLayer(this.layers.grid, 100);
-    this.addLayer(this.layers.shadow, 200);
-    this.addLayer(this.layers.stone, 300);
-
-    // append to element
-    elem.appendChild(this.element);
   }
 
   /**
    * Updates dimensions and redraws everything
    */
   resize() {
-    const countX = this.getCountX();
-    const countY = this.getCountY();
-    const margins = 2 * this.getMargin();
+    const countX = this.config.size - this.config.viewport.left - this.config.viewport.right;
+    const countY = this.config.size - this.config.viewport.top - this.config.viewport.bottom;
+    const topOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.top ? 0.5 : 0);
+    const rightOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.right ? 0.5 : 0);
+    const bottomOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.bottom ? 0.5 : 0);
+    const leftOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.left ? 0.5 : 0);
 
     if (this.config.width && this.config.height) {
       // exact dimensions
       this.width = this.config.width * this.pixelRatio;
       this.height = this.config.height * this.pixelRatio;
       this.fieldSize = Math.min(
-        this.height / (countY + margins),
-        this.width / (countX + margins),
+        this.width / (countX + leftOffset + rightOffset),
+        this.height / (countY + topOffset + bottomOffset),
       );
 
       if (this.resizeCallback) {
@@ -200,16 +180,16 @@ export default class CanvasBoard extends EventEmitter {
       }
     } else if (this.config.width) {
       this.width = this.config.width * this.pixelRatio;
-      this.fieldSize = this.width / (countX + margins);
-      this.height = this.fieldSize * (countY + margins);
+      this.fieldSize = this.width / (countX + leftOffset + rightOffset);
+      this.height = this.fieldSize * (countY + topOffset + bottomOffset);
 
       if (this.resizeCallback) {
         window.removeEventListener('resize', this.resizeCallback);
       }
     } else if (this.config.height) {
       this.height = this.config.height * this.pixelRatio;
-      this.fieldSize = this.height / (countY + margins);
-      this.width = this.fieldSize * (countX + margins);
+      this.fieldSize = this.height / (countY + topOffset + bottomOffset);
+      this.width = this.fieldSize * (countX + leftOffset + rightOffset);
 
       if (this.resizeCallback) {
         window.removeEventListener('resize', this.resizeCallback);
@@ -217,8 +197,8 @@ export default class CanvasBoard extends EventEmitter {
     } else {
       this.element.style.width = 'auto';
       this.width = this.element.offsetWidth * this.pixelRatio;
-      this.fieldSize = this.width / (countX + margins);
-      this.height = this.fieldSize * (countY + margins);
+      this.fieldSize = this.width / (countX + leftOffset + rightOffset);
+      this.height = this.fieldSize * (countY + topOffset + bottomOffset);
 
       if (!this.resizeCallback) {
         this.resizeCallback = () => {
@@ -228,32 +208,23 @@ export default class CanvasBoard extends EventEmitter {
       }
     }
 
-    this.margin = this.fieldSize * (this.getMargin() + 0.5);
+    this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
+    this.topOffset = this.fieldSize * (topOffset + 0.5 - this.config.viewport.top);
 
     this.element.style.width = `${(this.width / this.pixelRatio)}px`;
     this.element.style.height = `${(this.height / this.pixelRatio)}px`;
 
+    const boardWidth = (countX + leftOffset + rightOffset) * this.fieldSize;
+    const boardHeight = (countY + topOffset + bottomOffset) * this.fieldSize;
+
+    this.boardElement.style.width = `${(boardWidth / this.pixelRatio)}px`;
+    this.boardElement.style.height = `${(boardHeight / this.pixelRatio)}px`;
+
     Object.keys(this.layers).forEach((layer) => {
-      this.layers[layer].setDimensions(
-        (countX + margins) * this.fieldSize,
-        (countY + margins) * this.fieldSize,
-        this,
-      );
+      this.layers[layer].resize(boardWidth, boardHeight);
     });
 
     this.redraw();
-  }
-
-  getCountX() {
-    return this.config.size - this.config.viewport.left - this.config.viewport.right;
-  }
-
-  getCountY() {
-    return this.config.size - this.config.viewport.top - this.config.viewport.bottom;
-  }
-
-  getMargin() {
-    return this.config.marginSize + (this.config.coordinates ? 0.5 : 0);
   }
 
   /**
@@ -263,7 +234,7 @@ export default class CanvasBoard extends EventEmitter {
 	 */
 
   getX(x: number) {
-    return this.margin + x * this.fieldSize;
+    return this.leftOffset + x * this.fieldSize;
   }
 
   /**
@@ -273,7 +244,7 @@ export default class CanvasBoard extends EventEmitter {
 	 */
 
   getY(y: number) {
-    return this.margin + y * this.fieldSize;
+    return this.topOffset + y * this.fieldSize;
   }
 
   /**
@@ -349,27 +320,6 @@ export default class CanvasBoard extends EventEmitter {
     }
   }
 
-  /**
-	 * Add layer to the board. It is meant to be only for canvas layers.
-	 *
-	 * @param {CanvasBoard.CanvasLayer} layer to add
-	 * @param {number} weight layer with biggest weight is on the top
-	 */
-
-  addLayer(layer: CanvasLayer, weight: number) {
-    layer.appendTo(this.element, weight);
-  }
-
-  /**
-	 * Remove layer from the board.
-	 *
-	 * @param {CanvasBoard.CanvasLayer} layer to remove
-	 */
-
-  removeLayer(layer: CanvasLayer) {
-    layer.removeFrom(this.element);
-  }
-
   getObjectHandler(boardObject: BoardObject) {
     return boardObject.type ? this.config.theme.drawHandlers[boardObject.type] : boardObject.handler;
   }
@@ -378,6 +328,13 @@ export default class CanvasBoard extends EventEmitter {
    * Redraw everything.
    */
   redraw() {
+    // set correct background
+    this.boardElement.style.backgroundColor = this.config.theme.backgroundColor;
+
+    if (this.config.theme.backgroundImage) {
+      this.boardElement.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
+    }
+
     // redraw all layers
     Object.keys(this.layers).forEach((layer) => {
       this.redrawLayer(layer);
@@ -389,15 +346,15 @@ export default class CanvasBoard extends EventEmitter {
 	 * For complete redrawing use method redraw().
 	 */
   redrawLayer(layer: string) {
-    this.layers[layer].clear(this);
+    this.layers[layer].clear();
 
     this.getObjectsToDraw().forEach((boardObject) => {
       const handler = this.getObjectHandler(boardObject);
       if ('drawField' in handler && handler.drawField[layer]) {
-        this.layers[layer].drawField(handler.drawField[layer], boardObject as BoardFieldObject, this);
+        this.layers[layer].drawField(handler.drawField[layer], boardObject as BoardFieldObject);
       }
       if ('drawFree' in handler && handler.drawFree[layer]) {
-        this.layers[layer].draw(handler.drawFree[layer], boardObject as BoardFreeObject, this);
+        this.layers[layer].draw(handler.drawFree[layer], boardObject as BoardFreeObject);
       }
     });
   }
@@ -430,7 +387,7 @@ export default class CanvasBoard extends EventEmitter {
       this.objects.push(boardObject);
       Object.keys(this.layers).forEach((layer) => {
         if (handler.drawField[layer]) {
-          this.layers[layer].drawField(handler.drawField[layer], boardObject, this);
+          this.layers[layer].drawField(handler.drawField[layer], boardObject);
         }
       });
     }
@@ -439,7 +396,7 @@ export default class CanvasBoard extends EventEmitter {
       this.objects.push(boardObject);
       Object.keys(this.layers).forEach((layer) => {
         if (handler.drawFree[layer]) {
-          this.layers[layer].draw(handler.drawFree[layer], boardObject as BoardFreeObject, this);
+          this.layers[layer].draw(handler.drawFree[layer], boardObject as BoardFreeObject);
         }
       });
     }
@@ -492,23 +449,24 @@ export default class CanvasBoard extends EventEmitter {
 
     Object.keys(this.layers).forEach((layer) => {
       // if there is a free object affecting the layer, we must redraw layer completely
-      const affectsCurrentLayer = affectsLayer(layer);
+      this.redrawLayer(layer);
+      /*const affectsCurrentLayer = affectsLayer(layer);
       if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
         this.redrawLayer(layer);
         return;
       }
 
-      this.layers[layer].clearField((boardObject as BoardFieldObject).field, this);
+      this.layers[layer].clearField((boardObject as BoardFieldObject).field);
 
       for (let i = 0; i < objects.length; i++) {
         const obj = objects[i];
         if ('field' in obj && isSameField(obj.field, (boardObject as BoardFieldObject).field)) {
           const handler = handlers[i];
           if ('drawField' in handler && handler.drawField[layer]) {
-            this.layers[layer].drawField(handler.drawField[layer], obj, this);
+            this.layers[layer].drawField(handler.drawField[layer], obj);
           }
         }
-      }
+      }*/
     });
   }
 
@@ -558,20 +516,36 @@ export default class CanvasBoard extends EventEmitter {
     return fixedObjects.concat(this.objects);
   }
 
-  /*on(type, callback) {
-    const evListener = {
-      type,
-      callback,
-      handleEvent: event => {
-        const coo = getMousePos(this, event);
-        callback(coo.x, coo.y, event);
-      },
-    };
-
-    this.element.addEventListener(type, evListener, true);
-    this.listeners.push(evListener);
+  on(type: string, callback: (event: UIEvent, point: Point) => void) {
+    super.on(type, callback);
+    this.registerBoardListener(type);
   }
 
+  registerBoardListener(type: string) {
+    this.boardElement.addEventListener(type, (evt) => {
+      if ((evt as any).layerX != null) {
+        const pos = this.getRelativeCoordinates((evt as any).layerX, (evt as any).layerY);
+        this.emit(type, evt, pos);
+      } else {
+        this.emit(type, evt);
+      }
+    });
+  }
+
+  getRelativeCoordinates(absoluteX: number, absoluteY: number) {
+    // new hopefully better translation of coordinates
+
+    const x = Math.round((absoluteX * this.pixelRatio - this.leftOffset) / this.fieldSize);
+    const y = Math.round((absoluteY * this.pixelRatio - this.topOffset) / this.fieldSize);
+
+    if (x < 0 || x >= this.config.size || y < 0 || y >= this.config.size) {
+      return null;
+    }
+
+    return { x, y };
+  }
+
+  /*
   off(type, callback) {
     for (let i = 0; i < this.listeners.length; i++) {
       const listener = this.listeners[i];

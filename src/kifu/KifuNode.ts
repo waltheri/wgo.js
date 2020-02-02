@@ -352,7 +352,6 @@ export default class KifuNode {
    * @param gameTree
    */
   static fromJS(gameTree: SGFGameTree) {
-    debugger;
     return processJSGF(gameTree);
   }
 
