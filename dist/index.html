@@ -12,16 +12,26 @@
 <script>
 
 var board = new WGo.CanvasBoard(document.getElementById('board'), {
-  width: 700,
-  height: 500,
+  width: 800,
+  //height: 700,
   coordinates: true,
   theme: {
-    stoneSize: 0.5,
+    //stoneSize: 0.48,
     coordinates: {
       params: { color: '#663300' },
-    }
-  }
+    },
+  },
 });
+
+board.addObjectAt(5, 10, new WGo.boardObjects.ThemedObject('CR'));
+board.addObjectAt(10, 5, new WGo.boardObjects.ThemedObject('B'));
+board.addObjectAt(10, 5, new WGo.boardObjects.ThemedObject('CR', { color: 'white' }));
+board.addObjectAt(10, 10, new WGo.boardObjects.ThemedObject('B'));
+board.addObjectAt(11, 11, new WGo.boardObjects.ThemedObject('B'));
+board.addObjectAt(10, 11, new WGo.boardObjects.ThemedObject('W'));
+board.addObjectAt(11, 10, new WGo.boardObjects.ThemedObject('W'));
+// board.addObjectAt(6, 10, new WGo.boardObjects.Circle());
+// board.addObjectAt(7, 10, new WGo.boardObjects.Circle());
 
 /*board.addObject({ x: 3, y: 3, c: 1 });
 board.addObject({ x: 15, y: 3, c: -1 });
@@ -75,7 +85,7 @@ board.addObject({ x: 9, y: 11, type: 'MA' });
 board.addObject({ x: 10, y: 11, type: 'SL' });
 board.addObject({ x: 11, y: 11, type: 'SM' });*/
 
-const custom = {
+/*const custom = {
   drawField: {
     stone(canvasCtx, args, board) {
       //canvasCtx.beginPath();
@@ -201,7 +211,7 @@ board.addObject({ x: 14, y: 14, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'MA' });*/
 
-let lastX;
+/*let lastX;
 let lastY;
 let obj;
 
@@ -232,7 +242,7 @@ board.on('mouseout', (evt, pos) => {
 board.on('click', (evt, pos) => {
   board.addObject({ type: 'B', field: pos });
 });
-
+*/
 </script>
 </body>
 </html>

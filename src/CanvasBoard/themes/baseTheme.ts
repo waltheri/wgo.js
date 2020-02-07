@@ -3,6 +3,8 @@ import coordinatesHandler from '../drawHandlers/coordinates';
 import { CanvasBoardTheme } from '../types';
 import gridFieldClear from '../drawHandlers/gridFieldClear';
 import gridHandler from '../drawHandlers/grid';
+import { Circle, simpleStoneFactory } from '../boardObjects';
+//import { boardObjects } from '../boardObjects';
 
 const baseTheme: CanvasBoardTheme = {
   // basic
@@ -18,8 +20,8 @@ const baseTheme: CanvasBoardTheme = {
   shadowColor: 'rgba(62,32,32,0.5)',
   shadowTransparentColor: 'rgba(62,32,32,0)',
   shadowBlur: 0.25,
-  shadowOffsetX: 0.08,
-  shadowOffsetY: 0.16,
+  shadowOffsetX: 0.07,
+  shadowOffsetY: 0.13,
 
   // other
   font: 'calibri',
@@ -29,37 +31,32 @@ const baseTheme: CanvasBoardTheme = {
 
   // grid
   grid: {
-    handler: gridHandler,
-    params: {
-      linesWidth: 0.03,
-      linesColor: '#654525',
-      starColor: '#531',
-      starSize: 0.07,
-    },
+    linesWidth: 0.03,
+    linesColor: '#654525',
+    starColor: '#531',
+    starSize: 0.07,
   },
 
   // coordinates
   coordinates: {
-    handler: coordinatesHandler,
-    params: {
-      color: '#531',
-      bold: false,
-      x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-      y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
-    },
+    color: '#531',
+    bold: false,
+    x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+    y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
   },
 
   drawHandlers: {
-    B: drawHandlers.simpleStone('#222'),
-    W: drawHandlers.simpleStone('#eee'),
-    CR: drawHandlers.circle,
-    LB: drawHandlers.label,
-    SQ: drawHandlers.square,
-    TR: drawHandlers.triangle,
-    MA: drawHandlers.xMark,
-    SL: drawHandlers.dot,
-    SM: drawHandlers.smileyFace,
-    gridFieldClear,
+    CR: Circle as any,
+    B: simpleStoneFactory('#222'),
+    W: simpleStoneFactory('#eee'),
+    //CR: drawHandlers.circle,
+    //LB: drawHandlers.label,
+    //SQ: drawHandlers.square,
+    //TR: drawHandlers.triangle,
+    //MA: drawHandlers.xMark,
+    //SL: drawHandlers.dot,
+    //SM: drawHandlers.smileyFace,
+    //gridFieldClear,
   },
 };
 

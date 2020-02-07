@@ -35,6 +35,7 @@ const canvasBoardDefaultConfig: CanvasBoardConfig = {
   coordinates: false,
   theme: baseTheme,
   marginSize: 0.25,
+  snapToGrid: false,
 };
 
 export default canvasBoardDefaultConfig;

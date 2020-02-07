@@ -1,8 +1,9 @@
 import CanvasLayer from './CanvasLayer';
-import { CanvasBoardConfig, BoardViewport, BoardObject, DrawHandler, FieldDrawHandler } from './types';
+import { CanvasBoardConfig, BoardViewport } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
+import BoardObject from './boardObjects/BoardObject';
 export default class CanvasBoard extends EventEmitter {
     config: CanvasBoardConfig;
     element: HTMLElement;
@@ -21,6 +22,7 @@ export default class CanvasBoard extends EventEmitter {
     topOffset: number;
     fieldSize: number;
     resizeCallback: (this: Window, ev: UIEvent) => any;
+    redrawScheduled: boolean;
     /**
        * CanvasBoard class constructor - it creates a canvas board.
        *
@@ -113,7 +115,6 @@ export default class CanvasBoard extends EventEmitter {
     setSize(size?: number): void;
     getCoordinates(): boolean;
     setCoordinates(coordinates: boolean): void;
-    getObjectHandler(boardObject: BoardObject): DrawHandler;
     /**
      * Redraw everything.
      */
@@ -130,24 +131,17 @@ export default class CanvasBoard extends EventEmitter {
      */
     addObject(boardObject: BoardObject | BoardObject[]): void;
     /**
-     * Shortcut method to add field object.
+     * Shortcut method to add object and set its position.
      */
-    addFieldObject(x: number, y: number, handler: string | FieldDrawHandler, params?: {
-        [key: string]: any;
-    }): void;
+    addObjectAt(x: number, y: number, boardObject: BoardObject): void;
     /**
      * Remove board object. Main function for removing graphics on the board.
      *
      * @param boardObject
      */
     removeObject(boardObject: BoardObject | BoardObject[]): void;
-    /**
-     * Shortcut method to remove field object.
-     */
-    removeFieldObject(x: number, y: number, handler: string | FieldDrawHandler): void;
     removeObjectsAt(x: number, y: number): void;
     removeAllObjects(): void;
-    getObjectsToDraw(): BoardObject[];
     on(type: string, callback: (event: UIEvent, point: Point) => void): void;
     registerBoardListener(type: string): void;
     getRelativeCoordinates(absoluteX: number, absoluteY: number): {

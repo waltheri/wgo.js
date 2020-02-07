@@ -55,7 +55,7 @@ export default function (graphic: any[], fallback: FieldDrawHandler) {
           fallback.drawField.stone(canvasCtx, args, board);
         }
       },
+      shadow,
     },
-    shadow,
   };
 }

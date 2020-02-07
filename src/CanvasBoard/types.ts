@@ -1,5 +1,6 @@
 import { Point, Color } from '../types';
 import CanvasBoard from './CanvasBoard';
+import { BoardObject } from './boardObjects';
 
 export interface BoardViewport {
   top: number;
@@ -13,13 +14,10 @@ export interface CanvasBoardTheme {
 
   // grid & star points
   grid: {
-    handler: DrawHandler;
-    params: {
-      linesWidth: number;
-      linesColor: string;
-      starColor: string;
-      starSize: number;
-    }
+    linesWidth: number;
+    linesColor: string;
+    starColor: string;
+    starSize: number;
   };
 
   // markup
@@ -37,13 +35,10 @@ export interface CanvasBoardTheme {
 
   // coordinates
   coordinates: {
-    handler: DrawHandler;
-    params: {
-      color: string;
-      bold: boolean;
-      x: string | (string | number)[];
-      y: string | (string | number)[];
-    }
+    color: string;
+    bold: boolean;
+    x: string | (string | number)[];
+    y: string | (string | number)[];
   };
 
   // other
@@ -55,7 +50,7 @@ export interface CanvasBoardTheme {
   backgroundImage: string;
 
   drawHandlers: {
-    [key: string]: DrawHandler;
+    [key: string]: any;//typeof BoardObject;
   };
 }
 
@@ -72,6 +67,9 @@ export interface CanvasBoardConfig {
 
   /** Size of board margin relative to field size */
   marginSize: number;
+
+  /** This will cause sharper edges, but the board won't have exact specified dimensions (temporary solution I hope) */
+  snapToGrid: boolean;
 }
 
 export interface DrawFunction<P> {
@@ -108,4 +106,4 @@ export type BoardFieldObject = ({ type?: string, handler?: DrawHandler }) & Boar
 
 export type BoardFreeObject = ({ type?: string, handler?: DrawHandler }) & BoardObjectBase;
 
-export type BoardObject = BoardFieldObject | BoardFreeObject;
+// export type BoardObject = BoardFieldObject | BoardFreeObject;

@@ -270,8 +270,9 @@
      * Implements one layer of the HTML5 canvas
      */
     var CanvasLayer = /** @class */ (function () {
-        function CanvasLayer(board) {
+        function CanvasLayer(board, drawFunctionName) {
             this.board = board;
+            this.drawFunctionName = drawFunctionName;
             this.init();
         }
         CanvasLayer.prototype.init = function () {
@@ -291,47 +292,31 @@
             this.element.height = height;
             this.context.transform(1, 0, 0, 1, linesShift, linesShift);
         };
-        CanvasLayer.prototype.draw = function (drawingFn, args) {
-            try {
-                this.context.save();
-                drawingFn(this.context, args, this.board);
-                this.context.restore();
-            }
-            catch (err) {
-                // If the board is too small some canvas painting function can throw an exception, but we don't
-                // want to break our app
-                // tslint:disable-next-line:no-console
-                console.error("Object couldn't be rendered. Error: " + err.message, args);
-            }
-        };
-        CanvasLayer.prototype.drawField = function (drawingFn, args) {
-            try {
-                var leftOffset = this.board.getX(args.field.x);
-                var topOffset = this.board.getY(args.field.y);
-                // create a "sandbox" for drawing function
-                this.context.save();
-                this.context.transform(this.board.fieldSize, 0, 0, this.board.fieldSize, leftOffset, topOffset);
-                //this.context.beginPath();
-                //this.context.rect(-0.5, -0.5, 1, 1);
-                //this.context.clip();
-                drawingFn(this.context, args, this.board);
-                // restore context
-                this.context.restore();
-            }
-            catch (err) {
-                // If the board is too small some canvas painting function can throw an exception, but we don't
-                // want to break our app
-                // tslint:disable-next-line:no-console
-                console.error("Object couldn't be rendered. Error: " + err.message, args);
+        CanvasLayer.prototype.draw = function (boardObject) {
+            if (boardObject[this.drawFunctionName]) {
+                try {
+                    var leftOffset = this.board.getX(boardObject.x);
+                    var topOffset = this.board.getY(boardObject.y);
+                    var fieldSize = this.board.fieldSize;
+                    // create a "sandbox" for drawing function
+                    this.context.save();
+                    this.context.transform(fieldSize * boardObject.scaleX, 0, 0, fieldSize * boardObject.scaleY, leftOffset, topOffset);
+                    this.context.rotate(boardObject.rotate);
+                    this.context.globalAlpha = boardObject.opacity;
+                    boardObject[this.drawFunctionName](this.context, this.board.config);
+                    // restore context
+                    this.context.restore();
+                }
+                catch (err) {
+                    // If the board is too small some canvas painting function can throw an exception, but we don't
+                    // want to break our app
+                    // tslint:disable-next-line:no-console
+                    console.error("Object couldn't be rendered. Error: " + err.message, boardObject);
+                }
             }
         };
         CanvasLayer.prototype.clear = function () {
             this.context.clearRect(0, 0, this.element.width, this.element.height);
-        };
-        CanvasLayer.prototype.clearField = function (field) {
-            var leftOffset = this.board.getX(field.x);
-            var topOffset = this.board.getY(field.y);
-            this.context.clearRect(leftOffset - this.board.fieldSize / 2, topOffset - this.board.fieldSize / 2, this.board.fieldSize, this.board.fieldSize);
         };
         return CanvasLayer;
     }());
@@ -668,8 +653,8 @@
                         fallback.drawField.stone(canvasCtx, args, board);
                     }
                 },
+                shadow: shadow,
             },
-            shadow: shadow,
         };
     }
     //# sourceMappingURL=realisticStone.js.map
@@ -874,75 +859,111 @@
         gridFieldClear: gridFieldClear
     });
 
-    /**
-     * Draws coordinates on the board
-     */
-    var coordinatesHandler = {
-        drawFree: {
-            grid: function (canvasCtx, args, board) {
-                var t;
-                var params = args.params;
-                canvasCtx.fillStyle = params.color;
-                canvasCtx.textBaseline = 'middle';
-                canvasCtx.textAlign = 'center';
-                canvasCtx.font = "" + (params.bold ? 'bold ' : '') + board.fieldSize / 2 + "px " + (board.config.theme.font || '');
-                var xright = board.getX(-0.75);
-                var xleft = board.getX(board.config.size - 0.25);
-                var ytop = board.getY(-0.75);
-                var ybottom = board.getY(board.config.size - 0.25);
-                var coordinatesX = params.x;
-                var coordinatesY = params.y;
-                for (var i = 0; i < board.config.size; i++) {
-                    t = board.getY(i);
-                    canvasCtx.fillText(coordinatesX[i], xright, t);
-                    canvasCtx.fillText(coordinatesX[i], xleft, t);
-                    t = board.getX(i);
-                    canvasCtx.fillText(coordinatesY[i], t, ytop);
-                    canvasCtx.fillText(coordinatesY[i], t, ybottom);
-                }
-                canvasCtx.fillStyle = 'black';
-            },
-        },
-    };
-    //# sourceMappingURL=coordinates.js.map
+    var BoardObject = /** @class */ (function () {
+        function BoardObject(params) {
+            if (params === void 0) { params = {}; }
+            this.x = 0;
+            this.y = 0;
+            this.scaleX = 1;
+            this.scaleY = 1;
+            this.rotate = 0;
+            this.params = params;
+        }
+        BoardObject.prototype.setPosition = function (x, y) {
+            this.x = x;
+            this.y = y;
+        };
+        BoardObject.prototype.setScale = function (factor) {
+            this.scaleX = factor;
+            this.scaleY = factor;
+        };
+        BoardObject.prototype.setOpacity = function (value) {
+            this.opacity = value;
+        };
+        return BoardObject;
+    }());
+    //# sourceMappingURL=BoardObject.js.map
 
-    var gridHandler = {
-        drawFree: {
-            grid: function (canvasCtx, args, board) {
-                // draw grid
-                var tmp;
-                var params = args.params;
+    var Circle = /** @class */ (function (_super) {
+        __extends(Circle, _super);
+        function Circle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Circle.prototype.drawStone = function (canvasCtx, boardConfig) {
+            canvasCtx.strokeStyle = this.params.color || boardConfig.theme.markupNoneColor;
+            canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLinesWidth;
+            canvasCtx.beginPath();
+            canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
+            canvasCtx.stroke();
+            if (this.params.fillColor) {
+                canvasCtx.fillStyle = this.params.fillColor;
+                canvasCtx.fill();
+            }
+        };
+        Circle.prototype.drawGrid = function (canvasCtx, boardConfig) {
+            canvasCtx.clearRect(-boardConfig.theme.stoneSize, -boardConfig.theme.stoneSize, boardConfig.theme.stoneSize * 2, boardConfig.theme.stoneSize * 2);
+        };
+        return Circle;
+    }(BoardObject));
+    //# sourceMappingURL=Circle.js.map
+
+    var ThemedObject = /** @class */ (function (_super) {
+        __extends(ThemedObject, _super);
+        function ThemedObject(type, params) {
+            var _this = _super.call(this, params) || this;
+            _this.type = type;
+            return _this;
+        }
+        ThemedObject.prototype.drawStone = function (context, config) {
+            if (config.theme.drawHandlers[this.type].prototype.drawStone) {
+                config.theme.drawHandlers[this.type].prototype.drawStone.call(this, context, config);
+            }
+        };
+        ThemedObject.prototype.drawGrid = function (context, config) {
+            if (config.theme.drawHandlers[this.type].prototype.drawGrid) {
+                config.theme.drawHandlers[this.type].prototype.drawGrid.call(this, context, config);
+            }
+        };
+        ThemedObject.prototype.drawShadow = function (context, config) {
+            if (config.theme.drawHandlers[this.type].prototype.drawShadow) {
+                config.theme.drawHandlers[this.type].prototype.drawShadow.call(this, context, config);
+            }
+        };
+        return ThemedObject;
+    }(BoardObject));
+
+    function simpleStoneFactory(color) {
+        return (/** @class */ (function (_super) {
+            __extends(SimpleStone, _super);
+            function SimpleStone() {
+                return _super !== null && _super.apply(this, arguments) || this;
+            }
+            SimpleStone.prototype.drawStone = function (canvasCtx, boardConfig) {
+                var stoneSize = boardConfig.theme.stoneSize;
+                var lw = boardConfig.theme.markupLinesWidth;
+                canvasCtx.fillStyle = color;
                 canvasCtx.beginPath();
-                canvasCtx.lineWidth = params.linesWidth * board.fieldSize;
-                canvasCtx.strokeStyle = params.linesColor;
-                var tx = Math.round(board.getX(0));
-                var ty = Math.round(board.getY(0));
-                var bw = Math.round((board.config.size - 1) * board.fieldSize);
-                var bh = Math.round((board.config.size - 1) * board.fieldSize);
-                canvasCtx.strokeRect(tx, ty, bw, bh);
-                for (var i = 1; i < board.config.size - 1; i++) {
-                    tmp = Math.round(board.getX(i));
-                    canvasCtx.moveTo(tmp, ty);
-                    canvasCtx.lineTo(tmp, ty + bh);
-                    tmp = Math.round(board.getY(i));
-                    canvasCtx.moveTo(tx, tmp);
-                    canvasCtx.lineTo(tx + bw, tmp);
-                }
+                canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
+                canvasCtx.fill();
+                canvasCtx.lineWidth = lw;
+                canvasCtx.strokeStyle = 'black';
                 canvasCtx.stroke();
-                // draw stars
-                canvasCtx.fillStyle = params.starColor;
-                if (board.config.starPoints[board.config.size]) {
-                    for (var key in board.config.starPoints[board.config.size]) {
-                        canvasCtx.beginPath();
-                        canvasCtx.arc(board.getX(board.config.starPoints[board.config.size][key].x), board.getY(board.config.starPoints[board.config.size][key].y), params.starSize * board.fieldSize, 0, 2 * Math.PI, true);
-                        canvasCtx.fill();
-                    }
-                }
-            },
-        },
-    };
-    //# sourceMappingURL=grid.js.map
+            };
+            return SimpleStone;
+        }(BoardObject)));
+    }
+    //# sourceMappingURL=simpleStoneFactory.js.map
 
+    //# sourceMappingURL=index.js.map
+
+    var index$1 = /*#__PURE__*/Object.freeze({
+        BoardObject: BoardObject,
+        Circle: Circle,
+        ThemedObject: ThemedObject,
+        simpleStoneFactory: simpleStoneFactory
+    });
+
+    //import { boardObjects } from '../boardObjects';
     var baseTheme = {
         // basic
         stoneSize: 0.47,
@@ -955,8 +976,8 @@
         shadowColor: 'rgba(62,32,32,0.5)',
         shadowTransparentColor: 'rgba(62,32,32,0)',
         shadowBlur: 0.25,
-        shadowOffsetX: 0.08,
-        shadowOffsetY: 0.16,
+        shadowOffsetX: 0.07,
+        shadowOffsetY: 0.13,
         // other
         font: 'calibri',
         linesShift: -0.5,
@@ -964,56 +985,43 @@
         backgroundImage: '',
         // grid
         grid: {
-            handler: gridHandler,
-            params: {
-                linesWidth: 0.03,
-                linesColor: '#654525',
-                starColor: '#531',
-                starSize: 0.07,
-            },
+            linesWidth: 0.03,
+            linesColor: '#654525',
+            starColor: '#531',
+            starSize: 0.07,
         },
         // coordinates
         coordinates: {
-            handler: coordinatesHandler,
-            params: {
-                color: '#531',
-                bold: false,
-                x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-                y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
-            },
+            color: '#531',
+            bold: false,
+            x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+            y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         },
         drawHandlers: {
-            B: simpleStone('#222'),
-            W: simpleStone('#eee'),
-            CR: circle,
-            LB: label,
-            SQ: square,
-            TR: triangle,
-            MA: xMark,
-            SL: dot,
-            SM: smileyFace,
-            gridFieldClear: gridFieldClear,
+            CR: Circle,
+            B: simpleStoneFactory('#222'),
+            W: simpleStoneFactory('#eee'),
         },
     };
     //# sourceMappingURL=baseTheme.js.map
 
-    var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: realisticStone([
-                'stones/black00_128.png',
-                'stones/black01_128.png',
-                'stones/black02_128.png',
-                'stones/black03_128.png',
+    var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: realisticStone([
+                'images/stones/black00_128.png',
+                'images/stones/black01_128.png',
+                'images/stones/black02_128.png',
+                'images/stones/black03_128.png',
             ], shellStoneBlack), W: realisticStone([
-                'stones/white00_128.png',
-                'stones/white01_128.png',
-                'stones/white02_128.png',
-                'stones/white03_128.png',
-                'stones/white04_128.png',
-                'stones/white05_128.png',
-                'stones/white06_128.png',
-                'stones/white07_128.png',
-                'stones/white08_128.png',
-                'stones/white09_128.png',
-                'stones/white10_128.png',
+                'images/stones/white00_128.png',
+                'images/stones/white01_128.png',
+                'images/stones/white02_128.png',
+                'images/stones/white03_128.png',
+                'images/stones/white04_128.png',
+                'images/stones/white05_128.png',
+                'images/stones/white06_128.png',
+                'images/stones/white07_128.png',
+                'images/stones/white08_128.png',
+                'images/stones/white09_128.png',
+                'images/stones/white10_128.png',
             ], shellStoneWhite) }) });
     //# sourceMappingURL=realisticTheme.js.map
 
@@ -1023,7 +1031,7 @@
     // add here all themes, which should be publicly exposed
     //# sourceMappingURL=index.js.map
 
-    var index$1 = /*#__PURE__*/Object.freeze({
+    var index$2 = /*#__PURE__*/Object.freeze({
         baseTheme: baseTheme,
         realisticTheme: realisticTheme,
         modernTheme: modernTheme
@@ -1063,6 +1071,7 @@
         coordinates: false,
         theme: baseTheme,
         marginSize: 0.25,
+        snapToGrid: false,
     };
     //# sourceMappingURL=defaultConfig.js.map
 
@@ -1074,7 +1083,8 @@
      */
     function makeConfig(defaults, config) {
         var mergedConfig = {};
-        Object.keys(defaults).forEach(function (key) {
+        var defaultKeys = Object.keys(defaults);
+        defaultKeys.forEach(function (key) {
             if (typeof config[key] === 'object' && !Array.isArray(config[key])) {
                 mergedConfig[key] = makeConfig(defaults[key], config[key]);
             }
@@ -1083,6 +1093,11 @@
             }
             else {
                 mergedConfig[key] = defaults[key];
+            }
+        });
+        Object.keys(config).forEach(function (key) {
+            if (defaultKeys.indexOf(key) === -1) {
+                mergedConfig[key] = config[key];
             }
         });
         return mergedConfig;
@@ -1123,13 +1138,82 @@
     }());
     //# sourceMappingURL=EventEmitter.js.map
 
+    var GridLayer = /** @class */ (function (_super) {
+        __extends(GridLayer, _super);
+        function GridLayer() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GridLayer.prototype.init = function () {
+            _super.prototype.init.call(this);
+            this.drawGrid();
+        };
+        GridLayer.prototype.clear = function () {
+            _super.prototype.clear.call(this);
+            this.drawGrid();
+        };
+        GridLayer.prototype.drawGrid = function () {
+            // draw grid
+            var tmp;
+            var params = this.board.config.theme.grid;
+            this.context.beginPath();
+            this.context.lineWidth = params.linesWidth * this.board.fieldSize;
+            this.context.strokeStyle = params.linesColor;
+            var tx = Math.round(this.board.getX(0));
+            var ty = Math.round(this.board.getY(0));
+            var bw = Math.round((this.board.config.size - 1) * this.board.fieldSize);
+            var bh = Math.round((this.board.config.size - 1) * this.board.fieldSize);
+            this.context.strokeRect(tx, ty, bw, bh);
+            for (var i = 1; i < this.board.config.size - 1; i++) {
+                tmp = Math.round(this.board.getX(i));
+                this.context.moveTo(tmp, ty);
+                this.context.lineTo(tmp, ty + bh);
+                tmp = Math.round(this.board.getY(i));
+                this.context.moveTo(tx, tmp);
+                this.context.lineTo(tx + bw, tmp);
+            }
+            this.context.stroke();
+            // draw stars
+            this.context.fillStyle = params.starColor;
+            if (this.board.config.starPoints[this.board.config.size]) {
+                for (var key in this.board.config.starPoints[this.board.config.size]) {
+                    this.context.beginPath();
+                    this.context.arc(this.board.getX(this.board.config.starPoints[this.board.config.size][key].x), this.board.getY(this.board.config.starPoints[this.board.config.size][key].y), params.starSize * this.board.fieldSize, 0, 2 * Math.PI, true);
+                    this.context.fill();
+                }
+            }
+            if (this.board.config.coordinates) {
+                this.drawCoordinates();
+            }
+        };
+        GridLayer.prototype.drawCoordinates = function () {
+            var t;
+            var params = this.board.config.theme.coordinates;
+            this.context.fillStyle = params.color;
+            this.context.textBaseline = 'middle';
+            this.context.textAlign = 'center';
+            // tslint:disable-next-line:max-line-length
+            this.context.font = "" + (params.bold ? 'bold ' : '') + this.board.fieldSize / 2 + "px " + (this.board.config.theme.font || '');
+            var xRight = this.board.getX(-0.75);
+            var xLeft = this.board.getX(this.board.config.size - 0.25);
+            var yTop = this.board.getY(-0.75);
+            var yBottom = this.board.getY(this.board.config.size - 0.25);
+            var coordinatesX = params.x;
+            var coordinatesY = params.y;
+            for (var i = 0; i < this.board.config.size; i++) {
+                t = this.board.getY(i);
+                this.context.fillText(coordinatesX[i], xRight, t);
+                this.context.fillText(coordinatesX[i], xLeft, t);
+                t = this.board.getX(i);
+                this.context.fillText(coordinatesY[i], t, yTop);
+                this.context.fillText(coordinatesY[i], t, yBottom);
+            }
+            this.context.fillStyle = 'black';
+        };
+        return GridLayer;
+    }(CanvasLayer));
+    //# sourceMappingURL=GridLayer.js.map
+
     /* global document, window */
-    function affectsLayer(layer) {
-        return function (handler) { return !!('drawFree' in handler && handler.drawFree[layer]); };
-    }
-    function isSameField(field1, field2) {
-        return field1.x === field2.x && field1.y === field2.y;
-    }
     /*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
       // new hopefully better translation of coordinates
 
@@ -1223,9 +1307,9 @@
             this.boardElement.style.margin = 'auto';
             this.element.appendChild(this.boardElement);
             this.layers = {
-                grid: new CanvasLayer(this),
-                shadow: new ShadowLayer(this),
-                stone: new CanvasLayer(this),
+                grid: new GridLayer(this, 'drawGrid'),
+                shadow: new ShadowLayer(this, 'drawShadow'),
+                stone: new CanvasLayer(this, 'drawStone'),
             };
         };
         /**
@@ -1275,6 +1359,9 @@
                     };
                     window.addEventListener('resize', this.resizeCallback);
                 }
+            }
+            if (this.config.snapToGrid) {
+                this.fieldSize = Math.floor(this.fieldSize);
             }
             this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
             this.topOffset = this.fieldSize * (topOffset + 0.5 - this.config.viewport.top);
@@ -1368,23 +1455,26 @@
                 this.resize();
             }
         };
-        CanvasBoard.prototype.getObjectHandler = function (boardObject) {
-            return boardObject.type ? this.config.theme.drawHandlers[boardObject.type] : boardObject.handler;
-        };
         /**
          * Redraw everything.
          */
         CanvasBoard.prototype.redraw = function () {
             var _this = this;
-            // set correct background
-            this.boardElement.style.backgroundColor = this.config.theme.backgroundColor;
-            if (this.config.theme.backgroundImage) {
-                this.boardElement.style.backgroundImage = "url(\"" + this.config.theme.backgroundImage + "\")";
+            if (!this.redrawScheduled) {
+                this.redrawScheduled = true;
+                window.requestAnimationFrame(function () {
+                    _this.redrawScheduled = false;
+                    // set correct background
+                    _this.boardElement.style.backgroundColor = _this.config.theme.backgroundColor;
+                    if (_this.config.theme.backgroundImage) {
+                        _this.boardElement.style.backgroundImage = "url(\"" + _this.config.theme.backgroundImage + "\")";
+                    }
+                    // redraw all layers
+                    Object.keys(_this.layers).forEach(function (layer) {
+                        _this.redrawLayer(layer);
+                    });
+                });
             }
-            // redraw all layers
-            Object.keys(this.layers).forEach(function (layer) {
-                _this.redrawLayer(layer);
-            });
         };
         /**
            * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
@@ -1393,14 +1483,8 @@
         CanvasBoard.prototype.redrawLayer = function (layer) {
             var _this = this;
             this.layers[layer].clear();
-            this.getObjectsToDraw().forEach(function (boardObject) {
-                var handler = _this.getObjectHandler(boardObject);
-                if ('drawField' in handler && handler.drawField[layer]) {
-                    _this.layers[layer].drawField(handler.drawField[layer], boardObject);
-                }
-                if ('drawFree' in handler && handler.drawFree[layer]) {
-                    _this.layers[layer].draw(handler.drawFree[layer], boardObject);
-                }
+            this.objects.forEach(function (boardObject) {
+                _this.layers[layer].draw(boardObject);
             });
         };
         /**
@@ -1409,7 +1493,6 @@
          * @param boardObject
          */
         CanvasBoard.prototype.addObject = function (boardObject) {
-            var _this = this;
             // handling multiple objects
             if (Array.isArray(boardObject)) {
                 for (var i = 0; i < boardObject.length; i++) {
@@ -1417,45 +1500,15 @@
                 }
                 return;
             }
-            var handler = this.getObjectHandler(boardObject);
-            if (!handler) {
-                throw new TypeError('Board object has invalid or missing `handler` draw function and cannot be added.');
-            }
-            if ('drawField' in handler) {
-                if (!('field' in boardObject)) {
-                    throw new TypeError('Board object has field draw `handler` but `field` property is missing.');
-                }
-                this.objects.push(boardObject);
-                Object.keys(this.layers).forEach(function (layer) {
-                    if (handler.drawField[layer]) {
-                        _this.layers[layer].drawField(handler.drawField[layer], boardObject);
-                    }
-                });
-            }
-            if ('drawFree' in handler) {
-                this.objects.push(boardObject);
-                Object.keys(this.layers).forEach(function (layer) {
-                    if (handler.drawFree[layer]) {
-                        _this.layers[layer].draw(handler.drawFree[layer], boardObject);
-                    }
-                });
-            }
+            this.objects.push(boardObject);
+            this.redraw();
         };
         /**
-         * Shortcut method to add field object.
+         * Shortcut method to add object and set its position.
          */
-        CanvasBoard.prototype.addFieldObject = function (x, y, handler, params) {
-            var object = {
-                field: { x: x, y: y },
-                params: params,
-            };
-            if (typeof handler === 'string') {
-                object.type = handler;
-            }
-            else {
-                object.handler = handler;
-            }
-            this.addObject(object);
+        CanvasBoard.prototype.addObjectAt = function (x, y, boardObject) {
+            boardObject.setPosition(x, y);
+            this.addObject(boardObject);
         };
         /**
          * Remove board object. Main function for removing graphics on the board.
@@ -1463,7 +1516,6 @@
          * @param boardObject
          */
         CanvasBoard.prototype.removeObject = function (boardObject) {
-            var _this = this;
             // handling multiple objects
             if (Array.isArray(boardObject)) {
                 for (var i = 0; i < boardObject.length; i++) {
@@ -1477,64 +1529,19 @@
                 return;
             }
             this.objects.splice(objectPos, 1);
-            var objects = this.getObjectsToDraw();
-            var objectHandler = this.getObjectHandler(boardObject);
-            var handlers = objects.map(function (obj) { return _this.getObjectHandler(obj); });
-            Object.keys(this.layers).forEach(function (layer) {
-                // if there is a free object affecting the layer, we must redraw layer completely
-                //this.redrawLayer(layer);
-                var affectsCurrentLayer = affectsLayer(layer);
-                if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
-                    _this.redrawLayer(layer);
-                    return;
-                }
-                _this.layers[layer].clearField(boardObject.field);
-                for (var i = 0; i < objects.length; i++) {
-                    var obj = objects[i];
-                    if ('field' in obj && isSameField(obj.field, boardObject.field)) {
-                        var handler = handlers[i];
-                        if ('drawField' in handler && handler.drawField[layer]) {
-                            _this.layers[layer].drawField(handler.drawField[layer], obj);
-                        }
-                    }
-                }
-            });
-        };
-        /**
-         * Shortcut method to remove field object.
-         */
-        CanvasBoard.prototype.removeFieldObject = function (x, y, handler) {
-            var toRemove = [];
-            var field = { x: x, y: y };
-            this.objects.forEach(function (obj) {
-                if ('field' in obj && isSameField(obj.field, field) && (obj.handler === handler || obj.type === handler)) {
-                    toRemove.push(obj);
-                }
-            });
-            this.removeObject(toRemove);
+            this.redraw();
         };
         CanvasBoard.prototype.removeObjectsAt = function (x, y) {
-            var toRemove = [];
-            var field = { x: x, y: y };
+            var _this = this;
             this.objects.forEach(function (obj) {
-                if ('field' in obj && isSameField(obj.field, field)) {
-                    toRemove.push(obj);
+                if (obj.x === x && obj.y === y) {
+                    _this.removeObject(obj);
                 }
             });
-            this.removeObject(toRemove);
         };
         CanvasBoard.prototype.removeAllObjects = function () {
             this.objects = [];
             this.redraw();
-        };
-        CanvasBoard.prototype.getObjectsToDraw = function () {
-            // add grid
-            var fixedObjects = [this.config.theme.grid];
-            // add coordinates
-            if (this.config.coordinates) {
-                fixedObjects.push(this.config.theme.coordinates);
-            }
-            return fixedObjects.concat(this.objects);
         };
         CanvasBoard.prototype.on = function (type, callback) {
             _super.prototype.on.call(this, type, callback);
@@ -1563,6 +1570,7 @@
         };
         return CanvasBoard;
     }(EventEmitter));
+    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -3178,12 +3186,12 @@
     //# sourceMappingURL=KifuReader.js.map
 
     var propertyHandlers = {
-        B: function (player, propIdent, propValue) {
-            player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'white' } });
-        },
-        W: function (player, propIdent, propValue) {
-            player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'black' } });
-        },
+    //B(player, propIdent, propValue) {
+    //  player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'rgba(255,255,255,0.8)' } });
+    //},
+    //W(player, propIdent, propValue) {
+    //  player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'rgba(0,0,0,0.8)' } });
+    //},
     };
     //# sourceMappingURL=propertyHandlers.js.map
 
@@ -3222,34 +3230,31 @@
             // this.board.on('click', )
         };
         Player.prototype.updateBoard = function () {
-            var _this = this;
             // Remove missing stones in current position
-            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
-                if (_this.kifuReader.game.getStone(boardObject.field.x, boardObject.field.y) !== colorsMap[boardObject.type]) {
-                    _this.board.removeObject(boardObject);
-                    return false;
-                }
-                return true;
-            });
-            // Add new stones from current position
-            var position = this.kifuReader.game.position;
-            var _loop_1 = function (x) {
-                var _loop_2 = function (y) {
-                    var c = position.get(x, y);
-                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.field.x === x && boardObject.field.y === y && c === colorsMap[boardObject.type]; })) {
-                        var boardObject = { type: c === Color.B ? 'B' : 'W', field: { x: x, y: y } };
-                        this_1.board.addObject(boardObject);
-                        this_1.stoneBoardsObjects.push(boardObject);
-                    }
-                };
-                for (var y = 0; y < position.size; y++) {
-                    _loop_2(y);
-                }
-            };
-            var this_1 = this;
-            for (var x = 0; x < position.size; x++) {
-                _loop_1(x);
-            }
+            //this.stoneBoardsObjects = this.stoneBoardsObjects.filter((boardObject) => {
+            //  if (this.kifuReader.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
+            //    this.board.removeObject(boardObject);
+            //    return false;
+            //  }
+            //  return true;
+            //});
+            //
+            //// Add new stones from current position
+            //const position = this.kifuReader.game.position;
+            //
+            //for (let x = 0; x < position.size; x++) {
+            //  for (let y = 0; y < position.size; y++) {
+            //    const c = position.get(x, y);
+            //    if (c && !this.stoneBoardsObjects.some(
+            //      boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type],
+            //    )) {
+            //      const boardObject = { type: c === Color.B ? 'B' : 'W', field: { x, y } };
+            //      this.board.addObject(boardObject);
+            //      this.stoneBoardsObjects.push(boardObject);
+            //    }
+            //  }
+            //}
+            var _this = this;
             // Remove all markup
             this.markupBoardObjects.forEach(function (boardObject) { return _this.board.removeObject(boardObject); });
             this.markupBoardObjects = [];
@@ -3258,7 +3263,6 @@
                     propertyHandlers[propIdent](_this, propIdent, _this.kifuReader.currentNode.properties[propIdent]);
                 }
             });
-            this.markupBoardObjects.forEach(function (boardObject) { return _this.board.addObject(boardObject); });
         };
         Player.prototype.next = function () {
             this.kifuReader.next();
@@ -3274,6 +3278,7 @@
          */
         Player.prototype.addTemporaryBoardObject = function (boardObject) {
             this.markupBoardObjects.push(boardObject);
+            this.board.addObject(boardObject);
         };
         return Player;
     }(EventEmitter));
@@ -3294,10 +3299,11 @@
     exports.Position = Position;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
+    exports.boardObjects = index$1;
     exports.defaultBoardConfig = canvasBoardDefaultConfig;
     exports.drawHandlers = index;
     exports.goRules = goRules;
-    exports.themes = index$1;
+    exports.themes = index$2;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

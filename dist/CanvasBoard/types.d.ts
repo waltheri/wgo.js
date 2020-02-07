@@ -40,7 +40,7 @@ export interface CanvasBoardTheme {
     backgroundColor: string;
     backgroundImage: string;
     drawHandlers: {
-        [key: string]: DrawHandler;
+        [key: string]: any;
     };
 }
 export interface CanvasBoardConfig {
@@ -55,6 +55,8 @@ export interface CanvasBoardConfig {
     theme: CanvasBoardTheme;
     /** Size of board margin relative to field size */
     marginSize: number;
+    /** This will cause sharper edges, but the board won't have exact specified dimensions (temporary solution I hope) */
+    snapToGrid: boolean;
 }
 export interface DrawFunction<P> {
     (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
@@ -88,4 +90,3 @@ export declare type BoardFreeObject = ({
     type?: string;
     handler?: DrawHandler;
 }) & BoardObjectBase;
-export declare type BoardObject = BoardFieldObject | BoardFreeObject;

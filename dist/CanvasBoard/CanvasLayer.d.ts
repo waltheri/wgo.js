@@ -1,6 +1,5 @@
 import CanvasBoard from './CanvasBoard';
-import { DrawFunction, BoardFieldObject, BoardFreeObject } from './types';
-import { Point } from '../types';
+import BoardObject from './boardObjects/BoardObject';
 /**
  * @class
  * Implements one layer of the HTML5 canvas
@@ -10,11 +9,10 @@ export default class CanvasLayer {
     context: CanvasRenderingContext2D;
     pixelRatio: number;
     board: CanvasBoard;
-    constructor(board: CanvasBoard);
+    drawFunctionName: string;
+    constructor(board: CanvasBoard, drawFunctionName: string);
     init(): void;
     resize(width: number, height: number): void;
-    draw<P extends BoardFreeObject>(drawingFn: DrawFunction<P>, args: P): void;
-    drawField<P extends BoardFieldObject>(drawingFn: DrawFunction<P>, args: P): void;
+    draw(boardObject: BoardObject): void;
     clear(): void;
-    clearField(field: Point): void;
 }

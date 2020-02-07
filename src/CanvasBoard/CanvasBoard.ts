@@ -11,7 +11,6 @@ import defaultConfig from './defaultConfig';
 import {
   CanvasBoardConfig,
   BoardViewport,
-  BoardObject,
   BoardFieldObject,
   BoardFreeObject,
   DrawHandler,
@@ -21,6 +20,10 @@ import {
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
+import BoardObject from './boardObjects/BoardObject';
+import Grid from './boardObjects/Grid';
+import Coordinates from './boardObjects/Coordinates';
+import GridLayer from './GridLayer';
 
 function affectsLayer(layer: string) {
   return (handler: DrawHandler): handler is FreeDrawHandler => !!('drawFree' in handler && handler.drawFree[layer]);
@@ -72,6 +75,7 @@ export default class CanvasBoard extends EventEmitter {
   topOffset: number;
   fieldSize: number;
   resizeCallback: (this: Window, ev: UIEvent) => any;
+  redrawScheduled: boolean;
 
   /**
 	 * CanvasBoard class constructor - it creates a canvas board.
@@ -149,9 +153,9 @@ export default class CanvasBoard extends EventEmitter {
     this.element.appendChild(this.boardElement);
 
     this.layers = {
-      grid: new CanvasLayer(this),
-      shadow: new ShadowLayer(this),
-      stone: new CanvasLayer(this),
+      grid: new GridLayer(this, 'drawGrid'),
+      shadow: new ShadowLayer(this, 'drawShadow'),
+      stone: new CanvasLayer(this, 'drawStone'),
     };
   }
 
@@ -206,6 +210,10 @@ export default class CanvasBoard extends EventEmitter {
         };
         window.addEventListener('resize', this.resizeCallback);
       }
+    }
+
+    if (this.config.snapToGrid) {
+      this.fieldSize = Math.floor(this.fieldSize);
     }
 
     this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
@@ -320,25 +328,29 @@ export default class CanvasBoard extends EventEmitter {
     }
   }
 
-  getObjectHandler(boardObject: BoardObject) {
-    return boardObject.type ? this.config.theme.drawHandlers[boardObject.type] : boardObject.handler;
-  }
-
   /**
    * Redraw everything.
    */
   redraw() {
-    // set correct background
-    this.boardElement.style.backgroundColor = this.config.theme.backgroundColor;
+    if (!this.redrawScheduled) {
+      this.redrawScheduled = true;
 
-    if (this.config.theme.backgroundImage) {
-      this.boardElement.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
+      window.requestAnimationFrame(() => {
+        this.redrawScheduled = false;
+
+        // set correct background
+        this.boardElement.style.backgroundColor = this.config.theme.backgroundColor;
+
+        if (this.config.theme.backgroundImage) {
+          this.boardElement.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
+        }
+
+        // redraw all layers
+        Object.keys(this.layers).forEach((layer) => {
+          this.redrawLayer(layer);
+        });
+      });
     }
-
-    // redraw all layers
-    Object.keys(this.layers).forEach((layer) => {
-      this.redrawLayer(layer);
-    });
   }
 
   /**
@@ -348,14 +360,8 @@ export default class CanvasBoard extends EventEmitter {
   redrawLayer(layer: string) {
     this.layers[layer].clear();
 
-    this.getObjectsToDraw().forEach((boardObject) => {
-      const handler = this.getObjectHandler(boardObject);
-      if ('drawField' in handler && handler.drawField[layer]) {
-        this.layers[layer].drawField(handler.drawField[layer], boardObject as BoardFieldObject);
-      }
-      if ('drawFree' in handler && handler.drawFree[layer]) {
-        this.layers[layer].draw(handler.drawFree[layer], boardObject as BoardFreeObject);
-      }
+    this.objects.forEach((boardObject) => {
+      this.layers[layer].draw(boardObject);
     });
   }
 
@@ -373,51 +379,16 @@ export default class CanvasBoard extends EventEmitter {
       return;
     }
 
-    const handler = this.getObjectHandler(boardObject);
-
-    if (!handler) {
-      throw new TypeError('Board object has invalid or missing `handler` draw function and cannot be added.');
-    }
-
-    if ('drawField' in handler) {
-      if (!('field' in boardObject)) {
-        throw new TypeError('Board object has field draw `handler` but `field` property is missing.');
-      }
-
-      this.objects.push(boardObject);
-      Object.keys(this.layers).forEach((layer) => {
-        if (handler.drawField[layer]) {
-          this.layers[layer].drawField(handler.drawField[layer], boardObject);
-        }
-      });
-    }
-
-    if ('drawFree' in handler) {
-      this.objects.push(boardObject);
-      Object.keys(this.layers).forEach((layer) => {
-        if (handler.drawFree[layer]) {
-          this.layers[layer].draw(handler.drawFree[layer], boardObject as BoardFreeObject);
-        }
-      });
-    }
+    this.objects.push(boardObject);
+    this.redraw();
   }
 
   /**
-   * Shortcut method to add field object.
+   * Shortcut method to add object and set its position.
    */
-  addFieldObject(x: number, y: number, handler: string | FieldDrawHandler, params?: { [key: string]: any }) {
-    const object: BoardFieldObject = {
-      field: { x, y },
-      params,
-    };
-
-    if (typeof handler === 'string') {
-      object.type = handler;
-    } else {
-      object.handler = handler;
-    }
-
-    this.addObject(object);
+  addObjectAt(x: number, y: number, boardObject: BoardObject) {
+    boardObject.setPosition(x, y);
+    this.addObject(boardObject);
   }
 
   /**
@@ -442,78 +413,20 @@ export default class CanvasBoard extends EventEmitter {
     }
 
     this.objects.splice(objectPos, 1);
-
-    const objects = this.getObjectsToDraw();
-    const objectHandler = this.getObjectHandler(boardObject);
-    const handlers = objects.map(obj => this.getObjectHandler(obj));
-
-    Object.keys(this.layers).forEach((layer) => {
-      // if there is a free object affecting the layer, we must redraw layer completely
-      //this.redrawLayer(layer);
-      const affectsCurrentLayer = affectsLayer(layer);
-      if (affectsCurrentLayer(objectHandler) || handlers.some(affectsCurrentLayer)) {
-        this.redrawLayer(layer);
-        return;
-      }
-
-      this.layers[layer].clearField((boardObject as BoardFieldObject).field);
-
-      for (let i = 0; i < objects.length; i++) {
-        const obj = objects[i];
-        if ('field' in obj && isSameField(obj.field, (boardObject as BoardFieldObject).field)) {
-          const handler = handlers[i];
-          if ('drawField' in handler && handler.drawField[layer]) {
-            this.layers[layer].drawField(handler.drawField[layer], obj);
-          }
-        }
-      }
-    });
-  }
-
-  /**
-   * Shortcut method to remove field object.
-   */
-  removeFieldObject(x: number, y: number, handler: string | FieldDrawHandler) {
-    const toRemove: BoardObject[] = [];
-    const field = { x, y };
-
-    this.objects.forEach((obj) => {
-      if ('field' in obj && isSameField(obj.field, field) && (obj.handler === handler || obj.type === handler)) {
-        toRemove.push(obj);
-      }
-    });
-
-    this.removeObject(toRemove);
+    this.redraw();
   }
 
   removeObjectsAt(x: number, y: number) {
-    const toRemove: BoardObject[] = [];
-    const field = { x, y };
-
     this.objects.forEach((obj) => {
-      if ('field' in obj && isSameField(obj.field, field)) {
-        toRemove.push(obj);
+      if (obj.x === x && obj.y === y) {
+        this.removeObject(obj);
       }
     });
-
-    this.removeObject(toRemove);
   }
 
   removeAllObjects() {
     this.objects = [];
     this.redraw();
-  }
-
-  getObjectsToDraw() {
-    // add grid
-    const fixedObjects: BoardObject[] = [this.config.theme.grid];
-
-    // add coordinates
-    if (this.config.coordinates) {
-      fixedObjects.push(this.config.theme.coordinates);
-    }
-
-    return fixedObjects.concat(this.objects);
   }
 
   on(type: string, callback: (event: UIEvent, point: Point) => void) {
