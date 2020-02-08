@@ -1,5 +1,4 @@
 import CanvasLayer from './CanvasLayer';
-import CanvasBoard from './CanvasBoard';
 
 /**
  * @class

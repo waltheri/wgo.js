@@ -11,23 +11,13 @@ import defaultConfig from './defaultConfig';
 import {
   CanvasBoardConfig,
   BoardViewport,
-  BoardFieldObject,
-  BoardFreeObject,
-  DrawHandler,
-  FreeDrawHandler,
-  FieldDrawHandler,
 } from './types';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
-import BoardObject from './boardObjects/BoardObject';
-import Grid from './boardObjects/Grid';
-import Coordinates from './boardObjects/Coordinates';
+import { BoardObject } from './boardObjects';
 import GridLayer from './GridLayer';
-
-function affectsLayer(layer: string) {
-  return (handler: DrawHandler): handler is FreeDrawHandler => !!('drawFree' in handler && handler.drawFree[layer]);
-}
+import DrawHandler from './drawHandlers/DrawHandler';
 
 function isSameField(field1: Point, field2: Point) {
   return field1.x === field2.x && field1.y === field2.y;
@@ -153,9 +143,9 @@ export default class CanvasBoard extends EventEmitter {
     this.element.appendChild(this.boardElement);
 
     this.layers = {
-      grid: new GridLayer(this, 'drawGrid'),
-      shadow: new ShadowLayer(this, 'drawShadow'),
-      stone: new CanvasLayer(this, 'drawStone'),
+      grid: new GridLayer(this),
+      shadow: new ShadowLayer(this),
+      stone: new CanvasLayer(this),
     };
   }
 
@@ -360,8 +350,11 @@ export default class CanvasBoard extends EventEmitter {
   redrawLayer(layer: string) {
     this.layers[layer].clear();
 
-    this.objects.forEach((boardObject) => {
-      this.layers[layer].draw(boardObject);
+    this.objects.forEach((object) => {
+      const handler = typeof object.type === 'string' ? this.config.theme.drawHandlers[object.type] : object.type;
+      if ((handler as any)[layer]) {
+        this.layers[layer].draw((handler as any)[layer].bind(handler), object);
+      }
     });
   }
 
@@ -377,6 +370,16 @@ export default class CanvasBoard extends EventEmitter {
         this.addObject(boardObject[i]);
       }
       return;
+    }
+
+    if (typeof boardObject.type === 'string') {
+      if (!this.config.theme.drawHandlers[boardObject.type]) {
+        throw new TypeError(`Board object type "${boardObject.type}" doesn't exist in \`config.theme.drawHandlers\`.`);
+      }
+    } else {
+      if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
+        throw new TypeError('Invalid board object type.');
+      }
     }
 
     this.objects.push(boardObject);

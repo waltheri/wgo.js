@@ -1,0 +1,21 @@
+import { CanvasBoardConfig } from '../types';
+import { BoardMarkupObject } from '../boardObjects';
+import MarkupDrawHandler from './MarkupDrawHandler';
+
+export default abstract class ShapeMarkup extends MarkupDrawHandler {
+  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject) {
+    canvasCtx.strokeStyle = this.getColor(boardConfig, boardObject);
+    canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
+
+    canvasCtx.beginPath();
+    this.drawShape(canvasCtx);
+    canvasCtx.stroke();
+
+    if (this.params.fillColor) {
+      canvasCtx.fillStyle = this.params.fillColor;
+      canvasCtx.fill();
+    }
+  }
+
+  abstract drawShape(canvasCtx: CanvasRenderingContext2D): void;
+}

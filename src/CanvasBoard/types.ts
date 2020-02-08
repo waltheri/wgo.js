@@ -1,6 +1,7 @@
 import { Point, Color } from '../types';
 import CanvasBoard from './CanvasBoard';
-import { BoardObject } from './boardObjects';
+import BoardObject from './BoardObject';
+import DrawHandler from './drawHandlers/DrawHandler';
 
 export interface BoardViewport {
   top: number;
@@ -24,7 +25,7 @@ export interface CanvasBoardTheme {
   markupBlackColor: string;
   markupWhiteColor: string;
   markupNoneColor: string;
-  markupLinesWidth: number;
+  markupLineWidth: number;
 
   // shadow
   shadowColor: string;
@@ -50,7 +51,7 @@ export interface CanvasBoardTheme {
   backgroundImage: string;
 
   drawHandlers: {
-    [key: string]: any;//typeof BoardObject;
+    [key: string]: DrawHandler;
   };
 }
 
@@ -72,8 +73,8 @@ export interface CanvasBoardConfig {
   snapToGrid: boolean;
 }
 
-export interface DrawFunction<P> {
-  (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
+export interface DrawFunction {
+  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void;
 }
 
 export interface DrawHandlerBase {
@@ -81,13 +82,13 @@ export interface DrawHandlerBase {
 
 export interface FieldDrawHandler extends DrawHandlerBase {
   drawField: {
-    [layer: string]: DrawFunction<BoardFieldObject>;
+    [layer: string]: any;
   };
 }
 
 export interface FreeDrawHandler extends DrawHandlerBase {
   drawFree: {
-    [layer: string]: DrawFunction<BoardFreeObject>;
+    [layer: string]: any;
   };
 }
 
@@ -106,4 +107,4 @@ export type BoardFieldObject = ({ type?: string, handler?: DrawHandler }) & Boar
 
 export type BoardFreeObject = ({ type?: string, handler?: DrawHandler }) & BoardObjectBase;
 
-// export type BoardObject = BoardFieldObject | BoardFreeObject;
+// export type BoardObject = BoardFieldObject | BoardFreeObject;*/

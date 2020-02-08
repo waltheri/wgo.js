@@ -1,24 +1,24 @@
 // Black and white stone
-import CanvasBoard from '..';
-import { BoardFieldObject } from '../types';
+import { CanvasBoardConfig } from '../types';
+import DrawHandler from './DrawHandler';
 
-export default function (color: string) {
-  return {
-    drawField: {
-      stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
-        const stoneSize = board.config.theme.stoneSize;
-        const lw = board.config.theme.markupLinesWidth;
+export default class SimpleStone extends DrawHandler<{ color: string }> {
+  constructor (color: string) {
+    super({ color });
+  }
 
-        canvasCtx.fillStyle = color;
+  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig) {
+    const stoneSize = boardConfig.theme.stoneSize;
+    const lw = boardConfig.theme.markupLineWidth;
 
-        canvasCtx.beginPath();
-        canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
-        canvasCtx.fill();
+    canvasCtx.fillStyle = this.params.color;
 
-        canvasCtx.lineWidth = lw;
-        canvasCtx.strokeStyle = 'black';
-        canvasCtx.stroke();
-      },
-    },
-  };
+    canvasCtx.beginPath();
+    canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
+    canvasCtx.fill();
+
+    canvasCtx.lineWidth = lw;
+    canvasCtx.strokeStyle = 'black';
+    canvasCtx.stroke();
+  }
 }

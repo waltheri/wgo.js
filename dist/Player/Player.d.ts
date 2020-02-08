@@ -1,9 +1,8 @@
 import { PartialRecursive } from '../utils/makeConfig';
 import { PlayerConfig } from './types';
-import CanvasBoard from '../CanvasBoard';
+import CanvasBoard, { BoardObject } from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
 import EventEmitter from '../utils/EventEmitter';
-import BoardObject from '../CanvasBoard/boardObjects/BoardObject';
 export default class Player extends EventEmitter {
     element: HTMLElement;
     config: PlayerConfig;

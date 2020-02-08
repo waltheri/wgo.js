@@ -1,8 +1,10 @@
-import CanvasBoard from '..';
-import { BoardFieldObject } from '../types';
-declare const _default: {
-    drawField: {
-        stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard): void;
-    };
-};
-export default _default;
+import { CanvasBoardConfig } from '../types';
+import BoardLabelObject from '../boardObjects/BoardLabelObject';
+import MarkupDrawHandler from './MarkupDrawHandler';
+interface LabelParams {
+    font?: string;
+}
+export default class Label extends MarkupDrawHandler<LabelParams> {
+    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLabelObject): void;
+}
+export {};

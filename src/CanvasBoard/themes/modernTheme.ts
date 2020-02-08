@@ -9,8 +9,8 @@ const modernTheme: CanvasBoardTheme = {
 
   drawHandlers: {
     ...baseTheme.drawHandlers,
-    B: drawHandlers.shellStoneBlack,
-    W: drawHandlers.shellStoneWhite,
+    B: new drawHandlers.ShellStoneBlack(),
+    W: new drawHandlers.ShellStoneWhite(),
   },
 };
 

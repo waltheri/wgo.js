@@ -1,13 +1,12 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { PlayerConfig } from './types';
 import playerDefaultConfig from './defaultConfig';
-import CanvasBoard from '../CanvasBoard';
+import CanvasBoard, { BoardObject } from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
 import KifuNode from '../kifu/KifuNode';
 import { Color } from '../types';
 import EventEmitter from '../utils/EventEmitter';
 import propertyHandlers from './propertyHandlers';
-import BoardObject from '../CanvasBoard/boardObjects/BoardObject';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,

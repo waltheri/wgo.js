@@ -1,10 +1,5 @@
-import shadow from './stoneShadow';
-import CanvasBoard from '..';
-import { BoardFieldObject } from '../types';
-declare const _default: {
-    drawField: {
-        stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard): void;
-        shadow: typeof shadow;
-    };
-};
-export default _default;
+import { CanvasBoardConfig } from '../types';
+import Stone from './Stone';
+export default class ShellStoneBlack extends Stone {
+    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig): void;
+}

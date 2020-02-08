@@ -3,7 +3,7 @@ import { CanvasBoardConfig, BoardViewport } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
-import BoardObject from './boardObjects/BoardObject';
+import { BoardObject } from './boardObjects';
 export default class CanvasBoard extends EventEmitter {
     config: CanvasBoardConfig;
     element: HTMLElement;

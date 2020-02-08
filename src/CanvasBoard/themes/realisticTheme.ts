@@ -9,13 +9,13 @@ const realisticTheme: CanvasBoardTheme = {
   stoneSize: 0.48,
   drawHandlers: {
     ...baseTheme.drawHandlers,
-    B: drawHandlers.realisticStone([
+    B: new drawHandlers.RealisticStone([
       'images/stones/black00_128.png',
       'images/stones/black01_128.png',
       'images/stones/black02_128.png',
       'images/stones/black03_128.png',
-    ], drawHandlers.shellStoneBlack),
-    W: drawHandlers.realisticStone([
+    ], new drawHandlers.ShellStoneBlack()),
+    W: new drawHandlers.RealisticStone([
       'images/stones/white00_128.png',
       'images/stones/white01_128.png',
       'images/stones/white02_128.png',
@@ -27,7 +27,7 @@ const realisticTheme: CanvasBoardTheme = {
       'images/stones/white08_128.png',
       'images/stones/white09_128.png',
       'images/stones/white10_128.png',
-    ], drawHandlers.shellStoneWhite),
+    ], new drawHandlers.ShellStoneWhite()),
   },
   /*grid: {
     ...baseTheme.grid,

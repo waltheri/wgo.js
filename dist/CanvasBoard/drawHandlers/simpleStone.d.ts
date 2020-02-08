@@ -1,7 +1,8 @@
-import CanvasBoard from '..';
-import { BoardFieldObject } from '../types';
-export default function (color: string): {
-    drawField: {
-        stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard): void;
-    };
-};
+import { CanvasBoardConfig } from '../types';
+import DrawHandler from './DrawHandler';
+export default class SimpleStone extends DrawHandler<{
+    color: string;
+}> {
+    constructor(color: string);
+    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig): void;
+}

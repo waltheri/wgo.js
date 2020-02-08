@@ -1,4 +1,4 @@
-import { DrawHandler } from '../drawHandlers';
+import { DrawHandler } from './drawHandlers';
 export default class BoardObject {
     type: string | DrawHandler;
     x: number;

@@ -12,12 +12,15 @@ export default function makeConfig<T>(defaults: T, config: PartialRecursive<T>):
   const mergedConfig: any = {};
   const defaultKeys = Object.keys(defaults);
   defaultKeys.forEach((key) => {
-    if (typeof (config as any)[key] === 'object' && !Array.isArray((config as any)[key])) {
-      mergedConfig[key] = makeConfig((defaults as any)[key], (config as any)[key]);
-    } else if ((config as any)[key] !== undefined) {
-      mergedConfig[key] = (config as any)[key];
+    const val = (config as any)[key];
+    const defVal = (defaults as any)[key];
+
+    if (val != null && val.constructor === Object && !Array.isArray(val) && defVal != null) {
+      mergedConfig[key] = makeConfig(defVal, val);
+    } else if (val !== undefined) {
+      mergedConfig[key] = val;
     } else {
-      mergedConfig[key] = (defaults as any)[key];
+      mergedConfig[key] = defVal;
     }
   });
 

@@ -1,6 +1,7 @@
 /* global document, window */
 import CanvasBoard from './CanvasBoard';
-import BoardObject from './boardObjects/BoardObject';
+import { BoardObject } from './boardObjects';
+import { DrawFunction } from './types';
 
 /**
  * @class
@@ -12,11 +13,9 @@ export default class CanvasLayer {
   context: CanvasRenderingContext2D;
   pixelRatio: number;
   board: CanvasBoard;
-  drawFunctionName: string;
 
-  constructor(board: CanvasBoard, drawFunctionName: string) {
+  constructor(board: CanvasBoard) {
     this.board = board;
-    this.drawFunctionName = drawFunctionName;
     this.init();
   }
 
@@ -43,36 +42,34 @@ export default class CanvasLayer {
     this.context.transform(1, 0, 0, 1, linesShift, linesShift);
   }
 
-  draw(boardObject: BoardObject) {
-    if ((boardObject as any)[this.drawFunctionName]) {
-      try {
-        const leftOffset = this.board.getX(boardObject.x);
-        const topOffset = this.board.getY(boardObject.y);
-        const fieldSize = this.board.fieldSize;
+  draw(drawFunction: DrawFunction, boardObject: BoardObject) {
+    try {
+      const leftOffset = this.board.getX(boardObject.x);
+      const topOffset = this.board.getY(boardObject.y);
+      const fieldSize = this.board.fieldSize;
 
-        // create a "sandbox" for drawing function
-        this.context.save();
+      // create a "sandbox" for drawing function
+      this.context.save();
 
-        this.context.transform(
-          fieldSize * boardObject.scaleX,
-          0, 0,
-          fieldSize * boardObject.scaleY,
-          leftOffset,
-          topOffset,
-        );
-        this.context.rotate(boardObject.rotate);
-        this.context.globalAlpha = boardObject.opacity;
+      this.context.transform(
+        fieldSize * boardObject.scaleX,
+        0, 0,
+        fieldSize * boardObject.scaleY,
+        leftOffset,
+        topOffset,
+      );
+      this.context.rotate(boardObject.rotate);
+      this.context.globalAlpha = boardObject.opacity;
 
-        (boardObject as any)[this.drawFunctionName](this.context, this.board.config);
+      drawFunction(this.context, this.board.config, boardObject);
 
-        // restore context
-        this.context.restore();
-      } catch (err) {
-        // If the board is too small some canvas painting function can throw an exception, but we don't
-        // want to break our app
-        // tslint:disable-next-line:no-console
-        console.error(`Object couldn't be rendered. Error: ${err.message}`, boardObject);
-      }
+      // restore context
+      this.context.restore();
+    } catch (err) {
+      // If the board is too small some canvas painting function can throw an exception, but we don't
+      // want to break our app
+      // tslint:disable-next-line:no-console
+      console.error(`Object couldn't be rendered. Error: ${err.message}`, boardObject);
     }
   }
 

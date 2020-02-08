@@ -270,9 +270,8 @@
      * Implements one layer of the HTML5 canvas
      */
     var CanvasLayer = /** @class */ (function () {
-        function CanvasLayer(board, drawFunctionName) {
+        function CanvasLayer(board) {
             this.board = board;
-            this.drawFunctionName = drawFunctionName;
             this.init();
         }
         CanvasLayer.prototype.init = function () {
@@ -292,27 +291,25 @@
             this.element.height = height;
             this.context.transform(1, 0, 0, 1, linesShift, linesShift);
         };
-        CanvasLayer.prototype.draw = function (boardObject) {
-            if (boardObject[this.drawFunctionName]) {
-                try {
-                    var leftOffset = this.board.getX(boardObject.x);
-                    var topOffset = this.board.getY(boardObject.y);
-                    var fieldSize = this.board.fieldSize;
-                    // create a "sandbox" for drawing function
-                    this.context.save();
-                    this.context.transform(fieldSize * boardObject.scaleX, 0, 0, fieldSize * boardObject.scaleY, leftOffset, topOffset);
-                    this.context.rotate(boardObject.rotate);
-                    this.context.globalAlpha = boardObject.opacity;
-                    boardObject[this.drawFunctionName](this.context, this.board.config);
-                    // restore context
-                    this.context.restore();
-                }
-                catch (err) {
-                    // If the board is too small some canvas painting function can throw an exception, but we don't
-                    // want to break our app
-                    // tslint:disable-next-line:no-console
-                    console.error("Object couldn't be rendered. Error: " + err.message, boardObject);
-                }
+        CanvasLayer.prototype.draw = function (drawFunction, boardObject) {
+            try {
+                var leftOffset = this.board.getX(boardObject.x);
+                var topOffset = this.board.getY(boardObject.y);
+                var fieldSize = this.board.fieldSize;
+                // create a "sandbox" for drawing function
+                this.context.save();
+                this.context.transform(fieldSize * boardObject.scaleX, 0, 0, fieldSize * boardObject.scaleY, leftOffset, topOffset);
+                this.context.rotate(boardObject.rotate);
+                this.context.globalAlpha = boardObject.opacity;
+                drawFunction(this.context, this.board.config, boardObject);
+                // restore context
+                this.context.restore();
+            }
+            catch (err) {
+                // If the board is too small some canvas painting function can throw an exception, but we don't
+                // want to break our app
+                // tslint:disable-next-line:no-console
+                console.error("Object couldn't be rendered. Error: " + err.message, boardObject);
             }
         };
         CanvasLayer.prototype.clear = function () {
@@ -340,627 +337,509 @@
     }(CanvasLayer));
     //# sourceMappingURL=ShadowLayer.js.map
 
-    /**
-     * Generic shadow draw handler for all stones
-     *
-     * "shadowBlur" 0-1
-     * 0 - no blur - createRadialGradient(0, 0, stoneRadius, 0, 0, stoneRadius)
-     * 1 - maximal blur - createRadialGradient(0, 0, 0, 0, 0, 8/7*stoneRadius)
-     */
-    function shadow (canvasCtx, args, board) {
-        var stoneRadius = board.config.theme.stoneSize;
-        var blur = board.config.theme.shadowBlur;
-        var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
-        var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur;
-        var gradient = canvasCtx.createRadialGradient(0, 0, startRadius, 0, 0, stopRadius);
-        gradient.addColorStop(0, board.config.theme.shadowColor);
-        gradient.addColorStop(1, board.config.theme.shadowTransparentColor);
-        canvasCtx.beginPath();
-        canvasCtx.fillStyle = gradient;
-        canvasCtx.arc(0, 0, stopRadius, 0, 2 * Math.PI, true);
-        canvasCtx.fill();
-    }
-    //# sourceMappingURL=stoneShadow.js.map
+    var DrawHandler = /** @class */ (function () {
+        function DrawHandler(params) {
+            if (params === void 0) { params = {}; }
+            this.params = params;
+        }
+        return DrawHandler;
+    }());
+    //# sourceMappingURL=DrawHandler.js.map
 
-    var shellStoneBlack = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = '#000';
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-                var radGrad = canvasCtx.createRadialGradient(0.4 * stoneRadius, 0.4 * stoneRadius, 0, 0.5 * stoneRadius, 0.5 * stoneRadius, stoneRadius);
-                radGrad.addColorStop(0, 'rgba(32,32,32,1)');
-                radGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radGrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-                radGrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 0.05 * stoneRadius, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
-                radGrad.addColorStop(0, 'rgba(64,64,64,1)');
-                radGrad.addColorStop(1, 'rgba(0,0,0,0)');
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radGrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-            },
-            shadow: shadow,
-        },
-    };
-    //# sourceMappingURL=shellStoneBlack.js.map
+    /**
+     * Provides shadow for the stone.
+     */
+    var Stone = /** @class */ (function (_super) {
+        __extends(Stone, _super);
+        function Stone() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Stone.prototype.shadow = function (canvasCtx, boardConfig) {
+            var stoneRadius = boardConfig.theme.stoneSize;
+            var blur = boardConfig.theme.shadowBlur;
+            var startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
+            var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur;
+            var gradient = canvasCtx.createRadialGradient(0, 0, startRadius, 0, 0, stopRadius);
+            gradient.addColorStop(0, boardConfig.theme.shadowColor);
+            gradient.addColorStop(1, boardConfig.theme.shadowTransparentColor);
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = gradient;
+            canvasCtx.arc(0, 0, stopRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+        };
+        return Stone;
+    }(DrawHandler));
+    //# sourceMappingURL=Stone.js.map
+
+    var ShellStoneBlack = /** @class */ (function (_super) {
+        __extends(ShellStoneBlack, _super);
+        function ShellStoneBlack() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        ShellStoneBlack.prototype.stone = function (canvasCtx, boardConfig) {
+            var stoneRadius = boardConfig.theme.stoneSize;
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = '#000';
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            var radGrad = canvasCtx.createRadialGradient(0.4 * stoneRadius, 0.4 * stoneRadius, 0, 0.5 * stoneRadius, 0.5 * stoneRadius, stoneRadius);
+            radGrad.addColorStop(0, 'rgba(32,32,32,1)');
+            radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            radGrad = canvasCtx.createRadialGradient(-0.4 * stoneRadius, -0.4 * stoneRadius, 0.05 * stoneRadius, -0.5 * stoneRadius, -0.5 * stoneRadius, 1.5 * stoneRadius);
+            radGrad.addColorStop(0, 'rgba(64,64,64,1)');
+            radGrad.addColorStop(1, 'rgba(0,0,0,0)');
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+        };
+        return ShellStoneBlack;
+    }(Stone));
+    //# sourceMappingURL=ShellStoneBlack.js.map
 
     // shell stone helping functions
     var shellSeed = Math.ceil(Math.random() * 9999999);
-    // tslint:disable-next-line:max-line-length
-    var drawShellLine = function (ctx, x, y, r, startAngle, endAngle, factor, thickness) {
-        ctx.strokeStyle = 'rgba(64,64,64,0.2)';
-        ctx.lineWidth = (r / 30) * thickness;
-        ctx.beginPath();
-        var radius = r * 0.9;
-        var x1 = x + radius * Math.cos(startAngle * Math.PI);
-        var y1 = y + radius * Math.sin(startAngle * Math.PI);
-        var x2 = x + radius * Math.cos(endAngle * Math.PI);
-        var y2 = y + radius * Math.sin(endAngle * Math.PI);
-        var m;
-        var angle;
-        var diffX;
-        var diffY;
-        if (x2 > x1) {
-            m = (y2 - y1) / (x2 - x1);
-            angle = Math.atan(m);
-        }
-        else if (x2 === x1) {
-            angle = Math.PI / 2;
-        }
-        else {
-            m = (y2 - y1) / (x2 - x1);
-            angle = Math.atan(m) - Math.PI;
-        }
-        var c = factor * radius;
-        diffX = Math.sin(angle) * c;
-        diffY = Math.cos(angle) * c;
-        var bx1 = x1 + diffX;
-        var by1 = y1 - diffY;
-        var bx2 = x2 + diffX;
-        var by2 = y2 - diffY;
-        ctx.moveTo(x1, y1);
-        ctx.bezierCurveTo(bx1, by1, bx2, by2, x2, y2);
-        ctx.stroke();
-    };
-    var drawShell = function (arg) {
-        var fromAngle = arg.angle;
-        var toAngle = arg.angle;
-        for (var i = 0; i < arg.lines.length; i++) {
-            fromAngle += arg.lines[i];
-            toAngle -= arg.lines[i];
-            drawShellLine(arg.ctx, arg.x, arg.y, arg.radius, fromAngle, toAngle, arg.factor, arg.thickness);
-        }
-    };
-    var shellStoneWhite = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = '#aaa';
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-                // do shell magic here
-                var type = shellSeed % (3 + args.field.x * board.config.size + args.field.y) % 3;
-                var z = board.config.size * board.config.size + args.field.x * board.config.size + args.field.y;
-                var angle = (2 / z) * (shellSeed % z);
-                if (type === 0) {
-                    drawShell({
-                        ctx: canvasCtx,
-                        x: 0,
-                        y: 0,
-                        radius: stoneRadius,
-                        angle: angle,
-                        lines: [0.10, 0.12, 0.11, 0.10, 0.09, 0.09, 0.09, 0.09],
-                        factor: 0.25,
-                        thickness: 1.75,
-                    });
-                }
-                else if (type === 1) {
-                    drawShell({
-                        ctx: canvasCtx,
-                        x: 0,
-                        y: 0,
-                        radius: stoneRadius,
-                        angle: angle,
-                        lines: [0.10, 0.09, 0.08, 0.07, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06],
-                        factor: 0.2,
-                        thickness: 1.5,
-                    });
-                }
-                else {
-                    drawShell({
-                        ctx: canvasCtx,
-                        x: 0,
-                        y: 0,
-                        radius: stoneRadius,
-                        angle: angle,
-                        lines: [0.12, 0.14, 0.13, 0.12, 0.12, 0.12],
-                        factor: 0.3,
-                        thickness: 2,
-                    });
-                }
-                var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
-                radGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
-                radGrad.addColorStop(1, 'rgba(255,255,255,0)');
-                // add radial gradient //
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radGrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-            },
-            shadow: shadow,
-        },
-    };
-    //# sourceMappingURL=shellStoneWhite.js.map
-
-    var glassStoneBlack = {
-        // draw handler for stone layer
-        drawField: {
-            // drawing function - args object contain info about drawing object, board is main board object
-            stone: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                var radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
-                radgrad.addColorStop(0, '#666');
-                radgrad.addColorStop(1, '#000');
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radgrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-            },
-            shadow: shadow,
-        },
-    };
-    //# sourceMappingURL=glassStoneBlack.js.map
-
-    var glassStoneWhite = {
-        // draw handler for stone layer
-        drawField: {
-            // drawing function - args object contain info about drawing object, board is main board object
-            stone: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                var radgrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
-                radgrad.addColorStop(0, '#fff');
-                radgrad.addColorStop(1, '#aaa');
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radgrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-            },
-            shadow: shadow,
-        },
-    };
-    //# sourceMappingURL=glassStoneWhite.js.map
-
-    var paintedStoneBlack = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
-                radGrad.addColorStop(0, '#111');
-                radGrad.addColorStop(1, '#000');
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radGrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-                canvasCtx.beginPath();
-                canvasCtx.lineWidth = stoneRadius / 6;
-                canvasCtx.strokeStyle = '#ccc';
-                canvasCtx.arc(-stoneRadius / 8, -stoneRadius / 8, stoneRadius / 2, Math.PI, 1.5 * Math.PI);
-                canvasCtx.stroke();
-            },
-            shadow: shadow,
-        },
-    };
-    //# sourceMappingURL=paintedStoneBlack.js.map
-
-    var paintedStoneWhite = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
-                radGrad.addColorStop(0, '#fff');
-                radGrad.addColorStop(1, '#ddd');
-                canvasCtx.beginPath();
-                canvasCtx.fillStyle = radGrad;
-                canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-                canvasCtx.beginPath();
-                canvasCtx.lineWidth = stoneRadius / 6;
-                canvasCtx.strokeStyle = '#999';
-                canvasCtx.arc(stoneRadius / 8, stoneRadius / 8, stoneRadius / 2, 0, Math.PI / 2, false);
-                canvasCtx.stroke();
-            },
-            shadow: shadow,
-        },
-    };
-    //# sourceMappingURL=paintedStoneWhite.js.map
-
-    function simpleStone (color) {
-        return {
-            drawField: {
-                stone: function (canvasCtx, args, board) {
-                    var stoneSize = board.config.theme.stoneSize;
-                    var lw = board.config.theme.markupLinesWidth;
-                    canvasCtx.fillStyle = color;
-                    canvasCtx.beginPath();
-                    canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
-                    canvasCtx.fill();
-                    canvasCtx.lineWidth = lw;
-                    canvasCtx.strokeStyle = 'black';
-                    canvasCtx.stroke();
-                },
-            },
-        };
-    }
-    //# sourceMappingURL=simpleStone.js.map
-
-    /* global window */
-    // Check if image has been loaded properly
-    // see https://stereochro.me/ideas/detecting-broken-images-js
-    function isOkay(img) {
-        if (typeof img === 'string') {
-            return false;
-        }
-        if (!img.complete) {
-            return false;
-        }
-        if (typeof img.naturalWidth !== 'undefined' && img.naturalWidth === 0) {
-            return false;
-        }
-        return true;
-    }
-    // Shadow handler for the 'REALISTIC' rendering mode
-    // handler for image based stones
-    function realisticStone (graphic, fallback) {
-        var randSeed = Math.ceil(Math.random() * 9999999);
-        var redrawRequest;
-        return {
-            drawField: {
-                stone: function (canvasCtx, args, board) {
-                    var stoneRadius = board.config.theme.stoneSize;
-                    var count = graphic.length;
-                    var idx = randSeed % (count + args.field.x * board.config.size + args.field.y) % count;
-                    if (typeof graphic[idx] === 'string') {
-                        // The image has not been loaded yet
-                        var stoneGraphic = new Image();
-                        // Redraw the whole board after the image has been loaded.
-                        // This prevents 'missing stones' and similar graphical errors
-                        // especially on slower internet connections.
-                        stoneGraphic.onload = function () {
-                            // make sure board will be redraw just once, and after every stone is processed
-                            if (redrawRequest != null) {
-                                window.clearTimeout(redrawRequest);
-                            }
-                            redrawRequest = window.setTimeout(function () {
-                                board.redraw();
-                                redrawRequest = null;
-                            }, 1);
-                        };
-                        stoneGraphic.src = graphic[idx];
-                        graphic[idx] = stoneGraphic;
-                    }
-                    if (isOkay(graphic[idx])) {
-                        canvasCtx.drawImage(graphic[idx], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
-                    }
-                    else {
-                        // Fall back to SHELL handler if there was a problem loading the image
-                        fallback.drawField.stone(canvasCtx, args, board);
-                    }
-                },
-                shadow: shadow,
-            },
-        };
-    }
-    //# sourceMappingURL=realisticStone.js.map
-
-    var circle = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth;
-                canvasCtx.beginPath();
-                canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
-                canvasCtx.stroke();
-                if (params.fillColor) {
-                    canvasCtx.fillStyle = params.fillColor;
-                    canvasCtx.fill();
-                }
-            },
-        },
-    };
-    //# sourceMappingURL=circle.js.map
-
-    var square = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth;
-                canvasCtx.beginPath();
-                canvasCtx.rect(-0.25, -0.25, 0.5, 0.5);
-                canvasCtx.stroke();
-                if (params.fillColor) {
-                    canvasCtx.fillStyle = params.fillColor;
-                    canvasCtx.fill();
-                }
-            },
-        },
-    };
-    //# sourceMappingURL=square.js.map
-
-    var triangle = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth;
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(0, 0 - 0.25);
-                canvasCtx.lineTo(-0.25, 0.166666);
-                canvasCtx.lineTo(0.25, 0.166666);
-                canvasCtx.closePath();
-                canvasCtx.stroke();
-                if (params.fillColor) {
-                    canvasCtx.fillStyle = params.fillColor;
-                    canvasCtx.fill();
-                }
-            },
-        },
-    };
-    //# sourceMappingURL=triangle.js.map
-
-    var label = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                var font = params.font || board.config.theme.font || '';
-                canvasCtx.fillStyle = params.color || board.config.theme.markupNoneColor;
-                var fontSize = 0.5;
-                if (params.text.length === 1) {
-                    fontSize = 0.75;
-                }
-                else if (params.text.length === 2) {
-                    fontSize = 0.6;
-                }
-                canvasCtx.beginPath();
-                canvasCtx.textBaseline = 'middle';
-                canvasCtx.textAlign = 'center';
-                canvasCtx.font = fontSize + "px " + font;
-                canvasCtx.fillText(params.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 1);
-            },
-        },
-    };
-    //# sourceMappingURL=label.js.map
-
-    var dot = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                canvasCtx.fillStyle = params.color || board.config.theme.markupNoneColor;
-                canvasCtx.beginPath();
-                canvasCtx.rect(-0.5, -0.5, 1, 1);
-                canvasCtx.fill();
-            },
-        },
-    };
-    //# sourceMappingURL=dot.js.map
-
-    var xMark = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = params.lineWidth || board.config.theme.markupLinesWidth * 1.5;
-                canvasCtx.lineCap = 'round';
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(-0.20, -0.20);
-                canvasCtx.lineTo(0.20, 0.20);
-                canvasCtx.moveTo(0.20, -0.20);
-                canvasCtx.lineTo(-0.20, 0.20);
-                canvasCtx.stroke();
-                canvasCtx.lineCap = 'butt';
-            },
-        },
-    };
-    //# sourceMappingURL=xMark.js.map
-
-    var smileyFace = {
-        drawField: {
-            stone: function (canvasCtx, args, board) {
-                var params = args.params || {};
-                canvasCtx.strokeStyle = params.color || board.config.theme.markupNoneColor;
-                canvasCtx.lineWidth = (params.lineWidth || board.config.theme.markupLinesWidth) * 2;
-                canvasCtx.beginPath();
-                canvasCtx.arc(-0.5 / 3, -0.5 / 3, 0.5 / 6, 0, 2 * Math.PI, true);
-                canvasCtx.stroke();
-                canvasCtx.beginPath();
-                canvasCtx.arc(0.5 / 3, -0.5 / 3, 0.5 / 6, 0, 2 * Math.PI, true);
-                canvasCtx.stroke();
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(-0.5 / 1.5, 0);
-                canvasCtx.bezierCurveTo(-0.5 / 1.5, 0.5 / 2, 0.5 / 1.5, 0.5 / 2, 0.5 / 1.5, 0);
-                canvasCtx.stroke();
-            },
-        },
-    };
-    //# sourceMappingURL=smileyFace.js.map
-
-    // transparent modificator
-    function transparent (drawHandler) {
-        return {
-            drawField: {
-                stone: function (canvasCtx, args, board) {
-                    var params = args.params || {};
-                    if (params.alpha) {
-                        canvasCtx.globalAlpha = params.alpha;
-                    }
-                    else {
-                        canvasCtx.globalAlpha = 0.3;
-                    }
-                    drawHandler.drawField.stone.call(null, canvasCtx, args, board);
-                    canvasCtx.globalAlpha = 1;
-                },
-            },
-        };
-    }
-    //# sourceMappingURL=transparent.js.map
-
-    // size reducing modifier
-    function reduced (drawHandler) {
-        return {
-            drawField: {
-                stone: function (canvasCtx, args, board) {
-                    canvasCtx.scale(0.5, 0.5);
-                    drawHandler.drawField.stone.call(null, canvasCtx, args, board);
-                    canvasCtx.scale(2, 2);
-                },
-            },
-        };
-    }
-    //# sourceMappingURL=reduced.js.map
-
-    var gridFieldClear = {
-        drawField: {
-            grid: function (canvasCtx, args, board) {
-                var stoneRadius = board.config.theme.stoneSize;
-                canvasCtx.clearRect(-stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
-            },
-        },
-    };
-    //# sourceMappingURL=gridFieldClear.js.map
-
-    //# sourceMappingURL=index.js.map
-
-    var index = /*#__PURE__*/Object.freeze({
-        shellStoneBlack: shellStoneBlack,
-        shellStoneWhite: shellStoneWhite,
-        glassStoneBlack: glassStoneBlack,
-        glassStoneWhite: glassStoneWhite,
-        paintedStoneBlack: paintedStoneBlack,
-        paintedStoneWhite: paintedStoneWhite,
-        simpleStone: simpleStone,
-        realisticStone: realisticStone,
-        circle: circle,
-        square: square,
-        triangle: triangle,
-        label: label,
-        dot: dot,
-        xMark: xMark,
-        smileyFace: smileyFace,
-        transparent: transparent,
-        reduced: reduced,
-        gridFieldClear: gridFieldClear
-    });
-
-    var BoardObject = /** @class */ (function () {
-        function BoardObject(params) {
-            if (params === void 0) { params = {}; }
-            this.x = 0;
-            this.y = 0;
-            this.scaleX = 1;
-            this.scaleY = 1;
-            this.rotate = 0;
-            this.params = params;
-        }
-        BoardObject.prototype.setPosition = function (x, y) {
-            this.x = x;
-            this.y = y;
-        };
-        BoardObject.prototype.setScale = function (factor) {
-            this.scaleX = factor;
-            this.scaleY = factor;
-        };
-        BoardObject.prototype.setOpacity = function (value) {
-            this.opacity = value;
-        };
-        return BoardObject;
-    }());
-    //# sourceMappingURL=BoardObject.js.map
-
-    var Circle = /** @class */ (function (_super) {
-        __extends(Circle, _super);
-        function Circle() {
+    var ShellStoneWhite = /** @class */ (function (_super) {
+        __extends(ShellStoneWhite, _super);
+        function ShellStoneWhite() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        Circle.prototype.drawStone = function (canvasCtx, boardConfig) {
-            canvasCtx.strokeStyle = this.params.color || boardConfig.theme.markupNoneColor;
-            canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLinesWidth;
+        ShellStoneWhite.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            var stoneRadius = boardConfig.theme.stoneSize;
             canvasCtx.beginPath();
-            canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
+            canvasCtx.fillStyle = '#aaa';
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            // do shell magic here
+            var type = shellSeed % (3 + boardObject.x * boardConfig.size + boardObject.y) % 3;
+            var z = boardConfig.size * boardConfig.size + boardObject.x * boardConfig.size + boardObject.y;
+            var angle = (2 / z) * (shellSeed % z);
+            if (type === 0) {
+                this.drawShell({
+                    ctx: canvasCtx,
+                    x: 0,
+                    y: 0,
+                    radius: stoneRadius,
+                    angle: angle,
+                    lines: [0.10, 0.12, 0.11, 0.10, 0.09, 0.09, 0.09, 0.09],
+                    factor: 0.25,
+                    thickness: 1.75,
+                });
+            }
+            else if (type === 1) {
+                this.drawShell({
+                    ctx: canvasCtx,
+                    x: 0,
+                    y: 0,
+                    radius: stoneRadius,
+                    angle: angle,
+                    lines: [0.10, 0.09, 0.08, 0.07, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06, 0.06],
+                    factor: 0.2,
+                    thickness: 1.5,
+                });
+            }
+            else {
+                this.drawShell({
+                    ctx: canvasCtx,
+                    x: 0,
+                    y: 0,
+                    radius: stoneRadius,
+                    angle: angle,
+                    lines: [0.12, 0.14, 0.13, 0.12, 0.12, 0.12],
+                    factor: 0.3,
+                    thickness: 2,
+                });
+            }
+            var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
+            radGrad.addColorStop(0, 'rgba(255,255,255,0.9)');
+            radGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            // add radial gradient //
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+        };
+        ShellStoneWhite.prototype.drawShell = function (arg) {
+            var fromAngle = arg.angle;
+            var toAngle = arg.angle;
+            for (var i = 0; i < arg.lines.length; i++) {
+                fromAngle += arg.lines[i];
+                toAngle -= arg.lines[i];
+                this.drawShellLine(arg.ctx, arg.x, arg.y, arg.radius, fromAngle, toAngle, arg.factor, arg.thickness);
+            }
+        };
+        ShellStoneWhite.prototype.drawShellLine = function (ctx, x, y, r, startAngle, endAngle, factor, thickness) {
+            ctx.strokeStyle = 'rgba(64,64,64,0.2)';
+            ctx.lineWidth = (r / 30) * thickness;
+            ctx.beginPath();
+            var radius = r * 0.9;
+            var x1 = x + radius * Math.cos(startAngle * Math.PI);
+            var y1 = y + radius * Math.sin(startAngle * Math.PI);
+            var x2 = x + radius * Math.cos(endAngle * Math.PI);
+            var y2 = y + radius * Math.sin(endAngle * Math.PI);
+            var m;
+            var angle;
+            var diffX;
+            var diffY;
+            if (x2 > x1) {
+                m = (y2 - y1) / (x2 - x1);
+                angle = Math.atan(m);
+            }
+            else if (x2 === x1) {
+                angle = Math.PI / 2;
+            }
+            else {
+                m = (y2 - y1) / (x2 - x1);
+                angle = Math.atan(m) - Math.PI;
+            }
+            var c = factor * radius;
+            diffX = Math.sin(angle) * c;
+            diffY = Math.cos(angle) * c;
+            var bx1 = x1 + diffX;
+            var by1 = y1 - diffY;
+            var bx2 = x2 + diffX;
+            var by2 = y2 - diffY;
+            ctx.moveTo(x1, y1);
+            ctx.bezierCurveTo(bx1, by1, bx2, by2, x2, y2);
+            ctx.stroke();
+        };
+        return ShellStoneWhite;
+    }(Stone));
+    //# sourceMappingURL=ShellStoneWhite.js.map
+
+    var GlassStoneBlack = /** @class */ (function (_super) {
+        __extends(GlassStoneBlack, _super);
+        function GlassStoneBlack() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneBlack.prototype.stone = function (canvasCtx, boardConfig) {
+            var stoneRadius = boardConfig.theme.stoneSize;
+            var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+            radGrad.addColorStop(0, '#666');
+            radGrad.addColorStop(1, '#000');
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+        };
+        return GlassStoneBlack;
+    }(Stone));
+    //# sourceMappingURL=GlassStoneBlack.js.map
+
+    var GlassStoneWhite = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.stone = function (canvasCtx, boardConfig) {
+            var stoneRadius = boardConfig.theme.stoneSize;
+            var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, stoneRadius / 3, -stoneRadius / 5, -stoneRadius / 5, 5 * stoneRadius / 5);
+            radGrad.addColorStop(0, '#fff');
+            radGrad.addColorStop(1, '#aaa');
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+        };
+        return GlassStoneWhite;
+    }(Stone));
+    //# sourceMappingURL=GlassStoneWhite.js.map
+
+    var PaintedStoneBlack = /** @class */ (function (_super) {
+        __extends(PaintedStoneBlack, _super);
+        function PaintedStoneBlack() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        PaintedStoneBlack.prototype.stone = function (canvasCtx, boardConfig) {
+            var stoneRadius = boardConfig.theme.stoneSize;
+            var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 1 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+            radGrad.addColorStop(0, '#111');
+            radGrad.addColorStop(1, '#000');
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            canvasCtx.beginPath();
+            canvasCtx.lineWidth = stoneRadius / 6;
+            canvasCtx.strokeStyle = '#ccc';
+            canvasCtx.arc(-stoneRadius / 8, -stoneRadius / 8, stoneRadius / 2, Math.PI, 1.5 * Math.PI);
+            canvasCtx.stroke();
+        };
+        return PaintedStoneBlack;
+    }(Stone));
+    //# sourceMappingURL=PaintedStoneBlack.js.map
+
+    var PaintedStoneWhite = /** @class */ (function (_super) {
+        __extends(PaintedStoneWhite, _super);
+        function PaintedStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        PaintedStoneWhite.prototype.stone = function (canvasCtx, boardConfig) {
+            var stoneRadius = boardConfig.theme.stoneSize;
+            var radGrad = canvasCtx.createRadialGradient(-2 * stoneRadius / 5, -2 * stoneRadius / 5, 2 * stoneRadius / 5, -stoneRadius / 5, -stoneRadius / 5, 4 * stoneRadius / 5);
+            radGrad.addColorStop(0, '#fff');
+            radGrad.addColorStop(1, '#ddd');
+            canvasCtx.beginPath();
+            canvasCtx.fillStyle = radGrad;
+            canvasCtx.arc(0, 0, stoneRadius, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            canvasCtx.beginPath();
+            canvasCtx.lineWidth = stoneRadius / 6;
+            canvasCtx.strokeStyle = '#999';
+            canvasCtx.arc(stoneRadius / 8, stoneRadius / 8, stoneRadius / 2, 0, Math.PI / 2, false);
+            canvasCtx.stroke();
+        };
+        return PaintedStoneWhite;
+    }(Stone));
+    //# sourceMappingURL=PaintedStoneWhite.js.map
+
+    var SimpleStone = /** @class */ (function (_super) {
+        __extends(SimpleStone, _super);
+        function SimpleStone(color) {
+            return _super.call(this, { color: color }) || this;
+        }
+        SimpleStone.prototype.stone = function (canvasCtx, boardConfig) {
+            var stoneSize = boardConfig.theme.stoneSize;
+            var lw = boardConfig.theme.markupLineWidth;
+            canvasCtx.fillStyle = this.params.color;
+            canvasCtx.beginPath();
+            canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            canvasCtx.lineWidth = lw;
+            canvasCtx.strokeStyle = 'black';
+            canvasCtx.stroke();
+        };
+        return SimpleStone;
+    }(DrawHandler));
+    //# sourceMappingURL=SimpleStone.js.map
+
+    // Check if image has been loaded properly
+    // see https://stereochro.me/ideas/detecting-broken-images-js
+    /*function isOkay(img: any) {
+      if (typeof img === 'string') { return false; }
+      if (!img.complete) { return false; }
+      if (typeof img.naturalWidth !== 'undefined' && img.naturalWidth === 0) {
+        return false;
+      }
+      return true;
+    }*/
+    var RealisticStone = /** @class */ (function (_super) {
+        __extends(RealisticStone, _super);
+        function RealisticStone(paths, fallback) {
+            var _this = _super.call(this) || this;
+            _this.fallback = fallback;
+            _this.randSeed = Math.ceil(Math.random() * 9999999);
+            _this.images = [];
+            _this.loadImages(paths);
+            return _this;
+        }
+        RealisticStone.prototype.loadImages = function (paths) {
+            var _this = this;
+            if (paths[0]) {
+                var image_1 = new Image();
+                image_1.onload = function () {
+                    _this.images.push(image_1);
+                    _this.loadImages(paths.slice(1));
+                };
+                image_1.onerror = function () {
+                    _this.loadImages(paths.slice(1));
+                };
+                image_1.src = paths[0];
+            }
+        };
+        RealisticStone.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            var count = this.images.length;
+            if (count) {
+                var stoneRadius = boardConfig.theme.stoneSize;
+                var idx = this.randSeed % (count + boardObject.x * boardConfig.size + boardObject.y) % count;
+                canvasCtx.drawImage(this.images[idx], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+            }
+            else {
+                // Fall back to SHELL handler if there was a problem loading the image
+                this.fallback.stone(canvasCtx, boardConfig, boardObject);
+            }
+        };
+        return RealisticStone;
+    }(Stone));
+
+    /**
+     * Enumeration representing stone color, can be used for representing board position.
+     */
+    (function (Color) {
+        Color[Color["BLACK"] = 1] = "BLACK";
+        Color[Color["B"] = 1] = "B";
+        Color[Color["WHITE"] = -1] = "WHITE";
+        Color[Color["W"] = -1] = "W";
+        Color[Color["EMPTY"] = 0] = "EMPTY";
+        Color[Color["E"] = 0] = "E";
+    })(exports.Color || (exports.Color = {}));
+    //# sourceMappingURL=types.js.map
+
+    var MarkupDrawHandler = /** @class */ (function (_super) {
+        __extends(MarkupDrawHandler, _super);
+        function MarkupDrawHandler() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        MarkupDrawHandler.prototype.grid = function (canvasCtx, boardConfig, boardObject) {
+            if (boardObject.variation === exports.Color.E) {
+                canvasCtx.clearRect(-boardConfig.theme.stoneSize, -boardConfig.theme.stoneSize, boardConfig.theme.stoneSize * 2, boardConfig.theme.stoneSize * 2);
+            }
+        };
+        MarkupDrawHandler.prototype.getColor = function (boardConfig, boardObject) {
+            if (this.params.color) {
+                return this.params.color;
+            }
+            if (boardObject.variation === exports.Color.B) {
+                return boardConfig.theme.markupBlackColor;
+            }
+            if (boardObject.variation === exports.Color.W) {
+                return boardConfig.theme.markupWhiteColor;
+            }
+            return boardConfig.theme.markupNoneColor;
+        };
+        return MarkupDrawHandler;
+    }(DrawHandler));
+    //# sourceMappingURL=MarkupDrawHandler.js.map
+
+    var ShapeMarkup = /** @class */ (function (_super) {
+        __extends(ShapeMarkup, _super);
+        function ShapeMarkup() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        ShapeMarkup.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            canvasCtx.strokeStyle = this.getColor(boardConfig, boardObject);
+            canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
+            canvasCtx.beginPath();
+            this.drawShape(canvasCtx);
             canvasCtx.stroke();
             if (this.params.fillColor) {
                 canvasCtx.fillStyle = this.params.fillColor;
                 canvasCtx.fill();
             }
         };
-        Circle.prototype.drawGrid = function (canvasCtx, boardConfig) {
-            canvasCtx.clearRect(-boardConfig.theme.stoneSize, -boardConfig.theme.stoneSize, boardConfig.theme.stoneSize * 2, boardConfig.theme.stoneSize * 2);
+        return ShapeMarkup;
+    }(MarkupDrawHandler));
+    //# sourceMappingURL=ShapeMarkup.js.map
+
+    var Circle = /** @class */ (function (_super) {
+        __extends(Circle, _super);
+        function Circle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Circle.prototype.drawShape = function (canvasCtx) {
+            canvasCtx.arc(0, 0, 0.25, 0, 2 * Math.PI, true);
         };
         return Circle;
-    }(BoardObject));
+    }(ShapeMarkup));
     //# sourceMappingURL=Circle.js.map
 
-    var ThemedObject = /** @class */ (function (_super) {
-        __extends(ThemedObject, _super);
-        function ThemedObject(type, params) {
-            var _this = _super.call(this, params) || this;
-            _this.type = type;
-            return _this;
+    var Square = /** @class */ (function (_super) {
+        __extends(Square, _super);
+        function Square() {
+            return _super !== null && _super.apply(this, arguments) || this;
         }
-        ThemedObject.prototype.drawStone = function (context, config) {
-            if (config.theme.drawHandlers[this.type].prototype.drawStone) {
-                config.theme.drawHandlers[this.type].prototype.drawStone.call(this, context, config);
-            }
+        Square.prototype.drawShape = function (canvasCtx) {
+            canvasCtx.rect(-0.25, -0.25, 0.5, 0.5);
         };
-        ThemedObject.prototype.drawGrid = function (context, config) {
-            if (config.theme.drawHandlers[this.type].prototype.drawGrid) {
-                config.theme.drawHandlers[this.type].prototype.drawGrid.call(this, context, config);
-            }
-        };
-        ThemedObject.prototype.drawShadow = function (context, config) {
-            if (config.theme.drawHandlers[this.type].prototype.drawShadow) {
-                config.theme.drawHandlers[this.type].prototype.drawShadow.call(this, context, config);
-            }
-        };
-        return ThemedObject;
-    }(BoardObject));
+        return Square;
+    }(ShapeMarkup));
+    //# sourceMappingURL=Square.js.map
 
-    function simpleStoneFactory(color) {
-        return (/** @class */ (function (_super) {
-            __extends(SimpleStone, _super);
-            function SimpleStone() {
-                return _super !== null && _super.apply(this, arguments) || this;
+    var Triangle = /** @class */ (function (_super) {
+        __extends(Triangle, _super);
+        function Triangle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Triangle.prototype.drawShape = function (canvasCtx) {
+            canvasCtx.moveTo(0, 0 - 0.25);
+            canvasCtx.lineTo(-0.25, 0.166666);
+            canvasCtx.lineTo(0.25, 0.166666);
+            canvasCtx.closePath();
+        };
+        return Triangle;
+    }(ShapeMarkup));
+    //# sourceMappingURL=Triangle.js.map
+
+    var Label = /** @class */ (function (_super) {
+        __extends(Label, _super);
+        function Label() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Label.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            var font = this.params.font || boardConfig.theme.font || '';
+            canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+            var fontSize = 0.5;
+            if (boardObject.text.length === 1) {
+                fontSize = 0.75;
             }
-            SimpleStone.prototype.drawStone = function (canvasCtx, boardConfig) {
-                var stoneSize = boardConfig.theme.stoneSize;
-                var lw = boardConfig.theme.markupLinesWidth;
-                canvasCtx.fillStyle = color;
-                canvasCtx.beginPath();
-                canvasCtx.arc(0, 0, stoneSize - lw / 2, 0, 2 * Math.PI, true);
-                canvasCtx.fill();
-                canvasCtx.lineWidth = lw;
-                canvasCtx.strokeStyle = 'black';
-                canvasCtx.stroke();
-            };
-            return SimpleStone;
-        }(BoardObject)));
-    }
-    //# sourceMappingURL=simpleStoneFactory.js.map
+            else if (boardObject.text.length === 2) {
+                fontSize = 0.6;
+            }
+            canvasCtx.beginPath();
+            canvasCtx.textBaseline = 'middle';
+            canvasCtx.textAlign = 'center';
+            canvasCtx.font = fontSize + "px " + font;
+            canvasCtx.fillText(boardObject.text, 0, 0.02 + (fontSize - 0.5) * 0.08, 1);
+        };
+        return Label;
+    }(MarkupDrawHandler));
+    //# sourceMappingURL=Label.js.map
+
+    /**
+     * TODO: rename this
+     */
+    var Dot = /** @class */ (function (_super) {
+        __extends(Dot, _super);
+        function Dot() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Dot.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+            canvasCtx.beginPath();
+            canvasCtx.rect(-0.5, -0.5, 1, 1);
+            canvasCtx.fill();
+        };
+        return Dot;
+    }(MarkupDrawHandler));
+    //# sourceMappingURL=Dot.js.map
+
+    var XMark = /** @class */ (function (_super) {
+        __extends(XMark, _super);
+        function XMark() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        XMark.prototype.drawShape = function (canvasCtx) {
+            canvasCtx.moveTo(-0.20, -0.20);
+            canvasCtx.lineTo(0.20, 0.20);
+            canvasCtx.moveTo(0.20, -0.20);
+            canvasCtx.lineTo(-0.20, 0.20);
+        };
+        return XMark;
+    }(ShapeMarkup));
+    //# sourceMappingURL=XMark.js.map
 
     //# sourceMappingURL=index.js.map
 
-    var index$1 = /*#__PURE__*/Object.freeze({
-        BoardObject: BoardObject,
+    var index = /*#__PURE__*/Object.freeze({
+        DrawHandler: DrawHandler,
+        ShellStoneBlack: ShellStoneBlack,
+        ShellStoneWhite: ShellStoneWhite,
+        GlassStoneBlack: GlassStoneBlack,
+        GlassStoneWhite: GlassStoneWhite,
+        PaintedStoneBlack: PaintedStoneBlack,
+        PaintedStoneWhite: PaintedStoneWhite,
+        SimpleStone: SimpleStone,
+        RealisticStone: RealisticStone,
         Circle: Circle,
-        ThemedObject: ThemedObject,
-        simpleStoneFactory: simpleStoneFactory
+        Square: Square,
+        Triangle: Triangle,
+        Label: Label,
+        Dot: Dot,
+        XMark: XMark
     });
 
     //import { boardObjects } from '../boardObjects';
@@ -971,7 +850,7 @@
         markupBlackColor: 'rgba(255,255,255,0.9)',
         markupWhiteColor: 'rgba(0,0,0,0.7)',
         markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLinesWidth: 0.05,
+        markupLineWidth: 0.05,
         // shadows
         shadowColor: 'rgba(62,32,32,0.5)',
         shadowTransparentColor: 'rgba(62,32,32,0)',
@@ -998,19 +877,24 @@
             y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         },
         drawHandlers: {
-            CR: Circle,
-            B: simpleStoneFactory('#222'),
-            W: simpleStoneFactory('#eee'),
+            B: new SimpleStone('#222'),
+            W: new SimpleStone('#eee'),
+            CR: new Circle(),
+            SQ: new Square(),
+            LB: new Label(),
+            TR: new Triangle(),
+            MA: new XMark({ lineWidth: 0.075 }),
+            SL: new Dot(),
         },
     };
     //# sourceMappingURL=baseTheme.js.map
 
-    var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: realisticStone([
+    var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new RealisticStone([
                 'images/stones/black00_128.png',
                 'images/stones/black01_128.png',
                 'images/stones/black02_128.png',
                 'images/stones/black03_128.png',
-            ], shellStoneBlack), W: realisticStone([
+            ], new ShellStoneBlack()), W: new RealisticStone([
                 'images/stones/white00_128.png',
                 'images/stones/white01_128.png',
                 'images/stones/white02_128.png',
@@ -1022,16 +906,16 @@
                 'images/stones/white08_128.png',
                 'images/stones/white09_128.png',
                 'images/stones/white10_128.png',
-            ], shellStoneWhite) }) });
+            ], new ShellStoneWhite()) }) });
     //# sourceMappingURL=realisticTheme.js.map
 
-    var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: shellStoneBlack, W: shellStoneWhite }) });
+    var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
     //# sourceMappingURL=modernTheme.js.map
 
     // add here all themes, which should be publicly exposed
     //# sourceMappingURL=index.js.map
 
-    var index$2 = /*#__PURE__*/Object.freeze({
+    var index$1 = /*#__PURE__*/Object.freeze({
         baseTheme: baseTheme,
         realisticTheme: realisticTheme,
         modernTheme: modernTheme
@@ -1085,14 +969,16 @@
         var mergedConfig = {};
         var defaultKeys = Object.keys(defaults);
         defaultKeys.forEach(function (key) {
-            if (typeof config[key] === 'object' && !Array.isArray(config[key])) {
-                mergedConfig[key] = makeConfig(defaults[key], config[key]);
+            var val = config[key];
+            var defVal = defaults[key];
+            if (val != null && val.constructor === Object && !Array.isArray(val) && defVal != null) {
+                mergedConfig[key] = makeConfig(defVal, val);
             }
-            else if (config[key] !== undefined) {
-                mergedConfig[key] = config[key];
+            else if (val !== undefined) {
+                mergedConfig[key] = val;
             }
             else {
-                mergedConfig[key] = defaults[key];
+                mergedConfig[key] = defVal;
             }
         });
         Object.keys(config).forEach(function (key) {
@@ -1307,9 +1193,9 @@
             this.boardElement.style.margin = 'auto';
             this.element.appendChild(this.boardElement);
             this.layers = {
-                grid: new GridLayer(this, 'drawGrid'),
-                shadow: new ShadowLayer(this, 'drawShadow'),
-                stone: new CanvasLayer(this, 'drawStone'),
+                grid: new GridLayer(this),
+                shadow: new ShadowLayer(this),
+                stone: new CanvasLayer(this),
             };
         };
         /**
@@ -1483,8 +1369,11 @@
         CanvasBoard.prototype.redrawLayer = function (layer) {
             var _this = this;
             this.layers[layer].clear();
-            this.objects.forEach(function (boardObject) {
-                _this.layers[layer].draw(boardObject);
+            this.objects.forEach(function (object) {
+                var handler = typeof object.type === 'string' ? _this.config.theme.drawHandlers[object.type] : object.type;
+                if (handler[layer]) {
+                    _this.layers[layer].draw(handler[layer].bind(handler), object);
+                }
             });
         };
         /**
@@ -1499,6 +1388,16 @@
                     this.addObject(boardObject[i]);
                 }
                 return;
+            }
+            if (typeof boardObject.type === 'string') {
+                if (!this.config.theme.drawHandlers[boardObject.type]) {
+                    throw new TypeError("Board object type \"" + boardObject.type + "\" doesn't exist in `config.theme.drawHandlers`.");
+                }
+            }
+            else {
+                if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
+                    throw new TypeError('Invalid board object type.');
+                }
             }
             this.objects.push(boardObject);
             this.redraw();
@@ -1572,6 +1471,59 @@
     }(EventEmitter));
     //# sourceMappingURL=CanvasBoard.js.map
 
+    var BoardObject = /** @class */ (function () {
+        function BoardObject(type) {
+            this.type = type;
+            this.x = 0;
+            this.y = 0;
+            this.scaleX = 1;
+            this.scaleY = 1;
+            this.rotate = 0;
+        }
+        BoardObject.prototype.setPosition = function (x, y) {
+            this.x = x;
+            this.y = y;
+        };
+        BoardObject.prototype.setScale = function (factor) {
+            this.scaleX = factor;
+            this.scaleY = factor;
+        };
+        BoardObject.prototype.setOpacity = function (value) {
+            this.opacity = value;
+        };
+        return BoardObject;
+    }());
+    //# sourceMappingURL=BoardObject.js.map
+
+    /**
+     * Board markup object is special type of object, which can have 3 variations - for empty field
+     * and for black and white stone.
+     */
+    var BoardMarkupObject = /** @class */ (function (_super) {
+        __extends(BoardMarkupObject, _super);
+        function BoardMarkupObject(type, variation) {
+            if (variation === void 0) { variation = exports.Color.E; }
+            var _this = _super.call(this, type) || this;
+            _this.variation = variation;
+            return _this;
+        }
+        return BoardMarkupObject;
+    }(BoardObject));
+    //# sourceMappingURL=BoardMarkupObject.js.map
+
+    var BoardLabelObject = /** @class */ (function (_super) {
+        __extends(BoardLabelObject, _super);
+        function BoardLabelObject(text, variation) {
+            var _this = _super.call(this, 'LB', variation) || this;
+            _this.text = text;
+            return _this;
+        }
+        return BoardLabelObject;
+    }(BoardMarkupObject));
+    //# sourceMappingURL=BoardLabelObject.js.map
+
+    //# sourceMappingURL=index.js.map
+
     //# sourceMappingURL=index.js.map
 
     /**
@@ -1624,20 +1576,6 @@
     //# sourceMappingURL=rules.js.map
 
     /**
-     * Enumeration representing stone color, can be used for representing board position.
-     */
-    var Color;
-    (function (Color) {
-        Color[Color["BLACK"] = 1] = "BLACK";
-        Color[Color["B"] = 1] = "B";
-        Color[Color["WHITE"] = -1] = "WHITE";
-        Color[Color["W"] = -1] = "W";
-        Color[Color["EMPTY"] = 0] = "EMPTY";
-        Color[Color["E"] = 0] = "E";
-    })(Color || (Color = {}));
-    //# sourceMappingURL=types.js.map
-
-    /**
      * Contains implementation of go position class.
      * @module Position
      */
@@ -1681,7 +1619,7 @@
             /**
              * Who plays next move.
              */
-            this.turn = Color.BLACK;
+            this.turn = exports.Color.BLACK;
             this.size = size;
             // init grid
             this.clear();
@@ -1721,7 +1659,7 @@
          */
         Position.prototype.clear = function () {
             for (var i = 0; i < this.size * this.size; i++) {
-                this.grid[i] = Color.EMPTY;
+                this.grid[i] = exports.Color.EMPTY;
             }
             return this;
         };
@@ -1770,7 +1708,7 @@
             if (allowSuicide === void 0) { allowSuicide = false; }
             if (allowRewrite === void 0) { allowRewrite = false; }
             // check if move is on empty field of the board
-            if (!(allowRewrite || this.get(x, y) === Color.EMPTY)) {
+            if (!(allowRewrite || this.get(x, y) === exports.Color.EMPTY)) {
                 return false;
             }
             // clone position and add a stone
@@ -1822,7 +1760,7 @@
                 return false;
             }
             // however empty field means liberty
-            if (this.get(x, y) === Color.EMPTY) {
+            if (this.get(x, y) === exports.Color.EMPTY) {
                 return true;
             }
             // already tested field or stone of enemy isn't a liberty.
@@ -1854,9 +1792,9 @@
          */
         Position.prototype.capture = function (x, y, c) {
             if (c === void 0) { c = this.get(x, y); }
-            if (this.isOnPosition(x, y) && c !== Color.EMPTY && this.get(x, y) === c) {
-                this.set(x, y, Color.EMPTY);
-                if (c === Color.BLACK) {
+            if (this.isOnPosition(x, y) && c !== exports.Color.EMPTY && this.get(x, y) === c) {
+                this.set(x, y, exports.Color.EMPTY);
+                if (c === exports.Color.BLACK) {
                     this.capCount.white = this.capCount.white + 1;
                 }
                 else {
@@ -1895,8 +1833,8 @@
                     if (x === 0) {
                         output += (y < 10 ? " " + y : y) + " ";
                     }
-                    if (color !== Color.EMPTY) {
-                        output += color === Color.BLACK ? BS : WS;
+                    if (color !== exports.Color.EMPTY) {
+                        output += color === exports.Color.BLACK ? BS : WS;
                     }
                     else {
                         var char = void 0;
@@ -2342,7 +2280,7 @@
          * @return {boolean} true if operation is successful.
          */
         Game.prototype.addStone = function (x, y, c) {
-            if (this.isOnBoard(x, y) && this.position.get(x, y) === Color.EMPTY) {
+            if (this.isOnBoard(x, y) && this.position.get(x, y) === exports.Color.EMPTY) {
                 this.position.set(x, y, c);
                 return true;
             }
@@ -2356,8 +2294,8 @@
          * @return {boolean} true if operation is successful.
          */
         Game.prototype.removeStone = function (x, y) {
-            if (this.isOnBoard(x, y) && this.position.get(x, y) !== Color.EMPTY) {
-                this.position.set(x, y, Color.EMPTY);
+            if (this.isOnBoard(x, y) && this.position.get(x, y) !== exports.Color.EMPTY) {
+                this.position.set(x, y, exports.Color.EMPTY);
                 return true;
             }
             return false;
@@ -2463,8 +2401,8 @@
         write: function (value) { return value; },
     };
     var COLOR = {
-        read: function (str) { return (str === 'w' || str === 'W' ? Color.WHITE : Color.BLACK); },
-        write: function (value) { return (value === Color.WHITE ? 'W' : 'B'); },
+        read: function (str) { return (str === 'w' || str === 'W' ? exports.Color.WHITE : exports.Color.BLACK); },
+        write: function (value) { return (value === exports.Color.WHITE ? 'W' : 'B'); },
     };
     var POINT = {
         read: function (str) { return str ? {
@@ -3026,7 +2964,7 @@
             var handicap = this.getRootProperty(PropIdent.HANDICAP) || 0;
             this.game = new Game(size, rules);
             if (handicap > 1) {
-                this.game.turn = Color.WHITE;
+                this.game.turn = exports.Color.WHITE;
             }
         };
         /**
@@ -3038,9 +2976,9 @@
             var addBlack = this.getProperty(PropIdent.ADD_BLACK) || [];
             var addWhite = this.getProperty(PropIdent.ADD_WHITE) || [];
             var clear = this.getProperty(PropIdent.CLEAR_FIELD) || [];
-            addBlack.forEach(function (p) { return _this.game.setStone(p.x, p.y, Color.BLACK); });
-            addWhite.forEach(function (p) { return _this.game.setStone(p.x, p.y, Color.WHITE); });
-            clear.forEach(function (p) { return _this.game.setStone(p.x, p.y, Color.EMPTY); });
+            addBlack.forEach(function (p) { return _this.game.setStone(p.x, p.y, exports.Color.BLACK); });
+            addWhite.forEach(function (p) { return _this.game.setStone(p.x, p.y, exports.Color.WHITE); });
+            clear.forEach(function (p) { return _this.game.setStone(p.x, p.y, exports.Color.EMPTY); });
             // then play a move
             var blackMove = this.getProperty(PropIdent.BLACK_MOVE);
             var whiteMove = this.getProperty(PropIdent.WHITE_MOVE);
@@ -3049,20 +2987,20 @@
             }
             if (blackMove !== undefined) {
                 if (blackMove) {
-                    this.game.position.applyMove(blackMove.x, blackMove.y, Color.BLACK, true, true);
+                    this.game.position.applyMove(blackMove.x, blackMove.y, exports.Color.BLACK, true, true);
                 }
                 else {
                     // pass
-                    this.game.position.turn = Color.WHITE;
+                    this.game.position.turn = exports.Color.WHITE;
                 }
             }
             else if (whiteMove !== undefined) {
                 if (whiteMove) {
-                    this.game.position.applyMove(whiteMove.x, whiteMove.y, Color.WHITE, true, true);
+                    this.game.position.applyMove(whiteMove.x, whiteMove.y, exports.Color.WHITE, true, true);
                 }
                 else {
                     // pass
-                    this.game.position.turn = Color.BLACK;
+                    this.game.position.turn = exports.Color.BLACK;
                 }
             }
             // set turn
@@ -3196,8 +3134,8 @@
     //# sourceMappingURL=propertyHandlers.js.map
 
     var colorsMap = {
-        B: Color.BLACK,
-        W: Color.WHITE,
+        B: exports.Color.BLACK,
+        W: exports.Color.WHITE,
     };
     var Player = /** @class */ (function (_super) {
         __extends(Player, _super);
@@ -3289,6 +3227,9 @@
     // All public API is exported here
     //# sourceMappingURL=index.js.map
 
+    exports.BoardLabelObject = BoardLabelObject;
+    exports.BoardMarkupObject = BoardMarkupObject;
+    exports.BoardObject = BoardObject;
     exports.CHINESE_RULES = CHINESE_RULES;
     exports.CanvasBoard = CanvasBoard;
     exports.Game = Game;
@@ -3299,11 +3240,10 @@
     exports.Position = Position;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
-    exports.boardObjects = index$1;
     exports.defaultBoardConfig = canvasBoardDefaultConfig;
     exports.drawHandlers = index;
     exports.goRules = goRules;
-    exports.themes = index$2;
+    exports.themes = index$1;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

@@ -1,24 +1,21 @@
-import { CanvasBoardConfig } from '../types';
+import { DrawHandler } from '../drawHandlers';
 
-export default abstract class BoardObject<P = {}> {
+export default class BoardObject {
+  type: string | DrawHandler;
   x: number;
   y: number;
   scaleX: number;
   scaleY: number;
   rotate: number;
   opacity: number;
-  drawStone?(context: CanvasRenderingContext2D, config: CanvasBoardConfig): void;
-  drawShadow?(context: CanvasRenderingContext2D, config: CanvasBoardConfig): void;
-  drawGrid?(context: CanvasRenderingContext2D, config: CanvasBoardConfig): void;
-  params: P;
 
-  constructor(params: P = {} as any) {
+  constructor(type: string | DrawHandler) {
+    this.type = type;
     this.x = 0;
     this.y = 0;
     this.scaleX = 1;
     this.scaleY = 1;
     this.rotate = 0;
-    this.params = params;
   }
 
   setPosition(x: number, y: number) {

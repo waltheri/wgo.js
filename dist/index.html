@@ -15,21 +15,53 @@ var board = new WGo.CanvasBoard(document.getElementById('board'), {
   width: 800,
   //height: 700,
   coordinates: true,
-  theme: {
+  theme: WGo.themes.realisticTheme /*{
     //stoneSize: 0.48,
     coordinates: {
       params: { color: '#663300' },
     },
-  },
+  },*/
 });
 
-board.addObjectAt(5, 10, new WGo.boardObjects.ThemedObject('CR'));
-board.addObjectAt(10, 5, new WGo.boardObjects.ThemedObject('B'));
-board.addObjectAt(10, 5, new WGo.boardObjects.ThemedObject('CR', { color: 'white' }));
-board.addObjectAt(10, 10, new WGo.boardObjects.ThemedObject('B'));
-board.addObjectAt(11, 11, new WGo.boardObjects.ThemedObject('B'));
-board.addObjectAt(10, 11, new WGo.boardObjects.ThemedObject('W'));
-board.addObjectAt(11, 10, new WGo.boardObjects.ThemedObject('W'));
+board.addObjectAt(5, 10, new WGo.BoardMarkupObject('CR'));
+board.addObjectAt(10, 5, new WGo.BoardMarkupObject('B'));
+board.addObjectAt(10, 5, new WGo.BoardMarkupObject('CR', WGo.Color.BLACK));
+board.addObjectAt(10, 10, new WGo.BoardObject('B'));
+board.addObjectAt(11, 11, new WGo.BoardObject('B'));
+board.addObjectAt(10, 11, new WGo.BoardObject('W'));
+const opaque = new WGo.BoardObject('W');
+opaque.opacity = 0.5;
+board.addObjectAt(11, 10, opaque);
+
+board.addObjectAt(5, 4, new WGo.BoardMarkupObject('SQ'));
+board.addObjectAt(6, 4, new WGo.BoardLabelObject('225'));
+board.addObjectAt(7, 4, new WGo.BoardObject('B'));
+board.addObjectAt(7, 4, new WGo.BoardLabelObject('A', WGo.Color.BLACK));
+
+board.addObjectAt(8, 1, new WGo.BoardLabelObject('😃'));
+
+board.addObjectAt(2, 3, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(3, 3, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(3, 2, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(2, 2, new WGo.BoardMarkupObject('SL'));
+
+board.addObjectAt(7, 15, new WGo.BoardMarkupObject('TR'));
+board.addObjectAt(9, 15, new WGo.BoardMarkupObject('MA'));
+
+const rotated = new WGo.BoardMarkupObject('TR');
+rotated.rotate = Math.PI;
+board.addObjectAt(7, 16, rotated);
+
+board.addObjectAt(8, 7, new WGo.BoardObject(new WGo.drawHandlers.Circle({ color: '#009', fillColor: 'rgba(0, 0, 128, 0.5)', lineWidth: 0.02 })));
+
+const reduced = new WGo.BoardObject('B');
+reduced.setScale(0.5);
+board.addObjectAt(17, 10, reduced);
+
+const reduced2 = new WGo.BoardObject('W');
+reduced2.setScale(0.5);
+board.addObjectAt(17, 11, reduced2);
+
 // board.addObjectAt(6, 10, new WGo.boardObjects.Circle());
 // board.addObjectAt(7, 10, new WGo.boardObjects.Circle());
 

@@ -1,9 +1,5 @@
-import * as drawHandlers from '../drawHandlers';
-import coordinatesHandler from '../drawHandlers/coordinates';
 import { CanvasBoardTheme } from '../types';
-import gridFieldClear from '../drawHandlers/gridFieldClear';
-import gridHandler from '../drawHandlers/grid';
-import { Circle, simpleStoneFactory } from '../boardObjects';
+import * as drawHandlers from '../drawHandlers';
 //import { boardObjects } from '../boardObjects';
 
 const baseTheme: CanvasBoardTheme = {
@@ -14,7 +10,7 @@ const baseTheme: CanvasBoardTheme = {
   markupBlackColor: 'rgba(255,255,255,0.9)',
   markupWhiteColor: 'rgba(0,0,0,0.7)',
   markupNoneColor: 'rgba(0,0,0,0.7)',
-  markupLinesWidth: 0.05,
+  markupLineWidth: 0.05,
 
   // shadows
   shadowColor: 'rgba(62,32,32,0.5)',
@@ -46,17 +42,14 @@ const baseTheme: CanvasBoardTheme = {
   },
 
   drawHandlers: {
-    CR: Circle as any,
-    B: simpleStoneFactory('#222'),
-    W: simpleStoneFactory('#eee'),
-    //CR: drawHandlers.circle,
-    //LB: drawHandlers.label,
-    //SQ: drawHandlers.square,
-    //TR: drawHandlers.triangle,
-    //MA: drawHandlers.xMark,
-    //SL: drawHandlers.dot,
-    //SM: drawHandlers.smileyFace,
-    //gridFieldClear,
+    B: new drawHandlers.SimpleStone('#222'),
+    W: new drawHandlers.SimpleStone('#eee'),
+    CR: new drawHandlers.Circle(),
+    SQ: new drawHandlers.Square(),
+    LB: new drawHandlers.Label(),
+    TR: new drawHandlers.Triangle(),
+    MA: new drawHandlers.XMark({ lineWidth: 0.075 }),
+    SL: new drawHandlers.Dot(),
   },
 };
 

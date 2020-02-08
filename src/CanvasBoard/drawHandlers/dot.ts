@@ -1,15 +1,15 @@
-import CanvasBoard from '..';
-import { BoardFieldObject } from '../types';
+import { CanvasBoardConfig } from '../types';
+import MarkupDrawHandler from './MarkupDrawHandler';
+import { BoardMarkupObject } from '../boardObjects';
 
-export default {
-  drawField: {
-    stone(canvasCtx: CanvasRenderingContext2D, args: BoardFieldObject, board: CanvasBoard) {
-      const params = args.params || {};
-
-      canvasCtx.fillStyle = params.color || board.config.theme.markupNoneColor;
-      canvasCtx.beginPath();
-      canvasCtx.rect(-0.5, -0.5, 1, 1);
-      canvasCtx.fill();
-    },
-  },
-};
+/**
+ * TODO: rename this
+ */
+export default class Dot extends MarkupDrawHandler {
+  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject) {
+    canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+    canvasCtx.beginPath();
+    canvasCtx.rect(-0.5, -0.5, 1, 1);
+    canvasCtx.fill();
+  }
+}

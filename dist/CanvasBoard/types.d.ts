@@ -1,5 +1,6 @@
 import { Point } from '../types';
-import CanvasBoard from './CanvasBoard';
+import BoardObject from './BoardObject';
+import DrawHandler from './drawHandlers/DrawHandler';
 export interface BoardViewport {
     top: number;
     right: number;
@@ -9,38 +10,32 @@ export interface BoardViewport {
 export interface CanvasBoardTheme {
     stoneSize: number;
     grid: {
-        handler: DrawHandler;
-        params: {
-            linesWidth: number;
-            linesColor: string;
-            starColor: string;
-            starSize: number;
-        };
+        linesWidth: number;
+        linesColor: string;
+        starColor: string;
+        starSize: number;
     };
     markupBlackColor: string;
     markupWhiteColor: string;
     markupNoneColor: string;
-    markupLinesWidth: number;
+    markupLineWidth: number;
     shadowColor: string;
     shadowTransparentColor: string;
     shadowBlur: number;
     shadowOffsetX: number;
     shadowOffsetY: number;
     coordinates: {
-        handler: DrawHandler;
-        params: {
-            color: string;
-            bold: boolean;
-            x: string | (string | number)[];
-            y: string | (string | number)[];
-        };
+        color: string;
+        bold: boolean;
+        x: string | (string | number)[];
+        y: string | (string | number)[];
     };
     font: string;
     linesShift: number;
     backgroundColor: string;
     backgroundImage: string;
     drawHandlers: {
-        [key: string]: any;
+        [key: string]: DrawHandler;
     };
 }
 export interface CanvasBoardConfig {
@@ -58,19 +53,19 @@ export interface CanvasBoardConfig {
     /** This will cause sharper edges, but the board won't have exact specified dimensions (temporary solution I hope) */
     snapToGrid: boolean;
 }
-export interface DrawFunction<P> {
-    (context: CanvasRenderingContext2D, args: P, board: CanvasBoard): void;
+export interface DrawFunction {
+    (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void;
 }
 export interface DrawHandlerBase {
 }
 export interface FieldDrawHandler extends DrawHandlerBase {
     drawField: {
-        [layer: string]: DrawFunction<BoardFieldObject>;
+        [layer: string]: any;
     };
 }
 export interface FreeDrawHandler extends DrawHandlerBase {
     drawFree: {
-        [layer: string]: DrawFunction<BoardFreeObject>;
+        [layer: string]: any;
     };
 }
 export declare type DrawHandler = FieldDrawHandler | FreeDrawHandler;
