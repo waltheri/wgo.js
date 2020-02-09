@@ -3,11 +3,14 @@ import { BoardObject } from '../boardObjects';
 import DrawHandler from './DrawHandler';
 import Stone from './Stone';
 export default class RealisticStone extends Stone {
-    images: HTMLImageElement[];
+    paths: string[];
+    images: {
+        [path: string]: HTMLImageElement;
+    };
     fallback: DrawHandler;
     randSeed: number;
     redrawRequest: number;
     constructor(paths: string[], fallback: DrawHandler);
-    loadImages(paths: string[]): void;
-    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void;
+    loadImage(path: string): Promise<HTMLImageElement>;
+    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): Promise<void>;
 }

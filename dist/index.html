@@ -30,7 +30,7 @@ board.addObjectAt(10, 10, new WGo.BoardObject('B'));
 board.addObjectAt(11, 11, new WGo.BoardObject('B'));
 board.addObjectAt(10, 11, new WGo.BoardObject('W'));
 const opaque = new WGo.BoardObject('W');
-opaque.opacity = 0.5;
+opaque.opacity = 1;
 board.addObjectAt(11, 10, opaque);
 
 board.addObjectAt(5, 4, new WGo.BoardMarkupObject('SQ'));
@@ -243,19 +243,21 @@ board.addObject({ x: 14, y: 14, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'W' });
 board.addObject({ x: 14, y: 13, type: 'MA' });*/
 
-/*let lastX;
+let lastX;
 let lastY;
-let obj;
+let obj = new WGo.BoardObject('W');
+
+obj.opacity = 0.5;
 
 board.on('mousemove', (evt, pos) => {
   if (pos && (pos.x !== lastX || pos.y !== lastY)) {
-    if (obj) {
-      board.removeObject(obj);
+    obj.x = pos.x;
+    obj.y = pos.y;
+    if (!board.hasObject(obj)) {
+      board.addObject(obj);
+    } else {
+      board.redraw();
     }
-    lastX = pos.x;
-    lastY = pos.y;
-    obj = { handler: WGo.drawHandlers.transparent(WGo.drawHandlers.simpleStone('black')), field: pos };
-    board.addObject(obj);
   } else if (!pos && obj) {
     board.removeObject(obj);
     lastX = null;
@@ -272,9 +274,9 @@ board.on('mouseout', (evt, pos) => {
 });
 
 board.on('click', (evt, pos) => {
-  board.addObject({ type: 'B', field: pos });
+  board.addObjectAt(pos.x, pos.y, new WGo.BoardObject('W'));
 });
-*/
+
 </script>
 </body>
 </html>

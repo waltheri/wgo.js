@@ -16,7 +16,8 @@ import Stone from './Stone';
 }*/
 
 export default class RealisticStone extends Stone {
-  images: HTMLImageElement[];
+  paths: string[];
+  images: { [path: string]: HTMLImageElement };
   fallback: DrawHandler;
   randSeed: number;
   redrawRequest: number;
@@ -25,33 +26,43 @@ export default class RealisticStone extends Stone {
     super();
     this.fallback = fallback;
     this.randSeed = Math.ceil(Math.random() * 9999999);
-    this.images = [];
-    this.loadImages(paths);
+    this.images = {};
+    this.paths = paths;
   }
 
-  loadImages(paths: string[]) {
-    if (paths[0]) {
+  loadImage(path: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
       const image = new Image();
       image.onload = () => {
-        this.images.push(image);
-        this.loadImages(paths.slice(1));
+        resolve(image);
       };
       image.onerror = () => {
-        this.loadImages(paths.slice(1));
+        reject();
       };
-      image.src = paths[0];
-    }
+      image.src = path;
+    });
   }
 
   stone (canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject) {
-    const count = this.images.length;
+    const count = this.paths.length;
 
     if (count) {
       const stoneRadius = boardConfig.theme.stoneSize;
       const idx = this.randSeed % (count + boardObject.x * boardConfig.size + boardObject.y) % count;
-      canvasCtx.drawImage(this.images[idx], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+
+      if (this.images[this.paths[idx]]) {
+        canvasCtx.drawImage(this.images[this.paths[idx]], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+      } else {
+        this.fallback.stone(canvasCtx, boardConfig, boardObject);
+
+        const path = this.paths[idx];
+        return this.loadImage(path).then((image) => {
+          this.images[path] = image;
+        }).catch(() => {
+          this.paths = this.paths.filter(p => p !== path);
+        });
+      }
     } else {
-      // Fall back to SHELL handler if there was a problem loading the image
       this.fallback.stone(canvasCtx, boardConfig, boardObject);
     }
   }

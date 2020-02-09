@@ -74,7 +74,7 @@ export interface CanvasBoardConfig {
 }
 
 export interface DrawFunction {
-  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void;
+  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void | Promise<void>;
 }
 
 export interface DrawHandlerBase {

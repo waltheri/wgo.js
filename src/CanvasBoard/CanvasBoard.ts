@@ -432,6 +432,10 @@ export default class CanvasBoard extends EventEmitter {
     this.redraw();
   }
 
+  hasObject(boardObject: BoardObject) {
+    return this.objects.indexOf(boardObject) >= 0;
+  }
+
   on(type: string, callback: (event: UIEvent, point: Point) => void) {
     super.on(type, callback);
     this.registerBoardListener(type);

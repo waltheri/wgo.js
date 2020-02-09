@@ -61,10 +61,16 @@ export default class CanvasLayer {
       this.context.rotate(boardObject.rotate);
       this.context.globalAlpha = boardObject.opacity;
 
-      drawFunction(this.context, this.board.config, boardObject);
+      const res = drawFunction(this.context, this.board.config, boardObject);
 
       // restore context
       this.context.restore();
+
+      if (res && res.then) {
+        res.then(() => {
+          this.board.redraw();
+        });
+      }
     } catch (err) {
       // If the board is too small some canvas painting function can throw an exception, but we don't
       // want to break our app

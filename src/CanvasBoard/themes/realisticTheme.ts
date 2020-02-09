@@ -14,7 +14,7 @@ const realisticTheme: CanvasBoardTheme = {
       'images/stones/black01_128.png',
       'images/stones/black02_128.png',
       'images/stones/black03_128.png',
-    ], new drawHandlers.ShellStoneBlack()),
+    ], new drawHandlers.GlassStoneBlack()),
     W: new drawHandlers.RealisticStone([
       'images/stones/white00_128.png',
       'images/stones/white01_128.png',
@@ -27,7 +27,7 @@ const realisticTheme: CanvasBoardTheme = {
       'images/stones/white08_128.png',
       'images/stones/white09_128.png',
       'images/stones/white10_128.png',
-    ], new drawHandlers.ShellStoneWhite()),
+    ], new drawHandlers.GlassStoneWhite()),
   },
   /*grid: {
     ...baseTheme.grid,

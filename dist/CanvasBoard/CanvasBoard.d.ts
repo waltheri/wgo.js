@@ -142,6 +142,7 @@ export default class CanvasBoard extends EventEmitter {
     removeObject(boardObject: BoardObject | BoardObject[]): void;
     removeObjectsAt(x: number, y: number): void;
     removeAllObjects(): void;
+    hasObject(boardObject: BoardObject): boolean;
     on(type: string, callback: (event: UIEvent, point: Point) => void): void;
     registerBoardListener(type: string): void;
     getRelativeCoordinates(absoluteX: number, absoluteY: number): {

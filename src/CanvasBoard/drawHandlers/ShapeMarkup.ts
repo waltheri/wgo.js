@@ -6,6 +6,8 @@ export default abstract class ShapeMarkup extends MarkupDrawHandler {
   stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject) {
     canvasCtx.strokeStyle = this.getColor(boardConfig, boardObject);
     canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
+    canvasCtx.shadowBlur = 10;
+    canvasCtx.shadowColor = canvasCtx.strokeStyle;
 
     canvasCtx.beginPath();
     this.drawShape(canvasCtx);

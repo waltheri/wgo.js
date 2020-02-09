@@ -12,6 +12,8 @@ export default class Label extends MarkupDrawHandler<LabelParams> {
     const font = this.params.font || boardConfig.theme.font || '';
 
     canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+    canvasCtx.shadowBlur = 10;
+    canvasCtx.shadowColor = canvasCtx.fillStyle;
 
     let fontSize = 0.5;
 

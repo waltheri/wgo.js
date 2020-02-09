@@ -292,6 +292,7 @@
             this.context.transform(1, 0, 0, 1, linesShift, linesShift);
         };
         CanvasLayer.prototype.draw = function (drawFunction, boardObject) {
+            var _this = this;
             try {
                 var leftOffset = this.board.getX(boardObject.x);
                 var topOffset = this.board.getY(boardObject.y);
@@ -301,9 +302,14 @@
                 this.context.transform(fieldSize * boardObject.scaleX, 0, 0, fieldSize * boardObject.scaleY, leftOffset, topOffset);
                 this.context.rotate(boardObject.rotate);
                 this.context.globalAlpha = boardObject.opacity;
-                drawFunction(this.context, this.board.config, boardObject);
+                var res = drawFunction(this.context, this.board.config, boardObject);
                 // restore context
                 this.context.restore();
+                if (res && res.then) {
+                    res.then(function () {
+                        _this.board.redraw();
+                    });
+                }
             }
             catch (err) {
                 // If the board is too small some canvas painting function can throw an exception, but we don't
@@ -633,33 +639,42 @@
             var _this = _super.call(this) || this;
             _this.fallback = fallback;
             _this.randSeed = Math.ceil(Math.random() * 9999999);
-            _this.images = [];
-            _this.loadImages(paths);
+            _this.images = {};
+            _this.paths = paths;
             return _this;
         }
-        RealisticStone.prototype.loadImages = function (paths) {
-            var _this = this;
-            if (paths[0]) {
-                var image_1 = new Image();
-                image_1.onload = function () {
-                    _this.images.push(image_1);
-                    _this.loadImages(paths.slice(1));
+        RealisticStone.prototype.loadImage = function (path) {
+            return new Promise(function (resolve, reject) {
+                var image = new Image();
+                image.onload = function () {
+                    resolve(image);
                 };
-                image_1.onerror = function () {
-                    _this.loadImages(paths.slice(1));
+                image.onerror = function () {
+                    reject();
                 };
-                image_1.src = paths[0];
-            }
+                image.src = path;
+            });
         };
         RealisticStone.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
-            var count = this.images.length;
+            var _this = this;
+            var count = this.paths.length;
             if (count) {
                 var stoneRadius = boardConfig.theme.stoneSize;
                 var idx = this.randSeed % (count + boardObject.x * boardConfig.size + boardObject.y) % count;
-                canvasCtx.drawImage(this.images[idx], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+                if (this.images[this.paths[idx]]) {
+                    canvasCtx.drawImage(this.images[this.paths[idx]], -stoneRadius, -stoneRadius, 2 * stoneRadius, 2 * stoneRadius);
+                }
+                else {
+                    this.fallback.stone(canvasCtx, boardConfig, boardObject);
+                    var path_1 = this.paths[idx];
+                    return this.loadImage(path_1).then(function (image) {
+                        _this.images[path_1] = image;
+                    }).catch(function () {
+                        _this.paths = _this.paths.filter(function (p) { return p !== path_1; });
+                    });
+                }
             }
             else {
-                // Fall back to SHELL handler if there was a problem loading the image
                 this.fallback.stone(canvasCtx, boardConfig, boardObject);
             }
         };
@@ -713,6 +728,8 @@
         ShapeMarkup.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
             canvasCtx.strokeStyle = this.getColor(boardConfig, boardObject);
             canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = canvasCtx.strokeStyle;
             canvasCtx.beginPath();
             this.drawShape(canvasCtx);
             canvasCtx.stroke();
@@ -772,6 +789,8 @@
         Label.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
             var font = this.params.font || boardConfig.theme.font || '';
             canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = canvasCtx.fillStyle;
             var fontSize = 0.5;
             if (boardObject.text.length === 1) {
                 fontSize = 0.75;
@@ -894,7 +913,7 @@
                 'images/stones/black01_128.png',
                 'images/stones/black02_128.png',
                 'images/stones/black03_128.png',
-            ], new ShellStoneBlack()), W: new RealisticStone([
+            ], new GlassStoneBlack()), W: new RealisticStone([
                 'images/stones/white00_128.png',
                 'images/stones/white01_128.png',
                 'images/stones/white02_128.png',
@@ -906,7 +925,7 @@
                 'images/stones/white08_128.png',
                 'images/stones/white09_128.png',
                 'images/stones/white10_128.png',
-            ], new ShellStoneWhite()) }) });
+            ], new GlassStoneWhite()) }) });
     //# sourceMappingURL=realisticTheme.js.map
 
     var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
@@ -1441,6 +1460,9 @@
         CanvasBoard.prototype.removeAllObjects = function () {
             this.objects = [];
             this.redraw();
+        };
+        CanvasBoard.prototype.hasObject = function (boardObject) {
+            return this.objects.indexOf(boardObject) >= 0;
         };
         CanvasBoard.prototype.on = function (type, callback) {
             _super.prototype.on.call(this, type, callback);
