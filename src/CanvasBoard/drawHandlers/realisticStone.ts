@@ -1,6 +1,6 @@
 /* global window */
 import { CanvasBoardConfig } from '../types';
-import { BoardObject } from '../boardObjects';
+import { FieldObject } from '../boardObjects';
 import DrawHandler from './DrawHandler';
 import Stone from './Stone';
 
@@ -43,7 +43,7 @@ export default class RealisticStone extends Stone {
     });
   }
 
-  stone (canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject) {
+  stone (canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject) {
     const count = this.paths.length;
 
     if (count) {

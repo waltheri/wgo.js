@@ -1,6 +1,6 @@
 /* global document, window */
 import CanvasBoard from './CanvasBoard';
-import { BoardObject } from './boardObjects';
+import { BoardObject, FieldObject } from './boardObjects';
 import { DrawFunction } from './types';
 
 /**
@@ -44,22 +44,36 @@ export default class CanvasLayer {
 
   draw(drawFunction: DrawFunction, boardObject: BoardObject) {
     try {
-      const leftOffset = this.board.getX(boardObject.x);
-      const topOffset = this.board.getY(boardObject.y);
-      const fieldSize = this.board.fieldSize;
-
       // create a "sandbox" for drawing function
       this.context.save();
 
-      this.context.transform(
-        fieldSize * boardObject.scaleX,
-        0, 0,
-        fieldSize * boardObject.scaleY,
-        leftOffset,
-        topOffset,
-      );
-      this.context.rotate(boardObject.rotate);
-      this.context.globalAlpha = boardObject.opacity;
+      if (boardObject instanceof FieldObject) {
+        const leftOffset = this.board.getX(boardObject.x);
+        const topOffset = this.board.getY(boardObject.y);
+        const fieldSize = this.board.fieldSize;
+
+        this.context.transform(
+          fieldSize * boardObject.scaleX,
+          0, 0,
+          fieldSize * boardObject.scaleY,
+          leftOffset,
+          topOffset,
+        );
+        this.context.rotate(boardObject.rotate);
+        this.context.globalAlpha = boardObject.opacity;
+      } else {
+        const leftOffset = this.board.getX(0);
+        const topOffset = this.board.getY(0);
+        const fieldSize = this.board.fieldSize;
+
+        this.context.transform(
+          fieldSize,
+          0, 0,
+          fieldSize,
+          leftOffset,
+          topOffset,
+        );
+      }
 
       const res = drawFunction(this.context, this.board.config, boardObject);
 

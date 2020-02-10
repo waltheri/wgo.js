@@ -14,6 +14,9 @@ import Label from './Label';
 import Dot from './Dot';
 import XMark from './XMark';
 
+import Line from './Line';
+import Arrow from './Arrow';
+
 import DrawHandler from './DrawHandler';
 
 export {
@@ -32,4 +35,6 @@ export {
   Label,
   Dot,
   XMark,
+  Line,
+  Arrow,
 };

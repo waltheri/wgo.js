@@ -12,5 +12,7 @@ import Triangle from './Triangle';
 import Label from './Label';
 import Dot from './Dot';
 import XMark from './XMark';
+import Line from './Line';
+import Arrow from './Arrow';
 import DrawHandler from './DrawHandler';
-export { DrawHandler, ShellStoneBlack, ShellStoneWhite, GlassStoneBlack, GlassStoneWhite, PaintedStoneBlack, PaintedStoneWhite, SimpleStone, RealisticStone, Circle, Square, Triangle, Label, Dot, XMark, };
+export { DrawHandler, ShellStoneBlack, ShellStoneWhite, GlassStoneBlack, GlassStoneWhite, PaintedStoneBlack, PaintedStoneWhite, SimpleStone, RealisticStone, Circle, Square, Triangle, Label, Dot, XMark, Line, Arrow, };

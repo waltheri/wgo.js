@@ -15,7 +15,7 @@ import {
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
-import { BoardObject } from './boardObjects';
+import { BoardObject, FieldObject } from './boardObjects';
 import GridLayer from './GridLayer';
 import DrawHandler from './drawHandlers/DrawHandler';
 
@@ -389,7 +389,7 @@ export default class CanvasBoard extends EventEmitter {
   /**
    * Shortcut method to add object and set its position.
    */
-  addObjectAt(x: number, y: number, boardObject: BoardObject) {
+  addObjectAt(x: number, y: number, boardObject: FieldObject) {
     boardObject.setPosition(x, y);
     this.addObject(boardObject);
   }
@@ -421,7 +421,7 @@ export default class CanvasBoard extends EventEmitter {
 
   removeObjectsAt(x: number, y: number) {
     this.objects.forEach((obj) => {
-      if (obj.x === x && obj.y === y) {
+      if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
         this.removeObject(obj);
       }
     });

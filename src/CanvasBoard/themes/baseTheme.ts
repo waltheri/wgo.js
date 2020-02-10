@@ -50,6 +50,8 @@ const baseTheme: CanvasBoardTheme = {
     TR: new drawHandlers.Triangle(),
     MA: new drawHandlers.XMark({ lineWidth: 0.075 }),
     SL: new drawHandlers.Dot(),
+    LN: new drawHandlers.Line(),
+    AR: new drawHandlers.Arrow(),
   },
 };
 

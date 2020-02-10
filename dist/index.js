@@ -265,6 +265,98 @@
 
     //# sourceMappingURL=index.js.map
 
+    var BoardObject = /** @class */ (function () {
+        function BoardObject(type) {
+            this.type = type;
+        }
+        return BoardObject;
+    }());
+    //# sourceMappingURL=BoardObject.js.map
+
+    var FieldObject = /** @class */ (function (_super) {
+        __extends(FieldObject, _super);
+        function FieldObject(type) {
+            var _this = _super.call(this, type) || this;
+            _this.x = 0;
+            _this.y = 0;
+            _this.scaleX = 1;
+            _this.scaleY = 1;
+            _this.rotate = 0;
+            return _this;
+        }
+        FieldObject.prototype.setPosition = function (x, y) {
+            this.x = x;
+            this.y = y;
+        };
+        FieldObject.prototype.setScale = function (factor) {
+            this.scaleX = factor;
+            this.scaleY = factor;
+        };
+        FieldObject.prototype.setOpacity = function (value) {
+            this.opacity = value;
+        };
+        return FieldObject;
+    }(BoardObject));
+    //# sourceMappingURL=FieldObject.js.map
+
+    /**
+     * Enumeration representing stone color, can be used for representing board position.
+     */
+    (function (Color) {
+        Color[Color["BLACK"] = 1] = "BLACK";
+        Color[Color["B"] = 1] = "B";
+        Color[Color["WHITE"] = -1] = "WHITE";
+        Color[Color["W"] = -1] = "W";
+        Color[Color["EMPTY"] = 0] = "EMPTY";
+        Color[Color["E"] = 0] = "E";
+    })(exports.Color || (exports.Color = {}));
+    //# sourceMappingURL=types.js.map
+
+    /**
+     * Board markup object is special type of object, which can have 3 variations - for empty field
+     * and for black and white stone.
+     */
+    var BoardMarkupObject = /** @class */ (function (_super) {
+        __extends(BoardMarkupObject, _super);
+        function BoardMarkupObject(type, variation) {
+            if (variation === void 0) { variation = exports.Color.E; }
+            var _this = _super.call(this, type) || this;
+            _this.variation = variation;
+            return _this;
+        }
+        return BoardMarkupObject;
+    }(FieldObject));
+    //# sourceMappingURL=BoardMarkupObject.js.map
+
+    var BoardLabelObject = /** @class */ (function (_super) {
+        __extends(BoardLabelObject, _super);
+        function BoardLabelObject(text, variation) {
+            var _this = _super.call(this, 'LB', variation) || this;
+            _this.text = text;
+            return _this;
+        }
+        return BoardLabelObject;
+    }(BoardMarkupObject));
+    //# sourceMappingURL=BoardLabelObject.js.map
+
+    /**
+     * Board markup object is special type of object, which can have 3 variations - for empty field
+     * and for black and white stone.
+     */
+    var BoardLineObject = /** @class */ (function (_super) {
+        __extends(BoardLineObject, _super);
+        function BoardLineObject(type, start, end) {
+            var _this = _super.call(this, type) || this;
+            _this.start = start;
+            _this.end = end;
+            return _this;
+        }
+        return BoardLineObject;
+    }(FieldObject));
+    //# sourceMappingURL=BoardLineObject.js.map
+
+    //# sourceMappingURL=index.js.map
+
     /**
      * @class
      * Implements one layer of the HTML5 canvas
@@ -294,14 +386,22 @@
         CanvasLayer.prototype.draw = function (drawFunction, boardObject) {
             var _this = this;
             try {
-                var leftOffset = this.board.getX(boardObject.x);
-                var topOffset = this.board.getY(boardObject.y);
-                var fieldSize = this.board.fieldSize;
                 // create a "sandbox" for drawing function
                 this.context.save();
-                this.context.transform(fieldSize * boardObject.scaleX, 0, 0, fieldSize * boardObject.scaleY, leftOffset, topOffset);
-                this.context.rotate(boardObject.rotate);
-                this.context.globalAlpha = boardObject.opacity;
+                if (boardObject instanceof FieldObject) {
+                    var leftOffset = this.board.getX(boardObject.x);
+                    var topOffset = this.board.getY(boardObject.y);
+                    var fieldSize = this.board.fieldSize;
+                    this.context.transform(fieldSize * boardObject.scaleX, 0, 0, fieldSize * boardObject.scaleY, leftOffset, topOffset);
+                    this.context.rotate(boardObject.rotate);
+                    this.context.globalAlpha = boardObject.opacity;
+                }
+                else {
+                    var leftOffset = this.board.getX(0);
+                    var topOffset = this.board.getY(0);
+                    var fieldSize = this.board.fieldSize;
+                    this.context.transform(fieldSize, 0, 0, fieldSize, leftOffset, topOffset);
+                }
                 var res = drawFunction(this.context, this.board.config, boardObject);
                 // restore context
                 this.context.restore();
@@ -680,19 +780,7 @@
         };
         return RealisticStone;
     }(Stone));
-
-    /**
-     * Enumeration representing stone color, can be used for representing board position.
-     */
-    (function (Color) {
-        Color[Color["BLACK"] = 1] = "BLACK";
-        Color[Color["B"] = 1] = "B";
-        Color[Color["WHITE"] = -1] = "WHITE";
-        Color[Color["W"] = -1] = "W";
-        Color[Color["EMPTY"] = 0] = "EMPTY";
-        Color[Color["E"] = 0] = "E";
-    })(exports.Color || (exports.Color = {}));
-    //# sourceMappingURL=types.js.map
+    //# sourceMappingURL=RealisticStone.js.map
 
     var MarkupDrawHandler = /** @class */ (function (_super) {
         __extends(MarkupDrawHandler, _super);
@@ -841,6 +929,73 @@
     }(ShapeMarkup));
     //# sourceMappingURL=XMark.js.map
 
+    var Line = /** @class */ (function (_super) {
+        __extends(Line, _super);
+        function Line() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Line.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            canvasCtx.strokeStyle = this.params.color ? this.params.color : boardConfig.theme.markupNoneColor;
+            canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = canvasCtx.strokeStyle;
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(boardObject.start.x, boardObject.start.y);
+            canvasCtx.lineTo(boardObject.end.x, boardObject.end.y);
+            canvasCtx.stroke();
+        };
+        return Line;
+    }(DrawHandler));
+    //# sourceMappingURL=Line.js.map
+
+    var Arrow = /** @class */ (function (_super) {
+        __extends(Arrow, _super);
+        function Arrow() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Arrow.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
+            canvasCtx.strokeStyle = this.params.color ? this.params.color : boardConfig.theme.markupNoneColor;
+            canvasCtx.fillStyle = canvasCtx.strokeStyle;
+            canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = canvasCtx.strokeStyle;
+            var x1 = boardObject.start.x;
+            var y1 = boardObject.start.y;
+            var x2 = boardObject.end.x;
+            var y2 = boardObject.end.y;
+            // length of the main line
+            var length = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+            // line parametric functions
+            var getLineX = function (t) { return x1 + t * (x2 - x1); };
+            var getLineY = function (t) { return y1 + t * (y2 - y1); };
+            // triangle base line position on the main line
+            var triangleLen = 1 / length / 2.5;
+            var tx = getLineX(1 - triangleLen);
+            var ty = getLineY(1 - triangleLen);
+            // triangle base line parametric functions
+            var getBaseLineX = function (t) { return tx + t * (y2 - y1); };
+            var getBaseLineY = function (t) { return ty + t * (x1 - x2); };
+            // initial circle length
+            var circleLen = 0.1;
+            // draw initial circle
+            canvasCtx.arc(x1, y1, circleLen, 0, 2 * Math.PI, true);
+            canvasCtx.fill();
+            // draw line
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(getLineX(1 / length * circleLen), getLineY(1 / length * circleLen));
+            canvasCtx.lineTo(tx, ty);
+            canvasCtx.stroke();
+            // draw triangle at the end to make arrow
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(getBaseLineX(-triangleLen / 1.75), getBaseLineY(-triangleLen / 1.75));
+            canvasCtx.lineTo(getBaseLineX(triangleLen / 1.75), getBaseLineY(triangleLen / 1.75));
+            canvasCtx.lineTo(x2, y2);
+            canvasCtx.closePath();
+            canvasCtx.fill();
+        };
+        return Arrow;
+    }(DrawHandler));
+
     //# sourceMappingURL=index.js.map
 
     var index = /*#__PURE__*/Object.freeze({
@@ -858,7 +1013,9 @@
         Triangle: Triangle,
         Label: Label,
         Dot: Dot,
-        XMark: XMark
+        XMark: XMark,
+        Line: Line,
+        Arrow: Arrow
     });
 
     //import { boardObjects } from '../boardObjects';
@@ -904,6 +1061,8 @@
             TR: new Triangle(),
             MA: new XMark({ lineWidth: 0.075 }),
             SL: new Dot(),
+            LN: new Line(),
+            AR: new Arrow(),
         },
     };
     //# sourceMappingURL=baseTheme.js.map
@@ -1452,7 +1611,7 @@
         CanvasBoard.prototype.removeObjectsAt = function (x, y) {
             var _this = this;
             this.objects.forEach(function (obj) {
-                if (obj.x === x && obj.y === y) {
+                if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
                     _this.removeObject(obj);
                 }
             });
@@ -1492,59 +1651,6 @@
         return CanvasBoard;
     }(EventEmitter));
     //# sourceMappingURL=CanvasBoard.js.map
-
-    var BoardObject = /** @class */ (function () {
-        function BoardObject(type) {
-            this.type = type;
-            this.x = 0;
-            this.y = 0;
-            this.scaleX = 1;
-            this.scaleY = 1;
-            this.rotate = 0;
-        }
-        BoardObject.prototype.setPosition = function (x, y) {
-            this.x = x;
-            this.y = y;
-        };
-        BoardObject.prototype.setScale = function (factor) {
-            this.scaleX = factor;
-            this.scaleY = factor;
-        };
-        BoardObject.prototype.setOpacity = function (value) {
-            this.opacity = value;
-        };
-        return BoardObject;
-    }());
-    //# sourceMappingURL=BoardObject.js.map
-
-    /**
-     * Board markup object is special type of object, which can have 3 variations - for empty field
-     * and for black and white stone.
-     */
-    var BoardMarkupObject = /** @class */ (function (_super) {
-        __extends(BoardMarkupObject, _super);
-        function BoardMarkupObject(type, variation) {
-            if (variation === void 0) { variation = exports.Color.E; }
-            var _this = _super.call(this, type) || this;
-            _this.variation = variation;
-            return _this;
-        }
-        return BoardMarkupObject;
-    }(BoardObject));
-    //# sourceMappingURL=BoardMarkupObject.js.map
-
-    var BoardLabelObject = /** @class */ (function (_super) {
-        __extends(BoardLabelObject, _super);
-        function BoardLabelObject(text, variation) {
-            var _this = _super.call(this, 'LB', variation) || this;
-            _this.text = text;
-            return _this;
-        }
-        return BoardLabelObject;
-    }(BoardMarkupObject));
-    //# sourceMappingURL=BoardLabelObject.js.map
-
-    //# sourceMappingURL=index.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -3250,10 +3356,12 @@
     //# sourceMappingURL=index.js.map
 
     exports.BoardLabelObject = BoardLabelObject;
+    exports.BoardLineObject = BoardLineObject;
     exports.BoardMarkupObject = BoardMarkupObject;
     exports.BoardObject = BoardObject;
     exports.CHINESE_RULES = CHINESE_RULES;
     exports.CanvasBoard = CanvasBoard;
+    exports.FieldObject = FieldObject;
     exports.Game = Game;
     exports.ING_RULES = ING_RULES;
     exports.JAPANESE_RULES = JAPANESE_RULES;

@@ -3,7 +3,7 @@ import { CanvasBoardConfig, BoardViewport } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
-import { BoardObject } from './boardObjects';
+import { BoardObject, FieldObject } from './boardObjects';
 export default class CanvasBoard extends EventEmitter {
     config: CanvasBoardConfig;
     element: HTMLElement;
@@ -133,7 +133,7 @@ export default class CanvasBoard extends EventEmitter {
     /**
      * Shortcut method to add object and set its position.
      */
-    addObjectAt(x: number, y: number, boardObject: BoardObject): void;
+    addObjectAt(x: number, y: number, boardObject: FieldObject): void;
     /**
      * Remove board object. Main function for removing graphics on the board.
      *
