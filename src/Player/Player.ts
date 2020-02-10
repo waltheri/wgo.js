@@ -1,7 +1,7 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { PlayerConfig } from './types';
 import playerDefaultConfig from './defaultConfig';
-import CanvasBoard, { BoardObject } from '../CanvasBoard';
+import CanvasBoard, { BoardObject, FieldObject } from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
 import KifuNode from '../kifu/KifuNode';
 import { Color } from '../types';
@@ -18,7 +18,7 @@ export default class Player extends EventEmitter {
   config: PlayerConfig;
   board: CanvasBoard;
   kifuReader: KifuReader;
-  stoneBoardsObjects: BoardObject[];
+  stoneBoardsObjects: FieldObject[];
   markupBoardObjects: BoardObject[];
 
   // handleBoardClick(event: UIEvent, point: Point): void;
@@ -57,29 +57,29 @@ export default class Player extends EventEmitter {
 
   updateBoard() {
     // Remove missing stones in current position
-    //this.stoneBoardsObjects = this.stoneBoardsObjects.filter((boardObject) => {
-    //  if (this.kifuReader.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
-    //    this.board.removeObject(boardObject);
-    //    return false;
-    //  }
-    //  return true;
-    //});
-//
-    //// Add new stones from current position
-    //const position = this.kifuReader.game.position;
-//
-    //for (let x = 0; x < position.size; x++) {
-    //  for (let y = 0; y < position.size; y++) {
-    //    const c = position.get(x, y);
-    //    if (c && !this.stoneBoardsObjects.some(
-    //      boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type],
-    //    )) {
-    //      const boardObject = { type: c === Color.B ? 'B' : 'W', field: { x, y } };
-    //      this.board.addObject(boardObject);
-    //      this.stoneBoardsObjects.push(boardObject);
-    //    }
-    //  }
-    //}
+    this.stoneBoardsObjects = this.stoneBoardsObjects.filter((boardObject) => {
+      if (this.kifuReader.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type as string]) {
+        this.board.removeObject(boardObject);
+        return false;
+      }
+      return true;
+    });
+
+    // Add new stones from current position
+    const position = this.kifuReader.game.position;
+
+    for (let x = 0; x < position.size; x++) {
+      for (let y = 0; y < position.size; y++) {
+        const c = position.get(x, y);
+        if (c && !this.stoneBoardsObjects.some(
+          boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
+        )) {
+          const boardObject = new FieldObject(c === Color.B ? 'B' : 'W');
+          this.board.addObjectAt(x, y, boardObject);
+          this.stoneBoardsObjects.push(boardObject);
+        }
+      }
+    }
 
     // Remove all markup
     this.markupBoardObjects.forEach(boardObject => this.board.removeObject(boardObject));

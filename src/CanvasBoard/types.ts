@@ -1,6 +1,5 @@
-import { Point, Color } from '../types';
-import CanvasBoard from './CanvasBoard';
-import BoardObject from './BoardObject';
+import { Point } from '../types';
+import { BoardObject } from './boardObjects';
 import DrawHandler from './drawHandlers/DrawHandler';
 
 export interface BoardViewport {
@@ -76,35 +75,3 @@ export interface CanvasBoardConfig {
 export interface DrawFunction {
   (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void | Promise<void>;
 }
-
-export interface DrawHandlerBase {
-}
-
-export interface FieldDrawHandler extends DrawHandlerBase {
-  drawField: {
-    [layer: string]: any;
-  };
-}
-
-export interface FreeDrawHandler extends DrawHandlerBase {
-  drawFree: {
-    [layer: string]: any;
-  };
-}
-
-export type DrawHandler = FieldDrawHandler | FreeDrawHandler;
-
-export interface BoardObjectBase {
-  type?: string;
-  params?: {
-    [key: string]: any;
-  };
-}
-
-export type BoardFieldObject = ({ type?: string, handler?: DrawHandler }) & BoardObjectBase & {
-  field: Point;
-};
-
-export type BoardFreeObject = ({ type?: string, handler?: DrawHandler }) & BoardObjectBase;
-
-// export type BoardObject = BoardFieldObject | BoardFreeObject;*/

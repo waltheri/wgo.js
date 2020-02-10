@@ -40,6 +40,7 @@ export default class Arrow extends DrawHandler<ArrowParams> {
     const circleLen = 0.1;
 
     // draw initial circle
+    canvasCtx.beginPath();
     canvasCtx.arc(x1, y1, circleLen, 0, 2 * Math.PI, true);
     canvasCtx.fill();
 

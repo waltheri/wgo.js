@@ -18,6 +18,9 @@ import Line from './Line';
 import Arrow from './Arrow';
 
 import DrawHandler from './DrawHandler';
+import MarkupDrawHandler from './MarkupDrawHandler';
+import Stone from './Stone';
+import ShapeMarkup from './ShapeMarkup';
 
 export {
   DrawHandler,
@@ -37,4 +40,7 @@ export {
   XMark,
   Line,
   Arrow,
+  Stone,
+  MarkupDrawHandler,
+  ShapeMarkup,
 };

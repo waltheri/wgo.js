@@ -29,15 +29,6 @@ const realisticTheme: CanvasBoardTheme = {
       'images/stones/white10_128.png',
     ], new drawHandlers.GlassStoneWhite()),
   },
-  /*grid: {
-    ...baseTheme.grid,
-    params: {
-      ...baseTheme.grid.params,
-      linesWidth: 0.035,
-      starSize: 0.1,
-      linesColor: '#000',
-    },
-  },*/
 };
 
 export default realisticTheme;

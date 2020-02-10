@@ -43,6 +43,7 @@ board.addObjectAt(8, 1, new WGo.BoardLabelObject('😃'));
 board.addObjectAt(2, 3, new WGo.BoardMarkupObject('SL'));
 board.addObjectAt(3, 3, new WGo.BoardMarkupObject('SL'));
 board.addObjectAt(3, 2, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(2, 2, new WGo.FieldObject('B'));
 board.addObjectAt(2, 2, new WGo.BoardMarkupObject('SL'));
 
 board.addObjectAt(7, 15, new WGo.BoardMarkupObject('TR'));
@@ -52,7 +53,7 @@ const rotated = new WGo.BoardMarkupObject('TR');
 rotated.rotate = Math.PI;
 board.addObjectAt(7, 16, rotated);
 
-board.addObjectAt(8, 7, new WGo.FieldObject(new WGo.drawHandlers.Circle({ color: '#009', fillColor: 'rgba(0, 0, 128, 0.5)', lineWidth: 0.02 })));
+board.addObjectAt(8, 7, new WGo.FieldObject(new WGo.drawHandlers.Circle({ color: '#030', fillColor: 'rgba(0, 64, 0, 0.5)', lineWidth: 0.02 })));
 
 const reduced = new WGo.FieldObject('B');
 reduced.setScale(0.5);

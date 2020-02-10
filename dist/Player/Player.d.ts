@@ -1,6 +1,6 @@
 import { PartialRecursive } from '../utils/makeConfig';
 import { PlayerConfig } from './types';
-import CanvasBoard, { BoardObject } from '../CanvasBoard';
+import CanvasBoard, { BoardObject, FieldObject } from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
 import EventEmitter from '../utils/EventEmitter';
 export default class Player extends EventEmitter {
@@ -8,7 +8,7 @@ export default class Player extends EventEmitter {
     config: PlayerConfig;
     board: CanvasBoard;
     kifuReader: KifuReader;
-    stoneBoardsObjects: BoardObject[];
+    stoneBoardsObjects: FieldObject[];
     markupBoardObjects: BoardObject[];
     constructor(element: HTMLElement, config?: PartialRecursive<PlayerConfig>);
     init(): void;

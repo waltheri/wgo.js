@@ -904,14 +904,16 @@
         function Dot() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        Dot.prototype.stone = function (canvasCtx, boardConfig, boardObject) {
-            canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+        Dot.prototype.stone = function (canvasCtx) {
+            canvasCtx.fillStyle = this.params.color;
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = canvasCtx.fillStyle;
             canvasCtx.beginPath();
-            canvasCtx.rect(-0.5, -0.5, 1, 1);
+            canvasCtx.arc(0, 0, 0.15, 0, 2 * Math.PI, true);
             canvasCtx.fill();
         };
         return Dot;
-    }(MarkupDrawHandler));
+    }(DrawHandler));
     //# sourceMappingURL=Dot.js.map
 
     var XMark = /** @class */ (function (_super) {
@@ -978,6 +980,7 @@
             // initial circle length
             var circleLen = 0.1;
             // draw initial circle
+            canvasCtx.beginPath();
             canvasCtx.arc(x1, y1, circleLen, 0, 2 * Math.PI, true);
             canvasCtx.fill();
             // draw line
@@ -995,6 +998,7 @@
         };
         return Arrow;
     }(DrawHandler));
+    //# sourceMappingURL=Arrow.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -1015,10 +1019,12 @@
         Dot: Dot,
         XMark: XMark,
         Line: Line,
-        Arrow: Arrow
+        Arrow: Arrow,
+        Stone: Stone,
+        MarkupDrawHandler: MarkupDrawHandler,
+        ShapeMarkup: ShapeMarkup
     });
 
-    //import { boardObjects } from '../boardObjects';
     var baseTheme = {
         // basic
         stoneSize: 0.47,
@@ -1060,7 +1066,7 @@
             LB: new Label(),
             TR: new Triangle(),
             MA: new XMark({ lineWidth: 0.075 }),
-            SL: new Dot(),
+            SL: new Dot({ color: 'rgba(32, 32, 192, 0.75)' }),
             LN: new Line(),
             AR: new Arrow(),
         },
@@ -1278,27 +1284,6 @@
     //# sourceMappingURL=GridLayer.js.map
 
     /* global document, window */
-    /*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
-      // new hopefully better translation of coordinates
-
-      let x: number;
-      let y: number;
-
-      x = e.layerX * board.pixelRatio;
-      x -= board.left;
-      x /= board.fieldWidth;
-      x = Math.round(x);
-
-      y = e.layerY * board.pixelRatio;
-      y -= board.top;
-      y /= board.fieldHeight;
-      y = Math.round(y);
-
-      return {
-        x: x >= board.size ? -1 : x,
-        y: y >= board.size ? -1 : y,
-      };
-    };*/
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
         /**
@@ -2486,8 +2471,9 @@
     var playerDefaultConfig = {
         boardTheme: canvasBoardDefaultConfig.theme,
         sgf: null,
+        currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
+        currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
     };
-    //# sourceMappingURL=defaultConfig.js.map
 
     /**
      * From SGF specification, there are these types of property values:
@@ -3252,14 +3238,19 @@
     //# sourceMappingURL=KifuReader.js.map
 
     var propertyHandlers = {
-    //B(player, propIdent, propValue) {
-    //  player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'rgba(255,255,255,0.8)' } });
-    //},
-    //W(player, propIdent, propValue) {
-    //  player.addTemporaryBoardObject({ type: 'CR', field: propValue, params: { color: 'rgba(0,0,0,0.8)' } });
-    //},
+        B: function (player, propIdent, propValue) {
+            var circle = new FieldObject(player.config.currentMoveBlackMark);
+            circle.x = propValue.x;
+            circle.y = propValue.y;
+            player.addTemporaryBoardObject(circle);
+        },
+        W: function (player, propIdent, propValue) {
+            var circle = new FieldObject(player.config.currentMoveWhiteMark);
+            circle.x = propValue.x;
+            circle.y = propValue.y;
+            player.addTemporaryBoardObject(circle);
+        },
     };
-    //# sourceMappingURL=propertyHandlers.js.map
 
     var colorsMap = {
         B: exports.Color.BLACK,
@@ -3296,31 +3287,34 @@
             // this.board.on('click', )
         };
         Player.prototype.updateBoard = function () {
-            // Remove missing stones in current position
-            //this.stoneBoardsObjects = this.stoneBoardsObjects.filter((boardObject) => {
-            //  if (this.kifuReader.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
-            //    this.board.removeObject(boardObject);
-            //    return false;
-            //  }
-            //  return true;
-            //});
-            //
-            //// Add new stones from current position
-            //const position = this.kifuReader.game.position;
-            //
-            //for (let x = 0; x < position.size; x++) {
-            //  for (let y = 0; y < position.size; y++) {
-            //    const c = position.get(x, y);
-            //    if (c && !this.stoneBoardsObjects.some(
-            //      boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type],
-            //    )) {
-            //      const boardObject = { type: c === Color.B ? 'B' : 'W', field: { x, y } };
-            //      this.board.addObject(boardObject);
-            //      this.stoneBoardsObjects.push(boardObject);
-            //    }
-            //  }
-            //}
             var _this = this;
+            // Remove missing stones in current position
+            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
+                if (_this.kifuReader.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
+                    _this.board.removeObject(boardObject);
+                    return false;
+                }
+                return true;
+            });
+            // Add new stones from current position
+            var position = this.kifuReader.game.position;
+            var _loop_1 = function (x) {
+                var _loop_2 = function (y) {
+                    var c = position.get(x, y);
+                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
+                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W');
+                        this_1.board.addObjectAt(x, y, boardObject);
+                        this_1.stoneBoardsObjects.push(boardObject);
+                    }
+                };
+                for (var y = 0; y < position.size; y++) {
+                    _loop_2(y);
+                }
+            };
+            var this_1 = this;
+            for (var x = 0; x < position.size; x++) {
+                _loop_1(x);
+            }
             // Remove all markup
             this.markupBoardObjects.forEach(function (boardObject) { return _this.board.removeObject(boardObject); });
             this.markupBoardObjects = [];
@@ -3348,7 +3342,6 @@
         };
         return Player;
     }(EventEmitter));
-    //# sourceMappingURL=Player.js.map
 
     //# sourceMappingURL=index.js.map
 

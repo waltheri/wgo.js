@@ -1,15 +1,18 @@
 import { CanvasBoardConfig } from '../types';
-import MarkupDrawHandler from './MarkupDrawHandler';
+import DrawHandler from './DrawHandler';
 import { BoardMarkupObject } from '../boardObjects';
 
 /**
  * TODO: rename this
  */
-export default class Dot extends MarkupDrawHandler {
-  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject) {
-    canvasCtx.fillStyle = this.getColor(boardConfig, boardObject);
+export default class Dot extends DrawHandler<{ color: string }> {
+  stone(canvasCtx: CanvasRenderingContext2D) {
+    canvasCtx.fillStyle = this.params.color;
+    canvasCtx.shadowBlur = 10;
+    canvasCtx.shadowColor = canvasCtx.fillStyle;
+
     canvasCtx.beginPath();
-    canvasCtx.rect(-0.5, -0.5, 1, 1);
+    canvasCtx.arc(0, 0, 0.15, 0, 2 * Math.PI, true);
     canvasCtx.fill();
   }
 }

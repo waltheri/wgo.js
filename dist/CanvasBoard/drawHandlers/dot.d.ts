@@ -1,9 +1,9 @@
-import { CanvasBoardConfig } from '../types';
-import MarkupDrawHandler from './MarkupDrawHandler';
-import { BoardMarkupObject } from '../boardObjects';
+import DrawHandler from './DrawHandler';
 /**
  * TODO: rename this
  */
-export default class Dot extends MarkupDrawHandler {
-    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject): void;
+export default class Dot extends DrawHandler<{
+    color: string;
+}> {
+    stone(canvasCtx: CanvasRenderingContext2D): void;
 }

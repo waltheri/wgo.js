@@ -19,32 +19,6 @@ import { BoardObject, FieldObject } from './boardObjects';
 import GridLayer from './GridLayer';
 import DrawHandler from './drawHandlers/DrawHandler';
 
-function isSameField(field1: Point, field2: Point) {
-  return field1.x === field2.x && field1.y === field2.y;
-}
-
-/*const getMousePos = function (board: CanvasBoard, e: MouseEvent) {
-  // new hopefully better translation of coordinates
-
-  let x: number;
-  let y: number;
-
-  x = e.layerX * board.pixelRatio;
-  x -= board.left;
-  x /= board.fieldWidth;
-  x = Math.round(x);
-
-  y = e.layerY * board.pixelRatio;
-  y -= board.top;
-  y /= board.fieldHeight;
-  y = Math.round(y);
-
-  return {
-    x: x >= board.size ? -1 : x,
-    y: y >= board.size ? -1 : y,
-  };
-};*/
-
 export default class CanvasBoard extends EventEmitter {
   config: CanvasBoardConfig;
   element: HTMLElement;

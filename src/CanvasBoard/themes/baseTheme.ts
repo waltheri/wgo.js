@@ -1,6 +1,5 @@
 import { CanvasBoardTheme } from '../types';
 import * as drawHandlers from '../drawHandlers';
-//import { boardObjects } from '../boardObjects';
 
 const baseTheme: CanvasBoardTheme = {
   // basic
@@ -49,7 +48,7 @@ const baseTheme: CanvasBoardTheme = {
     LB: new drawHandlers.Label(),
     TR: new drawHandlers.Triangle(),
     MA: new drawHandlers.XMark({ lineWidth: 0.075 }),
-    SL: new drawHandlers.Dot(),
+    SL: new drawHandlers.Dot({ color: 'rgba(32, 32, 192, 0.75)' }),
     LN: new drawHandlers.Line(),
     AR: new drawHandlers.Arrow(),
   },
