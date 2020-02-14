@@ -51,6 +51,7 @@ const baseTheme: CanvasBoardTheme = {
     SL: new drawHandlers.Dot({ color: 'rgba(32, 32, 192, 0.75)' }),
     LN: new drawHandlers.Line(),
     AR: new drawHandlers.Arrow(),
+    DD: new drawHandlers.Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
   },
 };
 

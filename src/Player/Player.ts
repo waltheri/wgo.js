@@ -5,15 +5,15 @@ import CanvasBoard, { BoardObject, FieldObject } from '../CanvasBoard';
 import KifuReader from '../kifu/KifuReader';
 import KifuNode from '../kifu/KifuNode';
 import { Color } from '../types';
-import EventEmitter from '../utils/EventEmitter';
 import propertyHandlers from './propertyHandlers';
+import PlayerBase from './PlayerBase';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
   W: Color.WHITE,
 };
 
-export default class Player extends EventEmitter {
+export default class Player extends PlayerBase {
   element: HTMLElement;
   config: PlayerConfig;
   board: CanvasBoard;

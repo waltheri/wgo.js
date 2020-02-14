@@ -228,10 +228,10 @@ describe('SGF & KifuNode', () => {
 
     it('Simple setProperty() method', () => {
       node.setProperty('B', move1.c);
-      deepEqual(node.SGFProperties, { B: move1.c });
+      deepEqual(node.properties, { B: move1.c });
 
       node.setProperty('B');
-      deepEqual(node.SGFProperties, {});
+      deepEqual(node.properties, {});
     });
 
     /*it('Set single value property', () => {

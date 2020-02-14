@@ -19,6 +19,8 @@ import { BoardObject, FieldObject } from './boardObjects';
 import GridLayer from './GridLayer';
 import DrawHandler from './drawHandlers/DrawHandler';
 
+const zIndexSorter = (obj1: BoardObject, obj2: BoardObject) => obj1.zIndex - obj2.zIndex;
+
 export default class CanvasBoard extends EventEmitter {
   config: CanvasBoardConfig;
   element: HTMLElement;
@@ -309,27 +311,22 @@ export default class CanvasBoard extends EventEmitter {
           this.boardElement.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
         }
 
+        // sort objects by zIndex
+        this.objects.sort(zIndexSorter);
+
         // redraw all layers
         Object.keys(this.layers).forEach((layer) => {
-          this.redrawLayer(layer);
+          this.layers[layer].clear();
+
+          this.objects.forEach((object) => {
+            const handler = typeof object.type === 'string' ? this.config.theme.drawHandlers[object.type] : object.type;
+            if ((handler as any)[layer]) {
+              this.layers[layer].draw((handler as any)[layer].bind(handler), object);
+            }
+          });
         });
       });
     }
-  }
-
-  /**
-	 * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
-	 * For complete redrawing use method redraw().
-	 */
-  redrawLayer(layer: string) {
-    this.layers[layer].clear();
-
-    this.objects.forEach((object) => {
-      const handler = typeof object.type === 'string' ? this.config.theme.drawHandlers[object.type] : object.type;
-      if ((handler as any)[layer]) {
-        this.layers[layer].draw((handler as any)[layer].bind(handler), object);
-      }
-    });
   }
 
   /**

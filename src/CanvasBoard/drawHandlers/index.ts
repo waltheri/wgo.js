@@ -21,6 +21,7 @@ import DrawHandler from './DrawHandler';
 import MarkupDrawHandler from './MarkupDrawHandler';
 import Stone from './Stone';
 import ShapeMarkup from './ShapeMarkup';
+import Dim from './Dim';
 
 export {
   DrawHandler,
@@ -43,4 +44,5 @@ export {
   Stone,
   MarkupDrawHandler,
   ShapeMarkup,
+  Dim,
 };

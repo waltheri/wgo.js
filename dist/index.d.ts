@@ -4,3 +4,6 @@ export * from './CanvasBoard';
 export * from './Game';
 export { default as Player } from './Player';
 export { Color } from './types';
+export { default as KifuNode } from './kifu/KifuNode';
+export { default as KifuReader } from './kifu/KifuReader';
+export { default as propertyValueTypes } from './kifu/propertyValueTypes';

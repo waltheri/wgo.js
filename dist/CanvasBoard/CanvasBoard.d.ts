@@ -120,11 +120,6 @@ export default class CanvasBoard extends EventEmitter {
      */
     redraw(): void;
     /**
-       * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
-       * For complete redrawing use method redraw().
-       */
-    redrawLayer(layer: string): void;
-    /**
      * Add board object. Main function for adding graphics on the board.
      *
      * @param boardObject

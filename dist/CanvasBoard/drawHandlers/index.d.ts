@@ -18,4 +18,5 @@ import DrawHandler from './DrawHandler';
 import MarkupDrawHandler from './MarkupDrawHandler';
 import Stone from './Stone';
 import ShapeMarkup from './ShapeMarkup';
-export { DrawHandler, ShellStoneBlack, ShellStoneWhite, GlassStoneBlack, GlassStoneWhite, PaintedStoneBlack, PaintedStoneWhite, SimpleStone, RealisticStone, Circle, Square, Triangle, Label, Dot, XMark, Line, Arrow, Stone, MarkupDrawHandler, ShapeMarkup, };
+import Dim from './Dim';
+export { DrawHandler, ShellStoneBlack, ShellStoneWhite, GlassStoneBlack, GlassStoneWhite, PaintedStoneBlack, PaintedStoneWhite, SimpleStone, RealisticStone, Circle, Square, Triangle, Label, Dot, XMark, Line, Arrow, Stone, MarkupDrawHandler, ShapeMarkup, Dim, };

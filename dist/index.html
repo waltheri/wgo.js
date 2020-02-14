@@ -35,10 +35,17 @@ board.addObjectAt(11, 10, opaque);
 
 board.addObjectAt(5, 4, new WGo.BoardMarkupObject('SQ'));
 board.addObjectAt(6, 4, new WGo.BoardLabelObject('225'));
-board.addObjectAt(7, 4, new WGo.FieldObject('B'));
-board.addObjectAt(7, 4, new WGo.BoardLabelObject('A', WGo.Color.BLACK));
 
-board.addObjectAt(8, 1, new WGo.BoardLabelObject('😃'));
+var o2 = new WGo.BoardLabelObject('A', WGo.Color.BLACK);
+o2.zIndex = 10;
+board.addObjectAt(7, 4, o2);
+var o1 = new WGo.FieldObject('B');
+board.addObjectAt(7, 4, o1);
+
+board.addObjectAt(8, 1, new WGo.FieldObject('B'));
+var sad = new WGo.BoardLabelObject('😢');
+sad.opacity = 0.5;
+board.addObjectAt(8, 1, sad);
 
 board.addObjectAt(2, 3, new WGo.BoardMarkupObject('SL'));
 board.addObjectAt(3, 3, new WGo.BoardMarkupObject('SL'));
@@ -67,6 +74,12 @@ board.addObjectAt(3, 12, new WGo.BoardMarkupObject('W'));
 board.addObject(new WGo.BoardLineObject('AR', {x: 1, y: 5}, {x: 3, y: 12}));
 
 board.addObject(new WGo.BoardLineObject('AR', {x: 3, y: 16}, {x: 2, y: 15}));
+
+board.addObjectAt(17, 2, new WGo.FieldObject('DD'));
+board.addObjectAt(17, 3, new WGo.FieldObject('DD'));
+board.addObjectAt(16, 2, new WGo.FieldObject('DD'));
+board.addObjectAt(16, 3, new WGo.FieldObject('B'));
+board.addObjectAt(16, 3, new WGo.FieldObject('DD'));
 
 // board.addObjectAt(6, 10, new WGo.boardObjects.Circle());
 // board.addObjectAt(7, 10, new WGo.boardObjects.Circle());

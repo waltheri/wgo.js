@@ -267,6 +267,7 @@
 
     var BoardObject = /** @class */ (function () {
         function BoardObject(type) {
+            this.zIndex = 0;
             this.type = type;
         }
         return BoardObject;
@@ -1000,6 +1001,19 @@
     }(DrawHandler));
     //# sourceMappingURL=Arrow.js.map
 
+    var Dim = /** @class */ (function (_super) {
+        __extends(Dim, _super);
+        function Dim() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Dim.prototype.stone = function (canvasCtx) {
+            canvasCtx.fillStyle = this.params.color;
+            canvasCtx.fillRect(-0.5, -0.5, 1, 1);
+        };
+        return Dim;
+    }(DrawHandler));
+    //# sourceMappingURL=Dim.js.map
+
     //# sourceMappingURL=index.js.map
 
     var index = /*#__PURE__*/Object.freeze({
@@ -1022,7 +1036,8 @@
         Arrow: Arrow,
         Stone: Stone,
         MarkupDrawHandler: MarkupDrawHandler,
-        ShapeMarkup: ShapeMarkup
+        ShapeMarkup: ShapeMarkup,
+        Dim: Dim
     });
 
     var baseTheme = {
@@ -1069,6 +1084,7 @@
             SL: new Dot({ color: 'rgba(32, 32, 192, 0.75)' }),
             LN: new Line(),
             AR: new Arrow(),
+            DD: new Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
         },
     };
     //# sourceMappingURL=baseTheme.js.map
@@ -1284,6 +1300,7 @@
     //# sourceMappingURL=GridLayer.js.map
 
     /* global document, window */
+    var zIndexSorter = function (obj1, obj2) { return obj1.zIndex - obj2.zIndex; };
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
         /**
@@ -1518,26 +1535,20 @@
                     if (_this.config.theme.backgroundImage) {
                         _this.boardElement.style.backgroundImage = "url(\"" + _this.config.theme.backgroundImage + "\")";
                     }
+                    // sort objects by zIndex
+                    _this.objects.sort(zIndexSorter);
                     // redraw all layers
                     Object.keys(_this.layers).forEach(function (layer) {
-                        _this.redrawLayer(layer);
+                        _this.layers[layer].clear();
+                        _this.objects.forEach(function (object) {
+                            var handler = typeof object.type === 'string' ? _this.config.theme.drawHandlers[object.type] : object.type;
+                            if (handler[layer]) {
+                                _this.layers[layer].draw(handler[layer].bind(handler), object);
+                            }
+                        });
                     });
                 });
             }
-        };
-        /**
-           * Redraw just one layer. Use in special cases, when you know, that only that layer needs to be redrawn.
-           * For complete redrawing use method redraw().
-           */
-        CanvasBoard.prototype.redrawLayer = function (layer) {
-            var _this = this;
-            this.layers[layer].clear();
-            this.objects.forEach(function (object) {
-                var handler = typeof object.type === 'string' ? _this.config.theme.drawHandlers[object.type] : object.type;
-                if (handler[layer]) {
-                    _this.layers[layer].draw(handler[layer].bind(handler), object);
-                }
-            });
         };
         /**
          * Add board object. Main function for adding graphics on the board.
@@ -1635,7 +1646,6 @@
         };
         return CanvasBoard;
     }(EventEmitter));
-    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -2474,6 +2484,7 @@
         currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
         currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
     };
+    //# sourceMappingURL=defaultConfig.js.map
 
     /**
      * From SGF specification, there are these types of property values:
@@ -3251,6 +3262,7 @@
             player.addTemporaryBoardObject(circle);
         },
     };
+    //# sourceMappingURL=propertyHandlers.js.map
 
     var colorsMap = {
         B: exports.Color.BLACK,
@@ -3342,6 +3354,7 @@
         };
         return Player;
     }(EventEmitter));
+    //# sourceMappingURL=Player.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -3358,6 +3371,8 @@
     exports.Game = Game;
     exports.ING_RULES = ING_RULES;
     exports.JAPANESE_RULES = JAPANESE_RULES;
+    exports.KifuNode = KifuNode;
+    exports.KifuReader = KifuReader;
     exports.NO_RULES = NO_RULES;
     exports.Player = Player;
     exports.Position = Position;
@@ -3366,6 +3381,7 @@
     exports.defaultBoardConfig = canvasBoardDefaultConfig;
     exports.drawHandlers = index;
     exports.goRules = goRules;
+    exports.propertyValueTypes = propertyValueTypes;
     exports.themes = index$1;
 
     Object.defineProperty(exports, '__esModule', { value: true });
