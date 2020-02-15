@@ -1646,6 +1646,7 @@
         };
         return CanvasBoard;
     }(EventEmitter));
+    //# sourceMappingURL=CanvasBoard.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -2478,14 +2479,6 @@
 
     //# sourceMappingURL=index.js.map
 
-    var playerDefaultConfig = {
-        boardTheme: canvasBoardDefaultConfig.theme,
-        sgf: null,
-        currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
-        currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
-    };
-    //# sourceMappingURL=defaultConfig.js.map
-
     /**
      * From SGF specification, there are these types of property values:
      *
@@ -2544,20 +2537,20 @@
         }); },
         write: function (value) { return (String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) + ":" + value.text); },
     };
-    var LINE_SEGMENT = {
-        read: function (str) { return ({
-            point1: {
+    var VECTOR = {
+        read: function (str) { return str ? [
+            {
                 x: str.charCodeAt(0) - 97,
                 y: str.charCodeAt(1) - 97,
             },
-            point2: {
+            {
                 x: str.charCodeAt(3) - 97,
                 y: str.charCodeAt(4) - 97,
             },
-        }); },
+        ] : null; },
         write: function (value) { return (
         // tslint:disable-next-line:max-line-length
-        String.fromCharCode(value.point1.x + 97) + String.fromCharCode(value.point1.y + 97) + ":" + (String.fromCharCode(value.point2.x + 97) + String.fromCharCode(value.point2.y + 97))); },
+        value ? String.fromCharCode(value[0].x + 97) + String.fromCharCode(value[0].y + 97) + ":" + (String.fromCharCode(value[1].x + 97) + String.fromCharCode(value[1].y + 97)) : ''); },
     };
     var propertyValueTypes = {
         _default: {
@@ -2629,7 +2622,7 @@
         notEmpty: true,
     };
     propertyValueTypes.AR = propertyValueTypes.LN = {
-        transformer: LINE_SEGMENT,
+        transformer: VECTOR,
         multiple: true,
         notEmpty: true,
     };
@@ -2679,10 +2672,12 @@
         multiple: false,
         notEmpty: true,
     };
+    // VW property must be specified as compressed list (ab:cd) and only one value is allowed
+    // empty value [] will reset the viewport. Other options are not supported.
     propertyValueTypes.VW = {
-        transformer: POINT,
-        multiple: true,
-        notEmpty: false,
+        transformer: VECTOR,
+        multiple: false,
+        notEmpty: true,
     };
     //# sourceMappingURL=propertyValueTypes.js.map
 
@@ -3065,6 +3060,652 @@
     })(PropIdent || (PropIdent = {}));
     //# sourceMappingURL=sgfTypes.js.map
 
+    var PropertyHandler = /** @class */ (function () {
+        function PropertyHandler(type) {
+            this.type = type;
+        }
+        PropertyHandler.prototype.register = function (player) {
+            this.registerEvent(player, 'beforeInit');
+            this.registerEvent(player, 'afterInit');
+            this.registerEvent(player, 'beforeMove');
+            this.registerEvent(player, 'afterMove');
+            this.registerEvent(player, 'nextNode');
+            this.registerEvent(player, 'previousNode');
+            this.registerEvent(player, 'beforeNextNode');
+            this.registerEvent(player, 'beforePreviousNode');
+        };
+        PropertyHandler.prototype.registerEvent = function (player, event) {
+            var _this = this;
+            if (this[event]) {
+                player.on(event + ":" + this.type, function (value, propertyData, setPropertyData) {
+                    setPropertyData(_this[event](value, player, propertyData));
+                });
+            }
+        };
+        return PropertyHandler;
+    }());
+    //# sourceMappingURL=PropertyHandler.js.map
+
+    var SetupHandler = /** @class */ (function (_super) {
+        __extends(SetupHandler, _super);
+        function SetupHandler(type, color) {
+            var _this = _super.call(this, type) || this;
+            _this.color = color;
+            return _this;
+        }
+        SetupHandler.prototype.beforeMove = function (values, player) {
+            var _this = this;
+            values.forEach(function (value) {
+                // add stone
+                player.game.setStone(value.x, value.y, _this.color);
+            });
+        };
+        return SetupHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=SetupHandler.js.map
+
+    var SetTurnHandler = /** @class */ (function (_super) {
+        __extends(SetTurnHandler, _super);
+        function SetTurnHandler() {
+            return _super.call(this, 'PL') || this;
+        }
+        SetTurnHandler.prototype.afterMove = function (value, player) {
+            player.game.turn = value;
+        };
+        return SetTurnHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=SetTurnHandler.js.map
+
+    var BoardSizeHandler = /** @class */ (function (_super) {
+        __extends(BoardSizeHandler, _super);
+        function BoardSizeHandler() {
+            return _super.call(this, 'SZ') || this;
+        }
+        BoardSizeHandler.prototype.beforeInit = function (value, player) {
+            player.params.size = value;
+        };
+        return BoardSizeHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=BoardSizeHandler.js.map
+
+    var RulesHandler = /** @class */ (function (_super) {
+        __extends(RulesHandler, _super);
+        function RulesHandler() {
+            return _super.call(this, 'RU') || this;
+        }
+        RulesHandler.prototype.beforeInit = function (value, player) {
+            if (goRules[value]) {
+                player.params.rules = goRules[value];
+            }
+        };
+        return RulesHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=RulesHandler.js.map
+
+    var HandicapHandler = /** @class */ (function (_super) {
+        __extends(HandicapHandler, _super);
+        function HandicapHandler() {
+            return _super.call(this, 'HA') || this;
+        }
+        HandicapHandler.prototype.afterInit = function (value, player) {
+            if (value > 1) {
+                player.game.turn = exports.Color.WHITE;
+            }
+        };
+        return HandicapHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=HandicapHandler.js.map
+
+    var basePropertyHandlers = [
+        new BoardSizeHandler(),
+        new RulesHandler(),
+        new HandicapHandler(),
+        new SetupHandler('AW', exports.Color.WHITE),
+        new SetupHandler('AB', exports.Color.BLACK),
+        new SetupHandler('AE', exports.Color.EMPTY),
+        new SetTurnHandler(),
+    ];
+    //# sourceMappingURL=basePropertyHandlers.js.map
+
+    var PlayerBase = /** @class */ (function (_super) {
+        __extends(PlayerBase, _super);
+        function PlayerBase() {
+            var _this = _super.call(this) || this;
+            _this.registerPropertyHandlers(basePropertyHandlers);
+            return _this;
+        }
+        /**
+         * Load game (kifu) from KifuNode.
+         */
+        PlayerBase.prototype.loadKifu = function (rootNode) {
+            this.rootNode = rootNode;
+            this.currentNode = rootNode;
+            // init properties data map
+            this.propertiesData = new Map();
+            // set default params
+            this.params = {
+                size: 19,
+                rules: JAPANESE_RULES,
+            };
+            this.executeRoot();
+        };
+        /**
+         * Create new game (kifu) and init player with it.
+         */
+        PlayerBase.prototype.newGame = function (size, rules) {
+            var rootNode = new KifuNode();
+            if (size) {
+                rootNode.setProperty('SZ', size);
+            }
+            if (rules) {
+                // TODO: handle rules more correctly
+                var rulesName = Object.keys(goRules).find(function (name) { return goRules[name] === rules; });
+                if (rulesName) {
+                    rootNode.setProperty('RU', rulesName);
+                }
+            }
+            this.loadKifu(rootNode);
+        };
+        /**
+         * Register event listeners for SGF properties.
+         */
+        PlayerBase.prototype.registerPropertyHandlers = function (propertyHandlers) {
+            var _this = this;
+            propertyHandlers.forEach(function (handler) { return handler.register(_this); });
+        };
+        /**
+         * Executes root properties during initialization. If some properties change, call this to re-init player.
+         */
+        PlayerBase.prototype.executeRoot = function () {
+            this.emitNodeLifeCycleEvent('beforeInit');
+            this.game = new Game(this.params.size, this.params.rules);
+            this.emitNodeLifeCycleEvent('afterInit');
+            this.executeMove();
+            this.emitNodeLifeCycleEvent('nextNode');
+        };
+        /**
+         * Change current node to specified next node and executes its properties.
+         */
+        PlayerBase.prototype.executeNext = function (i) {
+            this.emitNodeLifeCycleEvent('beforeNextNode');
+            this.game.pushPosition(this.game.position.clone());
+            this.currentNode = this.currentNode.children[i];
+            this.executeMove();
+            this.emitNodeLifeCycleEvent('nextNode');
+        };
+        /**
+         * Change current node to previous/parent next node and executes its properties.
+         */
+        PlayerBase.prototype.executePrevious = function () {
+            this.emitNodeLifeCycleEvent('beforePreviousNode');
+            this.game.popPosition();
+            this.currentNode = this.currentNode.parent;
+            this.emitNodeLifeCycleEvent('previousNode');
+        };
+        /**
+         * Executes a move (black or white) - changes game position and sets turn.
+         */
+        PlayerBase.prototype.executeMove = function () {
+            this.emitNodeLifeCycleEvent('beforeMove');
+            // Execute move - B or W property - these properties are vital in this player implementation therefore hard coded.
+            var blackMove = this.getProperty(PropIdent.BLACK_MOVE);
+            var whiteMove = this.getProperty(PropIdent.WHITE_MOVE);
+            if (blackMove !== undefined && whiteMove !== undefined) {
+                // TODO: change this to custom (kifu) error.
+                throw new TypeError('Black (B) and white (W) properties must not be mixed within a node.');
+            }
+            if (blackMove !== undefined) {
+                if (blackMove) {
+                    this.game.position.applyMove(blackMove.x, blackMove.y, exports.Color.BLACK, true, true);
+                }
+                else {
+                    // black passes
+                    this.game.position.turn = exports.Color.WHITE;
+                }
+            }
+            else if (whiteMove !== undefined) {
+                if (whiteMove) {
+                    this.game.position.applyMove(whiteMove.x, whiteMove.y, exports.Color.WHITE, true, true);
+                }
+                else {
+                    // white passes
+                    this.game.position.turn = exports.Color.BLACK;
+                }
+            }
+            this.emitNodeLifeCycleEvent('afterMove');
+        };
+        /**
+         * Emits node life cycle method (for every property)
+         */
+        PlayerBase.prototype.emitNodeLifeCycleEvent = function (name) {
+            var _this = this;
+            this.emit(name);
+            Object.keys(this.currentNode.properties).forEach(function (propIdent) {
+                _this.emit(name + ":" + propIdent, _this.currentNode.properties[propIdent], _this.getPropertyData(propIdent), _this.setPropertyData.bind(_this, propIdent));
+            });
+        };
+        /**
+         * Gets property data of current node - data are temporary not related to SGF.
+         */
+        PlayerBase.prototype.getPropertyData = function (propIdent) {
+            var currentNodeData = this.propertiesData.get(this.currentNode);
+            return currentNodeData ? currentNodeData[propIdent] : undefined;
+        };
+        /**
+         * Sets property data of current node - data are temporary not related to SGF.
+         */
+        PlayerBase.prototype.setPropertyData = function (propIdent, data) {
+            var currentNodeData = this.propertiesData.get(this.currentNode);
+            if (data == null) {
+                if (currentNodeData) {
+                    delete currentNodeData[propIdent];
+                }
+            }
+            else {
+                if (!currentNodeData) {
+                    currentNodeData = {};
+                    this.propertiesData.set(this.currentNode, currentNodeData);
+                }
+                currentNodeData[propIdent] = data;
+            }
+        };
+        /**
+         * Gets property of current node.
+         */
+        PlayerBase.prototype.getProperty = function (propIdent) {
+            return this.currentNode.getProperty(propIdent);
+        };
+        /**
+         * Sets property of current node.
+         */
+        // setProperty(propIdent: PropIdent) {
+        //   return this.currentNode.setProperty(propIdent);
+        // }
+        /**
+         * Gets property of root node.
+         */
+        PlayerBase.prototype.getRootProperty = function (propIdent) {
+            return this.rootNode.getProperty(propIdent);
+        };
+        /**
+         * Returns array of next nodes (children).
+         */
+        PlayerBase.prototype.getNextNodes = function () {
+            return this.currentNode.children;
+        };
+        /**
+         * Go to (specified) next node and execute it.
+         */
+        PlayerBase.prototype.next = function (node) {
+            if (node === void 0) { node = 0; }
+            if (this.currentNode.children.length) {
+                var i = void 0;
+                if (typeof node === 'number') {
+                    i = node;
+                }
+                else {
+                    i = this.currentNode.children.indexOf(node);
+                }
+                if (this.currentNode.children[i]) {
+                    this.executeNext(i);
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+         * Go to the previous node.
+         */
+        PlayerBase.prototype.previous = function () {
+            if (this.currentNode.parent) {
+                this.executePrevious();
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Go to the first position - root node.
+         */
+        PlayerBase.prototype.first = function () {
+            // not sure if effective - TODO: check if there is a better way to do this
+            while (this.previous()) { }
+        };
+        /**
+         * Go to the last position.
+         */
+        PlayerBase.prototype.last = function () {
+            while (this.next()) { }
+        };
+        /**
+         * Go to specified path.
+         */
+        PlayerBase.prototype.goTo = function (pathOrMoveNumber) {
+            // TODO: check if there is a better way to do this
+            var path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
+            this.first();
+            for (var i = 0, j = 0; i < path.depth; i++) {
+                if (this.currentNode.children.length > 1) {
+                    this.next(path.forks[j++]);
+                }
+                else {
+                    this.next();
+                }
+            }
+        };
+        /**
+           * Go to previous fork (a node with more than one child).
+           */
+        PlayerBase.prototype.previousFork = function () {
+            while (this.previous()) {
+                if (this.currentNode.children.length > 1) {
+                    return;
+                }
+            }
+        };
+        return PlayerBase;
+    }(EventEmitter));
+    //# sourceMappingURL=PlayerBase.js.map
+
+    var MarkupHandler = /** @class */ (function (_super) {
+        __extends(MarkupHandler, _super);
+        function MarkupHandler() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        MarkupHandler.prototype.nextNode = function (values, player, propertyData) {
+            var _this = this;
+            var objects = [];
+            values.forEach(function (value) {
+                // add markup
+                var boardMarkup = new BoardMarkupObject(_this.type, player.game.getStone(value.x, value.y));
+                boardMarkup.zIndex = 10;
+                player.board.addObjectAt(value.x, value.y, boardMarkup);
+                objects.push(boardMarkup);
+            });
+            return objects;
+        };
+        MarkupHandler.prototype.previousNode = function (values, player, propertyData) {
+            return this.nextNode(values, player, propertyData);
+        };
+        MarkupHandler.prototype.beforeNextNode = function (values, player, propertyData) {
+            propertyData.forEach(function (object) {
+                player.board.removeObject(object);
+            });
+            return null;
+        };
+        MarkupHandler.prototype.beforePreviousNode = function (values, player, propertyData) {
+            return this.beforeNextNode(values, player, propertyData);
+        };
+        return MarkupHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=MarkupHandler.js.map
+
+    function samePoint(p1, p2) {
+        return p2 && p1.x === p2.x && p1.y === p2.y;
+    }
+    function isThereMarkup(ignore, field, properties) {
+        var propIdents = Object.keys(properties);
+        for (var i = 0; i < propIdents.length; i++) {
+            if (propIdents[i] === ignore) {
+                continue;
+            }
+            var value = properties[propIdents[i]];
+            if (Array.isArray(value)) {
+                for (var j = 0; j < value.length; j++) {
+                    if (samePoint(field, value[j])) {
+                        return true;
+                    }
+                }
+            }
+            else if (samePoint(field, value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    var MoveHandler = /** @class */ (function (_super) {
+        __extends(MoveHandler, _super);
+        function MoveHandler() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        MoveHandler.prototype.nextNode = function (value, player, propertyData) {
+            if (isThereMarkup(this.type, value, player.currentNode.properties)) {
+                return;
+            }
+            // add current move mark
+            var boardMarkup = new BoardMarkupObject(this.type === 'B' ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark);
+            boardMarkup.zIndex = 10;
+            player.board.addObjectAt(value.x, value.y, boardMarkup);
+            return boardMarkup;
+        };
+        MoveHandler.prototype.previousNode = function (value, player, propertyData) {
+            return this.nextNode(value, player, propertyData);
+        };
+        MoveHandler.prototype.beforeNextNode = function (value, player, propertyData) {
+            if (propertyData) {
+                player.board.removeObject(propertyData);
+            }
+            return null;
+        };
+        MoveHandler.prototype.beforePreviousNode = function (value, player, propertyData) {
+            return this.beforeNextNode(value, player, propertyData);
+        };
+        return MoveHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=MoveHandler.js.map
+
+    var MarkupLineHandler = /** @class */ (function (_super) {
+        __extends(MarkupLineHandler, _super);
+        function MarkupLineHandler() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        MarkupLineHandler.prototype.nextNode = function (values, player, propertyData) {
+            var _this = this;
+            var objects = [];
+            values.forEach(function (value) {
+                // add markup
+                var boardMarkup = new BoardLineObject(_this.type, value[0], value[1]);
+                boardMarkup.zIndex = 10;
+                player.board.addObject(boardMarkup);
+                objects.push(boardMarkup);
+            });
+            return objects;
+        };
+        MarkupLineHandler.prototype.previousNode = function (values, player, propertyData) {
+            return this.nextNode(values, player, propertyData);
+        };
+        MarkupLineHandler.prototype.beforeNextNode = function (values, player, propertyData) {
+            propertyData.forEach(function (object) {
+                player.board.removeObject(object);
+            });
+            return null;
+        };
+        MarkupLineHandler.prototype.beforePreviousNode = function (values, player, propertyData) {
+            return this.beforeNextNode(values, player, propertyData);
+        };
+        return MarkupLineHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=MarkupLineHandler.js.map
+
+    var MarkupLabelHandler = /** @class */ (function (_super) {
+        __extends(MarkupLabelHandler, _super);
+        function MarkupLabelHandler() {
+            return _super.call(this, 'LB') || this;
+        }
+        MarkupLabelHandler.prototype.nextNode = function (values, player, propertyData) {
+            var objects = [];
+            values.forEach(function (value) {
+                // add markup
+                var boardMarkup = new BoardLabelObject(value.text, player.game.getStone(value.x, value.y));
+                boardMarkup.zIndex = 10;
+                player.board.addObjectAt(value.x, value.y, boardMarkup);
+                objects.push(boardMarkup);
+            });
+            return objects;
+        };
+        MarkupLabelHandler.prototype.previousNode = function (values, player, propertyData) {
+            return this.nextNode(values, player, propertyData);
+        };
+        MarkupLabelHandler.prototype.beforeNextNode = function (values, player, propertyData) {
+            propertyData.forEach(function (object) {
+                player.board.removeObject(object);
+            });
+            return null;
+        };
+        MarkupLabelHandler.prototype.beforePreviousNode = function (values, player, propertyData) {
+            return this.beforeNextNode(values, player, propertyData);
+        };
+        return MarkupLabelHandler;
+    }(PropertyHandler));
+    //# sourceMappingURL=MarkupLabelHandler.js.map
+
+    var ViewportHandler = /** @class */ (function (_super) {
+        __extends(ViewportHandler, _super);
+        function ViewportHandler() {
+            return _super.call(this, 'VW') || this;
+        }
+        ViewportHandler.prototype.nextNode = function (value, player, propertyData) {
+            var currentViewport = player.board.getViewport();
+            if (value) {
+                var minX = Math.min(value[0].x, value[1].x);
+                var minY = Math.min(value[0].y, value[1].y);
+                var maxX = Math.max(value[0].x, value[1].x);
+                var maxY = Math.max(value[0].y, value[1].y);
+                player.board.setViewport({
+                    left: minX,
+                    top: minY,
+                    right: player.board.getSize() - maxX - 1,
+                    bottom: player.board.getSize() - maxY - 1,
+                });
+            }
+            else {
+                player.board.setViewport({
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
+                });
+            }
+            return currentViewport;
+        };
+        ViewportHandler.prototype.beforePreviousNode = function (value, player, propertyData) {
+            player.board.setViewport(propertyData);
+            return null;
+        };
+        return ViewportHandler;
+    }(PropertyHandler));
+
+    var defaultPlainPlayerConfig = {
+        boardTheme: canvasBoardDefaultConfig.theme,
+        currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
+        currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
+        enableMouseWheel: true,
+        enableKeys: true,
+    };
+    var plainPlayerPropertyHandlers = [
+        new MarkupHandler('CR'),
+        new MarkupHandler('DD'),
+        new MarkupHandler('MA'),
+        new MarkupHandler('SL'),
+        new MarkupHandler('SQ'),
+        new MarkupHandler('TR'),
+        new MarkupLabelHandler(),
+        new MarkupLineHandler('AR'),
+        new MarkupLineHandler('LN'),
+        new MoveHandler('B'),
+        new MoveHandler('W'),
+        new ViewportHandler(),
+    ];
+    var colorsMap = {
+        B: exports.Color.BLACK,
+        W: exports.Color.WHITE,
+    };
+    var PlainPlayer = /** @class */ (function (_super) {
+        __extends(PlainPlayer, _super);
+        function PlainPlayer(element, config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this) || this;
+            // merge user config with default
+            _this.element = element;
+            _this.config = makeConfig(defaultPlainPlayerConfig, config);
+            _this.init();
+            return _this;
+        }
+        PlainPlayer.prototype.init = function () {
+            var _this = this;
+            this.board = new CanvasBoard(this.element, {
+                theme: this.config.boardTheme,
+            });
+            this.stoneBoardsObjects = [];
+            this.registerPropertyHandlers(plainPlayerPropertyHandlers);
+            this.on('afterMove', function () { return _this.updateStones(); });
+            this.on('previousNode', function () { return _this.updateStones(); });
+            if (this.element.tabIndex < 0) {
+                this.element.tabIndex = 1;
+            }
+            document.addEventListener('mousewheel', this._mouseWheelEvent = function (e) {
+                if (document.activeElement === _this.element && _this.config.enableMouseWheel) {
+                    if (e.deltaY > 0) {
+                        _this.next();
+                    }
+                    else if (e.deltaY < 0) {
+                        _this.previous();
+                    }
+                    return false;
+                }
+            });
+            document.addEventListener('keydown', this._keyEvent = function (e) {
+                if (document.activeElement === _this.element && _this.config.enableKeys) {
+                    if (e.key === 'ArrowRight') {
+                        _this.next();
+                    }
+                    else if (e.key === 'ArrowLeft') {
+                        _this.previous();
+                    }
+                    return false;
+                }
+            });
+        };
+        PlainPlayer.prototype.destroy = function () {
+            document.removeEventListener('mousewheel', this._mouseWheelEvent);
+            this._mouseWheelEvent = null;
+            document.removeEventListener('keydown', this._keyEvent);
+        };
+        PlainPlayer.prototype.updateStones = function () {
+            var _this = this;
+            // Remove missing stones in current position
+            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
+                if (_this.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
+                    _this.board.removeObject(boardObject);
+                    return false;
+                }
+                return true;
+            });
+            // Add new stones from current position
+            var position = this.game.position;
+            var _loop_1 = function (x) {
+                var _loop_2 = function (y) {
+                    var c = position.get(x, y);
+                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
+                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W');
+                        this_1.board.addObjectAt(x, y, boardObject);
+                        this_1.stoneBoardsObjects.push(boardObject);
+                    }
+                };
+                for (var y = 0; y < position.size; y++) {
+                    _loop_2(y);
+                }
+            };
+            var this_1 = this;
+            for (var x = 0; x < position.size; x++) {
+                _loop_1(x);
+            }
+        };
+        return PlainPlayer;
+    }(PlayerBase));
+    //# sourceMappingURL=PlainPlayer.js.map
+
+    //# sourceMappingURL=index.js.map
+
     /**
      * Contains functionality to create, edit and manipulate go game record. It is basically virtual player
      * with API without board and any UI.
@@ -3248,116 +3889,6 @@
     }(EventEmitter));
     //# sourceMappingURL=KifuReader.js.map
 
-    var propertyHandlers = {
-        B: function (player, propIdent, propValue) {
-            var circle = new FieldObject(player.config.currentMoveBlackMark);
-            circle.x = propValue.x;
-            circle.y = propValue.y;
-            player.addTemporaryBoardObject(circle);
-        },
-        W: function (player, propIdent, propValue) {
-            var circle = new FieldObject(player.config.currentMoveWhiteMark);
-            circle.x = propValue.x;
-            circle.y = propValue.y;
-            player.addTemporaryBoardObject(circle);
-        },
-    };
-    //# sourceMappingURL=propertyHandlers.js.map
-
-    var colorsMap = {
-        B: exports.Color.BLACK,
-        W: exports.Color.WHITE,
-    };
-    var Player = /** @class */ (function (_super) {
-        __extends(Player, _super);
-        // handleBoardClick(event: UIEvent, point: Point): void;
-        function Player(element, config) {
-            if (config === void 0) { config = {}; }
-            var _this = _super.call(this) || this;
-            // merge user config with default
-            _this.element = element;
-            _this.config = makeConfig(playerDefaultConfig, config);
-            _this.init();
-            return _this;
-        }
-        Player.prototype.init = function () {
-            this.board = new CanvasBoard(this.element, {
-                theme: this.config.boardTheme,
-            });
-            this.stoneBoardsObjects = [];
-            this.markupBoardObjects = [];
-            if (this.config.sgf) {
-                this.kifuReader = new KifuReader(KifuNode.fromSGF(this.config.sgf));
-            }
-            else {
-                this.kifuReader = new KifuReader();
-            }
-            this.updateBoard();
-            // this.handleBoardClick = (_e, point) => {
-            //
-            // };
-            // this.board.on('click', )
-        };
-        Player.prototype.updateBoard = function () {
-            var _this = this;
-            // Remove missing stones in current position
-            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
-                if (_this.kifuReader.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
-                    _this.board.removeObject(boardObject);
-                    return false;
-                }
-                return true;
-            });
-            // Add new stones from current position
-            var position = this.kifuReader.game.position;
-            var _loop_1 = function (x) {
-                var _loop_2 = function (y) {
-                    var c = position.get(x, y);
-                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
-                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W');
-                        this_1.board.addObjectAt(x, y, boardObject);
-                        this_1.stoneBoardsObjects.push(boardObject);
-                    }
-                };
-                for (var y = 0; y < position.size; y++) {
-                    _loop_2(y);
-                }
-            };
-            var this_1 = this;
-            for (var x = 0; x < position.size; x++) {
-                _loop_1(x);
-            }
-            // Remove all markup
-            this.markupBoardObjects.forEach(function (boardObject) { return _this.board.removeObject(boardObject); });
-            this.markupBoardObjects = [];
-            Object.keys(this.kifuReader.currentNode.properties).forEach(function (propIdent) {
-                if (propertyHandlers[propIdent]) {
-                    propertyHandlers[propIdent](_this, propIdent, _this.kifuReader.currentNode.properties[propIdent]);
-                }
-            });
-        };
-        Player.prototype.next = function () {
-            this.kifuReader.next();
-            this.updateBoard();
-        };
-        Player.prototype.previous = function () {
-            this.kifuReader.previous();
-            this.updateBoard();
-        };
-        /**
-         * Adds temporary board object, which will be removed during next position/node update.
-         * @param boardObject
-         */
-        Player.prototype.addTemporaryBoardObject = function (boardObject) {
-            this.markupBoardObjects.push(boardObject);
-            this.board.addObject(boardObject);
-        };
-        return Player;
-    }(EventEmitter));
-    //# sourceMappingURL=Player.js.map
-
-    //# sourceMappingURL=index.js.map
-
     // All public API is exported here
     //# sourceMappingURL=index.js.map
 
@@ -3374,7 +3905,8 @@
     exports.KifuNode = KifuNode;
     exports.KifuReader = KifuReader;
     exports.NO_RULES = NO_RULES;
-    exports.Player = Player;
+    exports.PlainPlayer = PlainPlayer;
+    exports.PlayerBase = PlayerBase;
     exports.Position = Position;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
