@@ -5,6 +5,7 @@ import { CanvasBoardTheme } from '../CanvasBoard/types';
 import { DrawHandler } from '../CanvasBoard/drawHandlers';
 import MarkupHandler from './boardPropertyHandlers/MarkupHandler';
 import MarkupLineHandler from './boardPropertyHandlers/MarkupLineHandler';
+import { Point } from '../types';
 import MarkupLabelHandler from './boardPropertyHandlers/MarkupLabelHandler';
 import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
 import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
@@ -14,6 +15,9 @@ export interface PlainPlayerConfig {
     currentMoveWhiteMark: DrawHandler;
     enableMouseWheel: boolean;
     enableKeys: boolean;
+    showVariations: boolean;
+    showCurrentVariations: boolean;
+    variationDrawHandler: DrawHandler;
 }
 export declare const defaultPlainPlayerConfig: PlainPlayerConfig;
 export default class PlainPlayer extends PlayerBase {
@@ -41,11 +45,22 @@ export default class PlainPlayer extends PlayerBase {
     element: HTMLElement;
     config: PlainPlayerConfig;
     board: CanvasBoard;
-    stoneBoardsObjects: FieldObject[];
-    _mouseWheelEvent: EventListenerOrEventListenerObject;
-    _keyEvent: EventListenerOrEventListenerObject;
+    boardMouseX: number;
+    boardMouseY: number;
+    protected stoneBoardsObjects: FieldObject[];
+    protected variationBoardObjects: FieldObject[];
+    private _mouseWheelEvent;
+    private _keyEvent;
     constructor(element: HTMLElement, config?: PartialRecursive<PlainPlayerConfig>);
     init(): void;
     destroy(): void;
     protected updateStones(): void;
+    protected addVariationMarkup(): void;
+    protected getVariations(): Point[];
+    protected removeVariationMarkup(): void;
+    protected handleBoardClick(point: Point): void;
+    protected handleBoardMouseMove(point: Point): void;
+    protected handleBoardMouseOut(): void;
+    private handleVariationCursor;
+    private removeVariationCursor;
 }

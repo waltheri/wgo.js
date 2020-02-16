@@ -3,11 +3,9 @@ import PropertyHandler from '../PropertyHandler';
 import { goRules } from '../../Game';
 
 export default class RulesHandler extends PropertyHandler<string> {
-  beforeInit(value: string, player: PlayerBase, params: PlayerInitParams) {
+  beforeInit(value: string, player: PlayerBase) {
     if ((goRules as any)[value]) {
-      params.rules = (goRules as any)[value];
+      player.params.rules = (goRules as any)[value];
     }
-
-    return params;
   }
 }

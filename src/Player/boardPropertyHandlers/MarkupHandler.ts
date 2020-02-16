@@ -27,9 +27,7 @@ export default class MarkupHandler extends PropertyHandler<Point[], BoardObject[
   }
 
   clearNodeChanges(values: Point[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
-    propertyData.forEach((object) => {
-      player.board.removeObject(object);
-    });
+    player.board.removeObject(propertyData);
 
     return null;
   }

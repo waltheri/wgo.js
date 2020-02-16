@@ -14,6 +14,7 @@ import MoveHandler from './basePropertyHandlers/MoveHandler';
 export interface PlayerInitParams {
   size: number;
   rules: GoRules;
+  [key: string]: any;
 }
 
 export default class PlayerBase extends EventEmitter {
@@ -32,6 +33,7 @@ export default class PlayerBase extends EventEmitter {
   rootNode: KifuNode;
   currentNode: KifuNode;
   game: Game;
+  params: PlayerInitParams;
 
   // data bounded to SGF properties
   propertiesData: Map<KifuNode, { [propIdent: string]: any }>;
@@ -78,20 +80,13 @@ export default class PlayerBase extends EventEmitter {
    * Executes root properties during initialization. If some properties change, call this to re-init player.
    */
   protected executeRoot() {
-    let params = {
+    this.params = {
       size: 19,
       rules: JAPANESE_RULES,
     };
 
-    this.currentNode.forEachProperty((propIdent, value) => {
-      const propertyHandler = this.getPropertyHandler(propIdent);
-      if (propertyHandler && propertyHandler.beforeInit) {
-        params = propertyHandler.beforeInit(value, this, params);
-      }
-    });
-
-    this.emit('beforeInit', params);
-    this.game = new Game(params.size, params.rules);
+    this.emitNodeLifeCycleEvent('beforeInit');
+    this.game = new Game(this.params.size, this.params.rules);
 
     this.executeNode();
   }

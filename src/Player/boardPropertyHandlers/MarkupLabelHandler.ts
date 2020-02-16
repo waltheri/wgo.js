@@ -19,9 +19,7 @@ export default class MarkupLabelHandler extends PropertyHandler<Label[], BoardOb
   }
 
   clearNodeChanges(values: Label[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
-    propertyData.forEach((object) => {
-      player.board.removeObject(object);
-    });
+    player.board.removeObject(propertyData);
 
     return null;
   }

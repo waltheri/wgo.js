@@ -2997,9 +2997,8 @@
         function BoardSizeHandler() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        BoardSizeHandler.prototype.beforeInit = function (value, player, params) {
-            params.size = value;
-            return params;
+        BoardSizeHandler.prototype.beforeInit = function (value, player) {
+            player.params.size = value;
         };
         return BoardSizeHandler;
     }(PropertyHandler));
@@ -3010,11 +3009,10 @@
         function RulesHandler() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        RulesHandler.prototype.beforeInit = function (value, player, params) {
+        RulesHandler.prototype.beforeInit = function (value, player) {
             if (goRules[value]) {
-                params.rules = goRules[value];
+                player.params.rules = goRules[value];
             }
-            return params;
         };
         return RulesHandler;
     }(PropertyHandler));
@@ -3200,19 +3198,12 @@
          * Executes root properties during initialization. If some properties change, call this to re-init player.
          */
         PlayerBase.prototype.executeRoot = function () {
-            var _this = this;
-            var params = {
+            this.params = {
                 size: 19,
                 rules: JAPANESE_RULES,
             };
-            this.currentNode.forEachProperty(function (propIdent, value) {
-                var propertyHandler = _this.getPropertyHandler(propIdent);
-                if (propertyHandler && propertyHandler.beforeInit) {
-                    params = propertyHandler.beforeInit(value, _this, params);
-                }
-            });
-            this.emit('beforeInit', params);
-            this.game = new Game(params.size, params.rules);
+            this.emitNodeLifeCycleEvent('beforeInit');
+            this.game = new Game(this.params.size, this.params.rules);
             this.executeNode();
         };
         PlayerBase.prototype.executeNode = function () {
@@ -3407,9 +3398,7 @@
             return objects;
         };
         MarkupHandler.prototype.clearNodeChanges = function (values, player, propertyData) {
-            propertyData.forEach(function (object) {
-                player.board.removeObject(object);
-            });
+            player.board.removeObject(propertyData);
             return null;
         };
         return MarkupHandler;
@@ -3436,9 +3425,7 @@
             return objects;
         };
         MarkupLineHandler.prototype.clearNodeChanges = function (values, player, propertyData) {
-            propertyData.forEach(function (object) {
-                player.board.removeObject(object);
-            });
+            player.board.removeObject(propertyData);
             return null;
         };
         return MarkupLineHandler;
@@ -3462,9 +3449,7 @@
             return objects;
         };
         MarkupLabelHandler.prototype.clearNodeChanges = function (values, player, propertyData) {
-            propertyData.forEach(function (object) {
-                player.board.removeObject(object);
-            });
+            player.board.removeObject(propertyData);
             return null;
         };
         return MarkupLabelHandler;
@@ -3554,6 +3539,7 @@
         };
         return MoveHandlerWithMark;
     }(MoveHandler));
+    //# sourceMappingURL=MoveHandlerWithMark.js.map
 
     var defaultPlainPlayerConfig = {
         boardTheme: canvasBoardDefaultConfig.theme,
@@ -3561,6 +3547,9 @@
         currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
         enableMouseWheel: true,
         enableKeys: true,
+        showVariations: true,
+        showCurrentVariations: false,
+        variationDrawHandler: new Label({ color: '#33f' }),
     };
     var colorsMap = {
         B: exports.Color.BLACK,
@@ -3579,11 +3568,44 @@
         }
         PlainPlayer.prototype.init = function () {
             var _this = this;
+            this.stoneBoardsObjects = [];
+            this.variationBoardObjects = [];
             this.board = new CanvasBoard(this.element, {
                 theme: this.config.boardTheme,
             });
-            this.stoneBoardsObjects = [];
-            this.on('applyNodeChanges', function () { return _this.updateStones(); });
+            this.board.on('click', function (event, point) {
+                _this.handleBoardClick(point);
+            });
+            this.board.on('mousemove', function (event, point) {
+                if (!point) {
+                    if (_this.boardMouseX != null) {
+                        _this.boardMouseX = null;
+                        _this.boardMouseY = null;
+                        _this.handleBoardMouseOut();
+                    }
+                    return;
+                }
+                if (point.x !== _this.boardMouseX || point.y !== _this.boardMouseY) {
+                    _this.boardMouseX = point.x;
+                    _this.boardMouseY = point.y;
+                    _this.handleBoardMouseMove(point);
+                }
+            });
+            this.board.on('mouseout', function (event, point) {
+                if (!point && _this.boardMouseX != null) {
+                    _this.boardMouseX = null;
+                    _this.boardMouseY = null;
+                    _this.handleBoardMouseOut();
+                    return;
+                }
+            });
+            this.on('applyNodeChanges', function () {
+                _this.updateStones();
+                _this.addVariationMarkup();
+            });
+            this.on('clearNodeChanges', function () {
+                _this.removeVariationMarkup();
+            });
             if (this.element.tabIndex < 0) {
                 this.element.tabIndex = 1;
             }
@@ -3643,6 +3665,80 @@
             var this_1 = this;
             for (var x = 0; x < position.size; x++) {
                 _loop_1(x);
+            }
+        };
+        PlainPlayer.prototype.addVariationMarkup = function () {
+            var _this = this;
+            var moves = this.getVariations();
+            if (moves.length > 1) {
+                moves.forEach(function (move, i) {
+                    if (move) {
+                        var obj = new BoardLabelObject(String.fromCodePoint(65 + i));
+                        _this.variationBoardObjects.push(obj);
+                        obj.type = _this.config.variationDrawHandler;
+                        _this.board.addObjectAt(move.x, move.y, obj);
+                    }
+                });
+                if (this.boardMouseX != null) {
+                    this.handleVariationCursor(this.boardMouseX, this.boardMouseY, moves);
+                }
+            }
+        };
+        PlainPlayer.prototype.getVariations = function () {
+            if (this.config.showVariations) {
+                if (this.config.showCurrentVariations && this.currentNode.parent) {
+                    return this.currentNode.parent.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+                }
+                if (!this.config.showCurrentVariations) {
+                    return this.currentNode.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+                }
+            }
+            return [];
+        };
+        PlainPlayer.prototype.removeVariationMarkup = function () {
+            if (this.variationBoardObjects.length) {
+                this.board.removeObject(this.variationBoardObjects);
+                this.variationBoardObjects = [];
+                this.removeVariationCursor();
+            }
+        };
+        PlainPlayer.prototype.handleBoardClick = function (point) {
+            this.emit('boardClick', point);
+            var moves = this.getVariations();
+            if (moves.length > 1) {
+                var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
+                if (ind >= 0) {
+                    if (this.config.showCurrentVariations) {
+                        this.previous();
+                        this.next(ind);
+                    }
+                    else {
+                        this.next(ind);
+                    }
+                }
+            }
+        };
+        PlainPlayer.prototype.handleBoardMouseMove = function (point) {
+            this.emit('boardMouseMove', point);
+            this.handleVariationCursor(point.x, point.y, this.getVariations());
+        };
+        PlainPlayer.prototype.handleBoardMouseOut = function () {
+            this.emit('boardMouseOut');
+            this.removeVariationCursor();
+        };
+        PlainPlayer.prototype.handleVariationCursor = function (x, y, moves) {
+            if (moves.length > 1) {
+                var ind = moves.findIndex(function (move) { return move && move.x === x && move.y === y; });
+                if (ind >= 0) {
+                    this.element.style.cursor = 'pointer';
+                    return;
+                }
+            }
+            this.removeVariationCursor();
+        };
+        PlainPlayer.prototype.removeVariationCursor = function () {
+            if (this.element.style.cursor) {
+                this.element.style.cursor = '';
             }
         };
         PlainPlayer.propertyHandlers = __assign({}, PlayerBase.propertyHandlers, { CR: new MarkupHandler('CR'), DD: new MarkupHandler('DD'), MA: new MarkupHandler('MA'), SL: new MarkupHandler('SL'), SQ: new MarkupHandler('SQ'), TR: new MarkupHandler('TR'), LB: new MarkupLabelHandler(), AR: new MarkupLineHandler('AR'), LN: new MarkupLineHandler('LN'), VW: new ViewportHandler(), B: new MoveHandlerWithMark(exports.Color.BLACK), W: new MoveHandlerWithMark(exports.Color.WHITE) });

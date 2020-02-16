@@ -1,14 +1,15 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import CanvasBoard, { defaultBoardConfig, FieldObject } from '../CanvasBoard';
+import CanvasBoard, { defaultBoardConfig, FieldObject, BoardLabelObject } from '../CanvasBoard';
 import PlayerBase from './PlayerBase';
 import { CanvasBoardTheme } from '../CanvasBoard/types';
-import { DrawHandler, Circle } from '../CanvasBoard/drawHandlers';
+import { DrawHandler, Circle, Label } from '../CanvasBoard/drawHandlers';
 import MarkupHandler from './boardPropertyHandlers/MarkupHandler';
 import MarkupLineHandler from './boardPropertyHandlers/MarkupLineHandler';
-import { Color } from '../types';
+import { Color, Point } from '../types';
 import MarkupLabelHandler from './boardPropertyHandlers/MarkupLabelHandler';
 import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
 import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
+import { KifuNode } from '..';
 
 export interface PlainPlayerConfig {
   boardTheme: CanvasBoardTheme;
@@ -16,6 +17,9 @@ export interface PlainPlayerConfig {
   currentMoveWhiteMark: DrawHandler;
   enableMouseWheel: boolean;
   enableKeys: boolean;
+  showVariations: boolean;
+  showCurrentVariations: boolean;
+  variationDrawHandler: DrawHandler;
 }
 
 export const defaultPlainPlayerConfig: PlainPlayerConfig = {
@@ -24,6 +28,9 @@ export const defaultPlainPlayerConfig: PlainPlayerConfig = {
   currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
   enableMouseWheel: true,
   enableKeys: true,
+  showVariations: true,
+  showCurrentVariations: false,
+  variationDrawHandler: new Label({ color: '#33f' }),
 };
 
 const colorsMap: { [key: string]: Color } = {
@@ -51,9 +58,14 @@ export default class PlainPlayer extends PlayerBase {
   element: HTMLElement;
   config: PlainPlayerConfig;
   board: CanvasBoard;
-  stoneBoardsObjects: FieldObject[];
-  _mouseWheelEvent: EventListenerOrEventListenerObject;
-  _keyEvent: EventListenerOrEventListenerObject;
+  boardMouseX: number;
+  boardMouseY: number;
+
+  protected stoneBoardsObjects: FieldObject[];
+  protected variationBoardObjects: FieldObject[];
+
+  private _mouseWheelEvent: EventListenerOrEventListenerObject;
+  private _keyEvent: EventListenerOrEventListenerObject;
 
   constructor(element: HTMLElement, config: PartialRecursive<PlainPlayerConfig> = {}) {
     super();
@@ -66,12 +78,50 @@ export default class PlainPlayer extends PlayerBase {
   }
 
   init() {
+    this.stoneBoardsObjects = [];
+    this.variationBoardObjects = [];
+
     this.board = new CanvasBoard(this.element, {
       theme: this.config.boardTheme,
     });
-    this.stoneBoardsObjects = [];
 
-    this.on('applyNodeChanges', () => this.updateStones());
+    this.board.on('click', (event, point) => {
+      this.handleBoardClick(point);
+    });
+
+    this.board.on('mousemove', (event, point) => {
+      if (!point) {
+        if (this.boardMouseX != null) {
+          this.boardMouseX = null;
+          this.boardMouseY = null;
+          this.handleBoardMouseOut();
+        }
+        return;
+      }
+      if (point.x !== this.boardMouseX || point.y !== this.boardMouseY) {
+        this.boardMouseX = point.x;
+        this.boardMouseY = point.y;
+        this.handleBoardMouseMove(point);
+      }
+    });
+
+    this.board.on('mouseout', (event, point) => {
+      if (!point && this.boardMouseX != null) {
+        this.boardMouseX = null;
+        this.boardMouseY = null;
+        this.handleBoardMouseOut();
+        return;
+      }
+    });
+
+    this.on('applyNodeChanges', () => {
+      this.updateStones();
+      this.addVariationMarkup();
+    });
+
+    this.on('clearNodeChanges', () => {
+      this.removeVariationMarkup();
+    });
 
     if (this.element.tabIndex < 0) {
       this.element.tabIndex = 1;
@@ -133,6 +183,91 @@ export default class PlainPlayer extends PlayerBase {
           this.stoneBoardsObjects.push(boardObject);
         }
       }
+    }
+  }
+
+  protected addVariationMarkup() {
+    const moves = this.getVariations();
+
+    if (moves.length > 1) {
+      moves.forEach((move, i) => {
+        if (move) {
+          const obj = new BoardLabelObject(String.fromCodePoint(65 + i));
+          this.variationBoardObjects.push(obj);
+          obj.type = this.config.variationDrawHandler;
+          this.board.addObjectAt(move.x, move.y, obj);
+        }
+      });
+      if (this.boardMouseX != null) {
+        this.handleVariationCursor(this.boardMouseX, this.boardMouseY, moves);
+      }
+    }
+  }
+
+  protected getVariations(): Point[] {
+    if (this.config.showVariations) {
+      if (this.config.showCurrentVariations && this.currentNode.parent) {
+        return this.currentNode.parent.children.map(node => node.getProperty('B') || node.getProperty('W'));
+      }
+      if (!this.config.showCurrentVariations) {
+        return this.currentNode.children.map(node => node.getProperty('B') || node.getProperty('W'));
+      }
+    }
+    return [];
+  }
+
+  protected removeVariationMarkup() {
+    if (this.variationBoardObjects.length) {
+      this.board.removeObject(this.variationBoardObjects);
+      this.variationBoardObjects = [];
+      this.removeVariationCursor();
+    }
+  }
+
+  protected handleBoardClick(point: Point) {
+    this.emit('boardClick', point);
+
+    const moves = this.getVariations();
+    if (moves.length > 1) {
+      const ind = moves.findIndex(move => move && move.x === point.x && move.y === point.y);
+
+      if (ind >= 0) {
+        if (this.config.showCurrentVariations) {
+          this.previous();
+          this.next(ind);
+        } else {
+          this.next(ind);
+        }
+      }
+    }
+  }
+
+  protected handleBoardMouseMove(point: Point) {
+    this.emit('boardMouseMove', point);
+    this.handleVariationCursor(point.x, point.y, this.getVariations());
+  }
+
+  protected handleBoardMouseOut() {
+    this.emit('boardMouseOut');
+    this.removeVariationCursor();
+  }
+
+  private handleVariationCursor(x: number, y: number, moves: Point[]) {
+    if (moves.length > 1) {
+      const ind = moves.findIndex(move => move && move.x === x && move.y === y);
+
+      if (ind >= 0) {
+        this.element.style.cursor = 'pointer';
+        return;
+      }
+    }
+
+    this.removeVariationCursor();
+  }
+
+  private removeVariationCursor() {
+    if (this.element.style.cursor) {
+      this.element.style.cursor = '';
     }
   }
 }

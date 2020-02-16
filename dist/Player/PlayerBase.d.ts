@@ -12,6 +12,7 @@ import MoveHandler from './basePropertyHandlers/MoveHandler';
 export interface PlayerInitParams {
     size: number;
     rules: GoRules;
+    [key: string]: any;
 }
 export default class PlayerBase extends EventEmitter {
     static propertyHandlers: {
@@ -22,12 +23,13 @@ export default class PlayerBase extends EventEmitter {
         AB: SetupHandler;
         AE: SetupHandler;
         PL: SetTurnHandler;
-        B: MoveHandler;
-        W: MoveHandler;
+        B: MoveHandler<{}>;
+        W: MoveHandler<{}>;
     };
     rootNode: KifuNode;
     currentNode: KifuNode;
     game: Game;
+    params: PlayerInitParams;
     propertiesData: Map<KifuNode, {
         [propIdent: string]: any;
     }>;
