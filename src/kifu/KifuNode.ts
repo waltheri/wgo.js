@@ -297,6 +297,13 @@ export default class KifuNode {
   }
 
   /**
+   * Iterates through all properties.
+   */
+  forEachProperty(callback: (propIdent: string, value: any) => void) {
+    Object.keys(this.properties).forEach((propIdent: string) => callback(propIdent, this.properties[propIdent]));
+  }
+
+  /**
    * Sets multiple SGF properties.
    *
    * @param   {Object}   properties - map with signature propIdent -> propValues.

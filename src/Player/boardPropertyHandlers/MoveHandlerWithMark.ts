@@ -1,7 +1,7 @@
 import { BoardMarkupObject, BoardObject } from '../../CanvasBoard';
 import PlainPlayer from '../PlainPlayer';
-import PropertyHandler from './PropertyHandler';
-import { Point } from '../../types';
+import { Point, Color } from '../../types';
+import MoveHandler from '../basePropertyHandlers/MoveHandler';
 
 function samePoint(p1: Point, p2: any) {
   return p2 && p1.x === p2.x && p1.y === p2.y;
@@ -30,15 +30,15 @@ function isThereMarkup(ignore: string, field: Point, properties: { [key: string]
   return false;
 }
 
-export default class MoveHandler extends PropertyHandler<Point, BoardObject> {
-  nextNode(value: Point, player: PlainPlayer, propertyData: BoardObject) {
-    if (isThereMarkup(this.type, value, player.currentNode.properties)) {
+export default class MoveHandlerWithMark extends MoveHandler<BoardObject> {
+  applyNodeChanges(value: Point, player: PlainPlayer) {
+    if (isThereMarkup(this.color === Color.BLACK ? 'B' : 'W', value, player.currentNode.properties)) {
       return;
     }
 
     // add current move mark
     const boardMarkup = new BoardMarkupObject(
-      this.type === 'B' ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark,
+      this.color === Color.BLACK ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark,
     );
     boardMarkup.zIndex = 10;
     player.board.addObjectAt(value.x, value.y, boardMarkup);
@@ -46,18 +46,10 @@ export default class MoveHandler extends PropertyHandler<Point, BoardObject> {
     return boardMarkup;
   }
 
-  previousNode(value: Point, player: PlainPlayer, propertyData: BoardObject) {
-    return this.nextNode(value, player, propertyData);
-  }
-
-  beforeNextNode(value: Point, player: PlainPlayer, propertyData: BoardObject): BoardObject {
+  clearNodeChanges(value: Point, player: PlainPlayer, propertyData: BoardObject): BoardObject {
     if (propertyData) {
       player.board.removeObject(propertyData);
     }
     return null;
-  }
-
-  beforePreviousNode(value: Point, player: PlainPlayer, propertyData: BoardObject): BoardObject {
-    return this.beforeNextNode(value, player, propertyData);
   }
 }

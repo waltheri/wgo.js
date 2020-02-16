@@ -1,14 +1,10 @@
 import PlainPlayer from '../PlainPlayer';
-import PropertyHandler from './PropertyHandler';
+import PropertyHandler from '../PropertyHandler';
 import { Vector } from '../../types';
 import { BoardViewport } from '../../CanvasBoard/types';
 
 export default class ViewportHandler extends PropertyHandler<Vector, BoardViewport> {
-  constructor() {
-    super('VW');
-  }
-
-  nextNode(value: Vector, player: PlainPlayer, propertyData: BoardViewport) {
+  applyGameChanges(value: Vector, player: PlainPlayer) {
     const currentViewport = player.board.getViewport();
 
     if (value) {
@@ -35,7 +31,7 @@ export default class ViewportHandler extends PropertyHandler<Vector, BoardViewpo
     return currentViewport;
   }
 
-  beforePreviousNode(value: Vector, player: PlainPlayer, propertyData: BoardViewport): BoardViewport {
+  clearGameChanges(value: Vector, player: PlainPlayer, propertyData: BoardViewport): BoardViewport {
     player.board.setViewport(propertyData);
 
     return null;

@@ -2,17 +2,32 @@ import KifuNode, { Path } from '../kifu/KifuNode';
 import EventEmitter from '../utils/EventEmitter';
 import { Game, GoRules } from '../Game';
 import { PropIdent } from '../SGFParser/sgfTypes';
-import PropertyHandler from './propertyHandlers/PropertyHandler';
-interface PlayerParams {
+import PropertyHandler from './PropertyHandler';
+import BoardSizeHandler from './basePropertyHandlers/BoardSizeHandler';
+import RulesHandler from './basePropertyHandlers/RulesHandler';
+import HandicapHandler from './basePropertyHandlers/HandicapHandler';
+import SetupHandler from './basePropertyHandlers/SetupHandler';
+import SetTurnHandler from './basePropertyHandlers/SetTurnHandler';
+import MoveHandler from './basePropertyHandlers/MoveHandler';
+export interface PlayerInitParams {
     size: number;
     rules: GoRules;
-    [key: string]: any;
 }
 export default class PlayerBase extends EventEmitter {
+    static propertyHandlers: {
+        SZ: BoardSizeHandler;
+        RU: RulesHandler;
+        HA: HandicapHandler;
+        AW: SetupHandler;
+        AB: SetupHandler;
+        AE: SetupHandler;
+        PL: SetTurnHandler;
+        B: MoveHandler;
+        W: MoveHandler;
+    };
     rootNode: KifuNode;
     currentNode: KifuNode;
     game: Game;
-    params: PlayerParams;
     propertiesData: Map<KifuNode, {
         [propIdent: string]: any;
     }>;
@@ -26,13 +41,10 @@ export default class PlayerBase extends EventEmitter {
      */
     newGame(size?: number, rules?: GoRules): void;
     /**
-     * Register event listeners for SGF properties.
-     */
-    protected registerPropertyHandlers(propertyHandlers: PropertyHandler<any, any>[]): void;
-    /**
      * Executes root properties during initialization. If some properties change, call this to re-init player.
      */
     protected executeRoot(): void;
+    protected executeNode(): void;
     /**
      * Change current node to specified next node and executes its properties.
      */
@@ -42,13 +54,10 @@ export default class PlayerBase extends EventEmitter {
      */
     protected executePrevious(): void;
     /**
-     * Executes a move (black or white) - changes game position and sets turn.
-     */
-    protected executeMove(): void;
-    /**
      * Emits node life cycle method (for every property)
      */
-    protected emitNodeLifeCycleEvent(name: string): void;
+    protected emitNodeLifeCycleEvent(name: keyof PropertyHandler<any, any>): void;
+    protected getPropertyHandler(propIdent: string): PropertyHandler<any, any>;
     /**
      * Gets property data of current node - data are temporary not related to SGF.
      */
@@ -97,4 +106,3 @@ export default class PlayerBase extends EventEmitter {
        */
     previousFork(): void;
 }
-export {};

@@ -1,10 +1,18 @@
 import { BoardObject, BoardLineObject } from '../../CanvasBoard';
 import PlainPlayer from '../PlainPlayer';
-import PropertyHandler from './PropertyHandler';
+import PropertyHandler from '../PropertyHandler';
 import { Vector } from '../../types';
 
 export default class MarkupLineHandler extends PropertyHandler<Vector[], BoardObject[]> {
-  nextNode(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]) {
+  type: string;
+
+  constructor(type: string) {
+    super();
+
+    this.type = type;
+  }
+
+  applyNodeChanges(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]) {
     const objects: BoardObject[] = [];
 
     values.forEach((value) => {
@@ -18,19 +26,11 @@ export default class MarkupLineHandler extends PropertyHandler<Vector[], BoardOb
     return objects;
   }
 
-  previousNode(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]) {
-    return this.nextNode(values, player, propertyData);
-  }
-
-  beforeNextNode(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
+  clearNodeChanges(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
     propertyData.forEach((object) => {
       player.board.removeObject(object);
     });
 
     return null;
-  }
-
-  beforePreviousNode(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]) {
-    return this.beforeNextNode(values, player, propertyData);
   }
 }

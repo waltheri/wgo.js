@@ -1,10 +1,18 @@
 import { BoardMarkupObject, BoardObject } from '../../CanvasBoard';
 import PlainPlayer from '../PlainPlayer';
-import PropertyHandler from './PropertyHandler';
+import PropertyHandler from '../PropertyHandler';
 import { Point } from '../../types';
 
 export default class MarkupHandler extends PropertyHandler<Point[], BoardObject[]> {
-  nextNode(values: Point[], player: PlainPlayer, propertyData: BoardObject[]) {
+  type: string;
+
+  constructor(type: string) {
+    super();
+
+    this.type = type;
+  }
+
+  applyNodeChanges(values: Point[], player: PlainPlayer) {
     const objects: BoardObject[] = [];
 
     values.forEach((value) => {
@@ -18,19 +26,11 @@ export default class MarkupHandler extends PropertyHandler<Point[], BoardObject[
     return objects;
   }
 
-  previousNode(values: Point[], player: PlainPlayer, propertyData: BoardObject[]) {
-    return this.nextNode(values, player, propertyData);
-  }
-
-  beforeNextNode(values: Point[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
+  clearNodeChanges(values: Point[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
     propertyData.forEach((object) => {
       player.board.removeObject(object);
     });
 
     return null;
-  }
-
-  beforePreviousNode(values: Point[], player: PlainPlayer, propertyData: BoardObject[]) {
-    return this.beforeNextNode(values, player, propertyData);
   }
 }

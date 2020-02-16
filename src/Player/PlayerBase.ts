@@ -3,29 +3,41 @@ import EventEmitter from '../utils/EventEmitter';
 import { Game, goRules, GoRules, JAPANESE_RULES } from '../Game';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { Point, Color } from '../types';
-import PropertyHandler from './propertyHandlers/PropertyHandler';
-import basePropertyHandlers from './propertyHandlers/basePropertyHandlers';
+import PropertyHandler from './PropertyHandler';
+import BoardSizeHandler from './basePropertyHandlers/BoardSizeHandler';
+import RulesHandler from './basePropertyHandlers/RulesHandler';
+import HandicapHandler from './basePropertyHandlers/HandicapHandler';
+import SetupHandler from './basePropertyHandlers/SetupHandler';
+import SetTurnHandler from './basePropertyHandlers/SetTurnHandler';
+import MoveHandler from './basePropertyHandlers/MoveHandler';
 
-interface PlayerParams {
+export interface PlayerInitParams {
   size: number;
   rules: GoRules;
-  [key: string]: any;
 }
 
 export default class PlayerBase extends EventEmitter {
+  static propertyHandlers = {
+    SZ: new BoardSizeHandler(),
+    RU: new RulesHandler(),
+    HA: new HandicapHandler(),
+    AW: new SetupHandler(Color.WHITE),
+    AB: new SetupHandler(Color.BLACK),
+    AE: new SetupHandler(Color.EMPTY),
+    PL: new SetTurnHandler(),
+    B: new MoveHandler(Color.BLACK),
+    W: new MoveHandler(Color.WHITE),
+  };
+
   rootNode: KifuNode;
   currentNode: KifuNode;
   game: Game;
-
-  // player params defined by SGF
-  params: PlayerParams;
 
   // data bounded to SGF properties
   propertiesData: Map<KifuNode, { [propIdent: string]: any }>;
 
   constructor() {
     super();
-    this.registerPropertyHandlers(basePropertyHandlers);
   }
 
   /**
@@ -37,12 +49,6 @@ export default class PlayerBase extends EventEmitter {
 
     // init properties data map
     this.propertiesData = new Map();
-
-    // set default params
-    this.params = {
-      size: 19,
-      rules: JAPANESE_RULES,
-    };
 
     this.executeRoot();
   }
@@ -69,95 +75,76 @@ export default class PlayerBase extends EventEmitter {
   }
 
   /**
-   * Register event listeners for SGF properties.
-   */
-  protected registerPropertyHandlers(propertyHandlers: PropertyHandler<any, any>[]) {
-    propertyHandlers.forEach(handler => handler.register(this));
-  }
-
-  /**
    * Executes root properties during initialization. If some properties change, call this to re-init player.
    */
   protected executeRoot() {
-    this.emitNodeLifeCycleEvent('beforeInit');
-    this.game = new Game(this.params.size, this.params.rules);
-    this.emitNodeLifeCycleEvent('afterInit');
+    let params = {
+      size: 19,
+      rules: JAPANESE_RULES,
+    };
 
-    this.executeMove();
-    this.emitNodeLifeCycleEvent('nextNode');
+    this.currentNode.forEachProperty((propIdent, value) => {
+      const propertyHandler = this.getPropertyHandler(propIdent);
+      if (propertyHandler && propertyHandler.beforeInit) {
+        params = propertyHandler.beforeInit(value, this, params);
+      }
+    });
+
+    this.emit('beforeInit', params);
+    this.game = new Game(params.size, params.rules);
+
+    this.executeNode();
+  }
+
+  protected executeNode() {
+    this.emitNodeLifeCycleEvent('applyGameChanges');
+    this.emitNodeLifeCycleEvent('applyNodeChanges');
   }
 
   /**
    * Change current node to specified next node and executes its properties.
    */
   protected executeNext(i: number) {
-    this.emitNodeLifeCycleEvent('beforeNextNode');
+    this.emitNodeLifeCycleEvent('clearNodeChanges');
 
     this.game.pushPosition(this.game.position.clone());
     this.currentNode = this.currentNode.children[i];
 
-    this.executeMove();
-    this.emitNodeLifeCycleEvent('nextNode');
+    this.executeNode();
   }
 
   /**
    * Change current node to previous/parent next node and executes its properties.
    */
   protected executePrevious() {
-    this.emitNodeLifeCycleEvent('beforePreviousNode');
+    this.emitNodeLifeCycleEvent('clearNodeChanges');
+    this.emitNodeLifeCycleEvent('clearGameChanges');
+
     this.game.popPosition();
     this.currentNode = this.currentNode.parent;
-    this.emitNodeLifeCycleEvent('previousNode');
-  }
 
-  /**
-   * Executes a move (black or white) - changes game position and sets turn.
-   */
-  protected executeMove() {
-    this.emitNodeLifeCycleEvent('beforeMove');
-
-    // Execute move - B or W property - these properties are vital in this player implementation therefore hard coded.
-    const blackMove: Point = this.getProperty(PropIdent.BLACK_MOVE);
-    const whiteMove: Point = this.getProperty(PropIdent.WHITE_MOVE);
-
-    if (blackMove !== undefined && whiteMove !== undefined) {
-      // TODO: change this to custom (kifu) error.
-      throw new TypeError('Black (B) and white (W) properties must not be mixed within a node.');
-    }
-
-    if (blackMove !== undefined) {
-      if (blackMove) {
-        this.game.position.applyMove(blackMove.x, blackMove.y, Color.BLACK, true, true);
-      } else {
-        // black passes
-        this.game.position.turn = Color.WHITE;
-      }
-    } else if (whiteMove !== undefined) {
-      if (whiteMove) {
-        this.game.position.applyMove(whiteMove.x, whiteMove.y, Color.WHITE, true, true);
-      } else {
-        // white passes
-        this.game.position.turn = Color.BLACK;
-      }
-    }
-
-    this.emitNodeLifeCycleEvent('afterMove');
+    this.emitNodeLifeCycleEvent('applyNodeChanges');
   }
 
   /**
    * Emits node life cycle method (for every property)
    */
-  protected emitNodeLifeCycleEvent(name: string) {
+  protected emitNodeLifeCycleEvent(name: keyof PropertyHandler<any, any>) {
     this.emit(name);
 
-    Object.keys(this.currentNode.properties).forEach((propIdent) => {
-      this.emit(
-        `${name}:${propIdent}`,
-        this.currentNode.properties[propIdent],
-        this.getPropertyData(propIdent),
-        this.setPropertyData.bind(this, propIdent),
-      );
+    this.currentNode.forEachProperty((propIdent, value) => {
+      const propertyHandler = this.getPropertyHandler(propIdent);
+      if (propertyHandler && propertyHandler[name]) {
+        this.setPropertyData(
+          propIdent,
+          propertyHandler[name](value, this, this.getPropertyData(propIdent)),
+        );
+      }
     });
+  }
+
+  protected getPropertyHandler(propIdent: string) {
+    return (this.constructor as any).propertyHandlers[propIdent] as PropertyHandler<any, any>;
   }
 
   /**

@@ -1,14 +1,10 @@
 import { BoardObject, BoardLabelObject } from '../../CanvasBoard';
 import PlainPlayer from '../PlainPlayer';
-import PropertyHandler from './PropertyHandler';
+import PropertyHandler from '../PropertyHandler';
 import { Point, Label } from '../../types';
 
 export default class MarkupLabelHandler extends PropertyHandler<Label[], BoardObject[]> {
-  constructor() {
-    super('LB');
-  }
-
-  nextNode(values: Label[], player: PlainPlayer, propertyData: BoardObject[]) {
+  applyNodeChanges(values: Label[], player: PlainPlayer) {
     const objects: BoardObject[] = [];
 
     values.forEach((value) => {
@@ -22,19 +18,11 @@ export default class MarkupLabelHandler extends PropertyHandler<Label[], BoardOb
     return objects;
   }
 
-  previousNode(values: Label[], player: PlainPlayer, propertyData: BoardObject[]) {
-    return this.nextNode(values, player, propertyData);
-  }
-
-  beforeNextNode(values: Label[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
+  clearNodeChanges(values: Label[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
     propertyData.forEach((object) => {
       player.board.removeObject(object);
     });
 
     return null;
-  }
-
-  beforePreviousNode(values: Label[], player: PlainPlayer, propertyData: BoardObject[]) {
-    return this.beforeNextNode(values, player, propertyData);
   }
 }

@@ -1,14 +1,14 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import CanvasBoard, { defaultBoardConfig, BoardObject, FieldObject } from '../CanvasBoard';
+import CanvasBoard, { defaultBoardConfig, FieldObject } from '../CanvasBoard';
 import PlayerBase from './PlayerBase';
 import { CanvasBoardTheme } from '../CanvasBoard/types';
 import { DrawHandler, Circle } from '../CanvasBoard/drawHandlers';
-import MarkupHandler from './propertyHandlers/MarkupHandler';
-import MoveHandler from './propertyHandlers/MoveHandler';
-import MarkupLineHandler from './propertyHandlers/MarkupLineHandler';
+import MarkupHandler from './boardPropertyHandlers/MarkupHandler';
+import MarkupLineHandler from './boardPropertyHandlers/MarkupLineHandler';
 import { Color } from '../types';
-import MarkupLabelHandler from './propertyHandlers/MarkupLabelHandler';
-import ViewportHandler from './propertyHandlers/ViewportHandler';
+import MarkupLabelHandler from './boardPropertyHandlers/MarkupLabelHandler';
+import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
+import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
 
 export interface PlainPlayerConfig {
   boardTheme: CanvasBoardTheme;
@@ -26,27 +26,28 @@ export const defaultPlainPlayerConfig: PlainPlayerConfig = {
   enableKeys: true,
 };
 
-export const plainPlayerPropertyHandlers = [
-  new MarkupHandler('CR'),
-  new MarkupHandler('DD'),
-  new MarkupHandler('MA'),
-  new MarkupHandler('SL'),
-  new MarkupHandler('SQ'),
-  new MarkupHandler('TR'),
-  new MarkupLabelHandler(),
-  new MarkupLineHandler('AR'),
-  new MarkupLineHandler('LN'),
-  new MoveHandler('B'),
-  new MoveHandler('W'),
-  new ViewportHandler(),
-];
-
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
   W: Color.WHITE,
 };
 
 export default class PlainPlayer extends PlayerBase {
+  static propertyHandlers = {
+    ...PlayerBase.propertyHandlers,
+    CR: new MarkupHandler('CR'),
+    DD: new MarkupHandler('DD'),
+    MA: new MarkupHandler('MA'),
+    SL: new MarkupHandler('SL'),
+    SQ: new MarkupHandler('SQ'),
+    TR: new MarkupHandler('TR'),
+    LB: new MarkupLabelHandler(),
+    AR: new MarkupLineHandler('AR'),
+    LN: new MarkupLineHandler('LN'),
+    VW: new ViewportHandler(),
+    B: new MoveHandlerWithMark(Color.BLACK),
+    W: new MoveHandlerWithMark(Color.WHITE),
+  };
+
   element: HTMLElement;
   config: PlainPlayerConfig;
   board: CanvasBoard;
@@ -70,9 +71,7 @@ export default class PlainPlayer extends PlayerBase {
     });
     this.stoneBoardsObjects = [];
 
-    this.registerPropertyHandlers(plainPlayerPropertyHandlers);
-    this.on('afterMove', () => this.updateStones());
-    this.on('previousNode', () => this.updateStones());
+    this.on('applyNodeChanges', () => this.updateStones());
 
     if (this.element.tabIndex < 0) {
       this.element.tabIndex = 1;

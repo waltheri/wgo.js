@@ -3,11 +3,11 @@ import CanvasBoard, { FieldObject } from '../CanvasBoard';
 import PlayerBase from './PlayerBase';
 import { CanvasBoardTheme } from '../CanvasBoard/types';
 import { DrawHandler } from '../CanvasBoard/drawHandlers';
-import MarkupHandler from './propertyHandlers/MarkupHandler';
-import MoveHandler from './propertyHandlers/MoveHandler';
-import MarkupLineHandler from './propertyHandlers/MarkupLineHandler';
-import MarkupLabelHandler from './propertyHandlers/MarkupLabelHandler';
-import ViewportHandler from './propertyHandlers/ViewportHandler';
+import MarkupHandler from './boardPropertyHandlers/MarkupHandler';
+import MarkupLineHandler from './boardPropertyHandlers/MarkupLineHandler';
+import MarkupLabelHandler from './boardPropertyHandlers/MarkupLabelHandler';
+import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
+import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
 export interface PlainPlayerConfig {
     boardTheme: CanvasBoardTheme;
     currentMoveBlackMark: DrawHandler;
@@ -16,8 +16,28 @@ export interface PlainPlayerConfig {
     enableKeys: boolean;
 }
 export declare const defaultPlainPlayerConfig: PlainPlayerConfig;
-export declare const plainPlayerPropertyHandlers: (MarkupHandler | MarkupLabelHandler | MarkupLineHandler | MoveHandler | ViewportHandler)[];
 export default class PlainPlayer extends PlayerBase {
+    static propertyHandlers: {
+        CR: MarkupHandler;
+        DD: MarkupHandler;
+        MA: MarkupHandler;
+        SL: MarkupHandler;
+        SQ: MarkupHandler;
+        TR: MarkupHandler;
+        LB: MarkupLabelHandler;
+        AR: MarkupLineHandler;
+        LN: MarkupLineHandler;
+        VW: ViewportHandler;
+        B: MoveHandlerWithMark;
+        W: MoveHandlerWithMark;
+        SZ: import("./basePropertyHandlers/BoardSizeHandler").default;
+        RU: import("./basePropertyHandlers/RulesHandler").default;
+        HA: import("./basePropertyHandlers/HandicapHandler").default;
+        AW: import("./basePropertyHandlers/SetupHandler").default;
+        AB: import("./basePropertyHandlers/SetupHandler").default;
+        AE: import("./basePropertyHandlers/SetupHandler").default;
+        PL: import("./basePropertyHandlers/SetTurnHandler").default;
+    };
     element: HTMLElement;
     config: PlainPlayerConfig;
     board: CanvasBoard;
