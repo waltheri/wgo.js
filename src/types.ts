@@ -22,10 +22,7 @@ export interface Label extends Point {
   text: string;
 }
 
-export interface LineSegment {
-  point1: Point;
-  point2: Point;
-}
+export type Vector = Point[];
 
 export interface Label extends Point {
   text: string;

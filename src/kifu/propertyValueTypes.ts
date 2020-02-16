@@ -26,7 +26,7 @@
  * {@link http://www.red-bean.com/sgf/sgf4.html}
  */
 
-import { Color, Point, Label, LineSegment } from '../types';
+import { Color, Point, Label, Vector } from '../types';
 
 interface PropertyValueTransformer<T = any> {
   read(str: string): T;
@@ -72,20 +72,20 @@ export const LABEL = {
   ),
 };
 
-export const LINE_SEGMENT = {
-  read: (str: string): LineSegment => ({
-    point1: {
+export const VECTOR = {
+  read: (str: string): Vector => str ? [
+    {
       x: str.charCodeAt(0) - 97,
       y: str.charCodeAt(1) - 97,
     },
-    point2: {
+    {
       x: str.charCodeAt(3) - 97,
       y: str.charCodeAt(4) - 97,
     },
-  }),
-  write: (value: LineSegment) => (
+  ] : null,
+  write: (value?: Vector) => (
     // tslint:disable-next-line:max-line-length
-    `${String.fromCharCode(value.point1.x + 97) + String.fromCharCode(value.point1.y + 97)}:${String.fromCharCode(value.point2.x + 97) + String.fromCharCode(value.point2.y + 97)}`
+    value ? `${String.fromCharCode(value[0].x + 97) + String.fromCharCode(value[0].y + 97)}:${String.fromCharCode(value[1].x + 97) + String.fromCharCode(value[1].y + 97)}` : ''
   ),
 };
 
@@ -184,7 +184,7 @@ propertyValueTypes.LB = {
 };
 
 propertyValueTypes.AR = propertyValueTypes.LN = {
-  transformer: LINE_SEGMENT,
+  transformer: VECTOR,
   multiple: true,
   notEmpty: true,
 };
@@ -246,10 +246,12 @@ propertyValueTypes.PM = {
   notEmpty: true,
 };
 
+// VW property must be specified as compressed list (ab:cd) and only one value is allowed
+// empty value [] will reset the viewport. Other options are not supported.
 propertyValueTypes.VW = {
-  transformer: POINT,
-  multiple: true,
-  notEmpty: false,
+  transformer: VECTOR,
+  multiple: false,
+  notEmpty: true,
 };
 
 export default propertyValueTypes;

@@ -8,14 +8,14 @@ export default abstract class PropertyHandler<V, D = void> {
     this.type = type;
   }
 
-  beforeInit?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  afterInit?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  beforeMove?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  afterMove?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  nextNode?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  previousNode?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  beforeNextNode?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
-  beforePreviousNode?(valueOrValues: V, propertyData: D, player: PlayerBase): D;
+  beforeInit?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  afterInit?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  beforeMove?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  afterMove?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  nextNode?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  previousNode?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  beforeNextNode?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
+  beforePreviousNode?(valueOrValues: V, player: PlayerBase, propertyData: D): D;
 
   register(player: PlayerBase) {
     this.registerEvent(player, 'beforeInit');
@@ -33,7 +33,7 @@ export default abstract class PropertyHandler<V, D = void> {
       player.on(
         `${event}:${this.type}`,
         (value: V, propertyData: D, setPropertyData: (data: D) => void) => {
-          setPropertyData((this[event] as Function)(value, propertyData, player));
+          setPropertyData((this[event] as Function)(value, player, propertyData));
         },
       );
     }

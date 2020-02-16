@@ -1,8 +1,10 @@
-import KifuNode from '../kifu/KifuNode';
+import KifuNode, { Path } from '../kifu/KifuNode';
 import EventEmitter from '../utils/EventEmitter';
-import { Game, GoRules, JAPANESE_RULES } from '../Game';
+import { Game, goRules, GoRules, JAPANESE_RULES } from '../Game';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { Point, Color } from '../types';
+import PropertyHandler from './propertyHandlers/PropertyHandler';
+import basePropertyHandlers from './propertyHandlers/basePropertyHandlers';
 
 interface PlayerParams {
   size: number;
@@ -21,9 +23,15 @@ export default class PlayerBase extends EventEmitter {
   // data bounded to SGF properties
   propertiesData: Map<KifuNode, { [propIdent: string]: any }>;
 
-  constructor(rootNode: KifuNode = new KifuNode()) {
+  constructor() {
     super();
+    this.registerPropertyHandlers(basePropertyHandlers);
+  }
 
+  /**
+   * Load game (kifu) from KifuNode.
+   */
+  loadKifu(rootNode: KifuNode) {
     this.rootNode = rootNode;
     this.currentNode = rootNode;
 
@@ -37,6 +45,34 @@ export default class PlayerBase extends EventEmitter {
     };
 
     this.executeRoot();
+  }
+
+  /**
+   * Create new game (kifu) and init player with it.
+   */
+  newGame(size?: number, rules?: GoRules) {
+    const rootNode = new KifuNode();
+
+    if (size) {
+      rootNode.setProperty('SZ', size);
+    }
+
+    if (rules) {
+      // TODO: handle rules more correctly
+      const rulesName = Object.keys(goRules).find(name => (goRules as any)[name] === rules);
+      if (rulesName) {
+        rootNode.setProperty('RU', rulesName);
+      }
+    }
+
+    this.loadKifu(rootNode);
+  }
+
+  /**
+   * Register event listeners for SGF properties.
+   */
+  protected registerPropertyHandlers(propertyHandlers: PropertyHandler<any, any>[]) {
+    propertyHandlers.forEach(handler => handler.register(this));
   }
 
   /**
@@ -161,7 +197,98 @@ export default class PlayerBase extends EventEmitter {
   /**
    * Sets property of current node.
    */
-  setProperty(propIdent: PropIdent) {
-    return this.currentNode.setProperty(propIdent);
+  // setProperty(propIdent: PropIdent) {
+  //   return this.currentNode.setProperty(propIdent);
+  // }
+
+  /**
+   * Gets property of root node.
+   */
+  getRootProperty(propIdent: PropIdent) {
+    return this.rootNode.getProperty(propIdent);
+  }
+
+  /**
+   * Returns array of next nodes (children).
+   */
+  getNextNodes() {
+    return this.currentNode.children;
+  }
+
+  /**
+   * Go to (specified) next node and execute it.
+   */
+  next(node: number | KifuNode = 0) {
+    if (this.currentNode.children.length) {
+      let i: number;
+
+      if (typeof node === 'number') {
+        i = node;
+      } else {
+        i = this.currentNode.children.indexOf(node);
+      }
+
+      if (this.currentNode.children[i]) {
+        this.executeNext(i);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Go to the previous node.
+   */
+  previous() {
+    if (this.currentNode.parent) {
+      this.executePrevious();
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Go to the first position - root node.
+   */
+  first() {
+    // not sure if effective - TODO: check if there is a better way to do this
+    while (this.previous()) {}
+  }
+
+  /**
+   * Go to the last position.
+   */
+  last() {
+    while (this.next()) {}
+  }
+
+  /**
+   * Go to specified path.
+   */
+  goTo(pathOrMoveNumber: Path | number) {
+    // TODO: check if there is a better way to do this
+    const path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
+    this.first();
+
+    for (let i = 0, j = 0; i < path.depth; i++) {
+      if (this.currentNode.children.length > 1) {
+        this.next(path.forks[j++]);
+      } else {
+        this.next();
+      }
+    }
+  }
+
+  /**
+	 * Go to previous fork (a node with more than one child).
+	 */
+  previousFork() {
+    while (this.previous()) {
+      if (this.currentNode.children.length > 1) {
+        return;
+      }
+    }
   }
 }
