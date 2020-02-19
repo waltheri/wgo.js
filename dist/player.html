@@ -15,7 +15,6 @@ const sgf = '(;GM[1]FF[4]CA[UTF-8]AP[GoPanda2.5.2-3]ST[1]SZ[19]HA[0]KM[6.5]PW[ce
 
 window.player = new WGo.PlainPlayer(document.getElementById('board'), {
   boardTheme: WGo.themes.realisticTheme,
-  showCurrentVariations: false,
 });
 
 window.player.loadKifu(WGo.KifuNode.fromSGF(sgf));

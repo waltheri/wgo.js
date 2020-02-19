@@ -10,9 +10,11 @@ import MarkupLabelHandler from './boardPropertyHandlers/MarkupLabelHandler';
 import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
 import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
 import { KifuNode } from '..';
+import { PropIdent } from '../SGFParser/sgfTypes';
 
 export interface PlainPlayerConfig {
   boardTheme: CanvasBoardTheme;
+  highlightCurrentMove: boolean;
   currentMoveBlackMark: DrawHandler;
   currentMoveWhiteMark: DrawHandler;
   enableMouseWheel: boolean;
@@ -24,6 +26,7 @@ export interface PlainPlayerConfig {
 
 export const defaultPlainPlayerConfig: PlainPlayerConfig = {
   boardTheme: defaultBoardConfig.theme,
+  highlightCurrentMove: true,
   currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
   currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
   enableMouseWheel: true,
@@ -204,16 +207,33 @@ export default class PlainPlayer extends PlayerBase {
     }
   }
 
-  protected getVariations(): Point[] {
-    if (this.config.showVariations) {
-      if (this.config.showCurrentVariations && this.currentNode.parent) {
-        return this.currentNode.parent.children.map(node => node.getProperty('B') || node.getProperty('W'));
-      }
-      if (!this.config.showCurrentVariations) {
+  getVariations(): Point[] {
+    if (this.showVariations()) {
+      if (this.showCurrentVariations()) {
+        if (this.currentNode.parent) {
+          return this.currentNode.parent.children.map(node => node.getProperty('B') || node.getProperty('W'));
+        }
+      } else {
         return this.currentNode.children.map(node => node.getProperty('B') || node.getProperty('W'));
       }
     }
     return [];
+  }
+
+  showVariations() {
+    const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+    if (st != null) {
+      return !(st & 2);
+    }
+    return this.config.showVariations;
+  }
+
+  showCurrentVariations() {
+    const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+    if (st != null) {
+      return !!(st & 1);
+    }
+    return this.config.showCurrentVariations;
   }
 
   protected removeVariationMarkup() {
@@ -232,7 +252,7 @@ export default class PlainPlayer extends PlayerBase {
       const ind = moves.findIndex(move => move && move.x === point.x && move.y === point.y);
 
       if (ind >= 0) {
-        if (this.config.showCurrentVariations) {
+        if (this.showCurrentVariations()) {
           this.previous();
           this.next(ind);
         } else {

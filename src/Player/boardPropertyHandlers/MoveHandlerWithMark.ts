@@ -7,11 +7,11 @@ function samePoint(p1: Point, p2: any) {
   return p2 && p1.x === p2.x && p1.y === p2.y;
 }
 
-function isThereMarkup(ignore: string, field: Point, properties: { [key: string]: any }) {
+function isThereMarkup(field: Point, properties: { [key: string]: any }) {
   const propIdents = Object.keys(properties);
 
   for (let i = 0; i < propIdents.length; i++) {
-    if (propIdents[i] === ignore) {
+    if (propIdents[i] === 'B' || propIdents[i] === 'W') {
       continue;
     }
 
@@ -32,18 +32,23 @@ function isThereMarkup(ignore: string, field: Point, properties: { [key: string]
 
 export default class MoveHandlerWithMark extends MoveHandler<BoardObject> {
   applyNodeChanges(value: Point, player: PlainPlayer) {
-    if (isThereMarkup(this.color === Color.BLACK ? 'B' : 'W', value, player.currentNode.properties)) {
-      return;
+    if (player.config.highlightCurrentMove) {
+      const variationsMarkup = player.getVariations().length > 1 && player.showCurrentVariations();
+      if (isThereMarkup(value, player.currentNode.properties) || variationsMarkup) {
+        return;
+      }
+
+      // add current move mark
+      const boardMarkup = new BoardMarkupObject(
+        this.color === Color.BLACK ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark,
+      );
+      boardMarkup.zIndex = 10;
+      player.board.addObjectAt(value.x, value.y, boardMarkup);
+
+      return boardMarkup;
     }
 
-    // add current move mark
-    const boardMarkup = new BoardMarkupObject(
-      this.color === Color.BLACK ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark,
-    );
-    boardMarkup.zIndex = 10;
-    player.board.addObjectAt(value.x, value.y, boardMarkup);
-
-    return boardMarkup;
+    return null;
   }
 
   clearNodeChanges(value: Point, player: PlainPlayer, propertyData: BoardObject): BoardObject {

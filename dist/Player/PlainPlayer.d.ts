@@ -11,6 +11,7 @@ import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
 import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
 export interface PlainPlayerConfig {
     boardTheme: CanvasBoardTheme;
+    highlightCurrentMove: boolean;
     currentMoveBlackMark: DrawHandler;
     currentMoveWhiteMark: DrawHandler;
     enableMouseWheel: boolean;
@@ -56,7 +57,9 @@ export default class PlainPlayer extends PlayerBase {
     destroy(): void;
     protected updateStones(): void;
     protected addVariationMarkup(): void;
-    protected getVariations(): Point[];
+    getVariations(): Point[];
+    showVariations(): boolean;
+    showCurrentVariations(): boolean;
     protected removeVariationMarkup(): void;
     protected handleBoardClick(point: Point): void;
     protected handleBoardMouseMove(point: Point): void;

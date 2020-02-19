@@ -3496,10 +3496,10 @@
     function samePoint(p1, p2) {
         return p2 && p1.x === p2.x && p1.y === p2.y;
     }
-    function isThereMarkup(ignore, field, properties) {
+    function isThereMarkup(field, properties) {
         var propIdents = Object.keys(properties);
         for (var i = 0; i < propIdents.length; i++) {
-            if (propIdents[i] === ignore) {
+            if (propIdents[i] === 'B' || propIdents[i] === 'W') {
                 continue;
             }
             var value = properties[propIdents[i]];
@@ -3522,14 +3522,18 @@
             return _super !== null && _super.apply(this, arguments) || this;
         }
         MoveHandlerWithMark.prototype.applyNodeChanges = function (value, player) {
-            if (isThereMarkup(this.color === exports.Color.BLACK ? 'B' : 'W', value, player.currentNode.properties)) {
-                return;
+            if (player.config.highlightCurrentMove) {
+                var variationsMarkup = player.getVariations().length > 1 && player.showCurrentVariations();
+                if (isThereMarkup(value, player.currentNode.properties) || variationsMarkup) {
+                    return;
+                }
+                // add current move mark
+                var boardMarkup = new BoardMarkupObject(this.color === exports.Color.BLACK ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark);
+                boardMarkup.zIndex = 10;
+                player.board.addObjectAt(value.x, value.y, boardMarkup);
+                return boardMarkup;
             }
-            // add current move mark
-            var boardMarkup = new BoardMarkupObject(this.color === exports.Color.BLACK ? player.config.currentMoveBlackMark : player.config.currentMoveWhiteMark);
-            boardMarkup.zIndex = 10;
-            player.board.addObjectAt(value.x, value.y, boardMarkup);
-            return boardMarkup;
+            return null;
         };
         MoveHandlerWithMark.prototype.clearNodeChanges = function (value, player, propertyData) {
             if (propertyData) {
@@ -3539,10 +3543,10 @@
         };
         return MoveHandlerWithMark;
     }(MoveHandler));
-    //# sourceMappingURL=MoveHandlerWithMark.js.map
 
     var defaultPlainPlayerConfig = {
         boardTheme: canvasBoardDefaultConfig.theme,
+        highlightCurrentMove: true,
         currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
         currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
         enableMouseWheel: true,
@@ -3685,15 +3689,31 @@
             }
         };
         PlainPlayer.prototype.getVariations = function () {
-            if (this.config.showVariations) {
-                if (this.config.showCurrentVariations && this.currentNode.parent) {
-                    return this.currentNode.parent.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+            if (this.showVariations()) {
+                if (this.showCurrentVariations()) {
+                    if (this.currentNode.parent) {
+                        return this.currentNode.parent.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+                    }
                 }
-                if (!this.config.showCurrentVariations) {
+                else {
                     return this.currentNode.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
                 }
             }
             return [];
+        };
+        PlainPlayer.prototype.showVariations = function () {
+            var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+            if (st != null) {
+                return !(st & 2);
+            }
+            return this.config.showVariations;
+        };
+        PlainPlayer.prototype.showCurrentVariations = function () {
+            var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+            if (st != null) {
+                return !!(st & 1);
+            }
+            return this.config.showCurrentVariations;
         };
         PlainPlayer.prototype.removeVariationMarkup = function () {
             if (this.variationBoardObjects.length) {
@@ -3708,7 +3728,7 @@
             if (moves.length > 1) {
                 var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
                 if (ind >= 0) {
-                    if (this.config.showCurrentVariations) {
+                    if (this.showCurrentVariations()) {
                         this.previous();
                         this.next(ind);
                     }
@@ -3744,6 +3764,7 @@
         PlainPlayer.propertyHandlers = __assign({}, PlayerBase.propertyHandlers, { CR: new MarkupHandler('CR'), DD: new MarkupHandler('DD'), MA: new MarkupHandler('MA'), SL: new MarkupHandler('SL'), SQ: new MarkupHandler('SQ'), TR: new MarkupHandler('TR'), LB: new MarkupLabelHandler(), AR: new MarkupLineHandler('AR'), LN: new MarkupLineHandler('LN'), VW: new ViewportHandler(), B: new MoveHandlerWithMark(exports.Color.BLACK), W: new MoveHandlerWithMark(exports.Color.WHITE) });
         return PlainPlayer;
     }(PlayerBase));
+    //# sourceMappingURL=PlainPlayer.js.map
 
     //# sourceMappingURL=index.js.map
 
