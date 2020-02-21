@@ -1,6 +1,7 @@
 import CanvasBoard from './CanvasBoard';
-import { BoardObject } from './boardObjects';
+import { BoardObject } from '../BoardBase';
 import { DrawFunction } from './types';
+import { DrawHandler } from './drawHandlers';
 /**
  * @class
  * Implements one layer of the HTML5 canvas
@@ -13,6 +14,6 @@ export default class CanvasLayer {
     constructor(board: CanvasBoard);
     init(): void;
     resize(width: number, height: number): void;
-    draw(drawFunction: DrawFunction, boardObject: BoardObject): void;
+    draw(drawFunction: DrawFunction, boardObject: BoardObject<DrawHandler>): void;
     clear(): void;
 }

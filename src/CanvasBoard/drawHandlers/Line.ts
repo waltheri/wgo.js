@@ -1,6 +1,6 @@
 import DrawHandler from './DrawHandler';
 import { CanvasBoardConfig } from '../types';
-import { BoardLineObject } from '../boardObjects';
+import { BoardLineObject } from '../../boardBase';
 
 interface LineParams {
   color?: string;
@@ -8,7 +8,11 @@ interface LineParams {
 }
 
 export default class Line extends DrawHandler<LineParams> {
-  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLineObject) {
+  stone(
+    canvasCtx: CanvasRenderingContext2D,
+    boardConfig: CanvasBoardConfig,
+    boardObject: BoardLineObject<DrawHandler<LineParams>>,
+  ) {
     canvasCtx.strokeStyle = this.params.color ? this.params.color : boardConfig.theme.markupNoneColor;
     canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;
     canvasCtx.shadowBlur = 10;

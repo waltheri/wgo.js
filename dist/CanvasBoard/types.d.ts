@@ -1,12 +1,6 @@
 import { Point } from '../types';
-import { BoardObject } from './boardObjects';
+import { BoardObject, BoardViewport } from '../boardBase';
 import DrawHandler from './drawHandlers/DrawHandler';
-export interface BoardViewport {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
-}
 export interface CanvasBoardTheme {
     stoneSize: number;
     grid: {
@@ -37,6 +31,7 @@ export interface CanvasBoardTheme {
     drawHandlers: {
         [key: string]: DrawHandler;
     };
+    style: Partial<CSSStyleDeclaration>;
 }
 export interface CanvasBoardConfig {
     size: number;
@@ -54,5 +49,5 @@ export interface CanvasBoardConfig {
     snapToGrid: boolean;
 }
 export interface DrawFunction {
-    (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void | Promise<void>;
+    (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void | Promise<void>;
 }

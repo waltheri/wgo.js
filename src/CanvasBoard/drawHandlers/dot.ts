@@ -1,6 +1,4 @@
-import { CanvasBoardConfig } from '../types';
 import DrawHandler from './DrawHandler';
-import { BoardMarkupObject } from '../boardObjects';
 
 /**
  * TODO: rename this

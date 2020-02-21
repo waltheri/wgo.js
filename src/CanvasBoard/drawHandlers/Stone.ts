@@ -1,6 +1,5 @@
 import DrawHandler from './DrawHandler';
 import { CanvasBoardConfig } from '../types';
-import { BoardObject } from '../boardObjects';
 
 /**
  * Provides shadow for the stone.

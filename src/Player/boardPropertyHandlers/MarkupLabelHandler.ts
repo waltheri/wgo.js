@@ -1,11 +1,11 @@
-import { BoardObject, BoardLabelObject } from '../../CanvasBoard';
+import { BoardObject, BoardLabelObject } from '../../BoardBase';
 import PlainPlayer from '../PlainPlayer';
 import PropertyHandler from '../PropertyHandler';
 import { Point, Label } from '../../types';
 
-export default class MarkupLabelHandler extends PropertyHandler<Label[], BoardObject[]> {
+export default class MarkupLabelHandler extends PropertyHandler<Label[], BoardObject<any>[]> {
   applyNodeChanges(values: Label[], player: PlainPlayer) {
-    const objects: BoardObject[] = [];
+    const objects: BoardObject<any>[] = [];
 
     values.forEach((value) => {
       // add markup
@@ -18,7 +18,7 @@ export default class MarkupLabelHandler extends PropertyHandler<Label[], BoardOb
     return objects;
   }
 
-  clearNodeChanges(values: Label[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
+  clearNodeChanges(values: Label[], player: PlainPlayer, propertyData: BoardObject<any>[]): BoardObject<any>[] {
     player.board.removeObject(propertyData);
 
     return null;

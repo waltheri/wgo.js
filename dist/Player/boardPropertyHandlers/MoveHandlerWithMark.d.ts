@@ -1,8 +1,8 @@
-import { BoardMarkupObject, BoardObject } from '../../CanvasBoard';
+import { BoardMarkupObject, BoardObject } from '../../BoardBase';
 import PlainPlayer from '../PlainPlayer';
 import { Point } from '../../types';
 import MoveHandler from '../basePropertyHandlers/MoveHandler';
-export default class MoveHandlerWithMark extends MoveHandler<BoardObject> {
-    applyNodeChanges(value: Point, player: PlainPlayer): BoardMarkupObject;
-    clearNodeChanges(value: Point, player: PlainPlayer, propertyData: BoardObject): BoardObject;
+export default class MoveHandlerWithMark extends MoveHandler<BoardObject<any>> {
+    applyNodeChanges(value: Point, player: PlainPlayer): BoardMarkupObject<import("../../CanvasBoard/drawHandlers").DrawHandler<{}>>;
+    clearNodeChanges(value: Point, player: PlainPlayer, propertyData: BoardObject<any>): BoardObject<any>;
 }

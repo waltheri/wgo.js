@@ -311,6 +311,7 @@
         Color[Color["EMPTY"] = 0] = "EMPTY";
         Color[Color["E"] = 0] = "E";
     })(exports.Color || (exports.Color = {}));
+    //# sourceMappingURL=types.js.map
 
     /**
      * Board markup object is special type of object, which can have 3 variations - for empty field
@@ -354,6 +355,269 @@
         return BoardLineObject;
     }(FieldObject));
     //# sourceMappingURL=BoardLineObject.js.map
+
+    /**
+     * Simple base class for event handling. It tries to follow Node.js EventEmitter class API,
+     * but contains only basic methods.
+     */
+    var EventEmitter = /** @class */ (function () {
+        function EventEmitter() {
+            // tslint:disable-next-line:variable-name
+            this._events = {};
+        }
+        EventEmitter.prototype.on = function (evName, callback) {
+            this._events[evName] = this._events[evName] || [];
+            this._events[evName].push(callback);
+        };
+        EventEmitter.prototype.off = function (evName, callback) {
+            if (this._events[evName]) {
+                if (callback == null) {
+                    this._events[evName] = [];
+                }
+                this._events[evName] = this._events[evName].filter(function (fn) { return fn !== callback; });
+            }
+        };
+        EventEmitter.prototype.emit = function (evName) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            if (this._events[evName]) {
+                this._events[evName].forEach(function (fn) { return fn.apply(void 0, args); });
+            }
+        };
+        return EventEmitter;
+    }());
+    //# sourceMappingURL=EventEmitter.js.map
+
+    /**
+     * Helper function for merging default config with provided config.
+     *
+     * @param defaults
+     * @param config
+     */
+    function makeConfig(defaults, config) {
+        var mergedConfig = {};
+        var defaultKeys = Object.keys(defaults);
+        defaultKeys.forEach(function (key) {
+            var val = config[key];
+            var defVal = defaults[key];
+            if (val != null && val.constructor === Object && !Array.isArray(val) && defVal != null) {
+                mergedConfig[key] = makeConfig(defVal, val);
+            }
+            else if (val !== undefined) {
+                mergedConfig[key] = val;
+            }
+            else {
+                mergedConfig[key] = defVal;
+            }
+        });
+        Object.keys(config).forEach(function (key) {
+            if (defaultKeys.indexOf(key) === -1) {
+                mergedConfig[key] = config[key];
+            }
+        });
+        return mergedConfig;
+    }
+    //# sourceMappingURL=makeConfig.js.map
+
+    var defaultBoardBaseConfig = {
+        size: 19,
+        width: 0,
+        height: 0,
+        starPoints: {
+            5: [{ x: 2, y: 2 }],
+            7: [{ x: 3, y: 3 }],
+            8: [{ x: 2, y: 2 }, { x: 5, y: 2 }, { x: 2, y: 5 }, { x: 5, y: 5 }],
+            9: [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 6 }, { x: 6, y: 6 }],
+            10: [{ x: 2, y: 2 }, { x: 7, y: 2 }, { x: 2, y: 7 }, { x: 7, y: 7 }],
+            11: [{ x: 2, y: 2 }, { x: 8, y: 2 }, { x: 5, y: 5 }, { x: 2, y: 8 }, { x: 8, y: 8 }],
+            12: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }],
+            13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 6, y: 6 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
+            14: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }],
+            15: [{ x: 3, y: 3 }, { x: 11, y: 3 }, { x: 7, y: 7 }, { x: 3, y: 11 }, { x: 11, y: 11 }],
+            16: [{ x: 3, y: 3 }, { x: 12, y: 3 }, { x: 3, y: 12 }, { x: 12, y: 12 }],
+            17: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 13, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 },
+                { x: 13, y: 8 }, { x: 3, y: 13 }, { x: 8, y: 13 }, { x: 13, y: 13 }],
+            18: [{ x: 3, y: 3 }, { x: 14, y: 3 }, { x: 3, y: 14 }, { x: 14, y: 14 }],
+            19: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 15, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 },
+                { x: 15, y: 9 }, { x: 3, y: 15 }, { x: 9, y: 15 }, { x: 15, y: 15 }],
+            20: [{ x: 3, y: 3 }, { x: 16, y: 3 }, { x: 3, y: 16 }, { x: 16, y: 16 }],
+            21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 },
+                { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }],
+        },
+        viewport: {
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+        },
+        coordinates: false,
+    };
+    var BoardBase = /** @class */ (function (_super) {
+        __extends(BoardBase, _super);
+        // following props are computed in resize() method for performance
+        // width: number;
+        // height: number;
+        // leftOffset: number;
+        // topOffset: number;
+        // fieldSize: number;
+        function BoardBase(element, config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this) || this;
+            // boardElement: HTMLElement;
+            _this.objects = [];
+            // merge user config with default
+            _this.element = element;
+            _this.config = makeConfig(defaultBoardBaseConfig, config);
+            return _this;
+        }
+        /**
+         * Updates dimensions and redraws everything
+         */
+        BoardBase.prototype.resize = function () {
+            // subclass may do resize things here
+        };
+        /**
+         * Redraw everything.
+         */
+        BoardBase.prototype.redraw = function () {
+            // subclass should implement this
+        };
+        /**
+         * Add board object. Main function for adding graphics on the board.
+         *
+         * @param boardObject
+         */
+        BoardBase.prototype.addObject = function (boardObject) {
+            // handling multiple objects
+            if (Array.isArray(boardObject)) {
+                for (var i = 0; i < boardObject.length; i++) {
+                    this.addObject(boardObject[i]);
+                }
+                return;
+            }
+            // if (typeof boardObject.type === 'string') {
+            //   if (!this.config.theme.drawHandlers[boardObject.type]) {
+            //  throw new TypeError(`Board object type "${boardObject.type}" doesn't exist in \`config.theme.drawHandlers\`.`);
+            //   }
+            // } else {
+            //   if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
+            //     throw new TypeError('Invalid board object type.');
+            //   }
+            // }
+            this.objects.push(boardObject);
+            this.redraw();
+        };
+        /**
+         * Shortcut method to add object and set its position.
+         */
+        BoardBase.prototype.addObjectAt = function (x, y, boardObject) {
+            boardObject.setPosition(x, y);
+            this.addObject(boardObject);
+        };
+        /**
+         * Remove board object. Main function for removing graphics on the board.
+         *
+         * @param boardObject
+         */
+        BoardBase.prototype.removeObject = function (boardObject) {
+            // handling multiple objects
+            if (Array.isArray(boardObject)) {
+                for (var i = 0; i < boardObject.length; i++) {
+                    this.removeObject(boardObject[i]);
+                }
+                return;
+            }
+            var objectPos = this.objects.indexOf(boardObject);
+            if (objectPos === -1) {
+                // object isn't on the board, ignore it
+                return;
+            }
+            this.objects.splice(objectPos, 1);
+            this.redraw();
+        };
+        BoardBase.prototype.removeObjectsAt = function (x, y) {
+            var _this = this;
+            this.objects.forEach(function (obj) {
+                if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
+                    _this.removeObject(obj);
+                }
+            });
+        };
+        BoardBase.prototype.removeAllObjects = function () {
+            this.objects = [];
+            this.redraw();
+        };
+        BoardBase.prototype.hasObject = function (boardObject) {
+            return this.objects.indexOf(boardObject) >= 0;
+        };
+        /**
+         * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
+         *
+         * @param width
+         */
+        BoardBase.prototype.setWidth = function (width) {
+            this.config.width = width;
+            this.config.height = 0;
+            this.resize();
+        };
+        /**
+         * Sets height of the board, width will be automatically computed. Then everything will be redrawn.
+         *
+         * @param height
+         */
+        BoardBase.prototype.setHeight = function (height) {
+            this.config.width = 0;
+            this.config.height = height;
+            this.resize();
+        };
+        /**
+         * Sets exact dimensions of the board. Then everything will be redrawn.
+         *
+         * @param width
+         * @param height
+         */
+        BoardBase.prototype.setDimensions = function (width, height) {
+            this.config.width = width;
+            this.config.height = height;
+            this.resize();
+        };
+        /**
+           * Get currently visible section of the board
+           */
+        BoardBase.prototype.getViewport = function () {
+            return this.config.viewport;
+        };
+        /**
+           * Set section of the board to be displayed
+           */
+        BoardBase.prototype.setViewport = function (viewport) {
+            this.config.viewport = viewport;
+            this.resize();
+        };
+        BoardBase.prototype.getSize = function () {
+            return this.config.size;
+        };
+        BoardBase.prototype.setSize = function (size) {
+            if (size === void 0) { size = 19; }
+            if (size !== this.config.size) {
+                this.config.size = size;
+                this.resize();
+            }
+        };
+        BoardBase.prototype.getCoordinates = function () {
+            return this.config.coordinates;
+        };
+        BoardBase.prototype.setCoordinates = function (coordinates) {
+            if (this.config.coordinates !== coordinates) {
+                this.config.coordinates = coordinates;
+                this.resize();
+            }
+        };
+        return BoardBase;
+    }(EventEmitter));
+    //# sourceMappingURL=BoardBase.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -442,6 +706,81 @@
         return ShadowLayer;
     }(CanvasLayer));
     //# sourceMappingURL=ShadowLayer.js.map
+
+    var GridLayer = /** @class */ (function (_super) {
+        __extends(GridLayer, _super);
+        function GridLayer() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GridLayer.prototype.init = function () {
+            _super.prototype.init.call(this);
+            this.drawGrid();
+        };
+        GridLayer.prototype.clear = function () {
+            _super.prototype.clear.call(this);
+            this.drawGrid();
+        };
+        GridLayer.prototype.drawGrid = function () {
+            // draw grid
+            var tmp;
+            var params = this.board.config.theme.grid;
+            this.context.beginPath();
+            this.context.lineWidth = params.linesWidth * this.board.fieldSize;
+            this.context.strokeStyle = params.linesColor;
+            var tx = Math.round(this.board.getX(0));
+            var ty = Math.round(this.board.getY(0));
+            var bw = Math.round((this.board.config.size - 1) * this.board.fieldSize);
+            var bh = Math.round((this.board.config.size - 1) * this.board.fieldSize);
+            this.context.strokeRect(tx, ty, bw, bh);
+            for (var i = 1; i < this.board.config.size - 1; i++) {
+                tmp = Math.round(this.board.getX(i));
+                this.context.moveTo(tmp, ty);
+                this.context.lineTo(tmp, ty + bh);
+                tmp = Math.round(this.board.getY(i));
+                this.context.moveTo(tx, tmp);
+                this.context.lineTo(tx + bw, tmp);
+            }
+            this.context.stroke();
+            // draw stars
+            this.context.fillStyle = params.starColor;
+            if (this.board.config.starPoints[this.board.config.size]) {
+                for (var key in this.board.config.starPoints[this.board.config.size]) {
+                    this.context.beginPath();
+                    this.context.arc(this.board.getX(this.board.config.starPoints[this.board.config.size][key].x), this.board.getY(this.board.config.starPoints[this.board.config.size][key].y), params.starSize * this.board.fieldSize, 0, 2 * Math.PI, true);
+                    this.context.fill();
+                }
+            }
+            if (this.board.config.coordinates) {
+                this.drawCoordinates();
+            }
+        };
+        GridLayer.prototype.drawCoordinates = function () {
+            var t;
+            var params = this.board.config.theme.coordinates;
+            this.context.fillStyle = params.color;
+            this.context.textBaseline = 'middle';
+            this.context.textAlign = 'center';
+            // tslint:disable-next-line:max-line-length
+            this.context.font = "" + (params.bold ? 'bold ' : '') + this.board.fieldSize / 2 + "px " + (this.board.config.theme.font || '');
+            var xRight = this.board.getX(-0.75);
+            var xLeft = this.board.getX(this.board.config.size - 0.25);
+            var yTop = this.board.getY(-0.75);
+            var yBottom = this.board.getY(this.board.config.size - 0.25);
+            var coordinatesX = params.x;
+            var coordinatesY = params.y;
+            for (var i = 0; i < this.board.config.size; i++) {
+                t = this.board.getY(i);
+                this.context.fillText(coordinatesX[i], xRight, t);
+                this.context.fillText(coordinatesX[i], xLeft, t);
+                t = this.board.getX(i);
+                this.context.fillText(coordinatesY[i], t, yTop);
+                this.context.fillText(coordinatesY[i], t, yBottom);
+            }
+            this.context.fillStyle = 'black';
+        };
+        return GridLayer;
+    }(CanvasLayer));
+    //# sourceMappingURL=GridLayer.js.map
 
     var DrawHandler = /** @class */ (function () {
         function DrawHandler(params) {
@@ -1164,225 +1503,40 @@
     };
     //# sourceMappingURL=defaultConfig.js.map
 
-    /**
-     * Helper function for merging default config with provided config.
-     *
-     * @param defaults
-     * @param config
-     */
-    function makeConfig(defaults, config) {
-        var mergedConfig = {};
-        var defaultKeys = Object.keys(defaults);
-        defaultKeys.forEach(function (key) {
-            var val = config[key];
-            var defVal = defaults[key];
-            if (val != null && val.constructor === Object && !Array.isArray(val) && defVal != null) {
-                mergedConfig[key] = makeConfig(defVal, val);
-            }
-            else if (val !== undefined) {
-                mergedConfig[key] = val;
-            }
-            else {
-                mergedConfig[key] = defVal;
-            }
-        });
-        Object.keys(config).forEach(function (key) {
-            if (defaultKeys.indexOf(key) === -1) {
-                mergedConfig[key] = config[key];
-            }
-        });
-        return mergedConfig;
-    }
-    //# sourceMappingURL=makeConfig.js.map
-
-    /**
-     * Simple base class for event handling. It tries to follow Node.js EventEmitter class API,
-     * but contains only basic methods.
-     */
-    var EventEmitter = /** @class */ (function () {
-        function EventEmitter() {
-            // tslint:disable-next-line:variable-name
-            this._events = {};
-        }
-        EventEmitter.prototype.on = function (evName, callback) {
-            this._events[evName] = this._events[evName] || [];
-            this._events[evName].push(callback);
-        };
-        EventEmitter.prototype.off = function (evName, callback) {
-            if (this._events[evName]) {
-                if (callback == null) {
-                    this._events[evName] = [];
-                }
-                this._events[evName] = this._events[evName].filter(function (fn) { return fn !== callback; });
-            }
-        };
-        EventEmitter.prototype.emit = function (evName) {
-            var args = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                args[_i - 1] = arguments[_i];
-            }
-            if (this._events[evName]) {
-                this._events[evName].forEach(function (fn) { return fn.apply(void 0, args); });
-            }
-        };
-        return EventEmitter;
-    }());
-    //# sourceMappingURL=EventEmitter.js.map
-
-    var GridLayer = /** @class */ (function (_super) {
-        __extends(GridLayer, _super);
-        function GridLayer() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        GridLayer.prototype.init = function () {
-            _super.prototype.init.call(this);
-            this.drawGrid();
-        };
-        GridLayer.prototype.clear = function () {
-            _super.prototype.clear.call(this);
-            this.drawGrid();
-        };
-        GridLayer.prototype.drawGrid = function () {
-            // draw grid
-            var tmp;
-            var params = this.board.config.theme.grid;
-            this.context.beginPath();
-            this.context.lineWidth = params.linesWidth * this.board.fieldSize;
-            this.context.strokeStyle = params.linesColor;
-            var tx = Math.round(this.board.getX(0));
-            var ty = Math.round(this.board.getY(0));
-            var bw = Math.round((this.board.config.size - 1) * this.board.fieldSize);
-            var bh = Math.round((this.board.config.size - 1) * this.board.fieldSize);
-            this.context.strokeRect(tx, ty, bw, bh);
-            for (var i = 1; i < this.board.config.size - 1; i++) {
-                tmp = Math.round(this.board.getX(i));
-                this.context.moveTo(tmp, ty);
-                this.context.lineTo(tmp, ty + bh);
-                tmp = Math.round(this.board.getY(i));
-                this.context.moveTo(tx, tmp);
-                this.context.lineTo(tx + bw, tmp);
-            }
-            this.context.stroke();
-            // draw stars
-            this.context.fillStyle = params.starColor;
-            if (this.board.config.starPoints[this.board.config.size]) {
-                for (var key in this.board.config.starPoints[this.board.config.size]) {
-                    this.context.beginPath();
-                    this.context.arc(this.board.getX(this.board.config.starPoints[this.board.config.size][key].x), this.board.getY(this.board.config.starPoints[this.board.config.size][key].y), params.starSize * this.board.fieldSize, 0, 2 * Math.PI, true);
-                    this.context.fill();
-                }
-            }
-            if (this.board.config.coordinates) {
-                this.drawCoordinates();
-            }
-        };
-        GridLayer.prototype.drawCoordinates = function () {
-            var t;
-            var params = this.board.config.theme.coordinates;
-            this.context.fillStyle = params.color;
-            this.context.textBaseline = 'middle';
-            this.context.textAlign = 'center';
-            // tslint:disable-next-line:max-line-length
-            this.context.font = "" + (params.bold ? 'bold ' : '') + this.board.fieldSize / 2 + "px " + (this.board.config.theme.font || '');
-            var xRight = this.board.getX(-0.75);
-            var xLeft = this.board.getX(this.board.config.size - 0.25);
-            var yTop = this.board.getY(-0.75);
-            var yBottom = this.board.getY(this.board.config.size - 0.25);
-            var coordinatesX = params.x;
-            var coordinatesY = params.y;
-            for (var i = 0; i < this.board.config.size; i++) {
-                t = this.board.getY(i);
-                this.context.fillText(coordinatesX[i], xRight, t);
-                this.context.fillText(coordinatesX[i], xLeft, t);
-                t = this.board.getX(i);
-                this.context.fillText(coordinatesY[i], t, yTop);
-                this.context.fillText(coordinatesY[i], t, yBottom);
-            }
-            this.context.fillStyle = 'black';
-        };
-        return GridLayer;
-    }(CanvasLayer));
-    //# sourceMappingURL=GridLayer.js.map
-
     /* global document, window */
     var zIndexSorter = function (obj1, obj2) { return obj1.zIndex - obj2.zIndex; };
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
         /**
            * CanvasBoard class constructor - it creates a canvas board.
-           *
-           * @alias WGo.CanvasBoard
-           * @class
-           * @param {HTMLElement} elem DOM element to put in
-           * @param {Object} config Configuration object. It is object with "key: value" structure. Possible configurations are:
-           *
-           * * size: number - size of the board (default: 19)
-           * * width: number - width of the board (default: 0)
-           * * height: number - height of the board (default: 0)
-           * * font: string - font of board writings (!deprecated)
-           * * lineWidth: number - line width of board drawings (!deprecated)
-           * * autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this
-         *   option rewrites 'lineWidth' /and it will keep markups sharp/ (!deprecated)
-           * * starPoints: Object - star points coordinates, defined for various board sizes. Look at CanvasBoard.default for
-         *   more info.
-           * * stoneHandler: CanvasBoard.DrawHandler - stone drawing handler (default: CanvasBoard.drawHandlers.SHELL)
-           * * starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by
-         *   given constant. (!deprecated)
-           * * stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given
-         *   constant. (!deprecated)
-           * * shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by
-         *   given constant. (!deprecated)
-           * * background: string - background of the board, it can be either color (#RRGGBB) or url. Empty string means no
-         *   background. (default: WGo.DIR+"wood1.jpg")
-           * * section: {
-           *     top: number,
-           *     right: number,
-           *     bottom: number,
-           *     left: number
-           *   }
-           *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side.
-           *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
-           * * theme: Object - theme object, which defines all graphical attributes of the board. Default theme object
-         *   is "WGo.CanvasBoard.themes.default". For old look you may use "WGo.CanvasBoard.themes.old".
-           *
-           * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only
-         * if you set property 'theme' to 'WGo.CanvasBoard.themes.old'.
            */
         function CanvasBoard(elem, config) {
             if (config === void 0) { config = {}; }
-            var _this = _super.call(this) || this;
+            var _this = _super.call(this, elem, makeConfig(canvasBoardDefaultConfig, config)) || this;
             _this.objects = [];
-            // merge user config with default
-            _this.config = makeConfig(canvasBoardDefaultConfig, config);
-            // init board html
-            _this.init(elem);
+            // init board HTML
+            _this.wrapperElement = document.createElement('div');
+            _this.wrapperElement.className = 'wgo-board';
+            _this.wrapperElement.style.position = 'relative';
+            _this.element.appendChild(_this.wrapperElement);
+            _this.boardElement = document.createElement('div');
+            _this.boardElement.style.position = 'absolute';
+            _this.boardElement.style.left = '0';
+            _this.boardElement.style.top = '0';
+            _this.boardElement.style.right = '0';
+            _this.boardElement.style.bottom = '0';
+            _this.boardElement.style.margin = 'auto';
+            _this.wrapperElement.appendChild(_this.boardElement);
+            _this.layers = {
+                grid: new GridLayer(_this),
+                shadow: new ShadowLayer(_this),
+                stone: new CanvasLayer(_this),
+            };
             // set the pixel ratio for HDPI (e.g. Retina) screens
             _this.pixelRatio = window.devicePixelRatio || 1;
             _this.resize();
             return _this;
         }
-        /**
-         * Initialization method, it is called in constructor. You shouldn't call it, but you can alter it.
-         */
-        CanvasBoard.prototype.init = function (elem) {
-            this.element = document.createElement('div');
-            this.element.className = 'wgo-board';
-            this.element.style.position = 'relative';
-            elem.appendChild(this.element);
-            this.boardElement = document.createElement('div');
-            this.boardElement.style.position = 'absolute';
-            this.boardElement.style.left = '0';
-            this.boardElement.style.top = '0';
-            this.boardElement.style.right = '0';
-            this.boardElement.style.bottom = '0';
-            this.boardElement.style.margin = 'auto';
-            this.element.appendChild(this.boardElement);
-            this.layers = {
-                grid: new GridLayer(this),
-                shadow: new ShadowLayer(this),
-                stone: new CanvasLayer(this),
-            };
-        };
         /**
          * Updates dimensions and redraws everything
          */
@@ -1420,8 +1574,8 @@
                 }
             }
             else {
-                this.element.style.width = 'auto';
-                this.width = this.element.offsetWidth * this.pixelRatio;
+                this.wrapperElement.style.width = 'auto';
+                this.width = this.wrapperElement.offsetWidth * this.pixelRatio;
                 this.fieldSize = this.width / (countX + leftOffset + rightOffset);
                 this.height = this.fieldSize * (countY + topOffset + bottomOffset);
                 if (!this.resizeCallback) {
@@ -1436,8 +1590,8 @@
             }
             this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
             this.topOffset = this.fieldSize * (topOffset + 0.5 - this.config.viewport.top);
-            this.element.style.width = (this.width / this.pixelRatio) + "px";
-            this.element.style.height = (this.height / this.pixelRatio) + "px";
+            this.wrapperElement.style.width = (this.width / this.pixelRatio) + "px";
+            this.wrapperElement.style.height = (this.height / this.pixelRatio) + "px";
             var boardWidth = (countX + leftOffset + rightOffset) * this.fieldSize;
             var boardHeight = (countY + topOffset + bottomOffset) * this.fieldSize;
             this.boardElement.style.width = (boardWidth / this.pixelRatio) + "px";
@@ -1462,69 +1616,6 @@
            */
         CanvasBoard.prototype.getY = function (y) {
             return this.topOffset + y * this.fieldSize;
-        };
-        /**
-         * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
-         *
-         * @param width
-         */
-        CanvasBoard.prototype.setWidth = function (width) {
-            this.config.width = width;
-            this.config.height = 0;
-            this.resize();
-        };
-        /**
-         * Sets height of the board, width will be automatically computed. Then everything will be redrawn.
-         *
-         * @param height
-         */
-        CanvasBoard.prototype.setHeight = function (height) {
-            this.config.width = 0;
-            this.config.height = height;
-            this.resize();
-        };
-        /**
-         * Sets exact dimensions of the board. Then everything will be redrawn.
-         *
-         * @param width
-         * @param height
-         */
-        CanvasBoard.prototype.setDimensions = function (width, height) {
-            this.config.width = width;
-            this.config.height = height;
-            this.resize();
-        };
-        /**
-           * Get currently visible section of the board
-           */
-        CanvasBoard.prototype.getViewport = function () {
-            return this.config.viewport;
-        };
-        /**
-           * Set section of the board to be displayed
-           */
-        CanvasBoard.prototype.setViewport = function (viewport) {
-            this.config.viewport = viewport;
-            this.resize();
-        };
-        CanvasBoard.prototype.getSize = function () {
-            return this.config.size;
-        };
-        CanvasBoard.prototype.setSize = function (size) {
-            if (size === void 0) { size = 19; }
-            if (size !== this.config.size) {
-                this.config.size = size;
-                this.resize();
-            }
-        };
-        CanvasBoard.prototype.getCoordinates = function () {
-            return this.config.coordinates;
-        };
-        CanvasBoard.prototype.setCoordinates = function (coordinates) {
-            if (this.config.coordinates !== coordinates) {
-                this.config.coordinates = coordinates;
-                this.resize();
-            }
         };
         /**
          * Redraw everything.
@@ -1558,75 +1649,6 @@
                 });
             }
         };
-        /**
-         * Add board object. Main function for adding graphics on the board.
-         *
-         * @param boardObject
-         */
-        CanvasBoard.prototype.addObject = function (boardObject) {
-            // handling multiple objects
-            if (Array.isArray(boardObject)) {
-                for (var i = 0; i < boardObject.length; i++) {
-                    this.addObject(boardObject[i]);
-                }
-                return;
-            }
-            if (typeof boardObject.type === 'string') {
-                if (!this.config.theme.drawHandlers[boardObject.type]) {
-                    throw new TypeError("Board object type \"" + boardObject.type + "\" doesn't exist in `config.theme.drawHandlers`.");
-                }
-            }
-            else {
-                if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
-                    throw new TypeError('Invalid board object type.');
-                }
-            }
-            this.objects.push(boardObject);
-            this.redraw();
-        };
-        /**
-         * Shortcut method to add object and set its position.
-         */
-        CanvasBoard.prototype.addObjectAt = function (x, y, boardObject) {
-            boardObject.setPosition(x, y);
-            this.addObject(boardObject);
-        };
-        /**
-         * Remove board object. Main function for removing graphics on the board.
-         *
-         * @param boardObject
-         */
-        CanvasBoard.prototype.removeObject = function (boardObject) {
-            // handling multiple objects
-            if (Array.isArray(boardObject)) {
-                for (var i = 0; i < boardObject.length; i++) {
-                    this.removeObject(boardObject[i]);
-                }
-                return;
-            }
-            var objectPos = this.objects.indexOf(boardObject);
-            if (objectPos === -1) {
-                // object isn't on the board, ignore it
-                return;
-            }
-            this.objects.splice(objectPos, 1);
-            this.redraw();
-        };
-        CanvasBoard.prototype.removeObjectsAt = function (x, y) {
-            var _this = this;
-            this.objects.forEach(function (obj) {
-                if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
-                    _this.removeObject(obj);
-                }
-            });
-        };
-        CanvasBoard.prototype.removeAllObjects = function () {
-            this.objects = [];
-            this.redraw();
-        };
-        CanvasBoard.prototype.hasObject = function (boardObject) {
-            return this.objects.indexOf(boardObject) >= 0;
-        };
         CanvasBoard.prototype.on = function (type, callback) {
             _super.prototype.on.call(this, type, callback);
             this.registerBoardListener(type);
@@ -1653,8 +1675,7 @@
             return { x: x, y: y };
         };
         return CanvasBoard;
-    }(EventEmitter));
-    //# sourceMappingURL=CanvasBoard.js.map
+    }(BoardBase));
 
     //# sourceMappingURL=index.js.map
 
@@ -3963,6 +3984,7 @@
     // All public API is exported here
     //# sourceMappingURL=index.js.map
 
+    exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;
     exports.BoardLineObject = BoardLineObject;
     exports.BoardMarkupObject = BoardMarkupObject;

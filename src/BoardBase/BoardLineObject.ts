@@ -1,16 +1,15 @@
-import { Point } from '../../types';
+import { Point } from '../types';
 import FieldObject from './FieldObject';
-import { DrawHandler } from '../drawHandlers';
 
 /**
  * Board markup object is special type of object, which can have 3 variations - for empty field
  * and for black and white stone.
  */
-export default class BoardLineObject extends FieldObject {
+export default class BoardLineObject<T> extends FieldObject<T> {
   start: Point;
   end: Point;
 
-  constructor(type: string | DrawHandler, start: Point, end: Point) {
+  constructor(type: string | T, start: Point, end: Point) {
     super(type);
     this.start = start;
     this.end = end;

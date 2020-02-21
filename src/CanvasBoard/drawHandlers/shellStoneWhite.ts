@@ -1,12 +1,12 @@
 import { CanvasBoardConfig } from '../types';
 import Stone from './Stone';
-import { FieldObject } from '../boardObjects';
+import { FieldObject } from '../../BoardBase';
 
 // shell stone helping functions
 const shellSeed = Math.ceil(Math.random() * 9999999);
 
 export default class ShellStoneWhite extends Stone {
-  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject) {
+  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject<Stone>) {
     const stoneRadius = boardConfig.theme.stoneSize;
     canvasCtx.beginPath();
     canvasCtx.fillStyle = '#aaa';

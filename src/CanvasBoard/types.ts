@@ -1,13 +1,6 @@
 import { Point } from '../types';
-import { BoardObject } from './boardObjects';
+import { BoardObject, BoardViewport } from '../boardBase';
 import DrawHandler from './drawHandlers/DrawHandler';
-
-export interface BoardViewport {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-}
 
 export interface CanvasBoardTheme {
   stoneSize: number;
@@ -75,5 +68,6 @@ export interface CanvasBoardConfig {
 }
 
 export interface DrawFunction {
-  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void | Promise<void>;
+  // tslint:disable-next-line:max-line-length
+  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void | Promise<void>;
 }

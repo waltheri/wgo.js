@@ -1,5 +1,6 @@
 import { PartialRecursive } from '../utils/makeConfig';
-import CanvasBoard, { FieldObject } from '../CanvasBoard';
+import CanvasBoard from '../CanvasBoard';
+import { FieldObject } from '../BoardBase';
 import PlayerBase from './PlayerBase';
 import { CanvasBoardTheme } from '../CanvasBoard/types';
 import { DrawHandler } from '../CanvasBoard/drawHandlers';
@@ -48,8 +49,8 @@ export default class PlainPlayer extends PlayerBase {
     board: CanvasBoard;
     boardMouseX: number;
     boardMouseY: number;
-    protected stoneBoardsObjects: FieldObject[];
-    protected variationBoardObjects: FieldObject[];
+    protected stoneBoardsObjects: FieldObject<any>[];
+    protected variationBoardObjects: FieldObject<any>[];
     private _mouseWheelEvent;
     private _keyEvent;
     constructor(element: HTMLElement, config?: PartialRecursive<PlainPlayerConfig>);

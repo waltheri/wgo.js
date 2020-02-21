@@ -1,4 +1,4 @@
-import { BoardMarkupObject, BoardObject } from '../../CanvasBoard';
+import { BoardMarkupObject, BoardObject } from '../../BoardBase';
 import PlainPlayer from '../PlainPlayer';
 import { Point, Color } from '../../types';
 import MoveHandler from '../basePropertyHandlers/MoveHandler';
@@ -30,7 +30,7 @@ function isThereMarkup(field: Point, properties: { [key: string]: any }) {
   return false;
 }
 
-export default class MoveHandlerWithMark extends MoveHandler<BoardObject> {
+export default class MoveHandlerWithMark extends MoveHandler<BoardObject<any>> {
   applyNodeChanges(value: Point, player: PlainPlayer) {
     if (player.config.highlightCurrentMove) {
       const variationsMarkup = player.getVariations().length > 1 && player.shouldShowCurrentVariations();
@@ -51,7 +51,7 @@ export default class MoveHandlerWithMark extends MoveHandler<BoardObject> {
     return null;
   }
 
-  clearNodeChanges(value: Point, player: PlainPlayer, propertyData: BoardObject): BoardObject {
+  clearNodeChanges(value: Point, player: PlainPlayer, propertyData: BoardObject<any>): BoardObject<any> {
     if (propertyData) {
       player.board.removeObject(propertyData);
     }

@@ -1,7 +1,7 @@
 import { CanvasBoardConfig } from '../types';
 import DrawHandler from './DrawHandler';
 import { Color } from '../../types';
-import { BoardMarkupObject } from '../boardObjects';
+import { BoardMarkupObject } from '../../boardBase';
 
 interface MarkupDrawHandlerParams {
   color?: string;
@@ -10,7 +10,11 @@ interface MarkupDrawHandlerParams {
 }
 
 export default abstract class MarkupDrawHandler<P = {}> extends DrawHandler<MarkupDrawHandlerParams & P> {
-  grid(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject) {
+  grid(
+    canvasCtx: CanvasRenderingContext2D,
+    boardConfig: CanvasBoardConfig,
+    boardObject: BoardMarkupObject<DrawHandler<MarkupDrawHandlerParams & P>>,
+  ) {
     if (boardObject.variation === Color.E) {
       canvasCtx.clearRect(
         -boardConfig.theme.stoneSize,
@@ -21,7 +25,10 @@ export default abstract class MarkupDrawHandler<P = {}> extends DrawHandler<Mark
     }
   }
 
-  getColor(boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject) {
+  getColor(
+    boardConfig: CanvasBoardConfig,
+    boardObject: BoardMarkupObject<DrawHandler<MarkupDrawHandlerParams & P>>,
+  ) {
     if (this.params.color) {
       return this.params.color;
     }

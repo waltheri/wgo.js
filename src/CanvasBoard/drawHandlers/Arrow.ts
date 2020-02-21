@@ -1,6 +1,6 @@
 import DrawHandler from './DrawHandler';
 import { CanvasBoardConfig } from '../types';
-import { BoardLineObject } from '../boardObjects';
+import { BoardLineObject } from '../../BoardBase';
 
 interface ArrowParams {
   color?: string;
@@ -8,7 +8,11 @@ interface ArrowParams {
 }
 
 export default class Arrow extends DrawHandler<ArrowParams> {
-  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLineObject) {
+  stone(
+    canvasCtx: CanvasRenderingContext2D,
+    boardConfig: CanvasBoardConfig,
+    boardObject: BoardLineObject<DrawHandler<ArrowParams>>,
+  ) {
     canvasCtx.strokeStyle = this.params.color ? this.params.color : boardConfig.theme.markupNoneColor;
     canvasCtx.fillStyle = canvasCtx.strokeStyle;
     canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;

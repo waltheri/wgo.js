@@ -1,6 +1,5 @@
 import { CanvasBoardConfig } from '../types';
-import { Color } from '../../types';
-import BoardLabelObject from '../boardObjects/BoardLabelObject';
+import { BoardLabelObject } from '../../BoardBase';
 import MarkupDrawHandler from './MarkupDrawHandler';
 
 interface LabelParams {

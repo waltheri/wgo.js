@@ -1,5 +1,5 @@
 import { CanvasBoardConfig } from '../types';
-import { BoardObject } from '../boardObjects';
+import { BoardObject } from '../../boardBase';
 
 export default abstract class DrawHandler<P extends object = {}> {
   params: P;
@@ -8,7 +8,7 @@ export default abstract class DrawHandler<P extends object = {}> {
     this.params = params;
   }
 
-  stone?(context: CanvasRenderingContext2D, config: CanvasBoardConfig, boardObject: BoardObject): void;
-  shadow?(context: CanvasRenderingContext2D, config: CanvasBoardConfig, boardObject: BoardObject): void;
-  grid?(context: CanvasRenderingContext2D, config: CanvasBoardConfig, boardObject: BoardObject): void;
+  stone?(context: CanvasRenderingContext2D, config: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void;
+  shadow?(context: CanvasRenderingContext2D, config: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void;
+  grid?(context: CanvasRenderingContext2D, config: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void;
 }

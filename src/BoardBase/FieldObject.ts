@@ -1,7 +1,6 @@
 import BoardObject from './BoardObject';
-import { DrawHandler } from '../drawHandlers';
 
-export default class FieldObject extends BoardObject {
+export default class FieldObject<T> extends BoardObject<T> {
   x: number;
   y: number;
   scaleX: number;
@@ -9,7 +8,7 @@ export default class FieldObject extends BoardObject {
   rotate: number;
   opacity: number;
 
-  constructor(type: string | DrawHandler) {
+  constructor(type: string | T) {
     super(type);
 
     this.x = 0;

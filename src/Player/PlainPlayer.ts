@@ -1,5 +1,6 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import CanvasBoard, { defaultBoardConfig, FieldObject, BoardLabelObject } from '../CanvasBoard';
+import CanvasBoard, { defaultBoardConfig } from '../CanvasBoard';
+import { FieldObject, BoardLabelObject } from '../BoardBase';
 import PlayerBase from './PlayerBase';
 import { CanvasBoardTheme } from '../CanvasBoard/types';
 import { DrawHandler, Circle, Label } from '../CanvasBoard/drawHandlers';
@@ -64,8 +65,8 @@ export default class PlainPlayer extends PlayerBase {
   boardMouseX: number;
   boardMouseY: number;
 
-  protected stoneBoardsObjects: FieldObject[];
-  protected variationBoardObjects: FieldObject[];
+  protected stoneBoardsObjects: FieldObject<any>[];
+  protected variationBoardObjects: FieldObject<any>[];
 
   private _mouseWheelEvent: EventListenerOrEventListenerObject;
   private _keyEvent: EventListenerOrEventListenerObject;
@@ -181,7 +182,7 @@ export default class PlainPlayer extends PlayerBase {
         if (c && !this.stoneBoardsObjects.some(
           boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
         )) {
-          const boardObject = new FieldObject(c === Color.B ? 'B' : 'W');
+          const boardObject = new FieldObject<any>(c === Color.B ? 'B' : 'W');
           this.board.addObjectAt(x, y, boardObject);
           this.stoneBoardsObjects.push(boardObject);
         }

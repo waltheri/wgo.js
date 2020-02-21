@@ -1,9 +1,9 @@
-import { BoardObject, BoardLineObject } from '../../CanvasBoard';
+import { BoardObject, BoardLineObject } from '../../BoardBase';
 import PlainPlayer from '../PlainPlayer';
 import PropertyHandler from '../PropertyHandler';
 import { Vector } from '../../types';
 
-export default class MarkupLineHandler extends PropertyHandler<Vector[], BoardObject[]> {
+export default class MarkupLineHandler extends PropertyHandler<Vector[], BoardObject<any>[]> {
   type: string;
 
   constructor(type: string) {
@@ -12,8 +12,8 @@ export default class MarkupLineHandler extends PropertyHandler<Vector[], BoardOb
     this.type = type;
   }
 
-  applyNodeChanges(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]) {
-    const objects: BoardObject[] = [];
+  applyNodeChanges(values: Vector[], player: PlainPlayer, propertyData: BoardObject<any>[]) {
+    const objects: BoardObject<any>[] = [];
 
     values.forEach((value) => {
       // add markup
@@ -26,7 +26,7 @@ export default class MarkupLineHandler extends PropertyHandler<Vector[], BoardOb
     return objects;
   }
 
-  clearNodeChanges(values: Vector[], player: PlainPlayer, propertyData: BoardObject[]): BoardObject[] {
+  clearNodeChanges(values: Vector[], player: PlainPlayer, propertyData: BoardObject<any>[]): BoardObject<any>[] {
     player.board.removeObject(propertyData);
 
     return null;

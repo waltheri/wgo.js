@@ -7,26 +7,23 @@
 
 import ShadowLayer from './ShadowLayer';
 import CanvasLayer from './CanvasLayer';
-import defaultConfig from './defaultConfig';
-import {
-  CanvasBoardConfig,
-  BoardViewport,
-} from './types';
+import { CanvasBoardConfig } from './types';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import EventEmitter from '../utils/EventEmitter';
 import { Point } from '../types';
-import { BoardObject, FieldObject } from './boardObjects';
+import { BoardObject, BoardBase } from '../BoardBase';
 import GridLayer from './GridLayer';
 import DrawHandler from './drawHandlers/DrawHandler';
+import canvasBoardDefaultConfig from './defaultConfig';
 
-const zIndexSorter = (obj1: BoardObject, obj2: BoardObject) => obj1.zIndex - obj2.zIndex;
+const zIndexSorter = (obj1: BoardObject<DrawHandler>, obj2: BoardObject<DrawHandler>) => obj1.zIndex - obj2.zIndex;
 
-export default class CanvasBoard extends EventEmitter {
+export default class CanvasBoard extends BoardBase<DrawHandler> {
   config: CanvasBoardConfig;
   element: HTMLElement;
+  wrapperElement: HTMLElement;
   boardElement: HTMLElement;
   pixelRatio: number;
-  objects: BoardObject[] = [];
+  objects: BoardObject<DrawHandler>[] = [];
   layers: {
     grid: CanvasLayer;
     shadow: CanvasLayer;
@@ -45,69 +42,15 @@ export default class CanvasBoard extends EventEmitter {
 
   /**
 	 * CanvasBoard class constructor - it creates a canvas board.
-	 *
-	 * @alias WGo.CanvasBoard
-	 * @class
-	 * @param {HTMLElement} elem DOM element to put in
-	 * @param {Object} config Configuration object. It is object with "key: value" structure. Possible configurations are:
-	 *
-	 * * size: number - size of the board (default: 19)
-	 * * width: number - width of the board (default: 0)
-	 * * height: number - height of the board (default: 0)
-	 * * font: string - font of board writings (!deprecated)
-	 * * lineWidth: number - line width of board drawings (!deprecated)
-	 * * autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this
-   *   option rewrites 'lineWidth' /and it will keep markups sharp/ (!deprecated)
-	 * * starPoints: Object - star points coordinates, defined for various board sizes. Look at CanvasBoard.default for
-   *   more info.
-	 * * stoneHandler: CanvasBoard.DrawHandler - stone drawing handler (default: CanvasBoard.drawHandlers.SHELL)
-	 * * starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by
-   *   given constant. (!deprecated)
-	 * * stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given
-   *   constant. (!deprecated)
-	 * * shadowSize: number - size of stone shadow (default: 1). Radius of shadow is dynamic, however you can modify it by
-   *   given constant. (!deprecated)
-	 * * background: string - background of the board, it can be either color (#RRGGBB) or url. Empty string means no
-   *   background. (default: WGo.DIR+"wood1.jpg")
-	 * * section: {
-	 *     top: number,
-	 *     right: number,
-	 *     bottom: number,
-	 *     left: number
-	 *   }
-	 *   It defines a section of board to be displayed. You can set a number of rows(or cols) to be skipped on each side.
-	 *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
-	 * * theme: Object - theme object, which defines all graphical attributes of the board. Default theme object
-   *   is "WGo.CanvasBoard.themes.default". For old look you may use "WGo.CanvasBoard.themes.old".
-	 *
-	 * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only
-   * if you set property 'theme' to 'WGo.CanvasBoard.themes.old'.
 	 */
-
   constructor(elem: HTMLElement, config: PartialRecursive<CanvasBoardConfig> = {}) {
-    super();
+    super(elem, makeConfig(canvasBoardDefaultConfig, config));
 
-    // merge user config with default
-    this.config = makeConfig(defaultConfig, config);
-
-    // init board html
-    this.init(elem);
-
-    // set the pixel ratio for HDPI (e.g. Retina) screens
-    this.pixelRatio = window.devicePixelRatio || 1;
-
-    this.resize();
-  }
-
-  /**
-   * Initialization method, it is called in constructor. You shouldn't call it, but you can alter it.
-   */
-
-  private init(elem: HTMLElement) {
-    this.element = document.createElement('div');
-    this.element.className = 'wgo-board';
-    this.element.style.position = 'relative';
-    elem.appendChild(this.element);
+    // init board HTML
+    this.wrapperElement = document.createElement('div');
+    this.wrapperElement.className = 'wgo-board';
+    this.wrapperElement.style.position = 'relative';
+    this.element.appendChild(this.wrapperElement);
 
     this.boardElement = document.createElement('div');
     this.boardElement.style.position = 'absolute';
@@ -116,13 +59,18 @@ export default class CanvasBoard extends EventEmitter {
     this.boardElement.style.right = '0';
     this.boardElement.style.bottom = '0';
     this.boardElement.style.margin = 'auto';
-    this.element.appendChild(this.boardElement);
+    this.wrapperElement.appendChild(this.boardElement);
 
     this.layers = {
       grid: new GridLayer(this),
       shadow: new ShadowLayer(this),
       stone: new CanvasLayer(this),
     };
+
+    // set the pixel ratio for HDPI (e.g. Retina) screens
+    this.pixelRatio = window.devicePixelRatio || 1;
+
+    this.resize();
   }
 
   /**
@@ -165,8 +113,8 @@ export default class CanvasBoard extends EventEmitter {
         window.removeEventListener('resize', this.resizeCallback);
       }
     } else {
-      this.element.style.width = 'auto';
-      this.width = this.element.offsetWidth * this.pixelRatio;
+      this.wrapperElement.style.width = 'auto';
+      this.width = this.wrapperElement.offsetWidth * this.pixelRatio;
       this.fieldSize = this.width / (countX + leftOffset + rightOffset);
       this.height = this.fieldSize * (countY + topOffset + bottomOffset);
 
@@ -185,8 +133,8 @@ export default class CanvasBoard extends EventEmitter {
     this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
     this.topOffset = this.fieldSize * (topOffset + 0.5 - this.config.viewport.top);
 
-    this.element.style.width = `${(this.width / this.pixelRatio)}px`;
-    this.element.style.height = `${(this.height / this.pixelRatio)}px`;
+    this.wrapperElement.style.width = `${(this.width / this.pixelRatio)}px`;
+    this.wrapperElement.style.height = `${(this.height / this.pixelRatio)}px`;
 
     const boardWidth = (countX + leftOffset + rightOffset) * this.fieldSize;
     const boardHeight = (countY + topOffset + bottomOffset) * this.fieldSize;
@@ -219,79 +167,6 @@ export default class CanvasBoard extends EventEmitter {
 
   getY(y: number) {
     return this.topOffset + y * this.fieldSize;
-  }
-
-  /**
-   * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
-   *
-   * @param width
-   */
-  setWidth(width: number) {
-    this.config.width = width;
-    this.config.height = 0;
-    this.resize();
-  }
-
-  /**
-   * Sets height of the board, width will be automatically computed. Then everything will be redrawn.
-   *
-   * @param height
-   */
-  setHeight(height: number) {
-    this.config.width = 0;
-    this.config.height = height;
-    this.resize();
-  }
-
-  /**
-   * Sets exact dimensions of the board. Then everything will be redrawn.
-   *
-   * @param width
-   * @param height
-   */
-  setDimensions(width: number, height: number) {
-    this.config.width = width;
-    this.config.height = height;
-    this.resize();
-  }
-
-  /**
-	 * Get currently visible section of the board
-	 */
-
-  getViewport() {
-    return this.config.viewport;
-  }
-
-  /**
-	 * Set section of the board to be displayed
-	 */
-
-  setViewport(viewport: BoardViewport) {
-    this.config.viewport = viewport;
-    this.resize();
-  }
-
-  getSize() {
-    return this.config.size;
-  }
-
-  setSize(size: number = 19) {
-    if (size !== this.config.size) {
-      this.config.size = size;
-      this.resize();
-    }
-  }
-
-  getCoordinates() {
-    return this.config.coordinates;
-  }
-
-  setCoordinates(coordinates: boolean) {
-    if (this.config.coordinates !== coordinates) {
-      this.config.coordinates = coordinates;
-      this.resize();
-    }
   }
 
   /**
@@ -334,84 +209,6 @@ export default class CanvasBoard extends EventEmitter {
     }
   }
 
-  /**
-   * Add board object. Main function for adding graphics on the board.
-   *
-   * @param boardObject
-   */
-  addObject(boardObject: BoardObject | BoardObject[]) {
-    // handling multiple objects
-    if (Array.isArray(boardObject)) {
-      for (let i = 0; i < boardObject.length; i++) {
-        this.addObject(boardObject[i]);
-      }
-      return;
-    }
-
-    if (typeof boardObject.type === 'string') {
-      if (!this.config.theme.drawHandlers[boardObject.type]) {
-        throw new TypeError(`Board object type "${boardObject.type}" doesn't exist in \`config.theme.drawHandlers\`.`);
-      }
-    } else {
-      if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
-        throw new TypeError('Invalid board object type.');
-      }
-    }
-
-    this.objects.push(boardObject);
-    this.redraw();
-  }
-
-  /**
-   * Shortcut method to add object and set its position.
-   */
-  addObjectAt(x: number, y: number, boardObject: FieldObject) {
-    boardObject.setPosition(x, y);
-    this.addObject(boardObject);
-  }
-
-  /**
-   * Remove board object. Main function for removing graphics on the board.
-   *
-   * @param boardObject
-   */
-  removeObject(boardObject: BoardObject | BoardObject[]) {
-    // handling multiple objects
-    if (Array.isArray(boardObject)) {
-      for (let i = 0; i < boardObject.length; i++) {
-        this.removeObject(boardObject[i]);
-      }
-      return;
-    }
-
-    const objectPos = this.objects.indexOf(boardObject);
-
-    if (objectPos === -1) {
-      // object isn't on the board, ignore it
-      return;
-    }
-
-    this.objects.splice(objectPos, 1);
-    this.redraw();
-  }
-
-  removeObjectsAt(x: number, y: number) {
-    this.objects.forEach((obj) => {
-      if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
-        this.removeObject(obj);
-      }
-    });
-  }
-
-  removeAllObjects() {
-    this.objects = [];
-    this.redraw();
-  }
-
-  hasObject(boardObject: BoardObject) {
-    return this.objects.indexOf(boardObject) >= 0;
-  }
-
   on(type: string, callback: (event: UIEvent, point: Point) => void) {
     super.on(type, callback);
     this.registerBoardListener(type);
@@ -440,17 +237,4 @@ export default class CanvasBoard extends EventEmitter {
 
     return { x, y };
   }
-
-  /*
-  off(type, callback) {
-    for (let i = 0; i < this.listeners.length; i++) {
-      const listener = this.listeners[i];
-      if (listener.type === type && listener.callback === callback) {
-        this.element.removeEventListener(listener.type, listener, true);
-        this.listeners.splice(i, 1);
-        return true;
-      }
-    }
-    return false;
-  }*/
 }
