@@ -52,6 +52,8 @@ export interface CanvasBoardTheme {
   drawHandlers: {
     [key: string]: DrawHandler;
   };
+
+  style: Partial<CSSStyleDeclaration>;
 }
 
 export interface CanvasBoardConfig {

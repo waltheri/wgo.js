@@ -29,6 +29,12 @@ const realisticTheme: CanvasBoardTheme = {
       'images/stones/white10_128.png',
     ], new drawHandlers.GlassStoneWhite()),
   },
+  style: {
+    // borderRight: '#D1A974 solid 1px',
+    // borderTop: '#F0E7A8 solid 1px',
+    // borderLeft: '#CCB467 solid 1px',
+    // borderBottom: '#665926 solid 1px',
+  },
 };
 
 export default realisticTheme;

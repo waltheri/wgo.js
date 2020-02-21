@@ -58,8 +58,8 @@ export default class PlainPlayer extends PlayerBase {
     protected updateStones(): void;
     protected addVariationMarkup(): void;
     getVariations(): Point[];
-    showVariations(): boolean;
-    showCurrentVariations(): boolean;
+    shouldShowVariations(): boolean;
+    shouldShowCurrentVariations(): boolean;
     protected removeVariationMarkup(): void;
     protected handleBoardClick(point: Point): void;
     protected handleBoardMouseMove(point: Point): void;

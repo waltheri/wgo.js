@@ -310,6 +310,11 @@ export default class CanvasBoard extends EventEmitter {
         if (this.config.theme.backgroundImage) {
           this.boardElement.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
         }
+        if (this.config.theme.style) {
+          Object.keys(this.config.theme.style).forEach(
+            style => (this.boardElement.style as any)[style] = (this.config.theme.style as any)[style],
+          );
+        }
 
         // sort objects by zIndex
         this.objects.sort(zIndexSorter);

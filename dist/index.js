@@ -311,7 +311,6 @@
         Color[Color["EMPTY"] = 0] = "EMPTY";
         Color[Color["E"] = 0] = "E";
     })(exports.Color || (exports.Color = {}));
-    //# sourceMappingURL=types.js.map
 
     /**
      * Board markup object is special type of object, which can have 3 variations - for empty field
@@ -1086,6 +1085,7 @@
             AR: new Arrow(),
             DD: new Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
         },
+        style: {},
     };
     //# sourceMappingURL=baseTheme.js.map
 
@@ -1106,7 +1106,12 @@
                 'images/stones/white08_128.png',
                 'images/stones/white09_128.png',
                 'images/stones/white10_128.png',
-            ], new GlassStoneWhite()) }) });
+            ], new GlassStoneWhite()) }), style: {
+        // borderRight: '#D1A974 solid 1px',
+        // borderTop: '#F0E7A8 solid 1px',
+        // borderLeft: '#CCB467 solid 1px',
+        // borderBottom: '#665926 solid 1px',
+        } });
     //# sourceMappingURL=realisticTheme.js.map
 
     var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
@@ -1534,6 +1539,9 @@
                     _this.boardElement.style.backgroundColor = _this.config.theme.backgroundColor;
                     if (_this.config.theme.backgroundImage) {
                         _this.boardElement.style.backgroundImage = "url(\"" + _this.config.theme.backgroundImage + "\")";
+                    }
+                    if (_this.config.theme.style) {
+                        Object.keys(_this.config.theme.style).forEach(function (style) { return _this.boardElement.style[style] = _this.config.theme.style[style]; });
                     }
                     // sort objects by zIndex
                     _this.objects.sort(zIndexSorter);
@@ -3523,7 +3531,7 @@
         }
         MoveHandlerWithMark.prototype.applyNodeChanges = function (value, player) {
             if (player.config.highlightCurrentMove) {
-                var variationsMarkup = player.getVariations().length > 1 && player.showCurrentVariations();
+                var variationsMarkup = player.getVariations().length > 1 && player.shouldShowCurrentVariations();
                 if (isThereMarkup(value, player.currentNode.properties) || variationsMarkup) {
                     return;
                 }
@@ -3543,6 +3551,7 @@
         };
         return MoveHandlerWithMark;
     }(MoveHandler));
+    //# sourceMappingURL=MoveHandlerWithMark.js.map
 
     var defaultPlainPlayerConfig = {
         boardTheme: canvasBoardDefaultConfig.theme,
@@ -3689,8 +3698,8 @@
             }
         };
         PlainPlayer.prototype.getVariations = function () {
-            if (this.showVariations()) {
-                if (this.showCurrentVariations()) {
+            if (this.shouldShowVariations()) {
+                if (this.shouldShowCurrentVariations()) {
                     if (this.currentNode.parent) {
                         return this.currentNode.parent.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
                     }
@@ -3701,14 +3710,14 @@
             }
             return [];
         };
-        PlainPlayer.prototype.showVariations = function () {
+        PlainPlayer.prototype.shouldShowVariations = function () {
             var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
             if (st != null) {
                 return !(st & 2);
             }
             return this.config.showVariations;
         };
-        PlainPlayer.prototype.showCurrentVariations = function () {
+        PlainPlayer.prototype.shouldShowCurrentVariations = function () {
             var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
             if (st != null) {
                 return !!(st & 1);
@@ -3728,7 +3737,7 @@
             if (moves.length > 1) {
                 var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
                 if (ind >= 0) {
-                    if (this.showCurrentVariations()) {
+                    if (this.shouldShowCurrentVariations()) {
                         this.previous();
                         this.next(ind);
                     }

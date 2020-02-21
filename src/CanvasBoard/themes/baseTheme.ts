@@ -53,6 +53,8 @@ const baseTheme: CanvasBoardTheme = {
     AR: new drawHandlers.Arrow(),
     DD: new drawHandlers.Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
   },
+
+  style: {},
 };
 
 export default baseTheme;

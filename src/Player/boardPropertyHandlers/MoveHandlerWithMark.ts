@@ -33,7 +33,7 @@ function isThereMarkup(field: Point, properties: { [key: string]: any }) {
 export default class MoveHandlerWithMark extends MoveHandler<BoardObject> {
   applyNodeChanges(value: Point, player: PlainPlayer) {
     if (player.config.highlightCurrentMove) {
-      const variationsMarkup = player.getVariations().length > 1 && player.showCurrentVariations();
+      const variationsMarkup = player.getVariations().length > 1 && player.shouldShowCurrentVariations();
       if (isThereMarkup(value, player.currentNode.properties) || variationsMarkup) {
         return;
       }

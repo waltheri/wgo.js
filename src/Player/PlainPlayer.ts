@@ -208,8 +208,8 @@ export default class PlainPlayer extends PlayerBase {
   }
 
   getVariations(): Point[] {
-    if (this.showVariations()) {
-      if (this.showCurrentVariations()) {
+    if (this.shouldShowVariations()) {
+      if (this.shouldShowCurrentVariations()) {
         if (this.currentNode.parent) {
           return this.currentNode.parent.children.map(node => node.getProperty('B') || node.getProperty('W'));
         }
@@ -220,7 +220,7 @@ export default class PlainPlayer extends PlayerBase {
     return [];
   }
 
-  showVariations() {
+  shouldShowVariations() {
     const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
     if (st != null) {
       return !(st & 2);
@@ -228,7 +228,7 @@ export default class PlainPlayer extends PlayerBase {
     return this.config.showVariations;
   }
 
-  showCurrentVariations() {
+  shouldShowCurrentVariations() {
     const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
     if (st != null) {
       return !!(st & 1);
@@ -252,7 +252,7 @@ export default class PlainPlayer extends PlayerBase {
       const ind = moves.findIndex(move => move && move.x === point.x && move.y === point.y);
 
       if (ind >= 0) {
-        if (this.showCurrentVariations()) {
+        if (this.shouldShowCurrentVariations()) {
           this.previous();
           this.next(ind);
         } else {
