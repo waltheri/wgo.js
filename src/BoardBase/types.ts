@@ -33,6 +33,41 @@ export interface BoardViewport {
   left: number;
 }
 
+export interface BoardBaseTheme {
+  stoneSize: number;
+  marginSize: number;
+  font: string;
+  backgroundColor: string;
+  backgroundImage: string;
+
+  // grid & star points
+  grid: {
+    linesWidth: number;
+    linesColor: string;
+    starColor: string;
+    starSize: number;
+  };
+
+  // markup
+  markupBlackColor: string;
+  markupWhiteColor: string;
+  markupNoneColor: string;
+  markupLineWidth: number;
+
+  // shadow
+  shadowColor: string;
+  shadowTransparentColor: string;
+  shadowBlur: number;
+  shadowOffsetX: number;
+  shadowOffsetY: number;
+
+  // coordinates
+  coordinates: {
+    color: string;
+    bold: boolean;
+  };
+}
+
 export interface BoardBaseConfig {
   size: number;
   width: number;
@@ -42,4 +77,7 @@ export interface BoardBaseConfig {
   };
   viewport: BoardViewport;
   coordinates: boolean;
+  coordinateLabelsX: string | (string | number)[];
+  coordinateLabelsY: string | (string | number)[];
+  theme: BoardBaseTheme;
 }

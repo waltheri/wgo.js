@@ -1,8 +1,7 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import CanvasBoard, { defaultBoardConfig } from '../CanvasBoard';
+import CanvasBoard from '../CanvasBoard';
 import { FieldObject, BoardLabelObject } from '../BoardBase';
 import PlayerBase from './PlayerBase';
-import { CanvasBoardTheme } from '../CanvasBoard/types';
 import { DrawHandler, Circle, Label } from '../CanvasBoard/drawHandlers';
 import MarkupHandler from './boardPropertyHandlers/MarkupHandler';
 import MarkupLineHandler from './boardPropertyHandlers/MarkupLineHandler';
@@ -10,11 +9,12 @@ import { Color, Point } from '../types';
 import MarkupLabelHandler from './boardPropertyHandlers/MarkupLabelHandler';
 import ViewportHandler from './boardPropertyHandlers/ViewportHandler';
 import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
-import { KifuNode } from '..';
 import { PropIdent } from '../SGFParser/sgfTypes';
+import { defaultBoardBaseTheme } from '../BoardBase/defaultConfig';
+import { BoardBaseTheme } from '../BoardBase/types';
 
 export interface PlainPlayerConfig {
-  boardTheme: CanvasBoardTheme;
+  boardTheme: BoardBaseTheme;
   highlightCurrentMove: boolean;
   currentMoveBlackMark: DrawHandler;
   currentMoveWhiteMark: DrawHandler;
@@ -26,7 +26,7 @@ export interface PlainPlayerConfig {
 }
 
 export const defaultPlainPlayerConfig: PlainPlayerConfig = {
-  boardTheme: defaultBoardConfig.theme,
+  boardTheme: defaultBoardBaseTheme,
   highlightCurrentMove: true,
   currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
   currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),

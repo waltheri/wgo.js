@@ -1,52 +1,15 @@
-import { Point } from '../types';
-import { BoardObject, BoardViewport } from '../boardBase';
+import { BoardObject } from '../boardBase';
 import DrawHandler from './drawHandlers/DrawHandler';
-export interface CanvasBoardTheme {
-    stoneSize: number;
-    grid: {
-        linesWidth: number;
-        linesColor: string;
-        starColor: string;
-        starSize: number;
-    };
-    markupBlackColor: string;
-    markupWhiteColor: string;
-    markupNoneColor: string;
-    markupLineWidth: number;
-    shadowColor: string;
-    shadowTransparentColor: string;
-    shadowBlur: number;
-    shadowOffsetX: number;
-    shadowOffsetY: number;
-    coordinates: {
-        color: string;
-        bold: boolean;
-        x: string | (string | number)[];
-        y: string | (string | number)[];
-    };
-    font: string;
+import { BoardBaseConfig, BoardBaseTheme } from '../BoardBase/types';
+export interface CanvasBoardTheme extends BoardBaseTheme {
+    snapToGrid: boolean;
     linesShift: number;
-    backgroundColor: string;
-    backgroundImage: string;
     drawHandlers: {
         [key: string]: DrawHandler;
     };
-    style: Partial<CSSStyleDeclaration>;
 }
-export interface CanvasBoardConfig {
-    size: number;
-    width: number;
-    height: number;
-    starPoints: {
-        [size: number]: Point[];
-    };
-    viewport: BoardViewport;
-    coordinates: boolean;
+export interface CanvasBoardConfig extends BoardBaseConfig {
     theme: CanvasBoardTheme;
-    /** Size of board margin relative to field size */
-    marginSize: number;
-    /** This will cause sharper edges, but the board won't have exact specified dimensions (temporary solution I hope) */
-    snapToGrid: boolean;
 }
 export interface DrawFunction {
     (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void | Promise<void>;

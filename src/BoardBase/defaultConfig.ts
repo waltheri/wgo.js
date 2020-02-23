@@ -1,7 +1,40 @@
-import { baseTheme } from './themes';
-import { CanvasBoardConfig } from './types';
+export const defaultBoardBaseTheme = {
+  // basic
+  stoneSize: 0.47,
+  marginSize: 0.25,
+  font: 'calibri',
+  backgroundColor: '#CEB053',
+  backgroundImage: '',
 
-const canvasBoardDefaultConfig: CanvasBoardConfig = {
+  // markup
+  markupBlackColor: 'rgba(255,255,255,0.9)',
+  markupWhiteColor: 'rgba(0,0,0,0.7)',
+  markupNoneColor: 'rgba(0,0,0,0.7)',
+  markupLineWidth: 0.05,
+
+  // shadows
+  shadowColor: 'rgba(62,32,32,0.5)',
+  shadowTransparentColor: 'rgba(62,32,32,0)',
+  shadowBlur: 0.25,
+  shadowOffsetX: 0.07,
+  shadowOffsetY: 0.13,
+
+  // grid
+  grid: {
+    linesWidth: 0.03,
+    linesColor: '#654525',
+    starColor: '#531',
+    starSize: 0.07,
+  },
+
+  // coordinates
+  coordinates: {
+    color: '#531',
+    bold: false,
+  },
+};
+
+export const defaultBoardBaseConfig = {
   size: 19,
   width: 0,
   height: 0,
@@ -33,9 +66,7 @@ const canvasBoardDefaultConfig: CanvasBoardConfig = {
     left: 0,
   },
   coordinates: false,
-  theme: baseTheme,
-  marginSize: 0.25,
-  snapToGrid: false,
+  coordinateLabelsX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+  coordinateLabelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+  theme: defaultBoardBaseTheme,
 };
-
-export default canvasBoardDefaultConfig;

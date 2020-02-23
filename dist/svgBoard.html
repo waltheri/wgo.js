@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<div id="board"></div>
+<script src="index.js"></script>
+<script>
+
+var board = new WGo.SVGBoard(document.getElementById('board'), {
+  width: 800,
+  coordinates: true,
+});
+
+board.addObjectAt(5, 7, new WGo.FieldObject('CR'));
+board.addObjectAt(6, 5, new WGo.FieldObject('B'));
+board.addObjectAt(6, 6, new WGo.FieldObject('B'));
+board.addObjectAt(5, 6, new WGo.FieldObject('B'));
+board.addObjectAt(5, 5, new WGo.FieldObject('B'));
+board.addObjectAt(2, 8, new WGo.FieldObject('B'));
+board.addObjectAt(7, 13, new WGo.FieldObject('B'));
+
+board.addObjectAt(3, 5, new WGo.FieldObject('W'));
+board.addObjectAt(12, 15, new WGo.FieldObject('W'));
+
+const sq = new WGo.FieldObject('SQ');
+sq.rotate = 45;
+
+board.addObjectAt(15, 15, sq);
+board.addObjectAt(14, 15, new WGo.FieldObject('SQ'));
+board.addObjectAt(12, 15, new WGo.BoardMarkupObject('SQ', -1));
+board.addObjectAt(11, 15, new WGo.FieldObject('B'));
+board.addObjectAt(11, 15, new WGo.BoardMarkupObject('SQ', 1));
+
+board.addObjectAt(3, 12, new WGo.BoardMarkupObject('TR'));
+
+board.addObjectAt(5, 12, new WGo.BoardMarkupObject('MA'));
+
+board.addObjectAt(4, 14, new WGo.BoardMarkupObject('SL'));
+
+board.addObjectAt(17, 7, new WGo.BoardMarkupObject('DD'));
+board.addObjectAt(17, 8, new WGo.BoardMarkupObject('DD'));
+board.addObjectAt(16, 7, new WGo.BoardMarkupObject('DD'));
+board.addObjectAt(16, 8, new WGo.BoardMarkupObject('DD'));
+
+board.addObject(new WGo.BoardLineObject('LN', {x: 10, y: 5}, {x: 13, y: 12}));
+
+board.addObjectAt(16, 2, new WGo.BoardLabelObject('123'));
+
+</script>
+</body>
+</html>

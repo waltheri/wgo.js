@@ -283,6 +283,7 @@
             _this.scaleX = 1;
             _this.scaleY = 1;
             _this.rotate = 0;
+            _this.opacity = 1;
             return _this;
         }
         FieldObject.prototype.setPosition = function (x, y) {
@@ -353,7 +354,7 @@
             return _this;
         }
         return BoardLineObject;
-    }(FieldObject));
+    }(BoardObject));
     //# sourceMappingURL=BoardLineObject.js.map
 
     /**
@@ -421,6 +422,37 @@
     }
     //# sourceMappingURL=makeConfig.js.map
 
+    var defaultBoardBaseTheme = {
+        // basic
+        stoneSize: 0.47,
+        marginSize: 0.25,
+        font: 'calibri',
+        backgroundColor: '#CEB053',
+        backgroundImage: '',
+        // markup
+        markupBlackColor: 'rgba(255,255,255,0.9)',
+        markupWhiteColor: 'rgba(0,0,0,0.7)',
+        markupNoneColor: 'rgba(0,0,0,0.7)',
+        markupLineWidth: 0.05,
+        // shadows
+        shadowColor: 'rgba(62,32,32,0.5)',
+        shadowTransparentColor: 'rgba(62,32,32,0)',
+        shadowBlur: 0.25,
+        shadowOffsetX: 0.07,
+        shadowOffsetY: 0.13,
+        // grid
+        grid: {
+            linesWidth: 0.03,
+            linesColor: '#654525',
+            starColor: '#531',
+            starSize: 0.07,
+        },
+        // coordinates
+        coordinates: {
+            color: '#531',
+            bold: false,
+        },
+    };
     var defaultBoardBaseConfig = {
         size: 19,
         width: 0,
@@ -453,19 +485,18 @@
             left: 0,
         },
         coordinates: false,
+        coordinateLabelsX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+        coordinateLabelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+        theme: defaultBoardBaseTheme,
     };
+    //# sourceMappingURL=defaultConfig.js.map
+
+    // tslint:disable-next-line:max-line-length
     var BoardBase = /** @class */ (function (_super) {
         __extends(BoardBase, _super);
-        // following props are computed in resize() method for performance
-        // width: number;
-        // height: number;
-        // leftOffset: number;
-        // topOffset: number;
-        // fieldSize: number;
         function BoardBase(element, config) {
             if (config === void 0) { config = {}; }
             var _this = _super.call(this) || this;
-            // boardElement: HTMLElement;
             _this.objects = [];
             // merge user config with default
             _this.element = element;
@@ -497,17 +528,9 @@
                 }
                 return;
             }
-            // if (typeof boardObject.type === 'string') {
-            //   if (!this.config.theme.drawHandlers[boardObject.type]) {
-            //  throw new TypeError(`Board object type "${boardObject.type}" doesn't exist in \`config.theme.drawHandlers\`.`);
-            //   }
-            // } else {
-            //   if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
-            //     throw new TypeError('Invalid board object type.');
-            //   }
-            // }
-            this.objects.push(boardObject);
-            this.redraw();
+            if (this.objects.indexOf(boardObject) === -1) {
+                this.objects.push(boardObject);
+            }
         };
         /**
          * Shortcut method to add object and set its position.
@@ -535,7 +558,6 @@
                 return;
             }
             this.objects.splice(objectPos, 1);
-            this.redraw();
         };
         BoardBase.prototype.removeObjectsAt = function (x, y) {
             var _this = this;
@@ -547,7 +569,6 @@
         };
         BoardBase.prototype.removeAllObjects = function () {
             this.objects = [];
-            this.redraw();
         };
         BoardBase.prototype.hasObject = function (boardObject) {
             return this.objects.indexOf(boardObject) >= 0;
@@ -594,26 +615,19 @@
            */
         BoardBase.prototype.setViewport = function (viewport) {
             this.config.viewport = viewport;
-            this.resize();
         };
         BoardBase.prototype.getSize = function () {
             return this.config.size;
         };
         BoardBase.prototype.setSize = function (size) {
             if (size === void 0) { size = 19; }
-            if (size !== this.config.size) {
-                this.config.size = size;
-                this.resize();
-            }
+            this.config.size = size;
         };
         BoardBase.prototype.getCoordinates = function () {
             return this.config.coordinates;
         };
         BoardBase.prototype.setCoordinates = function (coordinates) {
-            if (this.config.coordinates !== coordinates) {
-                this.config.coordinates = coordinates;
-                this.resize();
-            }
+            this.config.coordinates = coordinates;
         };
         return BoardBase;
     }(EventEmitter));
@@ -766,8 +780,8 @@
             var xLeft = this.board.getX(this.board.config.size - 0.25);
             var yTop = this.board.getY(-0.75);
             var yBottom = this.board.getY(this.board.config.size - 0.25);
-            var coordinatesX = params.x;
-            var coordinatesY = params.y;
+            var coordinatesX = this.board.config.coordinateLabelsX;
+            var coordinatesY = this.board.config.coordinateLabelsY;
             for (var i = 0; i < this.board.config.size; i++) {
                 t = this.board.getY(i);
                 this.context.fillText(coordinatesX[i], xRight, t);
@@ -1199,7 +1213,7 @@
             return _super !== null && _super.apply(this, arguments) || this;
         }
         Triangle.prototype.drawShape = function (canvasCtx) {
-            canvasCtx.moveTo(0, 0 - 0.25);
+            canvasCtx.moveTo(0, -0.25);
             canvasCtx.lineTo(-0.25, 0.166666);
             canvasCtx.lineTo(0.25, 0.166666);
             canvasCtx.closePath();
@@ -1378,40 +1392,7 @@
         Dim: Dim
     });
 
-    var baseTheme = {
-        // basic
-        stoneSize: 0.47,
-        // markup
-        markupBlackColor: 'rgba(255,255,255,0.9)',
-        markupWhiteColor: 'rgba(0,0,0,0.7)',
-        markupNoneColor: 'rgba(0,0,0,0.7)',
-        markupLineWidth: 0.05,
-        // shadows
-        shadowColor: 'rgba(62,32,32,0.5)',
-        shadowTransparentColor: 'rgba(62,32,32,0)',
-        shadowBlur: 0.25,
-        shadowOffsetX: 0.07,
-        shadowOffsetY: 0.13,
-        // other
-        font: 'calibri',
-        linesShift: -0.5,
-        backgroundColor: '#CEB053',
-        backgroundImage: '',
-        // grid
-        grid: {
-            linesWidth: 0.03,
-            linesColor: '#654525',
-            starColor: '#531',
-            starSize: 0.07,
-        },
-        // coordinates
-        coordinates: {
-            color: '#531',
-            bold: false,
-            x: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-            y: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
-        },
-        drawHandlers: {
+    var baseTheme = __assign({}, defaultBoardBaseTheme, { snapToGrid: false, linesShift: -0.5, drawHandlers: {
             B: new SimpleStone('#222'),
             W: new SimpleStone('#eee'),
             CR: new Circle(),
@@ -1423,9 +1404,7 @@
             LN: new Line(),
             AR: new Arrow(),
             DD: new Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
-        },
-        style: {},
-    };
+        } });
     //# sourceMappingURL=baseTheme.js.map
 
     var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new RealisticStone([
@@ -1445,12 +1424,7 @@
                 'images/stones/white08_128.png',
                 'images/stones/white09_128.png',
                 'images/stones/white10_128.png',
-            ], new GlassStoneWhite()) }), style: {
-        // borderRight: '#D1A974 solid 1px',
-        // borderTop: '#F0E7A8 solid 1px',
-        // borderLeft: '#CCB467 solid 1px',
-        // borderBottom: '#665926 solid 1px',
-        } });
+            ], new GlassStoneWhite()) }) });
     //# sourceMappingURL=realisticTheme.js.map
 
     var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
@@ -1465,45 +1439,11 @@
         modernTheme: modernTheme
     });
 
-    var canvasBoardDefaultConfig = {
-        size: 19,
-        width: 0,
-        height: 0,
-        starPoints: {
-            5: [{ x: 2, y: 2 }],
-            7: [{ x: 3, y: 3 }],
-            8: [{ x: 2, y: 2 }, { x: 5, y: 2 }, { x: 2, y: 5 }, { x: 5, y: 5 }],
-            9: [{ x: 2, y: 2 }, { x: 6, y: 2 }, { x: 4, y: 4 }, { x: 2, y: 6 }, { x: 6, y: 6 }],
-            10: [{ x: 2, y: 2 }, { x: 7, y: 2 }, { x: 2, y: 7 }, { x: 7, y: 7 }],
-            11: [{ x: 2, y: 2 }, { x: 8, y: 2 }, { x: 5, y: 5 }, { x: 2, y: 8 }, { x: 8, y: 8 }],
-            12: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 }],
-            13: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 6, y: 6 }, { x: 3, y: 9 }, { x: 9, y: 9 }],
-            14: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 }],
-            15: [{ x: 3, y: 3 }, { x: 11, y: 3 }, { x: 7, y: 7 }, { x: 3, y: 11 }, { x: 11, y: 11 }],
-            16: [{ x: 3, y: 3 }, { x: 12, y: 3 }, { x: 3, y: 12 }, { x: 12, y: 12 }],
-            17: [{ x: 3, y: 3 }, { x: 8, y: 3 }, { x: 13, y: 3 }, { x: 3, y: 8 }, { x: 8, y: 8 },
-                { x: 13, y: 8 }, { x: 3, y: 13 }, { x: 8, y: 13 }, { x: 13, y: 13 }],
-            18: [{ x: 3, y: 3 }, { x: 14, y: 3 }, { x: 3, y: 14 }, { x: 14, y: 14 }],
-            19: [{ x: 3, y: 3 }, { x: 9, y: 3 }, { x: 15, y: 3 }, { x: 3, y: 9 }, { x: 9, y: 9 },
-                { x: 15, y: 9 }, { x: 3, y: 15 }, { x: 9, y: 15 }, { x: 15, y: 15 }],
-            20: [{ x: 3, y: 3 }, { x: 16, y: 3 }, { x: 3, y: 16 }, { x: 16, y: 16 }],
-            21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 },
-                { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }],
-        },
-        viewport: {
-            top: 0,
-            right: 0,
-            bottom: 0,
-            left: 0,
-        },
-        coordinates: false,
-        theme: baseTheme,
-        marginSize: 0.25,
-        snapToGrid: false,
-    };
-    //# sourceMappingURL=defaultConfig.js.map
-
-    /* global document, window */
+    /**
+     * Contains implementation of go board.
+     * @module CanvasBoard
+     */
+    var canvasBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: baseTheme });
     var zIndexSorter = function (obj1, obj2) { return obj1.zIndex - obj2.zIndex; };
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
@@ -1542,12 +1482,13 @@
          */
         CanvasBoard.prototype.resize = function () {
             var _this = this;
+            var marginSize = this.config.theme.marginSize;
             var countX = this.config.size - this.config.viewport.left - this.config.viewport.right;
             var countY = this.config.size - this.config.viewport.top - this.config.viewport.bottom;
-            var topOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.top ? 0.5 : 0);
-            var rightOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.right ? 0.5 : 0);
-            var bottomOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.bottom ? 0.5 : 0);
-            var leftOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.left ? 0.5 : 0);
+            var topOffset = marginSize + (this.config.coordinates && !this.config.viewport.top ? 0.5 : 0);
+            var rightOffset = marginSize + (this.config.coordinates && !this.config.viewport.right ? 0.5 : 0);
+            var bottomOffset = marginSize + (this.config.coordinates && !this.config.viewport.bottom ? 0.5 : 0);
+            var leftOffset = marginSize + (this.config.coordinates && !this.config.viewport.left ? 0.5 : 0);
             if (this.config.width && this.config.height) {
                 // exact dimensions
                 this.width = this.config.width * this.pixelRatio;
@@ -1585,7 +1526,7 @@
                     window.addEventListener('resize', this.resizeCallback);
                 }
             }
-            if (this.config.snapToGrid) {
+            if (this.config.theme.snapToGrid) {
                 this.fieldSize = Math.floor(this.fieldSize);
             }
             this.leftOffset = this.fieldSize * (leftOffset + 0.5 - this.config.viewport.left);
@@ -1631,9 +1572,6 @@
                     if (_this.config.theme.backgroundImage) {
                         _this.boardElement.style.backgroundImage = "url(\"" + _this.config.theme.backgroundImage + "\")";
                     }
-                    if (_this.config.theme.style) {
-                        Object.keys(_this.config.theme.style).forEach(function (style) { return _this.boardElement.style[style] = _this.config.theme.style[style]; });
-                    }
                     // sort objects by zIndex
                     _this.objects.sort(zIndexSorter);
                     // redraw all layers
@@ -1648,6 +1586,31 @@
                     });
                 });
             }
+        };
+        CanvasBoard.prototype.addObject = function (boardObject) {
+            if (!Array.isArray(boardObject)) {
+                if (typeof boardObject.type === 'string') {
+                    if (!this.config.theme.drawHandlers[boardObject.type]) {
+                        // tslint:disable-next-line:max-line-length
+                        throw new TypeError("Board object type \"" + boardObject.type + "\" doesn't exist in `config.theme.drawHandlers`.");
+                    }
+                }
+                else {
+                    if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
+                        throw new TypeError('Invalid board object type.');
+                    }
+                }
+            }
+            _super.prototype.addObject.call(this, boardObject);
+            this.redraw();
+        };
+        CanvasBoard.prototype.removeObject = function (boardObject) {
+            _super.prototype.removeObject.call(this, boardObject);
+            this.redraw();
+        };
+        CanvasBoard.prototype.removeAllObjects = function () {
+            _super.prototype.removeAllObjects.call(this);
+            this.redraw();
         };
         CanvasBoard.prototype.on = function (type, callback) {
             _super.prototype.on.call(this, type, callback);
@@ -1674,8 +1637,585 @@
             }
             return { x: x, y: y };
         };
+        CanvasBoard.prototype.setSize = function (size) {
+            _super.prototype.setSize.call(this, size);
+            this.resize();
+        };
+        CanvasBoard.prototype.setViewport = function (viewport) {
+            _super.prototype.setViewport.call(this, viewport);
+            this.resize();
+        };
+        CanvasBoard.prototype.setCoordinates = function (coordinates) {
+            _super.prototype.setCoordinates.call(this, coordinates);
+            this.resize();
+        };
         return CanvasBoard;
     }(BoardBase));
+    //# sourceMappingURL=CanvasBoard.js.map
+
+    //# sourceMappingURL=index.js.map
+
+    var NS = 'http://www.w3.org/2000/svg';
+    //# sourceMappingURL=types.js.map
+
+    function line(fromX, fromY, toX, toY) {
+        var line = document.createElementNS(NS, 'line');
+        line.setAttribute('x1', fromX);
+        line.setAttribute('y1', fromY);
+        line.setAttribute('x2', toX);
+        line.setAttribute('y2', toY);
+        return line;
+    }
+    function star(x, y, starSize) {
+        var star = document.createElementNS(NS, 'circle');
+        star.setAttribute('cx', x);
+        star.setAttribute('cy', y);
+        star.setAttribute('r', starSize);
+        star.setAttribute('fill', '#553310');
+        star.setAttribute('stroke-width', '0');
+        return star;
+    }
+    function createGrid(config) {
+        var linesWidth = config.theme.grid.linesWidth;
+        var grid = document.createElementNS(NS, 'g');
+        grid.setAttribute('stroke', config.theme.grid.linesColor);
+        grid.setAttribute('stroke-width', linesWidth.toString());
+        grid.setAttribute('fill', config.theme.grid.starColor);
+        for (var i = 0; i < config.size; i++) {
+            grid.appendChild(line(i, 0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2));
+            grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
+        }
+        var starPoints = config.starPoints[config.size];
+        if (starPoints) {
+            starPoints.forEach(function (starPoint) {
+                grid.appendChild(star(starPoint.x, starPoint.y, config.theme.grid.starSize));
+            });
+        }
+        return grid;
+    }
+    //# sourceMappingURL=createGrid.js.map
+
+    function letter(x, y, str) {
+        var text = document.createElementNS(NS, 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
+        text.textContent = str;
+        return text;
+    }
+    function createCoordinates(config) {
+        var coordinates = document.createElementNS(NS, 'g');
+        coordinates.style.userSelect = 'none';
+        coordinates.setAttribute('font-family', config.theme.font);
+        coordinates.setAttribute('font-size', config.theme.coordinates.fontSize);
+        coordinates.setAttribute('text-anchor', 'middle');
+        coordinates.setAttribute('dominant-baseline', 'middle');
+        if (config.theme.coordinates.bold) {
+            coordinates.setAttribute('font-weight', 'bold');
+        }
+        coordinates.setAttribute('fill', config.theme.coordinates.color);
+        for (var i = 0; i < config.size; i++) {
+            coordinates.appendChild(letter(i, -0.75, config.coordinateLabelsX[i]));
+            coordinates.appendChild(letter(i, config.size - 0.25, config.coordinateLabelsX[i]));
+            coordinates.appendChild(letter(-0.75, config.size - i - 1, config.coordinateLabelsY[i]));
+            coordinates.appendChild(letter(config.size - 0.25, config.size - i - 1, config.coordinateLabelsY[i]));
+        }
+        return coordinates;
+    }
+    //# sourceMappingURL=createCoordinates.js.map
+
+    var SVGFieldDrawHandler = /** @class */ (function () {
+        function SVGFieldDrawHandler() {
+        }
+        SVGFieldDrawHandler.prototype.init = function (config) {
+            return null;
+        };
+        SVGFieldDrawHandler.prototype.updateElement = function (elem, boardObject, config) {
+            var transform = "translate(" + boardObject.x + ", " + boardObject.y + ")";
+            var scale = "scale(" + boardObject.scaleX + ", " + boardObject.scaleY + ")";
+            var rotate = "rotate(" + boardObject.rotate + ")";
+            elem.setAttribute('transform', transform + " " + scale + " " + rotate);
+            elem.setAttribute('opacity', boardObject.opacity);
+        };
+        return SVGFieldDrawHandler;
+    }());
+    //# sourceMappingURL=SVGFieldDrawHandler.js.map
+
+    var SVGStoneDrawHandler = /** @class */ (function (_super) {
+        __extends(SVGStoneDrawHandler, _super);
+        function SVGStoneDrawHandler() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        SVGStoneDrawHandler.prototype.init = function (config) {
+            if (!this.shadowFilterElement) {
+                this.shadowFilterId = "filter-" + Math.floor(Math.random() * 1000000000).toString(36);
+                var filter = document.createElementNS(NS, 'filter');
+                filter.setAttribute('id', this.shadowFilterId);
+                filter.innerHTML = "\n        <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"0.05\" />\n        <feOffset dx=\"0.03\" dy=\"0.03\" result=\"offsetblur\" />\n        <feComponentTransfer>\n          <feFuncA type=\"linear\" slope=\"0.5\" />\n        </feComponentTransfer>\n        <feMerge>\n          <feMergeNode />\n          <feMergeNode in=\"SourceGraphic\" />\n        </feMerge>\n      ";
+                this.shadowFilterElement = filter;
+                return filter;
+            }
+            return null;
+        };
+        return SVGStoneDrawHandler;
+    }(SVGFieldDrawHandler));
+    //# sourceMappingURL=SVGStoneDrawHandler.js.map
+
+    var GlassStoneBlack$1 = /** @class */ (function (_super) {
+        __extends(GlassStoneBlack, _super);
+        function GlassStoneBlack() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneBlack.prototype.init = function (config) {
+            var shadow = _super.prototype.init.call(this, config);
+            if (!this.filterElement) {
+                this.filterId = "filter-" + Math.floor(Math.random() * 1000000000).toString(36);
+                var filter = document.createElementNS(NS, 'filter');
+                filter.setAttribute('id', this.filterId);
+                filter.setAttribute('x', '-300%');
+                filter.setAttribute('y', '-300%');
+                filter.setAttribute('width', '600%');
+                filter.setAttribute('height', '600%');
+                var blur_1 = document.createElementNS(NS, 'feGaussianBlur');
+                blur_1.setAttribute('in', 'SourceGraphic');
+                blur_1.setAttribute('stdDeviation', 0.3 * config.theme.stoneSize);
+                filter.appendChild(blur_1);
+                this.filterElement = filter;
+                var filterGroup = document.createElementNS(NS, 'g');
+                filterGroup.appendChild(filter);
+                if (shadow) {
+                    filterGroup.appendChild(shadow);
+                }
+                return filterGroup;
+            }
+            return null;
+        };
+        GlassStoneBlack.prototype.createElement = function (config) {
+            var stoneGroup = document.createElementNS(NS, 'g');
+            var stone = document.createElementNS(NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', '#000');
+            stone.setAttribute('r', config.theme.stoneSize);
+            stone.setAttribute('filter', "url(#" + this.shadowFilterId + ")");
+            stoneGroup.appendChild(stone);
+            var glow1 = document.createElementNS(NS, 'circle');
+            glow1.setAttribute('cx', -0.4 * config.theme.stoneSize);
+            glow1.setAttribute('cy', -0.4 * config.theme.stoneSize);
+            glow1.setAttribute('r', 0.25 * config.theme.stoneSize);
+            glow1.setAttribute('fill', '#fff');
+            glow1.setAttribute('filter', "url(#" + this.filterId + ")");
+            stoneGroup.appendChild(glow1);
+            var glow2 = document.createElementNS(NS, 'circle');
+            glow2.setAttribute('cx', 0.4 * config.theme.stoneSize);
+            glow2.setAttribute('cy', 0.4 * config.theme.stoneSize);
+            glow2.setAttribute('r', 0.15 * config.theme.stoneSize);
+            glow2.setAttribute('fill', '#fff');
+            glow2.setAttribute('filter', "url(#" + this.filterId + ")");
+            stoneGroup.appendChild(glow2);
+            return stoneGroup;
+        };
+        return GlassStoneBlack;
+    }(SVGStoneDrawHandler));
+    //# sourceMappingURL=GlassStoneBlack.js.map
+
+    var GlassStoneWhite$1 = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.init = function (config) {
+            var shadow = _super.prototype.init.call(this, config);
+            if (!this.filterId) {
+                this.filterId = "filter-" + Math.floor(Math.random() * 1000000000).toString(36);
+                var filter1 = document.createElementNS(NS, 'radialGradient');
+                filter1.setAttribute('id', this.filterId + "-1");
+                filter1.setAttribute('fx', '30%');
+                filter1.setAttribute('fy', '30%');
+                filter1.innerHTML = "\n        <stop offset=\"10%\" stop-color=\"rgba(255,255,255,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(255,255,255,0)\" />\n      ";
+                var filter2 = document.createElementNS(NS, 'radialGradient');
+                filter2.setAttribute('id', this.filterId + "-2");
+                filter2.setAttribute('fx', '70%');
+                filter2.setAttribute('fy', '70%');
+                filter2.innerHTML = "\n        <stop offset=\"10%\" stop-color=\"rgba(255,255,255,0.75)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(255,255,255,0)\" />\n      ";
+                var filterGroup = document.createElementNS(NS, 'g');
+                filterGroup.appendChild(filter1);
+                filterGroup.appendChild(filter2);
+                if (shadow) {
+                    filterGroup.appendChild(shadow);
+                }
+                return filterGroup;
+            }
+            return null;
+        };
+        GlassStoneWhite.prototype.createElement = function (config) {
+            var stoneGroup = document.createElementNS(NS, 'g');
+            var stone = document.createElementNS(NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', '#ccc');
+            stone.setAttribute('r', config.theme.stoneSize);
+            stone.setAttribute('filter', "url(#" + this.shadowFilterId + ")");
+            stoneGroup.appendChild(stone);
+            var glow1 = document.createElementNS(NS, 'circle');
+            glow1.setAttribute('cx', '0');
+            glow1.setAttribute('cy', '0');
+            glow1.setAttribute('r', config.theme.stoneSize);
+            glow1.setAttribute('fill', "url(#" + this.filterId + "-1)");
+            stoneGroup.appendChild(glow1);
+            var glow2 = document.createElementNS(NS, 'circle');
+            glow2.setAttribute('cx', '0');
+            glow2.setAttribute('cy', '0');
+            glow2.setAttribute('r', config.theme.stoneSize);
+            glow2.setAttribute('fill', "url(#" + this.filterId + "-2)");
+            stoneGroup.appendChild(glow2);
+            return stoneGroup;
+        };
+        return GlassStoneWhite;
+    }(SVGStoneDrawHandler));
+    //# sourceMappingURL=GlassStoneWhite.js.map
+
+    var SVGMarkupDrawHandler = /** @class */ (function (_super) {
+        __extends(SVGMarkupDrawHandler, _super);
+        function SVGMarkupDrawHandler(params) {
+            if (params === void 0) { params = {}; }
+            var _this = _super.call(this) || this;
+            _this.params = params;
+            return _this;
+        }
+        SVGMarkupDrawHandler.prototype.updateElement = function (elem, boardObject, config) {
+            _super.prototype.updateElement.call(this, elem, boardObject, config);
+            if (boardObject.variation === exports.Color.B) {
+                elem.setAttribute('stroke', config.theme.markupBlackColor);
+                elem.setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
+            }
+            else if (boardObject.variation === exports.Color.W) {
+                elem.setAttribute('stroke', config.theme.markupWhiteColor);
+                elem.setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
+            }
+            else {
+                elem.setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
+                elem.setAttribute('fill', this.params.fillColor || config.theme.backgroundColor);
+            }
+        };
+        SVGMarkupDrawHandler.prototype.setDefaultAttributes = function (config, elem) {
+            elem.setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
+        };
+        return SVGMarkupDrawHandler;
+    }(SVGFieldDrawHandler));
+    //# sourceMappingURL=SVGMarkupDrawHandler.js.map
+
+    var Circle$1 = /** @class */ (function (_super) {
+        __extends(Circle, _super);
+        function Circle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Circle.prototype.createElement = function (config) {
+            var circle = document.createElementNS(NS, 'circle');
+            circle.setAttribute('cx', '0');
+            circle.setAttribute('cy', '0');
+            circle.setAttribute('r', '0.25');
+            this.setDefaultAttributes(config, circle);
+            return circle;
+        };
+        return Circle;
+    }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Circle.js.map
+
+    var Square$1 = /** @class */ (function (_super) {
+        __extends(Square, _super);
+        function Square() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Square.prototype.createElement = function (config) {
+            var square = document.createElementNS(NS, 'rect');
+            square.setAttribute('x', '-0.25');
+            square.setAttribute('y', '-0.25');
+            square.setAttribute('width', '0.50');
+            square.setAttribute('height', '0.50');
+            this.setDefaultAttributes(config, square);
+            return square;
+        };
+        return Square;
+    }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Square.js.map
+
+    var Triangle$1 = /** @class */ (function (_super) {
+        __extends(Triangle, _super);
+        function Triangle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Triangle.prototype.createElement = function (config) {
+            var triangle = document.createElementNS(NS, 'polygon');
+            triangle.setAttribute('points', '0,-0.25 -0.25,0.166666 0.25,0.166666');
+            this.setDefaultAttributes(config, triangle);
+            return triangle;
+        };
+        return Triangle;
+    }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Triangle.js.map
+
+    var XMark$1 = /** @class */ (function (_super) {
+        __extends(XMark, _super);
+        function XMark() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        XMark.prototype.createElement = function (config) {
+            var path = document.createElementNS(NS, 'path');
+            path.setAttribute('d', 'M -0.20,-0.20 L 0.20,0.20 M 0.20,-0.20 L -0.20,0.20');
+            this.setDefaultAttributes(config, path);
+            return path;
+        };
+        return XMark;
+    }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=XMark.js.map
+
+    var Dot$1 = /** @class */ (function (_super) {
+        __extends(Dot, _super);
+        function Dot(params) {
+            var _this = _super.call(this) || this;
+            _this.params = params;
+            return _this;
+        }
+        Dot.prototype.createElement = function (config) {
+            var circle = document.createElementNS(NS, 'circle');
+            circle.setAttribute('cx', '0');
+            circle.setAttribute('cy', '0');
+            circle.setAttribute('r', '0.15');
+            circle.setAttribute('fill', this.params.color);
+            return circle;
+        };
+        return Dot;
+    }(SVGFieldDrawHandler));
+    //# sourceMappingURL=Dot.js.map
+
+    var Dim$1 = /** @class */ (function (_super) {
+        __extends(Dim, _super);
+        function Dim(params) {
+            var _this = _super.call(this) || this;
+            _this.params = params;
+            return _this;
+        }
+        Dim.prototype.createElement = function (config) {
+            var rect = document.createElementNS(NS, 'rect');
+            rect.setAttribute('x', '-0.5');
+            rect.setAttribute('y', '-0.5');
+            rect.setAttribute('width', '1');
+            rect.setAttribute('height', '1');
+            rect.setAttribute('fill', this.params.color);
+            return rect;
+        };
+        return Dim;
+    }(SVGFieldDrawHandler));
+    //# sourceMappingURL=Dim.js.map
+
+    var Line$1 = /** @class */ (function () {
+        function Line(params) {
+            if (params === void 0) { params = {}; }
+            this.params = params;
+        }
+        Line.prototype.init = function () {
+            return null;
+        };
+        Line.prototype.createElement = function (config) {
+            var line = document.createElementNS(NS, 'line');
+            return line;
+        };
+        Line.prototype.updateElement = function (elem, boardObject, config) {
+            elem.setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
+            elem.setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
+            elem.setAttribute('x1', boardObject.start.x);
+            elem.setAttribute('y1', boardObject.start.y);
+            elem.setAttribute('x2', boardObject.end.x);
+            elem.setAttribute('y2', boardObject.end.y);
+        };
+        return Line;
+    }());
+    //# sourceMappingURL=Line.js.map
+
+    var Arrow$1 = /** @class */ (function () {
+        function Arrow(params) {
+            if (params === void 0) { params = {}; }
+            this.params = params;
+        }
+        Arrow.prototype.init = function () {
+            return null;
+        };
+        Arrow.prototype.createElement = function (config) {
+            var line = document.createElementNS(NS, 'line');
+            return line;
+        };
+        Arrow.prototype.updateElement = function (elem, boardObject, config) {
+            elem.setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
+            elem.setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
+            elem.setAttribute('x1', boardObject.start.x);
+            elem.setAttribute('y1', boardObject.start.y);
+            elem.setAttribute('x2', boardObject.end.x);
+            elem.setAttribute('y2', boardObject.end.y);
+            // TODO
+        };
+        return Arrow;
+    }());
+    //# sourceMappingURL=Arrow.js.map
+
+    var Label$1 = /** @class */ (function (_super) {
+        __extends(Label, _super);
+        function Label(params) {
+            if (params === void 0) { params = {}; }
+            return _super.call(this, params) || this;
+        }
+        Label.prototype.createElement = function (config) {
+            var text = document.createElementNS(NS, 'text');
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('font-size', '0.5');
+            return text;
+        };
+        Label.prototype.updateElement = function (elem, boardObject, config) {
+            _super.prototype.updateElement.call(this, elem, boardObject, config);
+            elem.setAttribute('stroke', '');
+            elem.setAttribute('fill', '');
+            elem.setAttribute('font', this.params.font || config.theme.font);
+            elem.setAttribute('stroke-width', this.params.font || config.theme.font);
+            elem.textContent = boardObject.text;
+            // TODO
+        };
+        return Label;
+    }(SVGMarkupDrawHandler));
+
+    //# sourceMappingURL=index.js.map
+
+    var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { backgroundImage: 'images/wood1.jpg', coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
+            B: new GlassStoneBlack$1(),
+            W: new GlassStoneWhite$1(),
+            CR: new Circle$1(),
+            SQ: new Square$1(),
+            LB: new Label$1(),
+            TR: new Triangle$1(),
+            MA: new XMark$1({ lineWidth: 0.075 }),
+            SL: new Dot$1({ color: 'rgba(32, 32, 192, 0.75)' }),
+            LN: new Line$1(),
+            AR: new Arrow$1(),
+            DD: new Dim$1({ color: 'rgba(0, 0, 0, 0.5)' }),
+        } });
+    //# sourceMappingURL=defaultSVGTheme.js.map
+
+    var svgBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: defaultSVGTheme });
+    var SVGBoard = /** @class */ (function (_super) {
+        __extends(SVGBoard, _super);
+        function SVGBoard(elem, config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this, elem, makeConfig(svgBoardDefaultConfig, config)) || this;
+            _this.svgElement = document.createElementNS(NS, 'svg');
+            _this.svgElement.style.cursor = 'default';
+            _this.element.appendChild(_this.svgElement);
+            _this.defsElement = document.createElementNS(NS, 'defs');
+            _this.svgElement.appendChild(_this.defsElement);
+            _this.setViewport();
+            _this.resize();
+            _this.redraw();
+            return _this;
+        }
+        SVGBoard.prototype.resize = function () {
+            if (this.config.width && this.config.height) {
+                this.svgElement.style.width = this.config.width + "px";
+                this.svgElement.style.height = this.config.height + "px";
+            }
+            else if (this.config.width) {
+                this.svgElement.style.width = this.config.width + "px";
+                this.svgElement.style.height = 'auto';
+            }
+            else if (this.config.height) {
+                this.svgElement.style.width = 'auto';
+                this.svgElement.style.height = this.config.height + "px";
+            }
+            else {
+                this.svgElement.style.width = '100%';
+                this.svgElement.style.height = 'auto';
+            }
+        };
+        SVGBoard.prototype.redraw = function () {
+            this.svgElement.style.backgroundColor = this.config.theme.backgroundColor;
+            if (this.config.theme.backgroundImage) {
+                this.svgElement.style.backgroundImage = "url('" + this.config.theme.backgroundImage + "')";
+            }
+            else {
+                this.svgElement.style.backgroundImage = '';
+            }
+            this.drawGrid();
+            this.drawCoordinates();
+            this.drawObjects();
+        };
+        SVGBoard.prototype.drawGrid = function () {
+            if (this.gridElement) {
+                this.svgElement.removeChild(this.gridElement);
+            }
+            this.gridElement = createGrid(this.config);
+            this.svgElement.appendChild(this.gridElement);
+        };
+        SVGBoard.prototype.drawCoordinates = function () {
+            if (this.coordinatesElement) {
+                this.svgElement.removeChild(this.coordinatesElement);
+            }
+            this.coordinatesElement = createCoordinates(this.config);
+            this.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
+            this.svgElement.appendChild(this.coordinatesElement);
+        };
+        SVGBoard.prototype.drawObjects = function () {
+            var _this = this;
+            if (this.objectsElementMap) {
+                this.objectsElementMap.forEach(function (elem) { return _this.svgElement.removeChild(elem); });
+            }
+            this.objectsElementMap = new Map();
+        };
+        SVGBoard.prototype.addObject = function (boardObject) {
+            _super.prototype.addObject.call(this, boardObject);
+            if (!Array.isArray(boardObject)) {
+                if (this.objectsElementMap.get(boardObject)) {
+                    // already added - just redraw it
+                    return;
+                }
+                // tslint:disable-next-line:max-line-length
+                var handler = typeof boardObject.type === 'string' ? this.config.theme.drawHandlers[boardObject.type] : boardObject.type;
+                // create optional definitions for handler
+                var def = handler.init(this.config);
+                if (def) {
+                    this.defsElement.appendChild(def);
+                }
+                // create element and add to the svg
+                var elem = handler.createElement(this.config);
+                this.objectsElementMap.set(boardObject, elem);
+                this.svgElement.appendChild(elem);
+                // set elements params according to the board object
+                handler.updateElement(elem, boardObject, this.config);
+            }
+        };
+        SVGBoard.prototype.setViewport = function (viewport) {
+            if (viewport === void 0) { viewport = this.config.viewport; }
+            _super.prototype.setViewport.call(this, viewport);
+            var _a = this.config, coordinates = _a.coordinates, theme = _a.theme, size = _a.size;
+            var marginSize = theme.marginSize;
+            var fontSize = theme.coordinates.fontSize;
+            var top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
+            var left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
+            var bottom = size - 0.5 - top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
+            var right = size - 0.5 - left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
+            this.svgElement.setAttribute('viewBox', left + " " + top + " " + right + " " + bottom);
+        };
+        SVGBoard.prototype.setSize = function (size) {
+            if (size === void 0) { size = 19; }
+            _super.prototype.setSize.call(this, size);
+            this.drawGrid();
+            this.drawCoordinates();
+            this.setViewport();
+        };
+        SVGBoard.prototype.setCoordinates = function (coordinates) {
+            _super.prototype.setCoordinates.call(this, coordinates);
+            this.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
+            this.setViewport();
+        };
+        return SVGBoard;
+    }(BoardBase));
+    //# sourceMappingURL=SVGBoard.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -1733,7 +2273,7 @@
      * @module Position
      */
     // creates 2-dim array
-    function createGrid(size) {
+    function createGrid$1(size) {
         var grid = [];
         for (var i = 0; i < size; i++) {
             grid.push([]);
@@ -1906,7 +2446,7 @@
          * Returns true if stone or group on the given coordinates has at least one liberty.
          */
         Position.prototype.hasLiberties = function (x, y, alreadyTested, c) {
-            if (alreadyTested === void 0) { alreadyTested = createGrid(this.size); }
+            if (alreadyTested === void 0) { alreadyTested = createGrid$1(this.size); }
             if (c === void 0) { c = this.get(x, y); }
             // out of the board there aren't liberties
             if (!this.isOnPosition(x, y)) {
@@ -3575,7 +4115,7 @@
     //# sourceMappingURL=MoveHandlerWithMark.js.map
 
     var defaultPlainPlayerConfig = {
-        boardTheme: canvasBoardDefaultConfig.theme,
+        boardTheme: defaultBoardBaseTheme,
         highlightCurrentMove: true,
         currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
         currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
@@ -4003,7 +4543,7 @@
     exports.Position = Position;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
-    exports.defaultBoardConfig = canvasBoardDefaultConfig;
+    exports.SVGBoard = SVGBoard;
     exports.drawHandlers = index;
     exports.goRules = goRules;
     exports.propertyValueTypes = propertyValueTypes;

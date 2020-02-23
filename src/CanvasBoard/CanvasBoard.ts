@@ -1,5 +1,3 @@
-/* global document, window */
-
 /**
  * Contains implementation of go board.
  * @module CanvasBoard
@@ -10,10 +8,16 @@ import CanvasLayer from './CanvasLayer';
 import { CanvasBoardConfig } from './types';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { Point } from '../types';
-import { BoardObject, BoardBase } from '../BoardBase';
+import { BoardObject, BoardBase, BoardViewport } from '../BoardBase';
 import GridLayer from './GridLayer';
 import DrawHandler from './drawHandlers/DrawHandler';
-import canvasBoardDefaultConfig from './defaultConfig';
+import { baseTheme } from './themes';
+import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
+
+const canvasBoardDefaultConfig: CanvasBoardConfig = {
+  ...defaultBoardBaseConfig,
+  theme: baseTheme,
+};
 
 const zIndexSorter = (obj1: BoardObject<DrawHandler>, obj2: BoardObject<DrawHandler>) => obj1.zIndex - obj2.zIndex;
 
@@ -77,12 +81,13 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
    * Updates dimensions and redraws everything
    */
   resize() {
+    const { marginSize } = this.config.theme;
     const countX = this.config.size - this.config.viewport.left - this.config.viewport.right;
     const countY = this.config.size - this.config.viewport.top - this.config.viewport.bottom;
-    const topOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.top ? 0.5 : 0);
-    const rightOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.right ? 0.5 : 0);
-    const bottomOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.bottom ? 0.5 : 0);
-    const leftOffset = this.config.marginSize + (this.config.coordinates && !this.config.viewport.left ? 0.5 : 0);
+    const topOffset = marginSize + (this.config.coordinates && !this.config.viewport.top ? 0.5 : 0);
+    const rightOffset = marginSize + (this.config.coordinates && !this.config.viewport.right ? 0.5 : 0);
+    const bottomOffset = marginSize + (this.config.coordinates && !this.config.viewport.bottom ? 0.5 : 0);
+    const leftOffset = marginSize + (this.config.coordinates && !this.config.viewport.left ? 0.5 : 0);
 
     if (this.config.width && this.config.height) {
       // exact dimensions
@@ -126,7 +131,7 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
       }
     }
 
-    if (this.config.snapToGrid) {
+    if (this.config.theme.snapToGrid) {
       this.fieldSize = Math.floor(this.fieldSize);
     }
 
@@ -185,11 +190,6 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
         if (this.config.theme.backgroundImage) {
           this.boardElement.style.backgroundImage = `url("${this.config.theme.backgroundImage}")`;
         }
-        if (this.config.theme.style) {
-          Object.keys(this.config.theme.style).forEach(
-            style => (this.boardElement.style as any)[style] = (this.config.theme.style as any)[style],
-          );
-        }
 
         // sort objects by zIndex
         this.objects.sort(zIndexSorter);
@@ -207,6 +207,34 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
         });
       });
     }
+  }
+
+  addObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]) {
+    if (!Array.isArray(boardObject)) {
+      if (typeof boardObject.type === 'string') {
+        if (!this.config.theme.drawHandlers[boardObject.type]) {
+          // tslint:disable-next-line:max-line-length
+          throw new TypeError(`Board object type "${boardObject.type}" doesn't exist in \`config.theme.drawHandlers\`.`);
+        }
+      } else {
+        if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
+          throw new TypeError('Invalid board object type.');
+        }
+      }
+    }
+
+    super.addObject(boardObject);
+    this.redraw();
+  }
+
+  removeObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]) {
+    super.removeObject(boardObject);
+    this.redraw();
+  }
+
+  removeAllObjects() {
+    super.removeAllObjects();
+    this.redraw();
   }
 
   on(type: string, callback: (event: UIEvent, point: Point) => void) {
@@ -236,5 +264,20 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
     }
 
     return { x, y };
+  }
+
+  setSize(size: number) {
+    super.setSize(size);
+    this.resize();
+  }
+
+  setViewport(viewport: BoardViewport) {
+    super.setViewport(viewport);
+    this.resize();
+  }
+
+  setCoordinates(coordinates: boolean) {
+    super.setCoordinates(coordinates);
+    this.resize();
   }
 }

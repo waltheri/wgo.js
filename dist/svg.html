@@ -1,0 +1,347 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<title>WGo</title>
+</head>
+
+<body>
+
+<h1>SVG test</h1>
+
+<div style="width:auto">
+<script type="text/javascript">
+
+//w = WGo("test.sgf");
+//w2 = WGo({sgf_file:"test4.sgf", width: 800});
+
+document.addEventListener("DOMContentLoaded", function(){
+
+var NS="http://www.w3.org/2000/svg";
+var e = document.getElementById("elem");
+svg = document.createElementNS(NS, "svg");
+
+svg.style.backgroundImage = "url('images/wood1.jpg')";
+svg.style.width = "800px";
+svg.style.height = "800px";
+
+
+/* 
+ <feGaussianBlur result = "blurOut" in = "offOut" stdDeviation = "10"/>
+*/
+
+var defs = document.createElementNS(NS, "defs");
+var f1 = document.createElementNS(NS, "filter");
+defs.appendChild(f1);
+
+f1.setAttribute("id", "f1");
+f1.setAttribute("x", 0);
+f1.setAttribute("y", 0);
+f1.setAttribute("width", "200%");
+f1.setAttribute("height", "200%");
+
+var tmp = document.createElementNS(NS, "feOffset");
+
+tmp.setAttribute("result", "offOut");
+tmp.setAttribute("in", "SourceAlpha");
+tmp.setAttribute("dx", 2);
+tmp.setAttribute("dy", 2);
+
+f1.appendChild(tmp);
+
+var tmp = document.createElementNS(NS, "feGaussianBlur");
+
+tmp.setAttribute("result", "blurOut");
+tmp.setAttribute("in", "offOut");
+tmp.setAttribute("stdDeviation", 2);
+
+f1.appendChild(tmp);
+
+var tmp = document.createElementNS(NS, "feBlend");
+
+tmp.setAttribute("mode", "normal");
+tmp.setAttribute("in", "SourceGraphic");
+tmp.setAttribute("in2", "blurOut");
+
+f1.appendChild(tmp);
+
+var f2 = document.createElementNS(NS, "filter");
+defs.appendChild(f2);
+
+f2.setAttribute("id", "f2");
+f2.setAttribute("x", "-300%");
+f2.setAttribute("y", "-300%");
+f2.setAttribute("width", "600%");
+f2.setAttribute("height", "600%");
+
+var tmp = document.createElementNS(NS, "feGaussianBlur");
+
+tmp.setAttribute("in", "SourceGraphic");
+tmp.setAttribute("stdDeviation", 7);
+
+f2.appendChild(tmp);
+
+svg.appendChild(defs);
+
+/*
+ <radialGradient id="grad1" cx="10%" cy="10%" r="97%" fx="0%" fy="0%">
+   <stop offset="34%" style="stop-color:rgb(245,245,245); stop-opacity:1" />
+   <stop offset="37%" style="stop-color:rgb(240,240,240); stop-opacity:1" />
+   <stop offset="40%" style="stop-color:rgb(250,250,250); stop-opacity:1" />
+   
+   <stop offset="54%" style="stop-color:rgb(255,255,255); stop-opacity:1" />
+   <stop offset="57%" style="stop-color:rgb(245,245,245); stop-opacity:1" />
+   <stop offset="60%" style="stop-color:rgb(255,255,255); stop-opacity:1" />
+
+   <stop offset="74%" style="stop-color:rgb(240,240,240); stop-opacity:1" />
+   <stop offset="77%" style="stop-color:rgb(235,235,235); stop-opacity:1" />
+   <stop offset="80%" style="stop-color:rgb(240,240,240); stop-opacity:1" />
+   
+   <stop offset="94%" style="stop-color:rgb(225,225,225); stop-opacity:1" />
+   <stop offset="97%" style="stop-color:rgb(220,220,220); stop-opacity:1" />
+   <stop offset="100%"style="stop-color:rgb(225,225,225); stop-opacity:1" />
+ </radialGradient>
+*/
+/*
+var radgrad = document.createElementNS(NS, "radialGradient");
+radgrad.setAttribute("id", "grad1");
+radgrad.setAttribute("cx", "10%");
+radgrad.setAttribute("cy", "10%");
+radgrad.setAttribute("r", "97%");
+radgrad.setAttribute("fx", "0%");
+radgrad.setAttribute("fy", "0%");
+
+function radstop(off, col) {
+	var stop = document.createElementNS(NS, "stop");
+	stop.setAttribute("offset", off+"%");
+	stop.setAttribute("style", "stop-color: "+col);
+	radgrad.appendChild(stop);
+}
+
+radstop("34", "rgb(245,245,245)");
+radstop("37", "rgb(240,240,240)");
+radstop("40", "rgb(250,250,250)");
+
+radstop("54", "rgb(255,255,255)");
+radstop("57", "rgb(245,245,245)");
+radstop("60", "rgb(255,255,255)");
+
+radstop("74", "rgb(240,240,240)");
+radstop("77", "rgb(235,235,235)");
+radstop("80", "rgb(240,240,240)");
+
+radstop("94", "rgb(225,225,225)");
+radstop("97", "rgb(220,220,220)");
+radstop("100", "rgb(225,225,225)");
+
+defs.appendChild(radgrad);*/
+
+function radstop(r, off, col) {
+	var stop = document.createElementNS(NS, "stop");
+	stop.setAttribute("offset", off+"%");
+	stop.setAttribute("style", "stop-color: "+col);
+	r.appendChild(stop);
+}
+
+var radgrad = document.createElementNS(NS, "radialGradient");
+radgrad.setAttribute("id", "grad1");
+radgrad.setAttribute("cx", "10%");
+radgrad.setAttribute("cy", "10%");
+radgrad.setAttribute("r", "97%");
+radgrad.setAttribute("fx", "0%");
+radgrad.setAttribute("fy", "0%");
+
+radstop(radgrad, "34", "rgba(255,255,255,0)");
+radstop(radgrad, "37", "rgba(127,127,127,0.1)");
+radstop(radgrad, "40", "rgba(255,255,255,0)");
+
+radstop(radgrad, "54", "rgba(255,255,255,0)");
+radstop(radgrad, "57", "rgba(127,127,127,0.1)");
+radstop(radgrad, "60", "rgba(255,255,255,0)");
+
+radstop(radgrad, "74", "rgba(255,255,255,0)");
+radstop(radgrad, "77", "rgba(127,127,127,0.1)");
+radstop(radgrad, "80", "rgba(255,255,255,0)");
+
+radstop(radgrad, "94", "rgba(255,255,255,0)");
+radstop(radgrad, "97", "rgba(127,127,127,0.1)");
+radstop(radgrad, "100", "rgba(255,255,255,0)");
+
+defs.appendChild(radgrad);
+
+var radgrad2 = document.createElementNS(NS, "radialGradient");
+radgrad2.setAttribute("id", "grad2");
+radgrad2.setAttribute("cx", "20%");
+radgrad2.setAttribute("cy", "20%");
+radgrad2.setAttribute("r", "70%");
+radgrad2.setAttribute("fx", "30%");
+radgrad2.setAttribute("fy", "30%");
+
+radstop(radgrad2, "0", "rgb(255,255,255)");
+radstop(radgrad2, "100", "rgb(220,220,220)");
+
+defs.appendChild(radgrad2);
+/*
+svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+svg.setAttribute("version", "1.1");*/
+
+e.appendChild(svg);
+
+var circle = document.createElementNS(NS, "circle");
+
+// <line x1="0" y1="0" x2="200" y2="200" style="stroke:rgb(255,0,0);stroke-width:2"/>
+function line(from, to) {
+	var line = document.createElementNS(NS, "line");
+	line.setAttribute("x1", from.x + 0.5);
+	line.setAttribute("y1", from.y + 0.5);
+	line.setAttribute("x2", to.x + 0.5);
+	line.setAttribute("y2", to.y + 0.5);
+	line.setAttribute("style", "stroke:rgba(0,0,0,0.5);stroke-width:1.5;"); //shape-rendering:crispEdges
+	svg.appendChild(line);
+}
+
+function dot(coo) {
+	var dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x+0.5);
+	dot.setAttribute("cy", coo.y+0.5);
+	dot.setAttribute("r", 4);
+	dot.setAttribute("fill", "black");
+	svg.appendChild(dot);
+}
+
+function stoneS(coo) {
+	var dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x+3);
+	dot.setAttribute("cy", coo.y+3);
+	dot.setAttribute("r", 19);
+	dot.setAttribute("fill", "rgba(0,0,0,0.33)");
+	//dot.setAttribute("filter", "url(#f2)");
+	svg.appendChild(dot);
+}
+
+function stoneW(coo) {
+	var dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x+0.5);
+	dot.setAttribute("cy", coo.y+0.5);
+	dot.setAttribute("r", 19.5);
+	dot.setAttribute("fill", "url(#grad2)");
+	svg.appendChild(dot);
+	var dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x+0.5);
+	dot.setAttribute("cy", coo.y+0.5);
+	dot.setAttribute("r", 19.5);
+	dot.setAttribute("fill", "url(#grad1)");
+	var rand = Math.round(Math.random()*10000)%360;
+	dot.setAttribute("transform", "rotate("+rand+","+(coo.x+0.5)+","+(coo.y+0.5)+")");
+	svg.appendChild(dot);
+}
+
+function stoneB(coo) {
+	var dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x+0.5);
+	dot.setAttribute("cy", coo.y+0.5);
+	dot.setAttribute("r", 19.5);
+	dot.setAttribute("fill", "#000");
+	svg.appendChild(dot);
+	
+	dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x-8);
+	dot.setAttribute("cy", coo.y-8);
+	dot.setAttribute("r", 4.5);
+	dot.setAttribute("fill", "#fff");
+	dot.setAttribute("filter", "url(#f2)");
+	svg.appendChild(dot);
+	
+	dot = document.createElementNS(NS, "circle");
+	dot.setAttribute("cx", coo.x+8);
+	dot.setAttribute("cy", coo.y+8);
+	dot.setAttribute("r", 2.5);
+	dot.setAttribute("fill", "#fff");
+	dot.setAttribute("filter", "url(#f2)");
+	svg.appendChild(dot);
+}
+
+function stoneShell(coo) {
+  var image = document.createElementNS(NS, 'image');
+  image.setAttribute('href', 'images/stones/white07_128.png');
+  image.setAttribute('width', 39);
+  image.setAttribute('height', 39);
+  image.setAttribute("x", coo.x-19.5);
+  image.setAttribute("y", coo.y-19.5);
+  
+  svg.appendChild(image);
+}
+
+for(var i = 1; i <= 19; i++) {
+	line({x:i*40,y:40}, {x:i*40, y:760});
+}
+
+for(var i = 1; i <= 19; i++) {
+	line({x:40,y:i*40}, {x:760, y:i*40});
+}
+
+dot({x:4*40,y:4*40});
+dot({x:10*40,y:4*40});
+dot({x:16*40,y:4*40});
+
+dot({x:4*40,y:10*40});
+dot({x:10*40,y:10*40});
+dot({x:16*40,y:10*40});
+
+dot({x:4*40,y:16*40});
+dot({x:10*40,y:16*40});
+dot({x:16*40,y:16*40});
+
+stoneS({x:4*40,y:4*40});
+stoneS({x:3*40,y:6*40});
+stoneS({x:3*40,y:8*40});
+stoneS({x:3*40,y:3*40});
+stoneS({x:3*40,y:4*40});
+stoneS({x:4*40,y:3*40});
+stoneS({x:5*40,y:4*40});
+stoneS({x:2*40,y:4*40});
+stoneS({x:2*40,y:5*40});
+stoneS({x:2*40,y:3*40});
+stoneS({x:3*40,y:5*40});
+stoneS({x:6*40,y:3*40});
+
+stoneW({x:4*40,y:4*40});
+stoneB({x:3*40,y:6*40});
+stoneW({x:3*40,y:8*40});
+stoneB({x:3*40,y:3*40});
+stoneW({x:3*40,y:4*40});
+stoneB({x:4*40,y:3*40});
+stoneW({x:5*40,y:4*40});
+stoneB({x:2*40,y:4*40});
+stoneW({x:2*40,y:5*40});
+stoneB({x:2*40,y:3*40});
+stoneW({x:3*40,y:5*40});
+stoneB({x:6*40,y:3*40});
+
+stoneS({x:10*40,y:10*40});
+stoneShell({x:10*40,y:10*40});
+});
+
+</script>
+<div id="elem"></div>
+
+
+<!--<svg height="100" width="100">
+  <circle cx="50" cy="50" r="40" stroke="black" stroke-width="3" fill="red" />
+</svg>
+
+<svg height="520" width="520">
+  <defs>
+    <filter id="f1"  width="200%" height="200%">
+      <feOffset result="offOut" in="SourceAlpha" dx="5" dy="5" />
+      <feGaussianBlur result="blurOut" in="offOut" stdDeviation="1" />
+      <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
+    </filter>
+	<filter id="f2" x="-300%" y="-300%" width="600%" height="600%">
+	  <feGaussianBlur in="SourceGraphic" stdDeviation="7"></feGaussianBlur>
+	</filter>
+  </defs>
+  <circle cx="90" cy="90" r="40" fill="black" filter="url(#f1)" />
+</svg>-->
+
+</body>
+</html>

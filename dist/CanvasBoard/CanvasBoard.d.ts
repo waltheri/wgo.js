@@ -1,8 +1,12 @@
+/**
+ * Contains implementation of go board.
+ * @module CanvasBoard
+ */
 import CanvasLayer from './CanvasLayer';
 import { CanvasBoardConfig } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import { Point } from '../types';
-import { BoardObject, BoardBase } from '../BoardBase';
+import { BoardObject, BoardBase, BoardViewport } from '../BoardBase';
 import DrawHandler from './drawHandlers/DrawHandler';
 export default class CanvasBoard extends BoardBase<DrawHandler> {
     config: CanvasBoardConfig;
@@ -48,10 +52,16 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
      * Redraw everything.
      */
     redraw(): void;
+    addObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]): void;
+    removeObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]): void;
+    removeAllObjects(): void;
     on(type: string, callback: (event: UIEvent, point: Point) => void): void;
     registerBoardListener(type: string): void;
     getRelativeCoordinates(absoluteX: number, absoluteY: number): {
         x: number;
         y: number;
     };
+    setSize(size: number): void;
+    setViewport(viewport: BoardViewport): void;
+    setCoordinates(coordinates: boolean): void;
 }

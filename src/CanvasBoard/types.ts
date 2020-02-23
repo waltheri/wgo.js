@@ -1,70 +1,17 @@
-import { Point } from '../types';
-import { BoardObject, BoardViewport } from '../boardBase';
+import { BoardObject } from '../boardBase';
 import DrawHandler from './drawHandlers/DrawHandler';
+import { BoardBaseConfig, BoardBaseTheme } from '../BoardBase/types';
 
-export interface CanvasBoardTheme {
-  stoneSize: number;
-
-  // grid & star points
-  grid: {
-    linesWidth: number;
-    linesColor: string;
-    starColor: string;
-    starSize: number;
-  };
-
-  // markup
-  markupBlackColor: string;
-  markupWhiteColor: string;
-  markupNoneColor: string;
-  markupLineWidth: number;
-
-  // shadow
-  shadowColor: string;
-  shadowTransparentColor: string;
-  shadowBlur: number;
-  shadowOffsetX: number;
-  shadowOffsetY: number;
-
-  // coordinates
-  coordinates: {
-    color: string;
-    bold: boolean;
-    x: string | (string | number)[];
-    y: string | (string | number)[];
-  };
-
-  // other
-  font: string;
+export interface CanvasBoardTheme extends BoardBaseTheme {
+  snapToGrid: boolean;
   linesShift: number;
-
-  // background
-  backgroundColor: string;
-  backgroundImage: string;
-
   drawHandlers: {
     [key: string]: DrawHandler;
   };
-
-  style: Partial<CSSStyleDeclaration>;
 }
 
-export interface CanvasBoardConfig {
-  size: number;
-  width: number;
-  height: number;
-  starPoints: {
-    [size: number]: Point[];
-  };
-  viewport: BoardViewport;
-  coordinates: boolean;
+export interface CanvasBoardConfig extends BoardBaseConfig {
   theme: CanvasBoardTheme;
-
-  /** Size of board margin relative to field size */
-  marginSize: number;
-
-  /** This will cause sharper edges, but the board won't have exact specified dimensions (temporary solution I hope) */
-  snapToGrid: boolean;
 }
 
 export interface DrawFunction {

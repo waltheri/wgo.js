@@ -74,8 +74,8 @@ export default class GridLayer extends CanvasLayer {
     const yTop = this.board.getY(-0.75);
     const yBottom = this.board.getY(this.board.config.size - 0.25);
 
-    const coordinatesX = params.x;
-    const coordinatesY = params.y;
+    const coordinatesX = this.board.config.coordinateLabelsX;
+    const coordinatesY = this.board.config.coordinateLabelsY;
 
     for (let i = 0; i < this.board.config.size; i++) {
       t = this.board.getY(i);

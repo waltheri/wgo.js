@@ -16,6 +16,7 @@ export default class FieldObject<T> extends BoardObject<T> {
     this.scaleX = 1;
     this.scaleY = 1;
     this.rotate = 0;
+    this.opacity = 1;
   }
 
   setPosition(x: number, y: number) {
