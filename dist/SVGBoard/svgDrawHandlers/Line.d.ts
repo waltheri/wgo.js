@@ -1,4 +1,4 @@
-import { SVGBoardConfig, SVGDrawHandler } from '../types';
+import { SVGBoardConfig, SVGDrawHandler, BoardObjectSVGElements, OBJECTS, GRID_MASK } from '../types';
 import { BoardLineObject } from '../../BoardBase';
 interface LineParams {
     color?: string;
@@ -7,8 +7,10 @@ interface LineParams {
 export default class Line implements SVGDrawHandler {
     params: LineParams;
     constructor(params?: LineParams);
-    init(): SVGElement;
-    createElement(config: SVGBoardConfig): SVGLineElement;
-    updateElement(elem: SVGLineElement, boardObject: BoardLineObject<SVGDrawHandler>, config: SVGBoardConfig): void;
+    createElement(): {
+        [OBJECTS]: SVGLineElement;
+        [GRID_MASK]: SVGLineElement;
+    };
+    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject<SVGDrawHandler>, config: SVGBoardConfig): void;
 }
 export {};

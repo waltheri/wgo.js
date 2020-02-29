@@ -1,12 +1,11 @@
-import { BoardBase, BoardViewport, BoardObject, FieldObject } from '../BoardBase';
+import { BoardBase, BoardViewport, BoardObject } from '../BoardBase';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import createGrid from './createGrid';
 import createCoordinates from './createCoordinates';
-import { SVGDrawHandler, SVGBoardConfig, NS } from './types';
-import Circle from './svgDrawHandlers/Circle';
-import SVGFieldDrawHandler from './svgDrawHandlers/SVGFieldDrawHandler';
+import { SVGDrawHandler, SVGBoardConfig, NS, OBJECTS, BoardObjectSVGElements, GRID_MASK } from './types';
 import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
 import defaultSVGTheme from './defaultSVGTheme';
+import generateId from './generateId';
 
 const svgBoardDefaultConfig: SVGBoardConfig = {
   ...defaultBoardBaseConfig,
@@ -17,15 +16,19 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
   config: SVGBoardConfig;
   svgElement: SVGElement;
   defsElement: SVGElement;
-  gridElement: SVGElement;
-  coordinatesElement: SVGElement;
-  objectsElementMap: Map<BoardObject<SVGDrawHandler>, SVGElement>;
+  objectsElementMap: Map<BoardObject<SVGDrawHandler>, BoardObjectSVGElements>;
+
+  /** Drawing contexts - elements to put additional board objects. Similar to layers. */
+  contexts: {
+    [key: string]: SVGElement;
+  } = {};
 
   constructor (elem: HTMLElement, config: PartialRecursive<SVGBoardConfig> = {}) {
     super(elem, makeConfig(svgBoardDefaultConfig, config));
 
     this.svgElement = document.createElementNS(NS, 'svg');
     this.svgElement.style.cursor = 'default';
+    this.svgElement.style.display = 'block';
     this.element.appendChild(this.svgElement);
 
     this.defsElement = document.createElementNS(NS, 'defs');
@@ -67,29 +70,48 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
   }
 
   drawGrid() {
-    if (this.gridElement) {
-      this.svgElement.removeChild(this.gridElement);
+    if (this.contexts[GRID_MASK]) {
+      this.svgElement.removeChild(this.contexts[GRID_MASK]);
     }
 
-    this.gridElement = createGrid(this.config);
-    this.svgElement.appendChild(this.gridElement);
+    if (this.contexts.gridElement) {
+      this.svgElement.removeChild(this.contexts.gridElement);
+    }
+
+    // create grid mask
+    const { size } = this.config;
+    this.contexts[GRID_MASK] = document.createElementNS(NS, 'mask');
+    this.contexts[GRID_MASK].id = generateId('mask');
+    this.contexts[GRID_MASK].innerHTML = `<rect x="-0.5" y="-0.5" width="${size}" height="${size}" fill="white" />`;
+    this.svgElement.appendChild(this.contexts[GRID_MASK]);
+
+    // create grid
+    this.contexts.gridElement = createGrid(this.config);
+    this.contexts.gridElement.setAttribute('mask', `url(#${this.contexts[GRID_MASK].id})`);
+    this.svgElement.appendChild(this.contexts.gridElement);
   }
 
   drawCoordinates() {
-    if (this.coordinatesElement) {
-      this.svgElement.removeChild(this.coordinatesElement);
+    if (this.contexts.coordinatesElement) {
+      this.svgElement.removeChild(this.contexts.coordinatesElement);
     }
 
-    this.coordinatesElement = createCoordinates(this.config);
-    this.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
-    this.svgElement.appendChild(this.coordinatesElement);
+    this.contexts.coordinatesElement = createCoordinates(this.config);
+    this.contexts.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
+    this.svgElement.appendChild(this.contexts.coordinatesElement);
   }
 
   drawObjects() {
-    if (this.objectsElementMap) {
-      this.objectsElementMap.forEach(elem => this.svgElement.removeChild(elem));
+    if (this.contexts[OBJECTS]) {
+      this.svgElement.removeChild(this.contexts[OBJECTS]);
     }
+
     this.objectsElementMap = new Map();
+
+    this.contexts[OBJECTS] = document.createElementNS(NS, 'g');
+    this.svgElement.appendChild(this.contexts[OBJECTS]);
+
+    this.objects.forEach(boardObject => this.createObjectElements(boardObject));
   }
 
   addObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]) {
@@ -98,26 +120,66 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     if (!Array.isArray(boardObject)) {
       if (this.objectsElementMap.get(boardObject)) {
         // already added - just redraw it
+        this.updateObject(boardObject);
         return;
       }
 
-      // tslint:disable-next-line:max-line-length
-      const handler = typeof boardObject.type === 'string' ? this.config.theme.drawHandlers[boardObject.type] : boardObject.type;
-
-      // create optional definitions for handler
-      const def = handler.init(this.config);
-      if (def) {
-        this.defsElement.appendChild(def);
-      }
-
-      // create element and add to the svg
-      const elem = handler.createElement(this.config);
-      this.objectsElementMap.set(boardObject, elem);
-      this.svgElement.appendChild(elem);
-
-      // set elements params according to the board object
-      handler.updateElement(elem, boardObject, this.config);
+      this.createObjectElements(boardObject);
     }
+  }
+
+  protected createObjectElements(boardObject: BoardObject<SVGDrawHandler>) {
+    const handler = this.getObjectHandler(boardObject);
+
+    // create element or elements and add them to the svg
+    const elem = handler.createElement(this.config, (def: SVGElement) => this.defsElement.appendChild(def));
+    let elements: BoardObjectSVGElements;
+
+    if (elem instanceof SVGElement) {
+      elements = { [OBJECTS]: elem };
+    } else {
+      elements = elem;
+    }
+    this.objectsElementMap.set(boardObject, elements);
+    Object.keys(elements).forEach(key => this.contexts[key].appendChild(elements[key]));
+
+    handler.updateElement(elements, boardObject, this.config);
+  }
+
+  getObjectHandler(boardObject: BoardObject<SVGDrawHandler>) {
+    return typeof boardObject.type === 'string' ? this.config.theme.drawHandlers[boardObject.type] : boardObject.type;
+  }
+
+  removeObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]) {
+    super.removeObject(boardObject);
+
+    if (!Array.isArray(boardObject)) {
+      const elements = this.objectsElementMap.get(boardObject);
+      if (elements) {
+        this.objectsElementMap.delete(boardObject);
+        Object.keys(elements).forEach(key => this.contexts[key].removeChild(elements[key]));
+      }
+    }
+  }
+
+  updateObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]) {
+    // handling multiple objects
+    if (Array.isArray(boardObject)) {
+      for (let i = 0; i < boardObject.length; i++) {
+        this.updateObject(boardObject[i]);
+      }
+      return;
+    }
+
+    const elements = this.objectsElementMap.get(boardObject);
+
+    if (!elements) {
+      // updated object isn't on board - ignore, add or warning?
+      return;
+    }
+
+    const handler = this.getObjectHandler(boardObject);
+    handler.updateElement(elements, boardObject, this.config);
   }
 
   setViewport(viewport: BoardViewport = this.config.viewport) {
@@ -143,7 +205,7 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
 
   setCoordinates(coordinates: boolean) {
     super.setCoordinates(coordinates);
-    this.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
+    this.contexts.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
     this.setViewport();
   }
 }

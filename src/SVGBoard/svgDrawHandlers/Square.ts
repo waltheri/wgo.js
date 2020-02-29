@@ -1,4 +1,4 @@
-import { SVGBoardConfig, NS } from '../types';
+import { SVGBoardConfig, NS, OBJECTS, GRID_MASK } from '../types';
 import SVGMarkupDrawHandler from './SVGMarkupDrawHandler';
 
 export default class Square extends SVGMarkupDrawHandler {
@@ -9,8 +9,16 @@ export default class Square extends SVGMarkupDrawHandler {
     square.setAttribute('width', '0.50');
     square.setAttribute('height', '0.50');
 
-    this.setDefaultAttributes(config, square);
+    const mask = document.createElementNS(NS, 'rect');
+    mask.setAttribute('x', '-0.35');
+    mask.setAttribute('y', '-0.35');
+    mask.setAttribute('width', '0.70');
+    mask.setAttribute('height', '0.70');
+    mask.setAttribute('fill', `rgba(0,0,0,${config.theme.markupGridMask})`);
 
-    return square;
+    return {
+      [OBJECTS]: square,
+      [GRID_MASK]: mask,
+    };
   }
 }

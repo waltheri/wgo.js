@@ -1,4 +1,4 @@
-import { SVGBoardConfig, NS } from '../types';
+import { NS, OBJECTS, GRID_MASK, SVGBoardConfig } from '../types';
 import SVGMarkupDrawHandler from './SVGMarkupDrawHandler';
 
 export default class Circle extends SVGMarkupDrawHandler {
@@ -8,8 +8,15 @@ export default class Circle extends SVGMarkupDrawHandler {
     circle.setAttribute('cy', '0');
     circle.setAttribute('r', '0.25');
 
-    this.setDefaultAttributes(config, circle);
+    const mask = document.createElementNS(NS, 'circle');
+    mask.setAttribute('cx', '0');
+    mask.setAttribute('cy', '0');
+    mask.setAttribute('r', '0.35');
+    mask.setAttribute('fill', `rgba(0,0,0,${config.theme.markupGridMask})`);
 
-    return circle;
+    return {
+      [OBJECTS]: circle,
+      [GRID_MASK]: mask,
+    };
   }
 }

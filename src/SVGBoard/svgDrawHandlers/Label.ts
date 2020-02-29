@@ -1,4 +1,4 @@
-import { SVGBoardConfig, NS } from '../types';
+import { SVGBoardConfig, NS, OBJECTS, BoardObjectSVGElements, GRID_MASK } from '../types';
 import SVGMarkupDrawHandler, { SVGMarkupDrawHandlerParams } from './SVGMarkupDrawHandler';
 import { BoardLabelObject } from '../../BoardBase';
 
@@ -19,18 +19,30 @@ export default class Label extends SVGMarkupDrawHandler {
     text.setAttribute('dominant-baseline', 'middle');
     text.setAttribute('font-size', '0.5');
 
-    return text;
+    const mask = document.createElementNS(NS, 'text');
+    mask.setAttribute('text-anchor', 'middle');
+    mask.setAttribute('dominant-baseline', 'middle');
+    mask.setAttribute('font-size', '0.5');
+    mask.setAttribute('stroke-width', '0.3');
+    mask.setAttribute('stroke', `rgba(0,0,0,${config.theme.markupGridMask})`);
+
+    return {
+      [OBJECTS]: text,
+      [GRID_MASK]: mask,
+    };
   }
 
-  updateElement(elem: SVGElement, boardObject: BoardLabelObject, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLabelObject, config: SVGBoardConfig) {
     super.updateElement(elem, boardObject, config);
-    elem.setAttribute('stroke', '');
-    elem.setAttribute('fill', '');
 
-    elem.setAttribute('font', this.params.font || config.theme.font);
-    elem.setAttribute('stroke-width', this.params.font || config.theme.font);
+    elem[OBJECTS].setAttribute('stroke', '');
+    elem[OBJECTS].setAttribute('fill', '');
 
-    elem.textContent = boardObject.text;
+    elem[OBJECTS].setAttribute('font', this.params.font || config.theme.font);
+    elem[OBJECTS].setAttribute('stroke-width', this.params.font || config.theme.font);
+
+    elem[OBJECTS].textContent = boardObject.text;
+    elem[GRID_MASK].textContent = boardObject.text;
 
     // TODO
   }

@@ -1,20 +1,19 @@
 
-import { SVGDrawHandler, SVGBoardConfig } from '../types';
+import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements, OBJECTS } from '../types';
 import { FieldObject } from '../../BoardBase';
 
 export default abstract class SVGFieldDrawHandler implements SVGDrawHandler {
-  init(config: SVGBoardConfig): SVGElement {
-    return null;
-  }
+  // tslint:disable-next-line:max-line-length
+  abstract createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGElement | BoardObjectSVGElements;
 
-  abstract createElement(config: SVGBoardConfig): SVGElement;
-
-  updateElement(elem: SVGElement, boardObject: FieldObject<SVGDrawHandler>, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: FieldObject<SVGDrawHandler>, config: SVGBoardConfig) {
     const transform = `translate(${boardObject.x}, ${boardObject.y})`;
     const scale = `scale(${boardObject.scaleX}, ${boardObject.scaleY})`;
     const rotate = `rotate(${boardObject.rotate})`;
 
-    elem.setAttribute('transform', `${transform} ${scale} ${rotate}`);
-    elem.setAttribute('opacity', boardObject.opacity as any);
+    Object.keys(elem).forEach((ctx) => {
+      elem[ctx].setAttribute('transform', `${transform} ${scale} ${rotate}`);
+      elem[ctx].setAttribute('opacity', boardObject.opacity as any);
+    });
   }
 }

@@ -1,4 +1,4 @@
-import { SVGBoardConfig, NS } from '../types';
+import { NS } from '../types';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
 
 export default class Dim extends SVGFieldDrawHandler {
@@ -9,7 +9,7 @@ export default class Dim extends SVGFieldDrawHandler {
     this.params = params;
   }
 
-  createElement(config: SVGBoardConfig) {
+  createElement() {
     const rect = document.createElementNS(NS, 'rect');
     rect.setAttribute('x', '-0.5');
     rect.setAttribute('y', '-0.5');

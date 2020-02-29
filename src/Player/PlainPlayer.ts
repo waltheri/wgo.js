@@ -2,7 +2,6 @@ import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import CanvasBoard from '../CanvasBoard';
 import { FieldObject, BoardLabelObject } from '../BoardBase';
 import PlayerBase from './PlayerBase';
-import { DrawHandler, Circle, Label } from '../CanvasBoard/drawHandlers';
 import MarkupHandler from './boardPropertyHandlers/MarkupHandler';
 import MarkupLineHandler from './boardPropertyHandlers/MarkupLineHandler';
 import { Color, Point } from '../types';
@@ -12,24 +11,27 @@ import MoveHandlerWithMark from './boardPropertyHandlers/MoveHandlerWithMark';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { defaultBoardBaseTheme } from '../BoardBase/defaultConfig';
 import { BoardBaseTheme } from '../BoardBase/types';
+import { SVGDrawHandler } from '../SVGBoard/types';
+import { Circle, Label } from '../SVGBoard/svgDrawHandlers';
+import { SVGBoard } from '../SVGBoard';
 
 export interface PlainPlayerConfig {
   boardTheme: BoardBaseTheme;
   highlightCurrentMove: boolean;
-  currentMoveBlackMark: DrawHandler;
-  currentMoveWhiteMark: DrawHandler;
+  currentMoveBlackMark: SVGDrawHandler;
+  currentMoveWhiteMark: SVGDrawHandler;
   enableMouseWheel: boolean;
   enableKeys: boolean;
   showVariations: boolean;
   showCurrentVariations: boolean;
-  variationDrawHandler: DrawHandler;
+  variationDrawHandler: SVGDrawHandler;
 }
 
 export const defaultPlainPlayerConfig: PlainPlayerConfig = {
   boardTheme: defaultBoardBaseTheme,
   highlightCurrentMove: true,
-  currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)' }),
-  currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)' }),
+  currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)', fillColor:'rgba(0,0,0,0)' }),
+  currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)', fillColor:'rgba(0,0,0,0)' }),
   enableMouseWheel: true,
   enableKeys: true,
   showVariations: true,
@@ -61,7 +63,7 @@ export default class PlainPlayer extends PlayerBase {
 
   element: HTMLElement;
   config: PlainPlayerConfig;
-  board: CanvasBoard;
+  board: SVGBoard;
   boardMouseX: number;
   boardMouseY: number;
 
@@ -85,11 +87,11 @@ export default class PlainPlayer extends PlayerBase {
     this.stoneBoardsObjects = [];
     this.variationBoardObjects = [];
 
-    this.board = new CanvasBoard(this.element, {
-      theme: this.config.boardTheme,
+    this.board = new SVGBoard(this.element, {
+      // theme: this.config.boardTheme,
     });
 
-    this.board.on('click', (event, point) => {
+    /*this.board.on('click', (event, point) => {
       this.handleBoardClick(point);
     });
 
@@ -116,7 +118,7 @@ export default class PlainPlayer extends PlayerBase {
         this.handleBoardMouseOut();
         return;
       }
-    });
+    });*/
 
     this.on('applyNodeChanges', () => {
       this.updateStones();

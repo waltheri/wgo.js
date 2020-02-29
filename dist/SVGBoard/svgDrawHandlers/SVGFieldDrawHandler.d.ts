@@ -1,7 +1,6 @@
-import { SVGDrawHandler, SVGBoardConfig } from '../types';
+import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements } from '../types';
 import { FieldObject } from '../../BoardBase';
 export default abstract class SVGFieldDrawHandler implements SVGDrawHandler {
-    init(config: SVGBoardConfig): SVGElement;
-    abstract createElement(config: SVGBoardConfig): SVGElement;
-    updateElement(elem: SVGElement, boardObject: FieldObject<SVGDrawHandler>, config: SVGBoardConfig): void;
+    abstract createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGElement | BoardObjectSVGElements;
+    updateElement(elem: BoardObjectSVGElements, boardObject: FieldObject<SVGDrawHandler>, config: SVGBoardConfig): void;
 }

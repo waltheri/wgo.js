@@ -5,6 +5,8 @@ import * as drawHandlers from './svgDrawHandlers';
 const defaultSVGTheme: SVGBoardTheme = {
   ...defaultBoardBaseTheme,
   backgroundImage: 'images/wood1.jpg',
+  markupGridMask: 0.8,
+
   coordinates: {
     ...defaultBoardBaseTheme.coordinates,
     fontSize: 0.5,

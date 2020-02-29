@@ -1,7 +1,7 @@
 import { SVGBoardConfig } from '../types';
 import SVGStoneDrawHandler from './SVGStoneDrawHandler';
 export default class GlassStoneWhite extends SVGStoneDrawHandler {
-    filterId: string;
-    init(config: SVGBoardConfig): SVGElement;
-    createElement(config: SVGBoardConfig): SVGGElement;
+    filterElement1: SVGElement;
+    filterElement2: SVGElement;
+    createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGGElement;
 }

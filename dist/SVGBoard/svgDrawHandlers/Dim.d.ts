@@ -1,4 +1,3 @@
-import { SVGBoardConfig } from '../types';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
 export default class Dim extends SVGFieldDrawHandler {
     params: {
@@ -7,5 +6,5 @@ export default class Dim extends SVGFieldDrawHandler {
     constructor(params: {
         color: string;
     });
-    createElement(config: SVGBoardConfig): SVGRectElement;
+    createElement(): SVGRectElement;
 }
