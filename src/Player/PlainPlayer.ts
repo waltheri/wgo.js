@@ -91,7 +91,7 @@ export default class PlainPlayer extends PlayerBase {
       // theme: this.config.boardTheme,
     });
 
-    /*this.board.on('click', (event, point) => {
+    this.board.on('click', (event, point) => {
       this.handleBoardClick(point);
     });
 
@@ -118,7 +118,7 @@ export default class PlainPlayer extends PlayerBase {
         this.handleBoardMouseOut();
         return;
       }
-    });*/
+    });
 
     this.on('applyNodeChanges', () => {
       this.updateStones();

@@ -12,7 +12,7 @@
 <script>
 
 var board = new WGo.SVGBoard(document.getElementById('board'), {
-  width: 800,
+  //width: 800,
   coordinates: true,
 });
 
@@ -52,6 +52,42 @@ board.addObject(new WGo.BoardLineObject('LN', {x: 10, y: 5}, {x: 13, y: 12}));
 board.addObject(new WGo.BoardLineObject('AR', {x: 7, y: 1}, {x: 11, y: 3}));
 
 board.addObjectAt(16, 2, new WGo.BoardLabelObject('123'));
+
+let lastX;
+let lastY;
+let obj = new WGo.FieldObject('W');
+
+obj.opacity = 0.5;
+
+board.on('mousemove', (evt, pos) => {
+  if (pos && (pos.x !== lastX || pos.y !== lastY)) {
+    obj.x = pos.x;
+    obj.y = pos.y;
+    if (!board.hasObject(obj)) {
+      board.addObject(obj);
+    } else {
+      board.updateObject(obj);
+    }
+    lastX = pos.x;
+    lastY = pos.y;
+  } else if (!pos && obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('mouseout', (evt, pos) => {
+  if (obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('click', (evt, pos) => {
+  board.addObjectAt(pos.x, pos.y, new WGo.FieldObject('W'));
+});
 
 </script>
 </body>

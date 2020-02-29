@@ -6,6 +6,7 @@ import { SVGDrawHandler, SVGBoardConfig, NS, OBJECTS, BoardObjectSVGElements, GR
 import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
 import defaultSVGTheme from './defaultSVGTheme';
 import generateId from './generateId';
+import { Point } from '../types';
 
 const svgBoardDefaultConfig: SVGBoardConfig = {
   ...defaultBoardBaseConfig,
@@ -14,9 +15,15 @@ const svgBoardDefaultConfig: SVGBoardConfig = {
 
 export default class SVGBoard extends BoardBase<SVGDrawHandler> {
   config: SVGBoardConfig;
+  boardElement: HTMLElement;
+  touchArea: HTMLElement;
   svgElement: SVGElement;
   defsElement: SVGElement;
   objectsElementMap: Map<BoardObject<SVGDrawHandler>, BoardObjectSVGElements>;
+  top: number;
+  left: number;
+  bottom: number;
+  right: number;
 
   /** Drawing contexts - elements to put additional board objects. Similar to layers. */
   contexts: {
@@ -26,10 +33,24 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
   constructor (elem: HTMLElement, config: PartialRecursive<SVGBoardConfig> = {}) {
     super(elem, makeConfig(svgBoardDefaultConfig, config));
 
+    this.boardElement = document.createElement('div');
+    this.boardElement.style.display = 'inline-block';
+    this.boardElement.style.position = 'relative';
+    this.boardElement.style.verticalAlign = 'middle';
+    this.element.appendChild(this.boardElement);
+
+    this.touchArea = document.createElement('div');
+    this.touchArea.style.position = 'absolute';
+    this.touchArea.style.top = '0';
+    this.touchArea.style.left = '0';
+    this.touchArea.style.bottom = '0';
+    this.touchArea.style.right = '0';
+    this.touchArea.style.zIndex = '1';
+    this.boardElement.appendChild(this.touchArea);
+
     this.svgElement = document.createElementNS(NS, 'svg');
-    this.svgElement.style.cursor = 'default';
     this.svgElement.style.display = 'block';
-    this.element.appendChild(this.svgElement);
+    this.boardElement.appendChild(this.svgElement);
 
     this.defsElement = document.createElementNS(NS, 'defs');
     this.svgElement.appendChild(this.defsElement);
@@ -41,15 +62,19 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
 
   resize() {
     if (this.config.width && this.config.height) {
+      this.boardElement.style.width = '';
       this.svgElement.style.width = `${this.config.width}px`;
       this.svgElement.style.height = `${this.config.height}px`;
     } else if (this.config.width) {
+      this.boardElement.style.width = '';
       this.svgElement.style.width = `${this.config.width}px`;
       this.svgElement.style.height = 'auto';
     } else if (this.config.height) {
+      this.boardElement.style.width = '';
       this.svgElement.style.width = 'auto';
       this.svgElement.style.height = `${this.config.height}px`;
     } else {
+      this.boardElement.style.width = '100%';
       this.svgElement.style.width = '100%';
       this.svgElement.style.height = 'auto';
     }
@@ -189,11 +214,12 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     const { marginSize } = theme;
     const { fontSize } = theme.coordinates;
 
-    const top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
-    const left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
-    const bottom = size - 0.5 - top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
-    const right = size - 0.5 - left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
-    this.svgElement.setAttribute('viewBox', `${left} ${top} ${right} ${bottom}`);
+    this.top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
+    this.left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
+    // tslint:disable-next-line:max-line-length
+    this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
+    this.right = size - 0.5 - this.left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
+    this.svgElement.setAttribute('viewBox', `${this.left} ${this.top} ${this.right} ${this.bottom}`);
   }
 
   setSize(size: number = 19) {
@@ -207,5 +233,37 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     super.setCoordinates(coordinates);
     this.contexts.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
     this.setViewport();
+  }
+
+  on(type: string, callback: (event: UIEvent, point: Point) => void) {
+    super.on(type, callback);
+    this.registerBoardListener(type);
+  }
+
+  registerBoardListener(type: string) {
+    this.touchArea.addEventListener(type, (evt) => {
+      if ((evt as any).layerX != null) {
+        const pos = this.getRelativeCoordinates((evt as any).layerX, (evt as any).layerY);
+        this.emit(type, evt, pos);
+      } else {
+        this.emit(type, evt);
+      }
+    });
+  }
+
+  getRelativeCoordinates(absoluteX: number, absoluteY: number) {
+    // new hopefully better translation of coordinates
+
+    const fieldWidth = this.touchArea.offsetWidth / (this.right);
+    const fieldHeight = this.touchArea.offsetHeight / (this.bottom);
+
+    const x = Math.round((absoluteX / fieldWidth + this.left));
+    const y = Math.round((absoluteY / fieldHeight + this.top));
+
+    if (x < 0 || x >= this.config.size || y < 0 || y >= this.config.size) {
+      return null;
+    }
+
+    return { x, y };
   }
 }

@@ -2140,12 +2140,10 @@
             var text = document.createElementNS(NS, 'text');
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('dominant-baseline', 'middle');
-            text.setAttribute('font-size', '0.5');
             var mask = document.createElementNS(NS, 'text');
             mask.setAttribute('text-anchor', 'middle');
             mask.setAttribute('dominant-baseline', 'middle');
-            mask.setAttribute('font-size', '0.5');
-            mask.setAttribute('stroke-width', '0.3');
+            mask.setAttribute('stroke-width', '0.2');
             mask.setAttribute('stroke', "rgba(0,0,0," + config.theme.markupGridMask + ")");
             return _a = {},
                 _a[OBJECTS] = text,
@@ -2154,10 +2152,19 @@
         };
         Label.prototype.updateElement = function (elem, boardObject, config) {
             _super.prototype.updateElement.call(this, elem, boardObject, config);
+            var fontSize = 0.5;
+            if (boardObject.text.length === 1) {
+                fontSize = 0.7;
+            }
+            else if (boardObject.text.length === 2) {
+                fontSize = 0.6;
+            }
             elem[OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
-            elem[OBJECTS].setAttribute('font', this.params.font || config.theme.font);
+            elem[OBJECTS].setAttribute('font-family', this.params.font || config.theme.font);
             elem[OBJECTS].setAttribute('stroke-width', '0');
+            elem[OBJECTS].setAttribute('font-size', fontSize);
             elem[OBJECTS].textContent = boardObject.text;
+            elem[GRID_MASK].setAttribute('font-size', fontSize);
             elem[GRID_MASK].textContent = boardObject.text;
             // TODO
         };
@@ -2263,10 +2270,22 @@
             var _this = _super.call(this, elem, makeConfig(svgBoardDefaultConfig, config)) || this;
             /** Drawing contexts - elements to put additional board objects. Similar to layers. */
             _this.contexts = {};
+            _this.boardElement = document.createElement('div');
+            _this.boardElement.style.display = 'inline-block';
+            _this.boardElement.style.position = 'relative';
+            _this.boardElement.style.verticalAlign = 'middle';
+            _this.element.appendChild(_this.boardElement);
+            _this.touchArea = document.createElement('div');
+            _this.touchArea.style.position = 'absolute';
+            _this.touchArea.style.top = '0';
+            _this.touchArea.style.left = '0';
+            _this.touchArea.style.bottom = '0';
+            _this.touchArea.style.right = '0';
+            _this.touchArea.style.zIndex = '1';
+            _this.boardElement.appendChild(_this.touchArea);
             _this.svgElement = document.createElementNS(NS, 'svg');
-            _this.svgElement.style.cursor = 'default';
             _this.svgElement.style.display = 'block';
-            _this.element.appendChild(_this.svgElement);
+            _this.boardElement.appendChild(_this.svgElement);
             _this.defsElement = document.createElementNS(NS, 'defs');
             _this.svgElement.appendChild(_this.defsElement);
             _this.setViewport();
@@ -2276,18 +2295,22 @@
         }
         SVGBoard.prototype.resize = function () {
             if (this.config.width && this.config.height) {
+                this.boardElement.style.width = '';
                 this.svgElement.style.width = this.config.width + "px";
                 this.svgElement.style.height = this.config.height + "px";
             }
             else if (this.config.width) {
+                this.boardElement.style.width = '';
                 this.svgElement.style.width = this.config.width + "px";
                 this.svgElement.style.height = 'auto';
             }
             else if (this.config.height) {
+                this.boardElement.style.width = '';
                 this.svgElement.style.width = 'auto';
                 this.svgElement.style.height = this.config.height + "px";
             }
             else {
+                this.boardElement.style.width = '100%';
                 this.svgElement.style.width = '100%';
                 this.svgElement.style.height = 'auto';
             }
@@ -2404,11 +2427,12 @@
             var _a = this.config, coordinates = _a.coordinates, theme = _a.theme, size = _a.size;
             var marginSize = theme.marginSize;
             var fontSize = theme.coordinates.fontSize;
-            var top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
-            var left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
-            var bottom = size - 0.5 - top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
-            var right = size - 0.5 - left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
-            this.svgElement.setAttribute('viewBox', left + " " + top + " " + right + " " + bottom);
+            this.top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
+            this.left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
+            // tslint:disable-next-line:max-line-length
+            this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
+            this.right = size - 0.5 - this.left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
+            this.svgElement.setAttribute('viewBox', this.left + " " + this.top + " " + this.right + " " + this.bottom);
         };
         SVGBoard.prototype.setSize = function (size) {
             if (size === void 0) { size = 19; }
@@ -2421,6 +2445,33 @@
             _super.prototype.setCoordinates.call(this, coordinates);
             this.contexts.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
             this.setViewport();
+        };
+        SVGBoard.prototype.on = function (type, callback) {
+            _super.prototype.on.call(this, type, callback);
+            this.registerBoardListener(type);
+        };
+        SVGBoard.prototype.registerBoardListener = function (type) {
+            var _this = this;
+            this.touchArea.addEventListener(type, function (evt) {
+                if (evt.layerX != null) {
+                    var pos = _this.getRelativeCoordinates(evt.layerX, evt.layerY);
+                    _this.emit(type, evt, pos);
+                }
+                else {
+                    _this.emit(type, evt);
+                }
+            });
+        };
+        SVGBoard.prototype.getRelativeCoordinates = function (absoluteX, absoluteY) {
+            // new hopefully better translation of coordinates
+            var fieldWidth = this.touchArea.offsetWidth / (this.right);
+            var fieldHeight = this.touchArea.offsetHeight / (this.bottom);
+            var x = Math.round((absoluteX / fieldWidth + this.left));
+            var y = Math.round((absoluteY / fieldHeight + this.top));
+            if (x < 0 || x >= this.config.size || y < 0 || y >= this.config.size) {
+                return null;
+            }
+            return { x: x, y: y };
         };
         return SVGBoard;
     }(BoardBase));
@@ -4356,34 +4407,32 @@
             this.board = new SVGBoard(this.element, {
             // theme: this.config.boardTheme,
             });
-            /*this.board.on('click', (event, point) => {
-              this.handleBoardClick(point);
+            this.board.on('click', function (event, point) {
+                _this.handleBoardClick(point);
             });
-        
-            this.board.on('mousemove', (event, point) => {
-              if (!point) {
-                if (this.boardMouseX != null) {
-                  this.boardMouseX = null;
-                  this.boardMouseY = null;
-                  this.handleBoardMouseOut();
+            this.board.on('mousemove', function (event, point) {
+                if (!point) {
+                    if (_this.boardMouseX != null) {
+                        _this.boardMouseX = null;
+                        _this.boardMouseY = null;
+                        _this.handleBoardMouseOut();
+                    }
+                    return;
                 }
-                return;
-              }
-              if (point.x !== this.boardMouseX || point.y !== this.boardMouseY) {
-                this.boardMouseX = point.x;
-                this.boardMouseY = point.y;
-                this.handleBoardMouseMove(point);
-              }
+                if (point.x !== _this.boardMouseX || point.y !== _this.boardMouseY) {
+                    _this.boardMouseX = point.x;
+                    _this.boardMouseY = point.y;
+                    _this.handleBoardMouseMove(point);
+                }
             });
-        
-            this.board.on('mouseout', (event, point) => {
-              if (!point && this.boardMouseX != null) {
-                this.boardMouseX = null;
-                this.boardMouseY = null;
-                this.handleBoardMouseOut();
-                return;
-              }
-            });*/
+            this.board.on('mouseout', function (event, point) {
+                if (!point && _this.boardMouseX != null) {
+                    _this.boardMouseX = null;
+                    _this.boardMouseY = null;
+                    _this.handleBoardMouseOut();
+                    return;
+                }
+            });
             this.on('applyNodeChanges', function () {
                 _this.updateStones();
                 _this.addVariationMarkup();
