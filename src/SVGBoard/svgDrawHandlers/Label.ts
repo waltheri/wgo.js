@@ -35,11 +35,9 @@ export default class Label extends SVGMarkupDrawHandler {
   updateElement(elem: BoardObjectSVGElements, boardObject: BoardLabelObject, config: SVGBoardConfig) {
     super.updateElement(elem, boardObject, config);
 
-    elem[OBJECTS].setAttribute('stroke', '');
-    elem[OBJECTS].setAttribute('fill', '');
-
+    elem[OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
     elem[OBJECTS].setAttribute('font', this.params.font || config.theme.font);
-    elem[OBJECTS].setAttribute('stroke-width', this.params.font || config.theme.font);
+    elem[OBJECTS].setAttribute('stroke-width', '0');
 
     elem[OBJECTS].textContent = boardObject.text;
     elem[GRID_MASK].textContent = boardObject.text;

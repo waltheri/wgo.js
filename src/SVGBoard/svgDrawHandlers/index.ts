@@ -10,3 +10,4 @@ export { default as Line } from './Line';
 export { default as Arrow } from './Arrow';
 export { default as Label } from './Label';
 export { default as SimpleStone } from './SimpleStone';
+export { default as RealisticStone } from './RealisticStone';

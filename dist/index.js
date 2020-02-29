@@ -2154,17 +2154,15 @@
         };
         Label.prototype.updateElement = function (elem, boardObject, config) {
             _super.prototype.updateElement.call(this, elem, boardObject, config);
-            elem[OBJECTS].setAttribute('stroke', '');
-            elem[OBJECTS].setAttribute('fill', '');
+            elem[OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
             elem[OBJECTS].setAttribute('font', this.params.font || config.theme.font);
-            elem[OBJECTS].setAttribute('stroke-width', this.params.font || config.theme.font);
+            elem[OBJECTS].setAttribute('stroke-width', '0');
             elem[OBJECTS].textContent = boardObject.text;
             elem[GRID_MASK].textContent = boardObject.text;
             // TODO
         };
         return Label;
     }(SVGMarkupDrawHandler));
-    //# sourceMappingURL=Label.js.map
 
     var SimpleStone$1 = /** @class */ (function (_super) {
         __extends(SimpleStone, _super);
@@ -2186,11 +2184,46 @@
     }(SVGFieldDrawHandler));
     //# sourceMappingURL=SimpleStone.js.map
 
+    var RealisticStone$1 = /** @class */ (function (_super) {
+        __extends(RealisticStone, _super);
+        function RealisticStone(paths, fallback) {
+            var _this = _super.call(this) || this;
+            _this.fallback = fallback;
+            _this.randSeed = Math.ceil(Math.random() * 9999999);
+            _this.paths = paths;
+            return _this;
+        }
+        RealisticStone.prototype.createElement = function (config, addDef) {
+            _super.prototype.createElement.call(this, config, addDef);
+            var group = document.createElementNS(NS, 'g');
+            var fallbackElement = this.fallback.createElement(config, addDef);
+            if (!(fallbackElement instanceof SVGElement)) {
+                fallbackElement = fallbackElement[OBJECTS];
+            }
+            group.appendChild(fallbackElement);
+            var image = document.createElementNS(NS, 'image');
+            var id = Math.floor(Math.random() * this.paths.length);
+            image.setAttribute('href', this.paths[id]);
+            image.setAttribute('width', config.theme.stoneSize * 2);
+            image.setAttribute('height', config.theme.stoneSize * 2);
+            image.setAttribute('x', -config.theme.stoneSize);
+            image.setAttribute('y', -config.theme.stoneSize);
+            image.setAttribute('filter', "url(#" + this.shadowFilterElement.id + ")");
+            image.setAttribute('opacity', '0');
+            image.addEventListener('load', function () {
+                image.setAttribute('opacity', '1');
+                group.removeChild(fallbackElement);
+            });
+            group.appendChild(image);
+            return group;
+        };
+        return RealisticStone;
+    }(SVGStoneDrawHandler));
+    //# sourceMappingURL=RealisticStone.js.map
+
     //# sourceMappingURL=index.js.map
 
     var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { backgroundImage: 'images/wood1.jpg', markupGridMask: 0.8, coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
-            B: new GlassStoneBlack$1(),
-            W: new GlassStoneWhite$1(),
             CR: new Circle$1(),
             SQ: new Square$1(),
             LB: new Label$1(),
@@ -2200,7 +2233,27 @@
             LN: new Line$1(),
             AR: new Arrow$1(),
             DD: new Dim$1({ color: 'rgba(0, 0, 0, 0.5)' }),
+            B: new RealisticStone$1([
+                'images/stones/black00_128.png',
+                'images/stones/black01_128.png',
+                'images/stones/black02_128.png',
+                'images/stones/black03_128.png',
+            ], new GlassStoneBlack$1()),
+            W: new RealisticStone$1([
+                'images/stones/white00_128.png',
+                'images/stones/white01_128.png',
+                'images/stones/white02_128.png',
+                'images/stones/white03_128.png',
+                'images/stones/white04_128.png',
+                'images/stones/white05_128.png',
+                'images/stones/white06_128.png',
+                'images/stones/white07_128.png',
+                'images/stones/white08_128.png',
+                'images/stones/white09_128.png',
+                'images/stones/white10_128.png',
+            ], new GlassStoneWhite$1()),
         } });
+    //# sourceMappingURL=defaultSVGTheme.js.map
 
     var svgBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: defaultSVGTheme });
     var SVGBoard = /** @class */ (function (_super) {
