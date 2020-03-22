@@ -13,6 +13,8 @@ export interface SimplePlayerConfig {
   showVariations: boolean;
   showCurrentVariations: boolean;
   variationDrawHandler: SVGDrawHandler;
+  formatNicks: boolean;
+  formatMoves: boolean;
 }
 
 const defaultSimplePlayerConfig: SimplePlayerConfig = {
@@ -25,6 +27,8 @@ const defaultSimplePlayerConfig: SimplePlayerConfig = {
   showVariations: true,
   showCurrentVariations: false,
   variationDrawHandler: new Label({ color: '#33f' }),
+  formatNicks: true,
+  formatMoves: true,
 };
 
 export default defaultSimplePlayerConfig;

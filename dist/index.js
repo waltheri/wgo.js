@@ -4153,6 +4153,8 @@
         showVariations: true,
         showCurrentVariations: false,
         variationDrawHandler: new Label$1({ color: '#33f' }),
+        formatNicks: true,
+        formatMoves: true,
     };
     //# sourceMappingURL=defaultSimplePlayerConfig.js.map
 
@@ -4238,6 +4240,7 @@
         SVGBoardComponent.prototype.create = function () {
             var _this = this;
             this.boardElement = document.createElement('div');
+            this.boardElement.className = 'wgo-player__board';
             this.stoneBoardsObjects = [];
             this.variationBoardObjects = [];
             this.board = new SVGBoard(this.boardElement, {
@@ -4547,10 +4550,141 @@
     }
     //# sourceMappingURL=SVGBoardComponent.js.map
 
-    var colorsMap$1 = {
-        B: exports.Color.BLACK,
-        W: exports.Color.WHITE,
-    };
+    var Container = /** @class */ (function (_super) {
+        __extends(Container, _super);
+        function Container(player, config, children) {
+            var _this = _super.call(this, player) || this;
+            _this.children = children;
+            _this.config = config;
+            return _this;
+        }
+        Container.prototype.create = function () {
+            var _this = this;
+            this.element = document.createElement('div');
+            this.element.className = "wgo-player__container wgo-player__container--" + this.config.direction;
+            this.children.forEach(function (child) {
+                _this.element.appendChild(child.create());
+            });
+            return this.element;
+        };
+        Container.prototype.destroy = function () {
+            var _this = this;
+            this.children.forEach(function (child) {
+                child.destroy();
+                _this.element.removeChild(_this.element.firstChild);
+            });
+        };
+        return Container;
+    }(Component));
+    //# sourceMappingURL=Container.js.map
+
+    var PlayerTag = /** @class */ (function (_super) {
+        __extends(PlayerTag, _super);
+        function PlayerTag(player, color) {
+            var _this = _super.call(this, player) || this;
+            _this.color = color;
+            _this.colorChar = color === exports.Color.B ? 'B' : 'W';
+            _this.colorName = color === exports.Color.B ? 'black' : 'white';
+            _this.setName = _this.setName.bind(_this);
+            _this.setRank = _this.setRank.bind(_this);
+            _this.setTeam = _this.setTeam.bind(_this);
+            _this.setCaps = _this.setCaps.bind(_this);
+            return _this;
+        }
+        PlayerTag.prototype.create = function () {
+            // create HTML
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__player-tag';
+            var playerElement = document.createElement('div');
+            playerElement.className = 'wgo-player__player-tag__name';
+            this.element.appendChild(playerElement);
+            this.playerNameElement = document.createElement('span');
+            playerElement.appendChild(this.playerNameElement);
+            this.playerRankElement = document.createElement('small');
+            this.playerRankElement.className = 'wgo-player__player-tag__name__rank';
+            playerElement.appendChild(this.playerRankElement);
+            this.playerCapsElement = document.createElement('div');
+            this.playerCapsElement.className = "wgo-player__player-tag__color wgo-player__player-tag__color--" + this.colorName;
+            this.playerCapsElement.textContent = '0';
+            this.element.appendChild(this.playerCapsElement);
+            // todo team
+            this.playerTeamElement = document.createElement('div');
+            // attach Kifu listeners
+            this.player.on("beforeInit.P" + this.colorChar, this.setName); // property PB or PW
+            this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
+            this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
+            this.player.on('applyNodeChanges', this.setCaps);
+            return this.element;
+        };
+        PlayerTag.prototype.destroy = function () {
+            this.player.off("beforeInit.P" + this.colorChar, this.setName);
+            this.player.off("beforeInit." + this.colorChar + "R", this.setRank);
+            this.player.off("beforeInit." + this.colorChar + "T", this.setTeam);
+            this.player.off('applyNodeChanges', this.setCaps);
+        };
+        PlayerTag.prototype.setName = function (event) {
+            this.playerNameElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setRank = function (event) {
+            this.playerRankElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setTeam = function (event) {
+            this.playerTeamElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setCaps = function () {
+            this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
+        };
+        return PlayerTag;
+    }(Component));
+    //# sourceMappingURL=PlayerTag.js.map
+
+    var CommentBox = /** @class */ (function (_super) {
+        __extends(CommentBox, _super);
+        function CommentBox(player) {
+            var _this = _super.call(this, player) || this;
+            _this.setComments = _this.setComments.bind(_this);
+            _this.clearComments = _this.clearComments.bind(_this);
+            return _this;
+        }
+        CommentBox.prototype.create = function () {
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__box--content';
+            var title = document.createElement('div');
+            title.innerHTML = 'Comments';
+            title.className = 'wgo-player__box__title';
+            this.element.appendChild(title);
+            this.commentsElement = document.createElement('div');
+            this.commentsElement.className = 'wgo-player__box__content';
+            this.element.appendChild(this.commentsElement);
+            this.player.on('applyNodeChanges.C', this.setComments);
+            this.player.on('clearNodeChanges.C', this.clearComments);
+            return this.element;
+        };
+        CommentBox.prototype.destroy = function () {
+        };
+        CommentBox.prototype.setComments = function (event) {
+            this.commentsElement.innerHTML = this.formatComment(event.value);
+        };
+        CommentBox.prototype.clearComments = function () {
+            this.commentsElement.textContent = '';
+        };
+        CommentBox.prototype.formatComment = function (text) {
+            // remove HTML tags from text
+            var formattedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            // divide text into paragraphs
+            formattedText = "<p>" + formattedText.replace(/\n/g, '</p><p>') + "</p>";
+            if (this.player.config.formatNicks) {
+                formattedText = formattedText.replace(/(<p>)([^:]{3,}:)\s/g, '<p><span class="wgo-player__nick">$2</span> ');
+            }
+            if (this.player.config.formatMoves) {
+                // tslint:disable-next-line:max-line-length
+                formattedText = formattedText.replace(/\b[a-zA-Z]1?\d\b/g, '<a href="javascript:void(0)" class="wgo-player__move-link">$&</a>');
+            }
+            return formattedText;
+        };
+        return CommentBox;
+    }(Component));
+
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);
         function SimplePlayer(element, config) {
@@ -4564,11 +4698,12 @@
         }
         SimplePlayer.prototype.init = function () {
             var _this = this;
-            if (this.element.tabIndex < 0) {
-                this.element.tabIndex = 1;
-            }
+            this.mainElement = document.createElement('div');
+            this.mainElement.className = 'wgo-player';
+            this.mainElement.tabIndex = 1;
+            this.element.appendChild(this.mainElement);
             document.addEventListener('mousewheel', this._mouseWheelEvent = function (e) {
-                if (document.activeElement === _this.element && _this.config.enableMouseWheel) {
+                if (document.activeElement === _this.mainElement && _this.config.enableMouseWheel) {
                     if (e.deltaY > 0) {
                         _this.next();
                     }
@@ -4579,7 +4714,7 @@
                 }
             });
             document.addEventListener('keydown', this._keyEvent = function (e) {
-                if (document.activeElement === _this.element && _this.config.enableKeys) {
+                if (document.activeElement === _this.mainElement && _this.config.enableKeys) {
                     if (e.key === 'ArrowRight') {
                         _this.next();
                     }
@@ -4589,10 +4724,16 @@
                     return false;
                 }
             });
-            // temp
-            var boardComponent = new SVGBoardComponent(this);
-            var boardElement = boardComponent.create();
-            this.element.appendChild(boardElement);
+            // temp (maybe)
+            this.layout = new Container(this, { direction: 'row' }, [
+                new SVGBoardComponent(this),
+                new Container(this, { direction: 'column' }, [
+                    new PlayerTag(this, exports.Color.B),
+                    new PlayerTag(this, exports.Color.W),
+                    new CommentBox(this),
+                ]),
+            ]);
+            this.mainElement.appendChild(this.layout.create());
         };
         SimplePlayer.prototype.destroy = function () {
             document.removeEventListener('mousewheel', this._mouseWheelEvent);
@@ -4628,6 +4769,7 @@
         };
         return SimplePlayer;
     }(PlayerBase));
+    //# sourceMappingURL=SimplePlayer.js.map
 
     //# sourceMappingURL=index.js.map
 

@@ -39,6 +39,7 @@ export default class SVGBoardComponent extends Component {
 
   create() {
     this.boardElement = document.createElement('div');
+    this.boardElement.className = 'wgo-player__board';
 
     this.stoneBoardsObjects = [];
     this.variationBoardObjects = [];

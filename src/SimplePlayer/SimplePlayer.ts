@@ -1,18 +1,19 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import { Color, Point } from '../types';
+import { Point, Color } from '../types';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { PlayerBase } from '../PlayerBase';
 import defaultSimplePlayerConfig, { SimplePlayerConfig } from './defaultSimplePlayerConfig';
 import SVGBoardComponent from './components/SVGBoardComponent';
-
-const colorsMap: { [key: string]: Color } = {
-  B: Color.BLACK,
-  W: Color.WHITE,
-};
+import Component from './components/Component';
+import Container from './components/Container';
+import PlayerTag from './components/PlayerTag';
+import CommentBox from './components/CommentsBox';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
+  mainElement: HTMLElement;
   config: SimplePlayerConfig;
+  layout: Component;
 
   private _mouseWheelEvent: EventListenerOrEventListenerObject;
   private _keyEvent: EventListenerOrEventListenerObject;
@@ -28,12 +29,13 @@ export default class SimplePlayer extends PlayerBase {
   }
 
   init() {
-    if (this.element.tabIndex < 0) {
-      this.element.tabIndex = 1;
-    }
+    this.mainElement = document.createElement('div');
+    this.mainElement.className = 'wgo-player';
+    this.mainElement.tabIndex = 1;
+    this.element.appendChild(this.mainElement);
 
     document.addEventListener('mousewheel', this._mouseWheelEvent = (e: any) => {
-      if (document.activeElement === this.element && this.config.enableMouseWheel) {
+      if (document.activeElement === this.mainElement && this.config.enableMouseWheel) {
         if (e.deltaY > 0) {
           this.next();
         } else if (e.deltaY < 0) {
@@ -45,7 +47,7 @@ export default class SimplePlayer extends PlayerBase {
     });
 
     document.addEventListener('keydown', this._keyEvent = (e: any) => {
-      if (document.activeElement === this.element && this.config.enableKeys) {
+      if (document.activeElement === this.mainElement && this.config.enableKeys) {
         if (e.key === 'ArrowRight') {
           this.next();
         } else if (e.key === 'ArrowLeft') {
@@ -56,10 +58,16 @@ export default class SimplePlayer extends PlayerBase {
       }
     });
 
-    // temp
-    const boardComponent = new SVGBoardComponent(this);
-    const boardElement = boardComponent.create();
-    this.element.appendChild(boardElement);
+    // temp (maybe)
+    this.layout = new Container(this, { direction: 'row' }, [
+      new SVGBoardComponent(this),
+      new Container(this, { direction: 'column' }, [
+        new PlayerTag(this, Color.B),
+        new PlayerTag(this, Color.W),
+        new CommentBox(this),
+      ]),
+    ]);
+    this.mainElement.appendChild(this.layout.create());
   }
 
   destroy() {

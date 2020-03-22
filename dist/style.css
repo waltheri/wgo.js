@@ -1,0 +1,259 @@
+.wgo-player {
+  font-family: calibri;
+  font-size: 15px;
+}
+
+.wgo-player__container {
+  display: flex;
+  max-height: 100%;
+}
+
+.wgo-player__container--row {
+  flex-direction: row;
+}
+
+.wgo-player__container--column {
+  flex-direction: column;
+}
+
+.wgo-player__container--row > .wgo-player__board {
+  width: 66.6666666%;
+}
+
+.wgo-player__container--row > .wgo-player__container--column {
+  width: 33.3333333%;
+}
+
+.wgo-player__box {
+  background: rgba(121, 85, 72, 0.05);
+  margin-left: 1px;
+  padding: 10px 15px;
+  overflow: hidden;
+}
+
+.wgo-player__box + .wgo-player__box {
+  margin-top: 1px;
+}
+
+.wgo-player__box--content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.wgo-player__box__title {
+  font-size: 1.5em;
+  margin-bottom: 5px;
+}
+
+.wgo-player__box__content {
+  flex: 1;
+  align-self: stretch;
+  background-color: rgba(255, 255, 255, 0.5);
+  padding: 5px 7px;
+  overflow: auto;
+}
+
+.wgo-player__box__content p {
+  margin: 0 0 5px;
+}
+
+.wgo-player__player-tag {
+  display: flex;
+  align-items: center;
+}
+
+.wgo-player__player-tag__name {
+  font-size: 1.5em;
+}
+
+.wgo-player__player-tag__name__rank {
+  font-size: 0.66em;
+}
+
+.wgo-player__player-tag__name__rank::before {
+  content: ' (';
+}
+
+.wgo-player__player-tag__name__rank::after {
+  content: ')';
+}
+
+.wgo-player__player-tag__color {
+  margin-left: auto;
+  min-width: 30px;
+  max-width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  border-radius: 50%;
+  border: 1px solid black;
+}
+
+.wgo-player__player-tag__color--black {
+  background: rgba(64,64,64,1);
+  color: white;
+}
+
+.wgo-player__player-tag__color--white {
+  background: rgba(255,255,255,1);
+}
+
+.wgo-player__nick {
+  font-weight: bold;
+}
+
+.wgo-player__move-link {
+  background: rgba(0, 0, 0,0.3);
+  color: rgba(255,255,255,1);
+  padding: 0 3px;
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+.wgo-player__move-link:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* TEMP */
+.column {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.player {
+  display: flex;
+  padding: 0 20px;
+  height: 50px;
+  align-items: center;
+  background: rgba(121, 85, 72, 0.05);
+  margin: 0 0px 1px 1px;
+}
+
+.player .color {
+  width: 40px;
+  height: 40px;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: 100%;
+}
+
+.color.black {
+  background-image: url(images/stones/black02_128.png);
+  color: white;
+}
+.color.white {
+  background-image: url(images/stones/white02_128.png);
+}
+
+.player img {
+  width: 100%;
+}
+
+.player .name {
+  font-size: 1.5em;
+}
+
+.btn-group {
+  font-size: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.btn-group > * {
+  flex: 1;
+}
+
+.btn-group > .btn:first-child:not(:last-child) {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.btn-group > .btn:first-child {
+  margin-left: 0;
+}
+
+.btn-group > .btn:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+.btn-group > .btn:last-child:not(:first-child) {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}
+
+.btn-group .btn+.btn,
+.btn-group .btn+.btn-group,
+.btn-group .btn-group+.btn,
+.btn-group .btn-group+.btn-group {
+  margin-left: -1px;
+}
+
+.btn {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.428571429;
+  border-radius: 4px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  outline: 0;
+}
+
+.btn-default {
+  color: #333333;
+  background-color: #ffffff;
+  border-color: #cccccc;
+}
+
+.move-number {
+  width: 25px;
+}
+
+.btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active {
+    color: #333333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.btn:active, .btn.active {
+    outline: 0;
+    background-image: none;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+
+.box {
+  display: flex;
+  padding: 10px 20px;
+  background: rgba(121, 85, 72, 0.05);
+  margin: 0 0px 1px 1px;
+  flex: 1;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.5em;
+  margin-bottom: 0.25em;
+}
+
+.content {
+  background: rgba(255, 255, 255, 0.5);
+  flex: 1;
+}
