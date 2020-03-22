@@ -2,44 +2,28 @@ import KifuNode, { Path } from '../kifu/KifuNode';
 import EventEmitter from '../utils/EventEmitter';
 import { Game, goRules, GoRules, JAPANESE_RULES } from '../Game';
 import { PropIdent } from '../SGFParser/sgfTypes';
-import { Point, Color } from '../types';
 import PropertyHandler from './PropertyHandler';
-import BoardSizeHandler from './basePropertyHandlers/BoardSizeHandler';
-import RulesHandler from './basePropertyHandlers/RulesHandler';
-import HandicapHandler from './basePropertyHandlers/HandicapHandler';
-import SetupHandler from './basePropertyHandlers/SetupHandler';
-import SetTurnHandler from './basePropertyHandlers/SetTurnHandler';
-import MoveHandler from './basePropertyHandlers/MoveHandler';
-
-export interface PlayerInitParams {
-  size: number;
-  rules: GoRules;
-  [key: string]: any;
-}
+import { PlayerInitParams } from './types';
+import * as basePropertyListeners from './basePropertyListeners';
 
 export default class PlayerBase extends EventEmitter {
-  static propertyHandlers = {
-    SZ: new BoardSizeHandler(),
-    RU: new RulesHandler(),
-    HA: new HandicapHandler(),
-    AW: new SetupHandler(Color.WHITE),
-    AB: new SetupHandler(Color.BLACK),
-    AE: new SetupHandler(Color.EMPTY),
-    PL: new SetTurnHandler(),
-    B: new MoveHandler(Color.BLACK),
-    W: new MoveHandler(Color.WHITE),
-  };
-
   rootNode: KifuNode;
   currentNode: KifuNode;
   game: Game;
   params: PlayerInitParams;
 
-  // data bounded to SGF properties
-  propertiesData: Map<KifuNode, { [propIdent: string]: any }>;
-
   constructor() {
     super();
+
+    this.on('beforeInit.SZ', basePropertyListeners.beforeInitSZ);
+    this.on('beforeInit.RU', basePropertyListeners.beforeInitRU);
+    this.on('applyGameChanges.HA', basePropertyListeners.applyGameChangesHA);
+    this.on('applyGameChanges.B', basePropertyListeners.applyGameChangesMove);
+    this.on('applyGameChanges.W', basePropertyListeners.applyGameChangesMove);
+    this.on('applyGameChanges.PL', basePropertyListeners.applyGameChangesPL);
+    this.on('applyGameChanges.AB', basePropertyListeners.applyGameChangesSetup);
+    this.on('applyGameChanges.AW', basePropertyListeners.applyGameChangesSetup);
+    this.on('applyGameChanges.AE', basePropertyListeners.applyGameChangesSetup);
   }
 
   /**
@@ -48,9 +32,6 @@ export default class PlayerBase extends EventEmitter {
   loadKifu(rootNode: KifuNode) {
     this.rootNode = rootNode;
     this.currentNode = rootNode;
-
-    // init properties data map
-    this.propertiesData = new Map();
 
     this.executeRoot();
   }
@@ -125,48 +106,23 @@ export default class PlayerBase extends EventEmitter {
    * Emits node life cycle method (for every property)
    */
   protected emitNodeLifeCycleEvent(name: keyof PropertyHandler<any, any>) {
-    this.emit(name);
+    this.emit(name, {
+      name,
+      target: this,
+    });
 
     this.currentNode.forEachProperty((propIdent, value) => {
-      const propertyHandler = this.getPropertyHandler(propIdent);
-      if (propertyHandler && propertyHandler[name]) {
-        this.setPropertyData(
-          propIdent,
-          propertyHandler[name](value, this, this.getPropertyData(propIdent)),
-        );
-      }
+      this.emit(`${name}.${propIdent}`, {
+        name,
+        target: this,
+        propIdent,
+        value,
+      });
     });
   }
 
   protected getPropertyHandler(propIdent: string) {
     return (this.constructor as any).propertyHandlers[propIdent] as PropertyHandler<any, any>;
-  }
-
-  /**
-   * Gets property data of current node - data are temporary not related to SGF.
-   */
-  getPropertyData(propIdent: string) {
-    const currentNodeData = this.propertiesData.get(this.currentNode);
-    return currentNodeData ? currentNodeData[propIdent] : undefined;
-  }
-
-  /**
-   * Sets property data of current node - data are temporary not related to SGF.
-   */
-  setPropertyData(propIdent: string, data: any) {
-    let currentNodeData = this.propertiesData.get(this.currentNode);
-
-    if (data == null) {
-      if (currentNodeData) {
-        delete currentNodeData[propIdent];
-      }
-    } else {
-      if (!currentNodeData) {
-        currentNodeData = {};
-        this.propertiesData.set(this.currentNode, currentNodeData);
-      }
-      currentNodeData[propIdent] = data;
-    }
   }
 
   /**

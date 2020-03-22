@@ -1,7 +1,7 @@
 import { strictEqual, deepEqual, throws, equal, ok as assert } from 'assert';
 import { Color } from '../src/types';
 import KifuNode from '../src/kifu/KifuNode';
-import PlayerBase from '../src/Player/PlayerBase';
+import { PlayerBase } from '../src/PlayerBase';
 import { SGFSyntaxError } from '../src/SGFParser';
 import propertyValueTypes from '../src/kifu/propertyValueTypes';
 import { JAPANESE_RULES, CHINESE_RULES } from '../src/Game/rules';

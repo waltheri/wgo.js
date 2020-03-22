@@ -48,7 +48,5 @@ export default class Label extends SVGMarkupDrawHandler {
 
     elem[GRID_MASK].setAttribute('font-size', fontSize as any);
     elem[GRID_MASK].textContent = boardObject.text;
-
-    // TODO
   }
 }

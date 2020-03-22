@@ -46,6 +46,10 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     this.touchArea.style.bottom = '0';
     this.touchArea.style.right = '0';
     this.touchArea.style.zIndex = '1';
+    this.touchArea.style.borderTop = '#F0E7A7 solid 1px';
+    this.touchArea.style.borderRight = '#D1A974 solid 1px';
+    this.touchArea.style.borderLeft = '#CCB467 solid 1px';
+    this.touchArea.style.borderBottom = '#665926 solid 1px';
     this.boardElement.appendChild(this.touchArea);
 
     this.svgElement = document.createElementNS(NS, 'svg');

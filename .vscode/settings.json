@@ -6,5 +6,8 @@
         "dont",
         "jsgf",
         "kifu"
-    ]
+    ],
+    "search.exclude": {
+        "dist/**/*": true
+    }
 }

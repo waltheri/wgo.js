@@ -1,0 +1,36 @@
+import Component from './Component';
+import { SVGBoard } from '../../SVGBoard';
+import { FieldObject } from '../../BoardBase';
+import { Point } from '../../types';
+import SimplePlayer from '../SimplePlayer';
+import PropertiesData from '../../PlayerBase/PropertiesData';
+export default class SVGBoardComponent extends Component {
+    board: SVGBoard;
+    boardElement: HTMLElement;
+    stoneBoardsObjects: FieldObject<any>[];
+    variationBoardObjects: FieldObject<any>[];
+    boardMouseX: number;
+    boardMouseY: number;
+    propertiesData: PropertiesData;
+    constructor(player: SimplePlayer);
+    create(): HTMLElement;
+    destroy(): void;
+    protected updateStones(): void;
+    protected addVariationMarkup(): void;
+    protected removeVariationMarkup(): void;
+    protected handleBoardClick(point: Point): void;
+    protected handleBoardMouseMove(point: Point): void;
+    protected handleBoardMouseOut(): void;
+    private handleVariationCursor;
+    private removeVariationCursor;
+    private applyNodeChanges;
+    private clearNodeChanges;
+    private applyMarkupProperty;
+    private applyLabelMarkupProperty;
+    private applyLineMarkupProperty;
+    private clearMarkupProperty;
+    private applyViewportProperty;
+    private clearViewportProperty;
+    private applyMoveProperty;
+    private clearMoveProperty;
+}

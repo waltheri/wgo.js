@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+
+<style>
+.wgo-player {
+  width: 900px;
+  display: flex;
+  font-family: calibri;
+}
+
+.board {
+  flex-grow: 2;
+  width: 66.6%;
+  max-width: 600px;
+}
+
+.column {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.player {
+  display: flex;
+  padding: 0 20px;
+  height: 50px;
+  align-items: center;
+  background: rgba(121, 85, 72, 0.05);
+  margin: 0 0px 1px 1px;
+}
+
+.player .color {
+  width: 40px;
+  height: 40px;
+  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: 100%;
+}
+
+.color.black {
+  background-image: url(images/stones/black02_128.png);
+  color: white;
+}
+.color.white {
+  background-image: url(images/stones/white02_128.png);
+}
+
+.player img {
+  width: 100%;
+}
+
+.player .name {
+  font-size: 1.5em;
+}
+
+.btn-group {
+  font-size: 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.btn-group > * {
+  flex: 1;
+}
+
+.btn-group > .btn:first-child:not(:last-child) {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.btn-group > .btn:first-child {
+  margin-left: 0;
+}
+
+.btn-group > .btn:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+.btn-group > .btn:last-child:not(:first-child) {
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}
+
+.btn-group .btn+.btn,
+.btn-group .btn+.btn-group,
+.btn-group .btn-group+.btn,
+.btn-group .btn-group+.btn-group {
+  margin-left: -1px;
+}
+
+.btn {
+  display: inline-block;
+  margin-bottom: 0;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.428571429;
+  border-radius: 4px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  outline: 0;
+}
+
+.btn-default {
+  color: #333333;
+  background-color: #ffffff;
+  border-color: #cccccc;
+}
+
+.move-number {
+  width: 25px;
+}
+
+.btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default.active {
+    color: #333333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}
+
+.btn:active, .btn.active {
+    outline: 0;
+    background-image: none;
+    -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+
+.box {
+  display: flex;
+  padding: 10px 20px;
+  background: rgba(121, 85, 72, 0.05);
+  margin: 0 0px 1px 1px;
+  flex: 1;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 1.5em;
+  margin-bottom: 0.25em;
+}
+
+.content {
+  background: rgba(255, 255, 255, 0.5);
+  flex: 1;
+}
+
+</style>
+
+<div class="wgo-player">
+  <div id="board" class="board"></div>
+  <div class="column">
+    <div class="player">
+      <div class="color black">
+        3
+      </div>
+      <div class="name">Lee Chang Ho <small>(9p)</small></div>
+    </div>
+    <div class="player">
+      <div class="color white">
+        0
+      </div>
+      <div class="name">Lee Sedol <small>(9p)</small></div>
+    </div>
+    <div class="control btn-group">
+      <button type="button" class="btn btn-default">a</button>
+      <button type="button" class="btn btn-default">b</button>
+      <button type="button" class="btn btn-default">c</button>
+      <input type="text" class="btn btn-default move-number" value="0">
+      <button type="button" class="btn btn-default">d</button>
+      <button type="button" class="btn btn-default">e</button>
+      <button type="button" class="btn btn-default">f</button>
+    </div>
+    <div class="box">
+      <div class="title">
+        Comments:
+      </div>
+      <div class="content"></div>
+    </div>
+  </div>
+</div>
+
+<script src="index.js"></script>
+<script>
+
+const sgf = '(;GM[1]FF[4]CA[UTF-8]AP[GoPanda2.5.2-3]ST[1]SZ[19]HA[0]KM[6.5]PW[cez]WR[3d?]PB[krabicka]BR[5d?]RE[B+R]DT[2019-12-03]PC[IGS-PandaNet];B[qd];W[dp]SQ[aa][qd];B[pq];W[dd](;B[nd];W[qo]MA[jj][dp];B[np]TR[np];W[fc]DD[cc][cd][ce][cf][dc][dd][de][df];B[cq];W[cp]AR[gg:eh][nd:kl];B[dq];W[fq]LB[np:123][jj:😃];B[eq];W[ep]LN[ef:bg];B[fr]MA[as][gj];W[pk]MA[as][gj]VW[as:gj];B[dk]VW[aa:ge];W[di];B[fp];W[gq];B[gr];W[hq]VW[];B[fo];W[ho];B[dn];W[bq];B[br];W[bo];B[cn];W[ar];B[bs];W[bn];B[cl];W[ds];B[dr];W[eo];B[en];W[fn];B[gn];W[fm];B[go];W[el];B[gm];W[gl];B[hl];W[hk];B[gk];W[fk];B[fl];W[er];B[es];W[gl];B[gj];W[il];B[fl];W[cr];B[cs];W[gl];B[hm];W[fl];B[im];W[fj];B[bm];W[ik];B[jm];W[cj];B[bk];W[dl];B[bj];W[bi];B[al];W[gi];B[cd];W[cc];B[ce];W[bc];B[ch];W[ci];B[ef];W[gf];B[ed];W[dc];B[bh];W[ai];B[de];W[fd];B[dh];W[bf];B[ei];W[ej];B[fh];W[fi];B[eh];W[cm];B[dm];W[aj];B[ah];W[ck];B[co];W[lq];B[ge];W[fe];B[ff];W[lc];B[nb];W[dj];B[an];W[gg];B[gh];W[hh];B[ad];W[rd];B[re];W[qc];B[pd];W[oc];B[pc];W[rq];B[mq];W[mr];B[lp];W[nq];B[mp];W[nr];B[kq];W[lr];B[po];W[jq];B[kr];W[kp];B[jr];W[op];B[oo];W[pp];B[qp];W[oq];B[qn];W[ro];B[ko];W[jp];B[ir];W[bp];B[ao];W[kn];B[ln];W[km];B[lm];W[ap];B[am];W[jo];B[lo];W[em];B[hi];W[hj];B[kl];W[ak];B[as];W[bl];B[bk];W[bj];B[aq];W[hr];B[hs];W[ar];B[rn];W[rp];B[aq];W[is];B[js];W[ar];B[qq];W[pn];B[rr];W[bl];B[sq];W[jn];B[jl];W[ll];B[on];W[pr];B[qr];W[os];B[hg];W[hf];B[ih];W[cm];B[pi];W[lk];B[kj];W[rf];B[rc];W[jf];B[pm];W[qe];B[sd];W[ph];B[oi];W[qi];B[qj];W[rj];B[ri];W[qh];B[rk];W[pj];B[qk];W[mi];B[oh];W[kk];B[jk];W[jj];B[ji];W[ij];B[hp];W[og];B[nh];W[iq];B[io];W[gs];B[fs];W[ls];B[gs];W[oe];B[ki];W[ks];B[is];W[no];B[mm];W[in];B[hn];W[rh];B[mh];W[ob];B[od];W[nc];B[mc];W[mb];B[md];W[si];B[lb];W[na];B[kb];W[ld];B[pb];W[jc];B[jb];W[ic];B[ib];W[hb];B[pa])(;B[mf];W[ee]))';
+
+window.player = new WGo.SimplePlayer(document.getElementById('board'), {
+  //boardTheme: WGo.themes.realisticTheme,
+});
+
+window.player.loadKifu(WGo.KifuNode.fromSGF(sgf));
+
+</script>
+</body>
+</html>
