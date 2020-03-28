@@ -4,7 +4,7 @@ import * as drawHandlers from './svgDrawHandlers';
 
 const defaultSVGTheme: SVGBoardTheme = {
   ...defaultBoardBaseTheme,
-  backgroundImage: 'images/wood1.jpg',
+  // backgroundImage: 'images/wood1.jpg',
   markupGridMask: 0.8,
 
   coordinates: {
@@ -28,7 +28,9 @@ const defaultSVGTheme: SVGBoardTheme = {
     LN: new drawHandlers.Line(),
     AR: new drawHandlers.Arrow(),
     DD: new drawHandlers.Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
-    B: new drawHandlers.RealisticStone([
+    B: new drawHandlers.SimpleStone('#222'),
+    W: new drawHandlers.SimpleStone('#eee'),
+    /*B: new drawHandlers.RealisticStone([
       'images/stones/black00_128.png',
       'images/stones/black01_128.png',
       'images/stones/black02_128.png',
@@ -46,7 +48,7 @@ const defaultSVGTheme: SVGBoardTheme = {
       'images/stones/white08_128.png',
       'images/stones/white09_128.png',
       'images/stones/white10_128.png',
-    ], new drawHandlers.GlassStoneWhite()),
+    ], new drawHandlers.GlassStoneWhite()),*/
   },
 };
 

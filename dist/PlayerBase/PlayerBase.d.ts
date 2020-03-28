@@ -68,9 +68,13 @@ export default class PlayerBase extends EventEmitter {
      */
     last(): void;
     /**
-     * Go to specified path.
+     * Go to a node specified by path or move number.
      */
     goTo(pathOrMoveNumber: Path | number): void;
+    /**
+     * Get path to current node
+     */
+    getCurrentPath(): Path;
     /**
        * Go to previous fork (a node with more than one child).
        */

@@ -203,7 +203,7 @@ export default class PlayerBase extends EventEmitter {
   }
 
   /**
-   * Go to specified path.
+   * Go to a node specified by path or move number.
    */
   goTo(pathOrMoveNumber: Path | number) {
     // TODO: check if there is a better way to do this
@@ -217,6 +217,26 @@ export default class PlayerBase extends EventEmitter {
         this.next();
       }
     }
+  }
+
+  /**
+   * Get path to current node
+   */
+  getCurrentPath() {
+    const path: Path = { depth: 0, forks: [] };
+    let node = this.currentNode;
+
+    while (node.parent) {
+      path.depth++;
+
+      if (node.parent.children.length > 1) {
+        path.forks.push(node.parent.children.indexOf(node));
+      }
+
+      node = node.parent;
+    }
+
+    return path;
   }
 
   /**

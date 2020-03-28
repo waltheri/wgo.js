@@ -8,6 +8,8 @@ import Component from './components/Component';
 import Container from './components/Container';
 import PlayerTag from './components/PlayerTag';
 import CommentBox from './components/CommentsBox';
+import GameInfoBox from './components/GameInfoBox';
+import ControlPanel from './components/ControlPanel';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
@@ -64,6 +66,8 @@ export default class SimplePlayer extends PlayerBase {
       new Container(this, { direction: 'column' }, [
         new PlayerTag(this, Color.B),
         new PlayerTag(this, Color.W),
+        new ControlPanel(this),
+        new GameInfoBox(this),
         new CommentBox(this),
       ]),
     ]);

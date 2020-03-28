@@ -2230,7 +2230,9 @@
 
     //# sourceMappingURL=index.js.map
 
-    var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { backgroundImage: 'images/wood1.jpg', markupGridMask: 0.8, coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
+    var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { 
+        // backgroundImage: 'images/wood1.jpg',
+        markupGridMask: 0.8, coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
             CR: new Circle$1(),
             SQ: new Square$1(),
             LB: new Label$1(),
@@ -2240,25 +2242,8 @@
             LN: new Line$1(),
             AR: new Arrow$1(),
             DD: new Dim$1({ color: 'rgba(0, 0, 0, 0.5)' }),
-            B: new RealisticStone$1([
-                'images/stones/black00_128.png',
-                'images/stones/black01_128.png',
-                'images/stones/black02_128.png',
-                'images/stones/black03_128.png',
-            ], new GlassStoneBlack$1()),
-            W: new RealisticStone$1([
-                'images/stones/white00_128.png',
-                'images/stones/white01_128.png',
-                'images/stones/white02_128.png',
-                'images/stones/white03_128.png',
-                'images/stones/white04_128.png',
-                'images/stones/white05_128.png',
-                'images/stones/white06_128.png',
-                'images/stones/white07_128.png',
-                'images/stones/white08_128.png',
-                'images/stones/white09_128.png',
-                'images/stones/white10_128.png',
-            ], new GlassStoneWhite$1()),
+            B: new SimpleStone$1('#222'),
+            W: new SimpleStone$1('#eee'),
         } });
     //# sourceMappingURL=defaultSVGTheme.js.map
 
@@ -4110,7 +4095,7 @@
             while (this.next()) { }
         };
         /**
-         * Go to specified path.
+         * Go to a node specified by path or move number.
          */
         PlayerBase.prototype.goTo = function (pathOrMoveNumber) {
             // TODO: check if there is a better way to do this
@@ -4124,6 +4109,21 @@
                     this.next();
                 }
             }
+        };
+        /**
+         * Get path to current node
+         */
+        PlayerBase.prototype.getCurrentPath = function () {
+            var path = { depth: 0, forks: [] };
+            var node = this.currentNode;
+            while (node.parent) {
+                path.depth++;
+                if (node.parent.children.length > 1) {
+                    path.forks.push(node.parent.children.indexOf(node));
+                }
+                node = node.parent;
+            }
+            return path;
         };
         /**
            * Go to previous fork (a node with more than one child).
@@ -4648,7 +4648,7 @@
         }
         CommentBox.prototype.create = function () {
             this.element = document.createElement('div');
-            this.element.className = 'wgo-player__box wgo-player__box--content';
+            this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
             var title = document.createElement('div');
             title.innerHTML = 'Comments';
             title.className = 'wgo-player__box__title';
@@ -4661,6 +4661,8 @@
             return this.element;
         };
         CommentBox.prototype.destroy = function () {
+            this.player.off('applyNodeChanges.C', this.setComments);
+            this.player.off('clearNodeChanges.C', this.clearComments);
         };
         CommentBox.prototype.setComments = function (event) {
             this.commentsElement.innerHTML = this.formatComment(event.value);
@@ -4683,6 +4685,160 @@
             return formattedText;
         };
         return CommentBox;
+    }(Component));
+    //# sourceMappingURL=CommentsBox.js.map
+
+    var gameInfoProperties = {
+        DT: 'Date',
+        KM: 'Komi',
+        HA: 'Handicap',
+        AN: 'Annotations',
+        CP: 'Copyright',
+        GC: 'Game comments',
+        GN: 'Game name',
+        ON: 'Fuseki',
+        OT: 'Overtime',
+        TM: 'Basic time',
+        RE: 'Result',
+        RO: 'Round',
+        RU: 'Rules',
+        US: 'Recorder',
+        PC: 'Place',
+        EV: 'Event',
+        SO: 'Source',
+    };
+    var GameInfoBox = /** @class */ (function (_super) {
+        __extends(GameInfoBox, _super);
+        function GameInfoBox(player) {
+            var _this = _super.call(this, player) || this;
+            _this.printInfo = _this.printInfo.bind(_this);
+            return _this;
+        }
+        GameInfoBox.prototype.create = function () {
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__box--content';
+            var title = document.createElement('div');
+            title.innerHTML = 'Game information';
+            title.className = 'wgo-player__box__title';
+            this.element.appendChild(title);
+            this.infoTable = document.createElement('table');
+            this.infoTable.className = 'wgo-player__box__game-info';
+            this.element.appendChild(this.infoTable);
+            this.player.on('beforeInit', this.printInfo);
+            return this.element;
+        };
+        GameInfoBox.prototype.destroy = function () {
+            this.player.off('beforeInit', this.printInfo);
+        };
+        GameInfoBox.prototype.addInfo = function (propIdent, value) {
+            var row = document.createElement('tr');
+            row.dataset.propIdent = propIdent;
+            this.infoTable.appendChild(row);
+            var label = document.createElement('th');
+            label.textContent = gameInfoProperties[propIdent];
+            row.appendChild(label);
+            var valueElement = document.createElement('td');
+            valueElement.textContent = value;
+            row.appendChild(valueElement);
+        };
+        GameInfoBox.prototype.removeInfo = function (propIdent) {
+            var elem = this.infoTable.querySelector("[data-id='" + propIdent + "']");
+            this.infoTable.removeChild(elem);
+        };
+        GameInfoBox.prototype.printInfo = function () {
+            var _this = this;
+            this.infoTable.innerHTML = '';
+            this.player.rootNode.forEachProperty(function (propIdent, value) {
+                if (gameInfoProperties[propIdent]) {
+                    _this.addInfo(propIdent, value);
+                }
+            });
+        };
+        return GameInfoBox;
+    }(Component));
+    //# sourceMappingURL=GameInfoBox.js.map
+
+    var ControlPanel = /** @class */ (function (_super) {
+        __extends(ControlPanel, _super);
+        function ControlPanel(player) {
+            var _this = _super.call(this, player) || this;
+            _this.update = _this.update.bind(_this);
+            return _this;
+        }
+        ControlPanel.prototype.create = function () {
+            var _this = this;
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__control-panel';
+            var buttonGroup = document.createElement('form');
+            buttonGroup.className = 'wgo-player__button-group';
+            this.element.appendChild(buttonGroup);
+            buttonGroup.addEventListener('submit', function (e) {
+                e.preventDefault();
+                _this.player.goTo(parseInt(_this.moveNumber.value, 10));
+            });
+            this.first = document.createElement('button');
+            this.first.type = 'button';
+            this.first.className = 'wgo-player__button';
+            this.first.innerHTML = '<span class="wgo-player__icon-to-end wgo-player__icon--reverse"></span>';
+            this.first.addEventListener('click', function () { return _this.player.first(); });
+            buttonGroup.appendChild(this.first);
+            this.previous = document.createElement('button');
+            this.previous.type = 'button';
+            this.previous.className = 'wgo-player__button';
+            this.previous.innerHTML = '<span class="wgo-player__icon-play wgo-player__icon--reverse"></span>';
+            this.previous.addEventListener('click', function () { return _this.player.previous(); });
+            buttonGroup.appendChild(this.previous);
+            this.moveNumber = document.createElement('input');
+            this.moveNumber.className = 'wgo-player__button wgo-player__move-number';
+            this.moveNumber.value = '0';
+            this.moveNumber.addEventListener('blur', function (e) {
+                _this.player.goTo(parseInt(_this.moveNumber.value, 10));
+            });
+            buttonGroup.appendChild(this.moveNumber);
+            this.next = document.createElement('button');
+            this.next.type = 'button';
+            this.next.className = 'wgo-player__button';
+            this.next.innerHTML = '<span class="wgo-player__icon-play"></span>';
+            this.next.addEventListener('click', function () { return _this.player.next(); });
+            buttonGroup.appendChild(this.next);
+            this.last = document.createElement('button');
+            this.last.type = 'button';
+            this.last.className = 'wgo-player__button';
+            this.last.innerHTML = '<span class="wgo-player__icon-to-end"></span>';
+            this.last.addEventListener('click', function () { return _this.player.last(); });
+            buttonGroup.appendChild(this.last);
+            var menu = document.createElement('button');
+            menu.type = 'button';
+            menu.className = 'wgo-player__button wgo-player__button--menu';
+            menu.innerHTML = '<span class="wgo-player__icon-menu"></span>';
+            // menu.addEventListener('click', () => this.player.last());
+            this.element.appendChild(menu);
+            this.player.on('applyNodeChanges', this.update);
+            return this.element;
+        };
+        ControlPanel.prototype.destroy = function () {
+            this.player.off('applyNodeChanges', this.update);
+        };
+        ControlPanel.prototype.update = function () {
+            this.moveNumber.value = String(this.player.getCurrentPath().depth);
+            if (!this.player.currentNode.parent) {
+                this.first.disabled = true;
+                this.previous.disabled = true;
+            }
+            else {
+                this.first.disabled = false;
+                this.previous.disabled = false;
+            }
+            if (this.player.currentNode.children.length === 0) {
+                this.next.disabled = true;
+                this.last.disabled = true;
+            }
+            else {
+                this.next.disabled = false;
+                this.last.disabled = false;
+            }
+        };
+        return ControlPanel;
     }(Component));
 
     var SimplePlayer = /** @class */ (function (_super) {
@@ -4730,6 +4886,8 @@
                 new Container(this, { direction: 'column' }, [
                     new PlayerTag(this, exports.Color.B),
                     new PlayerTag(this, exports.Color.W),
+                    new ControlPanel(this),
+                    new GameInfoBox(this),
                     new CommentBox(this),
                 ]),
             ]);
@@ -4773,189 +4931,6 @@
 
     //# sourceMappingURL=index.js.map
 
-    /**
-     * Contains functionality to create, edit and manipulate go game record. It is basically virtual player
-     * with API without board and any UI.
-     */
-    var KifuReader = /** @class */ (function (_super) {
-        __extends(KifuReader, _super);
-        function KifuReader(rootNode) {
-            if (rootNode === void 0) { rootNode = new KifuNode(); }
-            var _this = _super.call(this) || this;
-            _this.rootNode = rootNode;
-            _this.currentNode = rootNode;
-            _this.executeRootNode();
-            _this.executeNode();
-            return _this;
-        }
-        /**
-         * This will execute root node (root properties) once and initialize Game object
-         */
-        KifuReader.prototype.executeRootNode = function () {
-            var size = this.getRootProperty(PropIdent.BOARD_SIZE) || 19;
-            var rules = goRules[this.getRootProperty(PropIdent.RULES)] || JAPANESE_RULES;
-            var handicap = this.getRootProperty(PropIdent.HANDICAP) || 0;
-            this.game = new Game(size, rules);
-            if (handicap > 1) {
-                this.game.turn = exports.Color.WHITE;
-            }
-        };
-        /**
-         * Executes node. It will go through its properties and make changes in game object.
-         */
-        KifuReader.prototype.executeNode = function () {
-            var _this = this;
-            // first process setup
-            var addBlack = this.getProperty(PropIdent.ADD_BLACK) || [];
-            var addWhite = this.getProperty(PropIdent.ADD_WHITE) || [];
-            var clear = this.getProperty(PropIdent.CLEAR_FIELD) || [];
-            addBlack.forEach(function (p) { return _this.game.setStone(p.x, p.y, exports.Color.BLACK); });
-            addWhite.forEach(function (p) { return _this.game.setStone(p.x, p.y, exports.Color.WHITE); });
-            clear.forEach(function (p) { return _this.game.setStone(p.x, p.y, exports.Color.EMPTY); });
-            // then play a move
-            var blackMove = this.getProperty(PropIdent.BLACK_MOVE);
-            var whiteMove = this.getProperty(PropIdent.WHITE_MOVE);
-            if (blackMove !== undefined && whiteMove !== undefined) {
-                throw 'Some error';
-            }
-            if (blackMove !== undefined) {
-                if (blackMove) {
-                    this.game.position.applyMove(blackMove.x, blackMove.y, exports.Color.BLACK, true, true);
-                }
-                else {
-                    // pass
-                    this.game.position.turn = exports.Color.WHITE;
-                }
-            }
-            else if (whiteMove !== undefined) {
-                if (whiteMove) {
-                    this.game.position.applyMove(whiteMove.x, whiteMove.y, exports.Color.WHITE, true, true);
-                }
-                else {
-                    // pass
-                    this.game.position.turn = exports.Color.BLACK;
-                }
-            }
-            // set turn
-            var turn = this.getProperty(PropIdent.SET_TURN);
-            if (turn) {
-                this.game.turn = turn;
-            }
-        };
-        /**
-         * This will revert game changes of current node and re-execute it. Use this, after KifuNode properties are updated.
-         */
-        KifuReader.prototype.resetNode = function () {
-            if (this.currentNode.parent) {
-                // update normal node
-                this.game.popPosition();
-                this.game.pushPosition(this.game.position.clone());
-                this.executeNode();
-            }
-            else {
-                // update root node
-                this.executeRootNode();
-                this.executeNode();
-            }
-        };
-        /**
-         * Gets property of current node.
-         *
-         * @param propIdent
-         */
-        KifuReader.prototype.getProperty = function (propIdent) {
-            return this.currentNode.getProperty(propIdent);
-        };
-        /**
-         * Gets property of root node.
-         *
-         * @param propIdent
-         */
-        KifuReader.prototype.getRootProperty = function (propIdent) {
-            return this.rootNode.getProperty(propIdent);
-        };
-        /**
-         * Returns array of next nodes (children).
-         */
-        KifuReader.prototype.getNextNodes = function () {
-            return this.currentNode.children;
-        };
-        /**
-         * Go to a next node and executes it (updates game object).
-         * @param node
-         */
-        KifuReader.prototype.next = function (node) {
-            if (node === void 0) { node = 0; }
-            if (this.currentNode.children.length) {
-                var i = void 0;
-                if (typeof node === 'number') {
-                    i = node;
-                }
-                else {
-                    i = this.currentNode.children.indexOf(node);
-                }
-                if (this.currentNode.children[i]) {
-                    this.game.pushPosition(this.game.position.clone());
-                    this.currentNode = this.currentNode.children[i];
-                    this.executeNode();
-                    return true;
-                }
-            }
-            return false;
-        };
-        /**
-         * Go to the previous node.
-         */
-        KifuReader.prototype.previous = function () {
-            if (this.currentNode.parent) {
-                this.game.popPosition();
-                this.currentNode = this.currentNode.parent;
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Go to the first position - root node.
-         */
-        KifuReader.prototype.first = function () {
-            this.game.clear();
-            this.currentNode = this.rootNode;
-        };
-        /**
-         * Go to the last position.
-         */
-        KifuReader.prototype.last = function () {
-            while (this.next()) { }
-        };
-        /**
-         * Go to specified path.
-         */
-        KifuReader.prototype.goTo = function (pathOrMoveNumber) {
-            var path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
-            this.first();
-            for (var i = 0, j = 0; i < path.depth; i++) {
-                if (this.currentNode.children.length > 1) {
-                    this.next(path.forks[j++]);
-                }
-                else {
-                    this.next();
-                }
-            }
-        };
-        /**
-           * Go to previous fork (a node with more than one child).
-           */
-        KifuReader.prototype.previousFork = function () {
-            while (this.previous()) {
-                if (this.currentNode.children.length > 1) {
-                    return;
-                }
-            }
-        };
-        return KifuReader;
-    }(EventEmitter));
-    //# sourceMappingURL=KifuReader.js.map
-
     // All public API is exported here
     //# sourceMappingURL=index.js.map
 
@@ -4971,7 +4946,6 @@
     exports.ING_RULES = ING_RULES;
     exports.JAPANESE_RULES = JAPANESE_RULES;
     exports.KifuNode = KifuNode;
-    exports.KifuReader = KifuReader;
     exports.NO_RULES = NO_RULES;
     exports.PlayerBase = PlayerBase;
     exports.Position = Position;

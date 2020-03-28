@@ -15,7 +15,7 @@ export default class CommentBox extends Component {
 
   create() {
     this.element = document.createElement('div');
-    this.element.className = 'wgo-player__box wgo-player__box--content';
+    this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
 
     const title = document.createElement('div');
     title.innerHTML = 'Comments';
@@ -33,7 +33,8 @@ export default class CommentBox extends Component {
   }
 
   destroy() {
-
+    this.player.off('applyNodeChanges.C', this.setComments);
+    this.player.off('clearNodeChanges.C', this.clearComments);
   }
 
   setComments(event: LifeCycleEvent<string>) {
