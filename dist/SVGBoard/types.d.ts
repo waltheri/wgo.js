@@ -3,6 +3,7 @@ import { BoardObject } from '../BoardBase';
 export declare const NS = "http://www.w3.org/2000/svg";
 export declare const OBJECTS = "objects";
 export declare const GRID_MASK = "gridMask";
+export declare const SHADOWS = "shadows";
 export interface BoardObjectSVGElements {
     [key: string]: SVGElement;
 }

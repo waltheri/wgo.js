@@ -1658,6 +1658,7 @@
     var NS = 'http://www.w3.org/2000/svg';
     var OBJECTS = 'objects';
     var GRID_MASK = 'gridMask';
+    var SHADOWS = 'shadows';
     //# sourceMappingURL=types.js.map
 
     function line(fromX, fromY, toX, toY) {
@@ -1752,13 +1753,45 @@
             return _super !== null && _super.apply(this, arguments) || this;
         }
         SVGStoneDrawHandler.prototype.createElement = function (config, addDef) {
-            if (!this.shadowFilterElement) {
-                this.shadowFilterElement = document.createElementNS(NS, 'filter');
-                this.shadowFilterElement.setAttribute('id', generateId('filter'));
-                this.shadowFilterElement.innerHTML = "\n        <feGaussianBlur in=\"SourceAlpha\" stdDeviation=\"0.05\" />\n        <feOffset dx=\"0.03\" dy=\"0.03\" result=\"offsetblur\" />\n        <feComponentTransfer>\n          <feFuncA type=\"linear\" slope=\"0.5\" />\n        </feComponentTransfer>\n        <feMerge>\n          <feMergeNode />\n          <feMergeNode in=\"SourceGraphic\" />\n        </feMerge>\n      ";
-                addDef(this.shadowFilterElement);
-            }
+            /*if (!this.shadowFilterElement) {
+              this.shadowFilterElement = document.createElementNS(NS, 'filter');
+              this.shadowFilterElement.setAttribute('id', generateId('filter'));
+              this.shadowFilterElement.innerHTML = `
+                <feGaussianBlur in="SourceAlpha" stdDeviation="0.05" />
+                <feOffset dx="0.03" dy="0.03" result="offsetblur" />
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.5" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              `;
+        
+              addDef(this.shadowFilterElement);
+            }*/
             return null;
+        };
+        SVGStoneDrawHandler.prototype.createShadow = function (config, addDef) {
+            var stoneRadius = config.theme.stoneSize;
+            if (!this.shadowFilterElement) {
+                var shadowFilterElement = document.createElementNS(NS, 'radialGradient');
+                var blur_1 = config.theme.shadowBlur;
+                var startRadius = Math.max(stoneRadius - stoneRadius * blur_1, 0.00001);
+                var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur_1;
+                shadowFilterElement.setAttribute('id', generateId('shadowFilter'));
+                shadowFilterElement.setAttribute('fr', String(startRadius));
+                shadowFilterElement.setAttribute('r', String(stopRadius));
+                shadowFilterElement.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"" + config.theme.shadowColor + "\" />\n        <stop offset=\"100%\" stop-color=\"" + config.theme.shadowTransparentColor + "\" />\n      ";
+                addDef(shadowFilterElement);
+                this.shadowFilterElement = shadowFilterElement;
+            }
+            var shadow = document.createElementNS(NS, 'circle');
+            shadow.setAttribute('cx', String(config.theme.shadowOffsetX));
+            shadow.setAttribute('cy', String(config.theme.shadowOffsetY));
+            shadow.setAttribute('r', String(stoneRadius));
+            shadow.setAttribute('fill', "url(#" + this.shadowFilterElement.id + ")");
+            return shadow;
         };
         return SVGStoneDrawHandler;
     }(SVGFieldDrawHandler));
@@ -1791,7 +1824,6 @@
             stone.setAttribute('cy', '0');
             stone.setAttribute('fill', '#000');
             stone.setAttribute('r', config.theme.stoneSize);
-            stone.setAttribute('filter', "url(#" + this.shadowFilterElement.id + ")");
             stoneGroup.appendChild(stone);
             var glow1 = document.createElementNS(NS, 'circle');
             glow1.setAttribute('cx', -0.4 * config.theme.stoneSize);
@@ -1842,7 +1874,6 @@
             stone.setAttribute('cy', '0');
             stone.setAttribute('fill', '#ccc');
             stone.setAttribute('r', config.theme.stoneSize);
-            stone.setAttribute('filter', "url(#" + this.shadowFilterElement.id + ")");
             stoneGroup.appendChild(stone);
             var glow1 = document.createElementNS(NS, 'circle');
             glow1.setAttribute('cx', '0');
@@ -2179,7 +2210,6 @@
             return _this;
         }
         SimpleStone.prototype.createElement = function (config) {
-            var lw = config.theme.grid.linesWidth;
             var stone = document.createElementNS(NS, 'circle');
             stone.setAttribute('cx', '0');
             stone.setAttribute('cy', '0');
@@ -2198,41 +2228,121 @@
             _this.fallback = fallback;
             _this.randSeed = Math.ceil(Math.random() * 9999999);
             _this.paths = paths;
+            _this.loadedPaths = {};
             return _this;
         }
         RealisticStone.prototype.createElement = function (config, addDef) {
+            var _this = this;
             _super.prototype.createElement.call(this, config, addDef);
-            var group = document.createElementNS(NS, 'g');
-            var fallbackElement = this.fallback.createElement(config, addDef);
-            if (!(fallbackElement instanceof SVGElement)) {
-                fallbackElement = fallbackElement[OBJECTS];
-            }
-            group.appendChild(fallbackElement);
-            var image = document.createElementNS(NS, 'image');
             var id = Math.floor(Math.random() * this.paths.length);
+            var group = document.createElementNS(NS, 'g');
+            var fallbackElement;
+            if (!this.loadedPaths[id]) {
+                fallbackElement = this.fallback.createElement(config, addDef);
+                if (!(fallbackElement instanceof SVGElement)) {
+                    fallbackElement = fallbackElement[OBJECTS];
+                }
+                group.appendChild(fallbackElement);
+            }
+            var image = document.createElementNS(NS, 'image');
             image.setAttribute('href', this.paths[id]);
             image.setAttribute('width', config.theme.stoneSize * 2);
             image.setAttribute('height', config.theme.stoneSize * 2);
             image.setAttribute('x', -config.theme.stoneSize);
             image.setAttribute('y', -config.theme.stoneSize);
-            image.setAttribute('filter', "url(#" + this.shadowFilterElement.id + ")");
-            image.setAttribute('opacity', '0');
+            if (!this.loadedPaths[id]) {
+                image.setAttribute('opacity', '0');
+            }
             image.addEventListener('load', function () {
-                image.setAttribute('opacity', '1');
-                group.removeChild(fallbackElement);
+                if (fallbackElement) {
+                    image.setAttribute('opacity', '1');
+                    group.removeChild(fallbackElement);
+                    _this.loadedPaths[id] = true;
+                }
             });
             group.appendChild(image);
             return group;
         };
         return RealisticStone;
     }(SVGStoneDrawHandler));
-    //# sourceMappingURL=RealisticStone.js.map
 
     //# sourceMappingURL=index.js.map
 
+    var GlassStoneWhite$2 = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.createElement = function (config, addDef) {
+            var _a;
+            _super.prototype.createElement.call(this, config, addDef);
+            if (!this.filterElement1) {
+                var filter1 = document.createElementNS(NS, 'radialGradient');
+                filter1.setAttribute('id', generateId('filter'));
+                filter1.setAttribute('cx', '45%');
+                filter1.setAttribute('cy', '45%');
+                filter1.setAttribute('fx', '20%');
+                filter1.setAttribute('fy', '20%');
+                filter1.setAttribute('r', '60%');
+                filter1.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"rgba(255,255,255,1)\" />\n        <stop offset=\"80%\" stop-color=\"rgba(215,215,215,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(170,170,170,1)\" />\n      ";
+                addDef(filter1);
+                this.filterElement1 = filter1;
+            }
+            var stoneGroup = document.createElementNS(NS, 'g');
+            var stone = document.createElementNS(NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
+            stone.setAttribute('r', config.theme.stoneSize);
+            stoneGroup.appendChild(stone);
+            return _a = {},
+                _a[OBJECTS] = stoneGroup,
+                _a[SHADOWS] = this.createShadow(config, addDef),
+                _a;
+        };
+        return GlassStoneWhite;
+    }(SVGStoneDrawHandler));
+    //# sourceMappingURL=ModernStoneWhite.js.map
+
+    var GlassStoneWhite$3 = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.createElement = function (config, addDef) {
+            var _a;
+            _super.prototype.createElement.call(this, config, addDef);
+            if (!this.filterElement1) {
+                var filter1 = document.createElementNS(NS, 'radialGradient');
+                filter1.setAttribute('id', generateId('filter'));
+                filter1.setAttribute('cx', '45%');
+                filter1.setAttribute('cy', '45%');
+                filter1.setAttribute('fx', '20%');
+                filter1.setAttribute('fy', '20%');
+                filter1.setAttribute('r', '60%');
+                filter1.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"rgba(48,48,48,1)\" />\n        <stop offset=\"80%\" stop-color=\"rgba(16,16,16,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(0,0,0,1)\" />\n      ";
+                addDef(filter1);
+                this.filterElement1 = filter1;
+            }
+            var stoneGroup = document.createElementNS(NS, 'g');
+            var stone = document.createElementNS(NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
+            stone.setAttribute('r', config.theme.stoneSize);
+            stoneGroup.appendChild(stone);
+            return _a = {},
+                _a[OBJECTS] = stoneGroup,
+                _a[SHADOWS] = this.createShadow(config, addDef),
+                _a;
+        };
+        return GlassStoneWhite;
+    }(SVGStoneDrawHandler));
+    //# sourceMappingURL=ModernStoneBlack.js.map
+
     var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { 
         // backgroundImage: 'images/wood1.jpg',
-        markupGridMask: 0.8, coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
+        markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
             CR: new Circle$1(),
             SQ: new Square$1(),
             LB: new Label$1(),
@@ -2242,8 +2352,10 @@
             LN: new Line$1(),
             AR: new Arrow$1(),
             DD: new Dim$1({ color: 'rgba(0, 0, 0, 0.5)' }),
-            B: new SimpleStone$1('#222'),
-            W: new SimpleStone$1('#eee'),
+            //B: new drawHandlers.GlassStoneBlack(),
+            //W: new drawHandlers.GlassStoneWhite(),
+            W: new GlassStoneWhite$2(),
+            B: new GlassStoneWhite$3(),
         } });
     //# sourceMappingURL=defaultSVGTheme.js.map
 
@@ -2344,12 +2456,22 @@
         };
         SVGBoard.prototype.drawObjects = function () {
             var _this = this;
+            // remove old shadows layer
+            if (this.contexts[SHADOWS]) {
+                this.svgElement.removeChild(this.contexts[SHADOWS]);
+            }
+            // remove old objects layer
             if (this.contexts[OBJECTS]) {
                 this.svgElement.removeChild(this.contexts[OBJECTS]);
             }
-            this.objectsElementMap = new Map();
+            // append new shadows layer
+            this.contexts[SHADOWS] = document.createElementNS(NS, 'g');
+            this.svgElement.appendChild(this.contexts[SHADOWS]);
+            // append new object layer
             this.contexts[OBJECTS] = document.createElementNS(NS, 'g');
             this.svgElement.appendChild(this.contexts[OBJECTS]);
+            // prepare map for objects and add all objects
+            this.objectsElementMap = new Map();
             this.objects.forEach(function (boardObject) { return _this.createObjectElements(boardObject); });
         };
         SVGBoard.prototype.addObject = function (boardObject) {
@@ -4840,6 +4962,7 @@
         };
         return ControlPanel;
     }(Component));
+    //# sourceMappingURL=ControlPanel.js.map
 
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);

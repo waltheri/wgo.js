@@ -34,7 +34,6 @@ export default class GlassStoneBlack extends SVGStoneDrawHandler {
     stone.setAttribute('cy', '0');
     stone.setAttribute('fill', '#000');
     stone.setAttribute('r', config.theme.stoneSize as any);
-    stone.setAttribute('filter', `url(#${this.shadowFilterElement.id})`);
     stoneGroup.appendChild(stone);
 
     const glow1 = document.createElementNS(NS, 'circle');

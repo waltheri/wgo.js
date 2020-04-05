@@ -5,6 +5,9 @@ export default class RealisticStone extends SVGStoneDrawHandler {
     paths: string[];
     fallback: SVGFieldDrawHandler;
     randSeed: number;
+    loadedPaths: {
+        [path: string]: boolean;
+    };
     constructor(paths: string[], fallback: SVGFieldDrawHandler);
     createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGGElement;
 }

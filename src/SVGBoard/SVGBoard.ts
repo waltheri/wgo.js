@@ -2,7 +2,7 @@ import { BoardBase, BoardViewport, BoardObject } from '../BoardBase';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import createGrid from './createGrid';
 import createCoordinates from './createCoordinates';
-import { SVGDrawHandler, SVGBoardConfig, NS, OBJECTS, BoardObjectSVGElements, GRID_MASK } from './types';
+import { SVGDrawHandler, SVGBoardConfig, NS, OBJECTS, BoardObjectSVGElements, GRID_MASK, SHADOWS } from './types';
 import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
 import defaultSVGTheme from './defaultSVGTheme';
 import generateId from './generateId';
@@ -131,15 +131,26 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
   }
 
   drawObjects() {
+    // remove old shadows layer
+    if (this.contexts[SHADOWS]) {
+      this.svgElement.removeChild(this.contexts[SHADOWS]);
+    }
+
+    // remove old objects layer
     if (this.contexts[OBJECTS]) {
       this.svgElement.removeChild(this.contexts[OBJECTS]);
     }
 
-    this.objectsElementMap = new Map();
+    // append new shadows layer
+    this.contexts[SHADOWS] = document.createElementNS(NS, 'g');
+    this.svgElement.appendChild(this.contexts[SHADOWS]);
 
+    // append new object layer
     this.contexts[OBJECTS] = document.createElementNS(NS, 'g');
     this.svgElement.appendChild(this.contexts[OBJECTS]);
 
+    // prepare map for objects and add all objects
+    this.objectsElementMap = new Map();
     this.objects.forEach(boardObject => this.createObjectElements(boardObject));
   }
 

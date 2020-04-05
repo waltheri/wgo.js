@@ -1,11 +1,14 @@
 import { defaultBoardBaseTheme } from '../BoardBase/defaultConfig';
 import { SVGBoardTheme } from './types';
 import * as drawHandlers from './svgDrawHandlers';
+import ModernStoneWhite from './svgDrawHandlers/ModernStoneWhite';
+import ModernStoneBlack from './svgDrawHandlers/ModernStoneBlack';
 
 const defaultSVGTheme: SVGBoardTheme = {
   ...defaultBoardBaseTheme,
   // backgroundImage: 'images/wood1.jpg',
   markupGridMask: 0.8,
+  stoneSize: 0.48,
 
   coordinates: {
     ...defaultBoardBaseTheme.coordinates,
@@ -28,8 +31,10 @@ const defaultSVGTheme: SVGBoardTheme = {
     LN: new drawHandlers.Line(),
     AR: new drawHandlers.Arrow(),
     DD: new drawHandlers.Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
-    B: new drawHandlers.SimpleStone('#222'),
-    W: new drawHandlers.SimpleStone('#eee'),
+    //B: new drawHandlers.GlassStoneBlack(),
+    //W: new drawHandlers.GlassStoneWhite(),
+    W: new ModernStoneWhite(),
+    B: new ModernStoneBlack(),
     /*B: new drawHandlers.RealisticStone([
       'images/stones/black00_128.png',
       'images/stones/black01_128.png',

@@ -10,7 +10,6 @@ export default class SimpleStone extends SVGFieldDrawHandler {
   }
 
   createElement(config: SVGBoardConfig) {
-    const lw = config.theme.grid.linesWidth;
     const stone = document.createElementNS(NS, 'circle');
 
     stone.setAttribute('cx', '0');

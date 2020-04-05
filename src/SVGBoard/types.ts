@@ -4,6 +4,7 @@ import { BoardObject } from '../BoardBase';
 export const NS = 'http://www.w3.org/2000/svg';
 export const OBJECTS = 'objects';
 export const GRID_MASK = 'gridMask';
+export const SHADOWS = 'shadows';
 
 export interface BoardObjectSVGElements {
   [key: string]: SVGElement;
