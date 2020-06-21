@@ -2265,6 +2265,7 @@
         };
         return RealisticStone;
     }(SVGStoneDrawHandler));
+    //# sourceMappingURL=RealisticStone.js.map
 
     //# sourceMappingURL=index.js.map
 
@@ -4156,11 +4157,14 @@
             return this.currentNode.getProperty(propIdent);
         };
         /**
-         * Sets property of current node.
+         * Sets property of current node and execute changes.
          */
-        // setProperty(propIdent: PropIdent) {
-        //   return this.currentNode.setProperty(propIdent);
-        // }
+        PlayerBase.prototype.setProperty = function (propIdent, value) {
+            this.emitNodeLifeCycleEvent('clearNodeChanges');
+            this.emitNodeLifeCycleEvent('clearGameChanges');
+            this.currentNode.setProperty(propIdent, value);
+            this.executeNode();
+        };
         /**
          * Gets property of root node.
          */
@@ -4364,7 +4368,7 @@
             this.boardElement = document.createElement('div');
             this.boardElement.className = 'wgo-player__board';
             this.stoneBoardsObjects = [];
-            this.variationBoardObjects = [];
+            this.temporaryBoardObjects = [];
             this.board = new SVGBoard(this.boardElement, {
             // theme: this.config.boardTheme,
             });
@@ -4494,9 +4498,8 @@
                 moves.forEach(function (move, i) {
                     if (move) {
                         var obj = new BoardLabelObject(String.fromCodePoint(65 + i));
-                        _this.variationBoardObjects.push(obj);
                         obj.type = _this.player.config.variationDrawHandler;
-                        _this.board.addObjectAt(move.x, move.y, obj);
+                        _this.addTemporaryBoardObject(move.x, move.y, obj);
                     }
                 });
                 if (this.boardMouseX != null) {
@@ -4504,11 +4507,10 @@
                 }
             }
         };
-        SVGBoardComponent.prototype.removeVariationMarkup = function () {
-            if (this.variationBoardObjects.length) {
-                this.board.removeObject(this.variationBoardObjects);
-                this.variationBoardObjects = [];
-                this.removeVariationCursor();
+        SVGBoardComponent.prototype.clearTemporaryBoardObjects = function () {
+            if (this.temporaryBoardObjects.length) {
+                this.board.removeObject(this.temporaryBoardObjects);
+                this.temporaryBoardObjects = [];
             }
         };
         SVGBoardComponent.prototype.handleBoardClick = function (point) {
@@ -4555,7 +4557,8 @@
             this.addVariationMarkup();
         };
         SVGBoardComponent.prototype.clearNodeChanges = function () {
-            this.removeVariationMarkup();
+            this.clearTemporaryBoardObjects();
+            this.removeVariationCursor();
         };
         SVGBoardComponent.prototype.applyMarkupProperty = function (event) {
             var _this = this;
@@ -4644,6 +4647,14 @@
                 this.board.removeObject(propertyData);
             }
             this.propertiesData.clear(event.propIdent);
+        };
+        SVGBoardComponent.prototype.addTemporaryBoardObject = function (x, y, obj) {
+            this.temporaryBoardObjects.push(obj);
+            this.board.addObjectAt(x, y, obj);
+        };
+        SVGBoardComponent.prototype.removeTemporaryBoardObject = function (obj) {
+            this.temporaryBoardObjects = this.temporaryBoardObjects.filter(function (o) { return o !== obj; });
+            this.board.removeObject(obj);
         };
         return SVGBoardComponent;
     }(Component));
@@ -4787,7 +4798,20 @@
             this.player.off('clearNodeChanges.C', this.clearComments);
         };
         CommentBox.prototype.setComments = function (event) {
+            var _this = this;
             this.commentsElement.innerHTML = this.formatComment(event.value);
+            if (this.player.config.formatMoves && this.player.boardComponent) {
+                [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), function (link) {
+                    var boardObject = new BoardMarkupObject('MA');
+                    link.addEventListener('mouseenter', function () {
+                        var point = coordinatesToPoint(link.textContent);
+                        _this.player.boardComponent.addTemporaryBoardObject(point.x, point.y, boardObject);
+                    });
+                    link.addEventListener('mouseleave', function () {
+                        _this.player.boardComponent.removeTemporaryBoardObject(boardObject);
+                    });
+                });
+            }
         };
         CommentBox.prototype.clearComments = function () {
             this.commentsElement.textContent = '';
@@ -4808,7 +4832,11 @@
         };
         return CommentBox;
     }(Component));
-    //# sourceMappingURL=CommentsBox.js.map
+    function coordinatesToPoint(coordinates) {
+        var x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
+        var y = parseInt(coordinates.substr(1), 10) - 1;
+        return { x: x, y: y };
+    }
 
     var gameInfoProperties = {
         DT: 'Date',
@@ -5004,8 +5032,10 @@
                 }
             });
             // temp (maybe)
+            var boardComponent = new SVGBoardComponent(this);
+            this.boardComponent = boardComponent;
             this.layout = new Container(this, { direction: 'row' }, [
-                new SVGBoardComponent(this),
+                boardComponent,
                 new Container(this, { direction: 'column' }, [
                     new PlayerTag(this, exports.Color.B),
                     new PlayerTag(this, exports.Color.W),

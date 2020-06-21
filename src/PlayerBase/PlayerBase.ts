@@ -133,11 +133,14 @@ export default class PlayerBase extends EventEmitter {
   }
 
   /**
-   * Sets property of current node.
+   * Sets property of current node and execute changes.
    */
-  // setProperty(propIdent: PropIdent) {
-  //   return this.currentNode.setProperty(propIdent);
-  // }
+  setProperty(propIdent: PropIdent, value?: any) {
+    this.emitNodeLifeCycleEvent('clearNodeChanges');
+    this.emitNodeLifeCycleEvent('clearGameChanges');
+    this.currentNode.setProperty(propIdent, value);
+    this.executeNode();
+  }
 
   /**
    * Gets property of root node.

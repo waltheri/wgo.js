@@ -16,6 +16,7 @@ export default class SimplePlayer extends PlayerBase {
   mainElement: HTMLElement;
   config: SimplePlayerConfig;
   layout: Component;
+  boardComponent: SVGBoardComponent;
 
   private _mouseWheelEvent: EventListenerOrEventListenerObject;
   private _keyEvent: EventListenerOrEventListenerObject;
@@ -61,8 +62,10 @@ export default class SimplePlayer extends PlayerBase {
     });
 
     // temp (maybe)
+    const boardComponent = new SVGBoardComponent(this);
+    this.boardComponent = boardComponent;
     this.layout = new Container(this, { direction: 'row' }, [
-      new SVGBoardComponent(this),
+      boardComponent,
       new Container(this, { direction: 'column' }, [
         new PlayerTag(this, Color.B),
         new PlayerTag(this, Color.W),

@@ -12,13 +12,23 @@ const colorsMap: { [key: string]: Color } = {
 };
 
 export default class SVGBoardComponent extends Component {
+  // Underlying SVG board object
   board: SVGBoard;
+
+  // Main wrapper element for the board
   boardElement: HTMLElement;
+
+  // Current board objects for stones - should match the position object of the game
   stoneBoardsObjects: FieldObject<any>[];
-  variationBoardObjects: FieldObject<any>[];
+
+  // Temporary board object, will be removed after each node update
+  temporaryBoardObjects: FieldObject<any>[];
+
+  // For data associated with Kifu properties, it is used to revert some board changes
+  propertiesData: PropertiesData;
+
   boardMouseX: number;
   boardMouseY: number;
-  propertiesData: PropertiesData;
 
   constructor(player: SimplePlayer) {
     super(player);
@@ -42,7 +52,7 @@ export default class SVGBoardComponent extends Component {
     this.boardElement.className = 'wgo-player__board';
 
     this.stoneBoardsObjects = [];
-    this.variationBoardObjects = [];
+    this.temporaryBoardObjects = [];
 
     this.board = new SVGBoard(this.boardElement, {
       // theme: this.config.boardTheme,
@@ -188,9 +198,8 @@ export default class SVGBoardComponent extends Component {
       moves.forEach((move, i) => {
         if (move) {
           const obj = new BoardLabelObject(String.fromCodePoint(65 + i));
-          this.variationBoardObjects.push(obj);
           obj.type = this.player.config.variationDrawHandler;
-          this.board.addObjectAt(move.x, move.y, obj);
+          this.addTemporaryBoardObject(move.x, move.y, obj);
         }
       });
       if (this.boardMouseX != null) {
@@ -199,11 +208,10 @@ export default class SVGBoardComponent extends Component {
     }
   }
 
-  protected removeVariationMarkup() {
-    if (this.variationBoardObjects.length) {
-      this.board.removeObject(this.variationBoardObjects);
-      this.variationBoardObjects = [];
-      this.removeVariationCursor();
+  protected clearTemporaryBoardObjects() {
+    if (this.temporaryBoardObjects.length) {
+      this.board.removeObject(this.temporaryBoardObjects);
+      this.temporaryBoardObjects = [];
     }
   }
 
@@ -260,7 +268,8 @@ export default class SVGBoardComponent extends Component {
   }
 
   private clearNodeChanges() {
-    this.removeVariationMarkup();
+    this.clearTemporaryBoardObjects();
+    this.removeVariationCursor();
   }
 
   private applyMarkupProperty(event: LifeCycleEvent<Point[]>) {
@@ -366,6 +375,16 @@ export default class SVGBoardComponent extends Component {
       this.board.removeObject(propertyData);
     }
     this.propertiesData.clear(event.propIdent);
+  }
+
+  addTemporaryBoardObject(x: number, y: number, obj: FieldObject<any>) {
+    this.temporaryBoardObjects.push(obj);
+    this.board.addObjectAt(x, y, obj);
+  }
+
+  removeTemporaryBoardObject(obj: FieldObject<any>) {
+    this.temporaryBoardObjects = this.temporaryBoardObjects.filter(o => o !== obj);
+    this.board.removeObject(obj);
   }
 }
 

@@ -8,16 +8,16 @@ export default class SVGBoardComponent extends Component {
     board: SVGBoard;
     boardElement: HTMLElement;
     stoneBoardsObjects: FieldObject<any>[];
-    variationBoardObjects: FieldObject<any>[];
+    temporaryBoardObjects: FieldObject<any>[];
+    propertiesData: PropertiesData;
     boardMouseX: number;
     boardMouseY: number;
-    propertiesData: PropertiesData;
     constructor(player: SimplePlayer);
     create(): HTMLElement;
     destroy(): void;
     protected updateStones(): void;
     protected addVariationMarkup(): void;
-    protected removeVariationMarkup(): void;
+    protected clearTemporaryBoardObjects(): void;
     protected handleBoardClick(point: Point): void;
     protected handleBoardMouseMove(point: Point): void;
     protected handleBoardMouseOut(): void;
@@ -33,4 +33,6 @@ export default class SVGBoardComponent extends Component {
     private clearViewportProperty;
     private applyMoveProperty;
     private clearMoveProperty;
+    addTemporaryBoardObject(x: number, y: number, obj: FieldObject<any>): void;
+    removeTemporaryBoardObject(obj: FieldObject<any>): void;
 }

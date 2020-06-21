@@ -41,8 +41,9 @@ export default class PlayerBase extends EventEmitter {
      */
     getProperty(propIdent: PropIdent): any;
     /**
-     * Sets property of current node.
+     * Sets property of current node and execute changes.
      */
+    setProperty(propIdent: PropIdent, value?: any): void;
     /**
      * Gets property of root node.
      */

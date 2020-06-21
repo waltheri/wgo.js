@@ -1,6 +1,8 @@
 import Component from './Component';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
+import { PropIdent } from '../../SGFParser/sgfTypes';
+import { FieldObject, BoardMarkupObject } from '../../BoardBase';
 
 export default class CommentBox extends Component {
   element: HTMLElement;
@@ -39,6 +41,21 @@ export default class CommentBox extends Component {
 
   setComments(event: LifeCycleEvent<string>) {
     this.commentsElement.innerHTML = this.formatComment(event.value);
+
+    if (this.player.config.formatMoves && this.player.boardComponent) {
+      [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), (link: HTMLElement) => {
+        const boardObject = new BoardMarkupObject('MA');
+
+        link.addEventListener('mouseenter', () => {
+          const point = coordinatesToPoint(link.textContent);
+          this.player.boardComponent.addTemporaryBoardObject(point.x, point.y, boardObject);
+        });
+
+        link.addEventListener('mouseleave', () => {
+          this.player.boardComponent.removeTemporaryBoardObject(boardObject);
+        });
+      });
+    }
   }
 
   clearComments() {
@@ -63,4 +80,10 @@ export default class CommentBox extends Component {
 
     return formattedText;
   }
+}
+
+function coordinatesToPoint(coordinates: string) {
+  const x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
+  const y = parseInt(coordinates.substr(1), 10) - 1;
+  return { x, y };
 }
