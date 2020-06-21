@@ -3666,14 +3666,14 @@
                 var output = ';';
                 for (var propIdent in this.properties) {
                     if (this.properties.hasOwnProperty(propIdent)) {
-                        output += propIdent + this.getSGFProperty(propIdent);
+                        output += propIdent + "[" + this.getSGFProperty(propIdent).join('][') + "]";
                     }
                 }
                 if (this.children.length === 1) {
-                    return output + ";" + this.children[0].innerSGF;
+                    return "" + output + this.children[0].innerSGF;
                 }
                 if (this.children.length > 1) {
-                    return this.children.reduce(function (prev, current) { return prev + "(;" + current.innerSGF + ")"; }, output);
+                    return this.children.reduce(function (prev, current) { return prev + "(" + current.innerSGF + ")"; }, output);
                 }
                 return output;
             },
@@ -3806,7 +3806,7 @@
          * @param   {any}     value - property value or values
          */
         KifuNode.prototype.setProperty = function (propIdent, value) {
-            if (value == null) {
+            if (value === undefined) {
                 delete this.properties[propIdent];
             }
             else {
@@ -3822,9 +3822,9 @@
          * @returns {string[]} Array of SGF property values or null if there is not such property.
          */
         KifuNode.prototype.getSGFProperty = function (propIdent) {
-            if (this.properties[propIdent] != null) {
+            if (this.properties[propIdent] !== undefined) {
                 var propertyValueType_1 = propertyValueTypes[propIdent] || propertyValueTypes._default;
-                if (Array.isArray(this.properties[propIdent])) {
+                if (propertyValueType_1.multiple) {
                     return this.properties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue).replace(/\]/g, '\\]'); });
                 }
                 return [propertyValueType_1.transformer.write(this.properties[propIdent]).replace(/\]/g, '\\]')];
@@ -3840,7 +3840,7 @@
          */
         KifuNode.prototype.setSGFProperty = function (propIdent, propValues) {
             var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
-            if (propValues == null) {
+            if (propValues === undefined) {
                 delete this.properties[propIdent];
                 return this;
             }
@@ -4837,6 +4837,7 @@
         var y = parseInt(coordinates.substr(1), 10) - 1;
         return { x: x, y: y };
     }
+    //# sourceMappingURL=CommentsBox.js.map
 
     var gameInfoProperties = {
         DT: 'Date',
@@ -4957,12 +4958,18 @@
             this.last.innerHTML = '<span class="wgo-player__icon-to-end"></span>';
             this.last.addEventListener('click', function () { return _this.player.last(); });
             buttonGroup.appendChild(this.last);
-            var menu = document.createElement('button');
-            menu.type = 'button';
-            menu.className = 'wgo-player__button wgo-player__button--menu';
-            menu.innerHTML = '<span class="wgo-player__icon-menu"></span>';
-            // menu.addEventListener('click', () => this.player.last());
-            this.element.appendChild(menu);
+            var menuWrapper = document.createElement('div');
+            menuWrapper.className = 'wgo-player__menu-wrapper';
+            this.element.appendChild(menuWrapper);
+            var menuButton = document.createElement('button');
+            menuButton.type = 'button';
+            menuButton.className = 'wgo-player__button wgo-player__button--menu';
+            menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
+            menuWrapper.appendChild(menuButton);
+            var menu = document.createElement('div');
+            menu.className = 'wgo-player__menu';
+            this.createMenuItems(menu);
+            menuWrapper.appendChild(menu);
             this.player.on('applyNodeChanges', this.update);
             return this.element;
         };
@@ -4988,9 +4995,72 @@
                 this.last.disabled = false;
             }
         };
+        ControlPanel.prototype.createMenuItems = function (menu) {
+            var _this = this;
+            ControlPanel.menuItems.forEach(function (menuItem) {
+                var menuItemElement = document.createElement('a');
+                menuItemElement.className = 'wgo-player__menu-item';
+                menuItemElement.tabIndex = 0;
+                menuItemElement.textContent = menuItem.name;
+                menuItemElement.href = 'javascript: void(0)';
+                if (menuItem.checkable && menuItem.defaultChecked) {
+                    if (menuItem.defaultChecked.call(_this)) {
+                        menuItemElement.className += ' wgo-player__menu-item--checked';
+                    }
+                }
+                menuItemElement.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var res = menuItem.fn.call(_this);
+                    if (menuItem.checkable) {
+                        if (res) {
+                            menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
+                        }
+                        else {
+                            menuItemElement.className = 'wgo-player__menu-item';
+                        }
+                    }
+                    else {
+                        menuItemElement.blur();
+                    }
+                });
+                menu.appendChild(menuItemElement);
+            });
+        };
+        ControlPanel.menuItems = [
+            { name: 'Edit mode', fn: function () { } },
+            {
+                name: 'Display coordinates',
+                fn: function () {
+                    if (this.player.boardComponent) {
+                        this.player.boardComponent.board.setCoordinates(!this.player.boardComponent.board.getCoordinates());
+                        return this.player.boardComponent.board.getCoordinates();
+                    }
+                    return false;
+                },
+                checkable: true,
+                defaultChecked: function () {
+                    return this.player.boardComponent.board.getCoordinates();
+                },
+            },
+            {
+                name: 'Download SGF',
+                fn: function () {
+                    var name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+                    download(name, "(" + this.player.rootNode.innerSGF + ")");
+                },
+            },
+        ];
         return ControlPanel;
     }(Component));
-    //# sourceMappingURL=ControlPanel.js.map
+    function download(name, sgf) {
+        var element = document.createElement('a');
+        element.setAttribute('href', "data:application/x-go-sgf;charset=utf-8," + encodeURIComponent(sgf));
+        element.setAttribute('download', name + ".sgf");
+        element.style.display = 'none';
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
 
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);

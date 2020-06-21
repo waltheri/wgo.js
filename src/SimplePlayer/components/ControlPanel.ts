@@ -1,7 +1,47 @@
 import SimplePlayer from '../SimplePlayer';
 import Component from './Component';
+import { PropIdent } from '../../SGFParser/sgfTypes';
+
+interface MenuItem {
+  /** Title of the menu item. */
+  name: string;
+
+  /** Function executed upon click. If checkable, should return new check state. */
+  fn(this: ControlPanel): boolean | void;
+
+  /** If true, there can be check state of the menu item. */
+  checkable?: boolean;
+
+  /** If checkable, function which return initial check state. */
+  defaultChecked?(this: ControlPanel): boolean;
+}
 
 export default class ControlPanel extends Component {
+  static menuItems: MenuItem[] = [
+    { name: 'Edit mode', fn() {} },
+    {
+      name: 'Display coordinates',
+      fn(this: ControlPanel) {
+        if (this.player.boardComponent) {
+          this.player.boardComponent.board.setCoordinates(!this.player.boardComponent.board.getCoordinates());
+          return this.player.boardComponent.board.getCoordinates();
+        }
+        return false;
+      },
+      checkable: true,
+      defaultChecked(this: ControlPanel) {
+        return this.player.boardComponent.board.getCoordinates();
+      },
+    },
+    {
+      name: 'Download SGF',
+      fn() {
+        const name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+        download(name, `(${this.player.rootNode.innerSGF})`);
+      },
+    },
+  ];
+
   element: HTMLElement;
   moveNumber: HTMLInputElement;
   first: HTMLButtonElement;
@@ -62,12 +102,20 @@ export default class ControlPanel extends Component {
     this.last.addEventListener('click', () => this.player.last());
     buttonGroup.appendChild(this.last);
 
-    const menu = document.createElement('button');
-    menu.type = 'button';
-    menu.className = 'wgo-player__button wgo-player__button--menu';
-    menu.innerHTML = '<span class="wgo-player__icon-menu"></span>';
-    // menu.addEventListener('click', () => this.player.last());
-    this.element.appendChild(menu);
+    const menuWrapper = document.createElement('div');
+    menuWrapper.className = 'wgo-player__menu-wrapper';
+    this.element.appendChild(menuWrapper);
+
+    const menuButton = document.createElement('button');
+    menuButton.type = 'button';
+    menuButton.className = 'wgo-player__button wgo-player__button--menu';
+    menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
+    menuWrapper.appendChild(menuButton);
+
+    const menu = document.createElement('div');
+    menu.className = 'wgo-player__menu';
+    this.createMenuItems(menu);
+    menuWrapper.appendChild(menu);
 
     this.player.on('applyNodeChanges', this.update);
 
@@ -97,4 +145,50 @@ export default class ControlPanel extends Component {
       this.last.disabled = false;
     }
   }
+
+  createMenuItems(menu: HTMLElement) {
+    ControlPanel.menuItems.forEach((menuItem) => {
+      const menuItemElement = document.createElement('a');
+      menuItemElement.className = 'wgo-player__menu-item';
+      menuItemElement.tabIndex = 0;
+      menuItemElement.textContent = menuItem.name;
+      menuItemElement.href = 'javascript: void(0)';
+
+      if (menuItem.checkable && menuItem.defaultChecked) {
+        if (menuItem.defaultChecked.call(this)) {
+          menuItemElement.className += ' wgo-player__menu-item--checked';
+        }
+      }
+
+      menuItemElement.addEventListener('click', (e) => {
+        e.preventDefault();
+        const res = menuItem.fn.call(this);
+
+        if (menuItem.checkable) {
+          if (res) {
+            menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
+          } else {
+            menuItemElement.className = 'wgo-player__menu-item';
+          }
+        } else {
+          menuItemElement.blur();
+        }
+      });
+
+      menu.appendChild(menuItemElement);
+    });
+  }
+}
+
+function download(name: string, sgf: string) {
+  const element = document.createElement('a');
+  element.setAttribute('href', `data:application/x-go-sgf;charset=utf-8,${encodeURIComponent(sgf)}`);
+  element.setAttribute('download', `${name}.sgf`);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
 }

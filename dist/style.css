@@ -170,7 +170,6 @@
   font-size: 15px;
   border-radius: 4px;
   user-select: none;
-  outline: 0;
 }
 
 .wgo-player__button:disabled {
@@ -180,6 +179,7 @@
 
 .wgo-player__move-number {
   width: 30px;
+  font-variant: tabular-nums;
 }
 
 .wgo-player__button-group {
@@ -215,6 +215,52 @@
 .wgo-player__button--menu {
   margin-left: 15px;
   width: 40px;
+}
+
+.wgo-player__menu-wrapper {
+  position: relative;
+}
+
+.wgo-player__menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 3px 0;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s;
+}
+
+.wgo-player__menu:focus-within,
+.wgo-player__button--menu:focus + .wgo-player__menu {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.wgo-player__menu-item {
+  padding: 3px 29px 3px 9px;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.wgo-player__menu-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.wgo-player__menu-item--checked:after {
+  content: '\e813';
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  font-family: "wgo-icons";
 }
 
 /* Available icons: */
