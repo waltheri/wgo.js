@@ -18,7 +18,17 @@ interface MenuItem {
 
 export default class ControlPanel extends Component {
   static menuItems: MenuItem[] = [
-    { name: 'Edit mode', fn() {} },
+    {
+      name: 'Edit mode',
+      fn() {
+        this.player.setEditMode(!this.player.editMode);
+        return this.player.editMode;
+      },
+      checkable: true,
+      defaultChecked(this: ControlPanel) {
+        return this.player.editMode;
+      },
+    },
     {
       name: 'Display coordinates',
       fn(this: ControlPanel) {
@@ -37,7 +47,7 @@ export default class ControlPanel extends Component {
       name: 'Download SGF',
       fn() {
         const name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-        download(name, `(${this.player.rootNode.innerSGF})`);
+        download(name, this.player.rootNode.toSGF());
       },
     },
   ];

@@ -2372,6 +2372,7 @@
             _this.boardElement.style.display = 'inline-block';
             _this.boardElement.style.position = 'relative';
             _this.boardElement.style.verticalAlign = 'middle';
+            _this.boardElement.style.userSelect = 'none';
             _this.element.appendChild(_this.boardElement);
             _this.touchArea = document.createElement('div');
             _this.touchArea.style.position = 'absolute';
@@ -3905,6 +3906,19 @@
             return "(" + this.innerSGF + ")";
         };
         /**
+         * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
+         */
+        KifuNode.prototype.clone = function () {
+            var node = new KifuNode();
+            // TODO - something more efficient
+            var properties = JSON.parse(JSON.stringify(this.properties));
+            node.properties = properties;
+            this.children.forEach(function (child) {
+                node.appendChild(child.clone());
+            });
+            return node;
+        };
+        /**
          * Creates KNode object from SGF transformed to JavaScript object.
          * @param gameTree
          */
@@ -4058,6 +4072,7 @@
         __extends(PlayerBase, _super);
         function PlayerBase() {
             var _this = _super.call(this) || this;
+            _this.playerStateStack = [];
             _this.on('beforeInit.SZ', beforeInitSZ);
             _this.on('beforeInit.RU', beforeInitRU);
             _this.on('applyGameChanges.HA', applyGameChangesHA);
@@ -4259,6 +4274,39 @@
                 if (this.currentNode.children.length > 1) {
                     return;
                 }
+            }
+        };
+        /**
+         * Play a move. New kifu node will be created and move to it
+         */
+        PlayerBase.prototype.play = function (x, y) {
+            var node = new KifuNode();
+            if (this.game.turn === exports.Color.W) {
+                node.setProperty(PropIdent.WHITE_MOVE, { x: x, y: y });
+            }
+            else {
+                node.setProperty(PropIdent.BLACK_MOVE, { x: x, y: y });
+            }
+            var i = this.currentNode.appendChild(node);
+            this.next(i);
+        };
+        /**
+         * Saves current player state - Kifu and path object.
+         */
+        PlayerBase.prototype.save = function () {
+            this.playerStateStack.push({
+                rootNode: this.rootNode.clone(),
+                path: this.getCurrentPath(),
+            });
+        };
+        /**
+         * Restores player from previously saved state.
+         */
+        PlayerBase.prototype.restore = function () {
+            var lastState = this.playerStateStack.pop();
+            if (lastState) {
+                this.loadKifu(lastState.rootNode);
+                this.goTo(lastState.path);
             }
         };
         return PlayerBase;
@@ -4514,7 +4562,7 @@
             }
         };
         SVGBoardComponent.prototype.handleBoardClick = function (point) {
-            // this.emit('boardClick', point);
+            this.player.emit('boardClick', point);
             var moves = this.player.getVariations();
             if (moves.length > 1) {
                 var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
@@ -4530,11 +4578,11 @@
             }
         };
         SVGBoardComponent.prototype.handleBoardMouseMove = function (point) {
-            // this.emit('boardMouseMove', point);
+            this.player.emit('boardMouseMove', point);
             this.handleVariationCursor(point.x, point.y, this.player.getVariations());
         };
         SVGBoardComponent.prototype.handleBoardMouseOut = function () {
-            // this.emit('boardMouseOut');
+            this.player.emit('boardMouseOut');
             this.removeVariationCursor();
         };
         SVGBoardComponent.prototype.handleVariationCursor = function (x, y, moves) {
@@ -5027,7 +5075,17 @@
             });
         };
         ControlPanel.menuItems = [
-            { name: 'Edit mode', fn: function () { } },
+            {
+                name: 'Edit mode',
+                fn: function () {
+                    this.player.setEditMode(!this.player.editMode);
+                    return this.player.editMode;
+                },
+                checkable: true,
+                defaultChecked: function () {
+                    return this.player.editMode;
+                },
+            },
             {
                 name: 'Display coordinates',
                 fn: function () {
@@ -5046,7 +5104,7 @@
                 name: 'Download SGF',
                 fn: function () {
                     var name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-                    download(name, "(" + this.player.rootNode.innerSGF + ")");
+                    download(name, this.player.rootNode.toSGF());
                 },
             },
         ];
@@ -5075,6 +5133,7 @@
         }
         SimplePlayer.prototype.init = function () {
             var _this = this;
+            this.editMode = false;
             this.mainElement = document.createElement('div');
             this.mainElement.className = 'wgo-player';
             this.mainElement.tabIndex = 1;
@@ -5147,6 +5206,57 @@
                 return !!(st & 1);
             }
             return this.config.showCurrentVariations;
+        };
+        SimplePlayer.prototype.setEditMode = function (b) {
+            var _this = this;
+            if (b && !this.editMode) {
+                this.save();
+                this.editMode = true;
+                var lastX_1 = -1;
+                var lastY_1 = -1;
+                var boardObject_1;
+                this._boardMouseMoveEvent = function (p) {
+                    if (lastX_1 !== p.x || lastY_1 !== p.y) {
+                        if (_this.game.isValid(p.x, p.y)) {
+                            if (!boardObject_1) {
+                                // TODO - somehow change color, when turn changes
+                                boardObject_1 = new FieldObject('MA');
+                                _this.boardComponent.board.addObject(boardObject_1);
+                            }
+                            boardObject_1.setPosition(p.x, p.y);
+                            _this.boardComponent.board.updateObject(boardObject_1);
+                            lastX_1 = p.x;
+                            lastY_1 = p.y;
+                        }
+                        else {
+                            _this._boardMouseOutEvent();
+                        }
+                    }
+                };
+                this._boardMouseOutEvent = function () {
+                    _this.boardComponent.board.removeObject(boardObject_1);
+                    boardObject_1 = null;
+                    lastX_1 = -1;
+                    lastY_1 = -1;
+                };
+                this._boardClickEvent = function (p) {
+                    _this._boardMouseOutEvent();
+                    if (_this.game.isValid(p.x, p.y)) {
+                        // TODO - don't play, if already played, also should avoid conflicts with variations
+                        _this.play(p.x, p.y);
+                    }
+                };
+                this.on('boardMouseMove', this._boardMouseMoveEvent);
+                this.on('boardMouseOut', this._boardMouseOutEvent);
+                this.on('boardClick', this._boardClickEvent);
+            }
+            else if (!b && this.editMode) {
+                this.off('boardMouseMove', this._boardMouseMoveEvent);
+                this.off('boardMouseOut', this._boardMouseOutEvent);
+                this.off('boardClick', this._boardClickEvent);
+                this.editMode = false;
+                this.restore();
+            }
         };
         return SimplePlayer;
     }(PlayerBase));

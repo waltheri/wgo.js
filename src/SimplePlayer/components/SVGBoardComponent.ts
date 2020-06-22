@@ -216,7 +216,7 @@ export default class SVGBoardComponent extends Component {
   }
 
   protected handleBoardClick(point: Point) {
-    // this.emit('boardClick', point);
+    this.player.emit('boardClick', point);
 
     const moves = this.player.getVariations();
     if (moves.length > 1) {
@@ -234,12 +234,12 @@ export default class SVGBoardComponent extends Component {
   }
 
   protected handleBoardMouseMove(point: Point) {
-    // this.emit('boardMouseMove', point);
+    this.player.emit('boardMouseMove', point);
     this.handleVariationCursor(point.x, point.y, this.player.getVariations());
   }
 
   protected handleBoardMouseOut() {
-    // this.emit('boardMouseOut');
+    this.player.emit('boardMouseOut');
     this.removeVariationCursor();
   }
 

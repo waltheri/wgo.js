@@ -355,6 +355,22 @@ export default class KifuNode {
   }
 
   /**
+   * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
+   */
+  clone() {
+    const node = new KifuNode();
+    // TODO - something more efficient
+    const properties = JSON.parse(JSON.stringify(this.properties));
+    node.properties = properties;
+
+    this.children.forEach((child) => {
+      node.appendChild(child.clone());
+    });
+
+    return node;
+  }
+
+  /**
    * Creates KNode object from SGF transformed to JavaScript object.
    * @param gameTree
    */

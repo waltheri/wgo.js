@@ -4,11 +4,16 @@ import { Game, GoRules } from '../Game';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import PropertyHandler from './PropertyHandler';
 import { PlayerInitParams } from './types';
+interface PlayerBaseState {
+    rootNode: KifuNode;
+    path: Path;
+}
 export default class PlayerBase extends EventEmitter {
     rootNode: KifuNode;
     currentNode: KifuNode;
     game: Game;
     params: PlayerInitParams;
+    protected playerStateStack: PlayerBaseState[];
     constructor();
     /**
      * Load game (kifu) from KifuNode.
@@ -80,4 +85,17 @@ export default class PlayerBase extends EventEmitter {
        * Go to previous fork (a node with more than one child).
        */
     previousFork(): void;
+    /**
+     * Play a move. New kifu node will be created and move to it
+     */
+    play(x: number, y: number): void;
+    /**
+     * Saves current player state - Kifu and path object.
+     */
+    save(): void;
+    /**
+     * Restores player from previously saved state.
+     */
+    restore(): void;
 }
+export {};

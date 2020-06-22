@@ -37,6 +37,7 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     this.boardElement.style.display = 'inline-block';
     this.boardElement.style.position = 'relative';
     this.boardElement.style.verticalAlign = 'middle';
+    this.boardElement.style.userSelect = 'none';
     this.element.appendChild(this.boardElement);
 
     this.touchArea = document.createElement('div');

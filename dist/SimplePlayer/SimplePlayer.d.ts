@@ -10,12 +10,17 @@ export default class SimplePlayer extends PlayerBase {
     config: SimplePlayerConfig;
     layout: Component;
     boardComponent: SVGBoardComponent;
+    editMode: boolean;
     private _mouseWheelEvent;
     private _keyEvent;
+    private _boardMouseMoveEvent;
+    private _boardMouseOutEvent;
+    private _boardClickEvent;
     constructor(element: HTMLElement, config?: PartialRecursive<SimplePlayerConfig>);
     init(): void;
     destroy(): void;
     getVariations(): Point[];
     shouldShowVariations(): boolean;
     shouldShowCurrentVariations(): boolean;
+    setEditMode(b: boolean): void;
 }

@@ -5,12 +5,20 @@ import { PropIdent } from '../SGFParser/sgfTypes';
 import PropertyHandler from './PropertyHandler';
 import { PlayerInitParams } from './types';
 import * as basePropertyListeners from './basePropertyListeners';
+import { Color } from '../types';
+
+interface PlayerBaseState {
+  rootNode: KifuNode;
+  path: Path;
+}
 
 export default class PlayerBase extends EventEmitter {
   rootNode: KifuNode;
   currentNode: KifuNode;
   game: Game;
   params: PlayerInitParams;
+
+  protected playerStateStack: PlayerBaseState[] = [];
 
   constructor() {
     super();
@@ -250,6 +258,43 @@ export default class PlayerBase extends EventEmitter {
       if (this.currentNode.children.length > 1) {
         return;
       }
+    }
+  }
+
+  /**
+   * Play a move. New kifu node will be created and move to it
+   */
+  play(x: number, y: number) {
+    const node = new KifuNode();
+
+    if (this.game.turn === Color.W) {
+      node.setProperty(PropIdent.WHITE_MOVE, { x, y });
+    } else {
+      node.setProperty(PropIdent.BLACK_MOVE, { x, y });
+    }
+
+    const i = this.currentNode.appendChild(node);
+    this.next(i);
+  }
+
+  /**
+   * Saves current player state - Kifu and path object.
+   */
+  save() {
+    this.playerStateStack.push({
+      rootNode: this.rootNode.clone(),
+      path: this.getCurrentPath(),
+    });
+  }
+
+  /**
+   * Restores player from previously saved state.
+   */
+  restore() {
+    const lastState = this.playerStateStack.pop();
+    if (lastState) {
+      this.loadKifu(lastState.rootNode);
+      this.goTo(lastState.path);
     }
   }
 }
