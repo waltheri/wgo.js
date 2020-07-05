@@ -42,7 +42,7 @@ export default class PlayerBase extends EventEmitter {
     this.currentNode = rootNode;
 
     this.emit('loadKifu', {
-      name,
+      name: 'loadKifu',
       kifuNode: rootNode,
       target: this,
     });

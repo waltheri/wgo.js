@@ -3935,6 +3935,7 @@
         };
         return KifuNode;
     }());
+    //# sourceMappingURL=KifuNode.js.map
 
     var PropIdent;
     (function (PropIdent) {
@@ -4087,7 +4088,7 @@
             this.rootNode = rootNode;
             this.currentNode = rootNode;
             this.emit('loadKifu', {
-                name: name,
+                name: 'loadKifu',
                 kifuNode: rootNode,
                 target: this,
             });
@@ -4316,7 +4317,6 @@
         };
         return PlayerBase;
     }(EventEmitter));
-    //# sourceMappingURL=PlayerBase.js.map
 
     //# sourceMappingURL=PropertyHandler.js.map
 

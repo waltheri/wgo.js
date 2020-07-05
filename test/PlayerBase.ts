@@ -42,13 +42,13 @@ describe('PlayerBase object', () => {
   });
 
   describe('Utility functions', () => {
-    it('PlayerBase#getRootProperty()', /*() => {
+    it('PlayerBase#getRootProperty()', () => {
       const playerBase = new PlayerBase();
       playerBase.loadKifu(KifuNode.fromSGF('(;RU[Chinese]SZ[9];B[aa])'));
 
       equal(playerBase.getRootProperty(PropIdent.RULES), 'Chinese');
       equal(playerBase.getRootProperty(PropIdent.BOARD_SIZE), 9);
-    }*/);
+    });
 
     it('PlayerBase#getProperty()', () => {
       const playerBase = new PlayerBase();

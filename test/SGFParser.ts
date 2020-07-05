@@ -38,11 +38,11 @@ describe('SGFParser', () => {
     });
 
     // TODO: not sure how to do it
-    it('Throws error when prop ident is invalid', /*() => {
+    /*it('Throws error when prop ident is invalid', () => {
       const parser = new SGFParser(';w[aa]');
       // TODO: throws exact error object
       throws(() => parser.parseNode(), SGFSyntaxError);
-    }*/);
+    });*/
 
     it('Throws error when value is missing', () => {
       const parser = new SGFParser(';W');
