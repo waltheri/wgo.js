@@ -316,6 +316,10 @@ export default class SVGBoardComponent extends Component {
 
   private applyMoveProperty(event: LifeCycleEvent<Point>) {
     if (this.player.config.highlightCurrentMove) {
+      if (!event.value) {
+        // no markup when pass
+        return;
+      }
       if (isThereMarkup(event.value, this.player.currentNode.properties)) {
         // don't show current move markup, when there is markup in kifu node
         return;

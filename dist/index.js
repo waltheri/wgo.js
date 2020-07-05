@@ -4317,6 +4317,7 @@
         };
         return PlayerBase;
     }(EventEmitter));
+    //# sourceMappingURL=PlayerBase.js.map
 
     //# sourceMappingURL=PropertyHandler.js.map
 
@@ -4603,6 +4604,10 @@
         };
         SVGBoardComponent.prototype.applyMoveProperty = function (event) {
             if (this.player.config.highlightCurrentMove) {
+                if (!event.value) {
+                    // no markup when pass
+                    return;
+                }
                 if (isThereMarkup(event.value, this.player.currentNode.properties)) {
                     // don't show current move markup, when there is markup in kifu node
                     return;
@@ -4651,7 +4656,6 @@
         }
         return false;
     }
-    //# sourceMappingURL=SVGBoardComponent.js.map
 
     var Container = /** @class */ (function (_super) {
         __extends(Container, _super);
