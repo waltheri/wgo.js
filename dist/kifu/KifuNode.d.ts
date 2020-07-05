@@ -19,7 +19,10 @@ export default class KifuNode {
     };
     constructor();
     readonly root: KifuNode;
-    readonly innerSGF: string;
+    /**
+    * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
+    */
+    innerSGF: string;
     getPath(): Path;
     /**
      * Insert a KNode as the last child node of this node.
@@ -29,12 +32,6 @@ export default class KifuNode {
      * @returns {number} position(index) of appended node.
      */
     appendChild(node: KifuNode): number;
-    /**
-     * Hard clones a KNode and all of its contents.
-     *
-     * @param {boolean}  appendToParent if set true, cloned node will be appended to this parent.
-     * @returns {KifuNode}  cloned node
-     */
     /**
      * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
      *
@@ -68,6 +65,10 @@ export default class KifuNode {
      */
     replaceChild(newChild: KifuNode, oldChild: KifuNode): KifuNode;
     /**
+     * Remove all properties and children. Parent will remain.
+     */
+    clean(): void;
+    /**
      * Gets property by SGF property identificator. Returns property value (type depends on property type)
      *
      * @param   {string}   propIdent - SGF property idetificator
@@ -81,6 +82,15 @@ export default class KifuNode {
      * @param   {any}     value - property value or values
      */
     setProperty(propIdent: string, value?: any): this;
+    /**
+     * Alias for `setProperty` without second parameter.
+     * @param propIdent
+     */
+    removeProperty(propIdent: string): void;
+    /**
+     * Iterates through all properties.
+     */
+    forEachProperty(callback: (propIdent: string, value: any) => void): void;
     /**
      * Gets one SGF property value as string (with brackets `[` and `]`).
      *
@@ -97,10 +107,6 @@ export default class KifuNode {
      */
     setSGFProperty(propIdent: string, propValues?: string[]): KifuNode;
     /**
-     * Iterates through all properties.
-     */
-    forEachProperty(callback: (propIdent: string, value: any) => void): void;
-    /**
      * Sets multiple SGF properties.
      *
      * @param   {Object}   properties - map with signature propIdent -> propValues.
@@ -108,34 +114,24 @@ export default class KifuNode {
      */
     setSGFProperties(properties: SGFProperties): KifuNode;
     /**
-     * Sets properties of Kifu node based on the sgf string. Usually you won't use this method directly,
-     * but use innerSGF property instead.
-     *
-     * Basically it parsers the sgf, takes properties from it and adds them to the node.
-     * Then if there are other nodes in the string, they will be appended to the node as well.
-     *
-     * @param {string} sgf SGF text for current node. It must be without trailing `;`,
-     *                     however it can contain following nodes.
-     * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
-     */
-    /**
      * Transforms KNode object to standard SGF string.
      */
     toSGF(): string;
     /**
      * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
      */
-    clone(): KifuNode;
+    cloneNode(appendToParent?: boolean): KifuNode;
     /**
      * Creates KNode object from SGF transformed to JavaScript object.
+     *
      * @param gameTree
      */
-    static fromJS(gameTree: SGFGameTree): KifuNode;
+    static fromJS(gameTree: SGFGameTree, kifuNode?: KifuNode): KifuNode;
     /**
      * Creates KNode object from SGF string.
      *
      * @param sgf
      * @param gameNo
      */
-    static fromSGF(sgf: string, gameNo?: number): KifuNode;
+    static fromSGF(sgf: string, gameNo?: number, kifuNode?: KifuNode): KifuNode;
 }

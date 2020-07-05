@@ -287,7 +287,7 @@ export default class PlayerBase extends EventEmitter {
    */
   save() {
     this.playerStateStack.push({
-      rootNode: this.rootNode.clone(),
+      rootNode: this.rootNode.cloneNode(),
       path: this.getCurrentPath(),
     });
   }

@@ -181,8 +181,8 @@ export default class ControlPanel extends Component {
             menuItemElement.className = 'wgo-player__menu-item';
           }
         } else {
-          menuItemElement.blur();
         }
+        menuItemElement.blur();
       });
 
       menu.appendChild(menuItemElement);

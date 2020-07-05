@@ -1,7 +1,7 @@
 /* Test of WGo kifu classes and functionality */
 
-import { strictEqual, deepEqual, throws, equal, ok as assert } from 'assert';
-import { Color } from '../src/types';
+import { strictEqual, deepEqual, throws, equal, ok as assert, notDeepEqual } from 'assert';
+import { Color, Point } from '../src/types';
 import KifuNode from '../src/kifu/KifuNode';
 import { SGFSyntaxError } from '../src/SGFParser';
 import propertyValueTypes from '../src/kifu/propertyValueTypes';
@@ -38,22 +38,22 @@ describe('SGF & KifuNode', () => {
       deepEqual(propertyValueTypes.AW.transformer.write({ x: 5, y: 10 }), 'fk');
     });
 
-    it('Empty point properties', /*() => {
-      deepEqual(propertyValueTypes.B.transformer.read(undefined), false);
-      deepEqual(propertyValueTypes.W.transformer.read(''), false);
-      deepEqual(propertyValueTypes.B.transformer.write(false), '');
-      deepEqual(propertyValueTypes.W.transformer.write(false), '');
-    }*/);
+    it('Empty properties', () => {
+      deepEqual(propertyValueTypes.W.transformer.read(''), null);
+      deepEqual(propertyValueTypes.B.transformer.write(null), '');
+      deepEqual(propertyValueTypes.VW.transformer.read(''), null);
+      deepEqual(propertyValueTypes.VW.transformer.write(null), '');
+    });
 
     it('Label property (LB)', () => {
       deepEqual(propertyValueTypes.LB.transformer.read('hm:Hello'), { x: 7, y: 12, text: 'Hello' });
       deepEqual(propertyValueTypes.LB.transformer.write({ x: 7, y: 12, text: 'Hello' }), 'hm:Hello');
     });
 
-    it('Line properties (AR, LN)', /*() => {
-      deepEqual(propertyValueTypes.AR.transformer.read('hm:fk'), { x1: 7, y1: 12, x2: 5, y2: 10 });
-      deepEqual(propertyValueTypes.AR.transformer.write({ x1: 7, y1: 12, x2: 5, y2: 10 }), 'hm:fk');
-    }*/);
+    it('Line properties (AR, LN)', () => {
+      deepEqual(propertyValueTypes.AR.transformer.read('hm:fk'), [{ x: 7, y: 12 }, { x: 5, y: 10 }]);
+      deepEqual(propertyValueTypes.AR.transformer.write([{ x: 7, y: 12 }, { x: 5, y: 10 }]), 'hm:fk');
+    });
   });
 
   describe('KifuNode#getPath()', () => {
@@ -107,9 +107,6 @@ describe('SGF & KifuNode', () => {
 
     beforeEach(() => {
       rootNode = new KifuNode();
-      // rootNode.gameInfo = {}; // provisional game info
-      // rootNode.kifuInfo = {}; // provisional kifu info
-
       node1 = new KifuNode();
       node2 = new KifuNode();
       node3 = new KifuNode();
@@ -190,15 +187,16 @@ describe('SGF & KifuNode', () => {
       strictEqual(node2.root, node1);
     });
 
-    it('cloneNode()', /*() => {
-      node1.SGFProperties.B = { x: 5, y: 10 };
-      node2.SGFProperties.W = { x: 7, y: 12 };
+    it('cloneNode()', () => {
+      node1.properties.B = { x: 5, y: 10 };
+      node1.properties.CR = [{ x: 1, y: 1 }, { x: 2, y: 2 }];
+      node2.properties.W = { x: 7, y: 12 };
       node1.appendChild(node2);
 
       node3 = node1.cloneNode();
       deepEqual(node1, node3);
 
-      node2.SGFProperties.W.y = 13;
+      node2.properties.W.y = 13;
       notDeepEqual(node1, node3);
 
       node3 = node2.cloneNode();
@@ -206,7 +204,7 @@ describe('SGF & KifuNode', () => {
 
       node3 = node2.cloneNode(true);
       deepEqual(node2, node3);
-    }*/);
+    });
   });
 
   describe("KifuNode's setSGFProperty method", () => {
@@ -234,117 +232,92 @@ describe('SGF & KifuNode', () => {
       deepEqual(node.properties, {});
     });
 
-    /*it('Set single value property', () => {
-      node.setSGFProperty('B', '[' + move1.s + ']');
-      deepEqual(node.SGFProperties, { B: move1.c });
+    it('Set single value property', () => {
+      node.setSGFProperty('B', [move1.s]);
+      deepEqual(node.properties, { B: move1.c });
 
-      node.setSGFProperty('SZ', ['19']);
-      deepEqual(node.SGFProperties, { B: move1.c, SZ: 19 });
+      node.setSGFProperty('B');
+      deepEqual(node.properties, {});
     });
 
     it('Set single value empty property', () => {
-      node.setSGFProperty('KO', '[]');
-      deepEqual(node.SGFProperties, { KO: true });
-
       node.setSGFProperty('DO', ['']);
-      deepEqual(node.SGFProperties, { KO: true, DO: true });
-
-      node.setSGFProperty('GC', '[Hello]');
-      node.setSGFProperty('CA', ['WGo']);
-
-      deepEqual(node.SGFProperties, { KO: true, DO: true, GC: 'Hello', CA: 'WGo' });
-
-      node.setSGFProperty('GC', '[]');
-      node.setSGFProperty('CA', ['']);
-
-      deepEqual(node.SGFProperties, { KO: true, DO: true });
-      deepEqual(node.SGFProperties, { KO: true, DO: true });
+      node.setSGFProperty('KO', ['']);
+      deepEqual(node.properties, { DO: true, KO: true });
     });
 
     it('Set multiple value property', () => {
-      node.setSGFProperty('AB', '[' + move1.s + '][' + move2.s + ']');
-      deepEqual(node.SGFProperties, { AB: [move1.c, move2.c] });
-
-      node.setSGFProperty('VW', [move1.s, move2.s]);
-      deepEqual(node.SGFProperties, { AB: [move1.c, move2.c], VW: [move1.c, move2.c] });
+      node.setSGFProperty('AB', [move1.s, move2.s]);
+      deepEqual(node.properties, { AB: [move1.c, move2.c] });
     });
 
-    it('Set multiple value empty property', () => {
-      node.setSGFProperty('AW', '[]');
-      deepEqual(node.SGFProperties, {});
-
-      node.setSGFProperty('LB', []);
-      deepEqual(node.SGFProperties, {});
-
-      node.setSGFProperty('VW', ['']);
-      assert(node.SGFProperties.VW && !node.SGFProperties.VW[0]);
-
-      node.setSGFProperty('DD', '[]');
-      assert(node.SGFProperties.DD && !node.SGFProperties.DD[0]);
+    it('Set vector value property', () => {
+      node.setSGFProperty('VW', [`${move1.s}:${move2.s}`]);
+      deepEqual(node.properties, { VW: [move1.c, move2.c] });
     });
 
     it('Passes working properly (W[], B[])', () => {
-      node.setSGFProperty('B', '[]');
-      deepEqual(node.SGFProperties, { B: false });
+      node.setSGFProperty('B', ['']);
+      deepEqual(node.properties, { B: null });
 
       node.setSGFProperty('W', ['']);
-      deepEqual(node.SGFProperties, { B: false, W: false });
+      deepEqual(node.properties, { B: null, W: null });
     });
 
     it('Comment property(C)', () => {
       node.setSGFProperty('C', ['simple']);
-      deepEqual(node.SGFProperties, { C: 'simple' });
+      deepEqual(node.properties, { C: 'simple' });
 
-      node.setSGFProperty('C', '[Hello \\\nWorld! 碁\n][\\[\\]\\:\\\\]');
-      deepEqual(node.SGFProperties, { C: 'Hello World! 碁\n[]:\\' });
+      node.setSGFProperty('C', ['碁\n\\']);
+      deepEqual(node.properties, { C: '碁\n\\' });
 
-      node.setSGFProperty('C', '[]');
-      deepEqual(node.SGFProperties, {});
-    });*/
+      node.setSGFProperty('C', ['']);
+      deepEqual(node.properties, { C: '' });
+    });
   });
 
-  /*describe("KifuNode's getSGFProperty() method and innerSGF property getter", () => {
-    let node;
+  describe("KifuNode's getSGFProperty() method and innerSGF property getter", () => {
+    let node: KifuNode;
 
     beforeEach(() => {
       node = new KifuNode();
       node.setSGFProperties({
-        AB: '[hm][fk]',
-        IT: '[]',
+        AB: ['hm', 'fk'],
+        IT: [''],
         W: [''],
-        C: '[AB[hm\\][fk\\]]',
+        C: ['AB[hm][fk]\\'],
       });
     });
 
     it('Simple getProperty() method', () => {
       deepEqual(node.getProperty('AB'), [{ x: 7, y: 12 }, { x: 5, y: 10 }]);
-      strictEqual(node.getProperty('W'), false);
+      strictEqual(node.getProperty('W'), null);
       strictEqual(node.getProperty('IT'), true);
-      strictEqual(node.getProperty('C'), 'AB[hm][fk]');
+      strictEqual(node.getProperty('C'), 'AB[hm][fk]\\');
     });
 
     it('Basic properties', () => {
-      strictEqual(node.getSGFProperty('AB'), '[hm][fk]');
+      deepEqual(node.getSGFProperty('AB'), ['hm', 'fk']);
     });
 
     it('Properties with empty value', () => {
-      strictEqual(node.getSGFProperty('IT'), '[]');
-      strictEqual(node.getSGFProperty('W'), '[]');
+      deepEqual(node.getSGFProperty('IT'), ['']);
+      deepEqual(node.getSGFProperty('W'), ['']);
     });
 
-    it('Correct escaping of values', () => {
-      strictEqual(node.getSGFProperty('C'), '[AB[hm\\][fk\\]]');
+    it('Values are not escaped here', () => {
+      deepEqual(node.getSGFProperty('C'), ['AB[hm][fk]\\']);
     });
 
     it('node.innerSGF with no children', () => {
-      strictEqual(node.innerSGF, 'AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]]');
+      strictEqual(node.innerSGF, ';AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]\\\\]');
     });
 
     it('node.innerSGF with one child', () => {
       const child = new KifuNode();
       child.setSGFProperty('B', ['fk']);
       child.appendChild(node);
-      strictEqual(child.innerSGF, 'B[fk];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]]');
+      strictEqual(child.innerSGF, ';B[fk];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]\\\\]');
     });
 
     it('node.innerSGF with more children', () => {
@@ -354,17 +327,17 @@ describe('SGF & KifuNode', () => {
       child1.setSGFProperty('B', ['fk']);
       node.appendChild(child1);
 
-      child2.setSGFProperty('B', '[hm]');
+      child2.setSGFProperty('B', ['hm']);
       node.appendChild(child2);
 
-      strictEqual(node.innerSGF, 'AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm])');
+      strictEqual(node.innerSGF, ';AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]\\\\](;B[fk])(;B[hm])');
     });
-  });*/
+  });
 
-  /*describe("(5) KifuNode's innerSGF property setter", () => {
+  describe("(5) KifuNode's innerSGF property setter", () => {
     let node: KifuNode;
-    let move1;
-    let move2;
+    let move1: { s: string, c: Point };
+    let move2: { s: string, c: Point };
 
     beforeEach(() => {
       node = new KifuNode();
@@ -379,8 +352,8 @@ describe('SGF & KifuNode', () => {
     });
 
     it('Set only properties', () => {
-      node.innerSGF = 'AB[' + move1.s + '][' + move2.s + ']IT[]C[Hello]';
-      deepEqual(node.SGFProperties, {
+      node.innerSGF = `;AB[${move1.s}][${move2.s}]IT[]C[Hello]`;
+      deepEqual(node.properties, {
         AB: [move1.c, move2.c],
         IT: true,
         C: 'Hello',
@@ -388,20 +361,20 @@ describe('SGF & KifuNode', () => {
     });
 
     it('Set properties with special characters', () => {
-      node.innerSGF = 'B[' + move1.s + ']C[碁\\\\\\];(\\\n\\n\\\\]';
-      deepEqual(node.SGFProperties, {
+      node.innerSGF = `B[${move1.s}]C[碁\\\\\\];(]`;
+      deepEqual(node.properties, {
         B: move1.c,
-        C: '碁\\];(n\\',
+        C: '碁\\];(',
       });
     });
 
-    it('Remove all old properties', () => {
+    it('Remove all old properties and children', () => {
       node.setSGFProperty('SQ', ['hm']);
       node.appendChild(new KifuNode());
 
-      node.innerSGF = 'CR[' + move1.s + ']';
+      node.innerSGF = `CR[${move1.s}]`;
 
-      deepEqual(node.SGFProperties, {
+      deepEqual(node.properties, {
         CR: [move1.c],
       });
 
@@ -409,76 +382,72 @@ describe('SGF & KifuNode', () => {
     });
 
     it('Set just child nodes', () => {
-      node.innerSGF = ';W[' + move1.s + '];B[' + move2.s + ']';
+      node.innerSGF = `;;W[${move1.s}];B[${move2.s}]`;
 
-      deepEqual(node.SGFProperties, {});
+      deepEqual(node.properties, {});
 
-      deepEqual(node.children[0].SGFProperties, { W: move1.c });
-      deepEqual(node.children[0].children[0].SGFProperties, { B: move2.c });
+      deepEqual(node.children[0].properties, { W: move1.c });
+      deepEqual(node.children[0].children[0].properties, { B: move2.c });
     });
 
     it('Set multiple properties and children', () => {
-      node.innerSGF = 'AW[' + move1.s + ']C[Cool!](;W[' + move2.s + ']C[)(])(;W[];)';
+      node.innerSGF = `AW[${move1.s}]C[Cool!](;W[${move2.s}]C[)(])(;W[];)`;
 
-      deepEqual(node.SGFProperties, {
+      deepEqual(node.properties, {
         AW: [move1.c],
         C: 'Cool!',
       });
 
       strictEqual(node.children.length, 2);
 
-      deepEqual(node.children[0].SGFProperties, {
+      deepEqual(node.children[0].properties, {
         W: move2.c,
         C: ')(',
       });
 
-      deepEqual(node.children[1].SGFProperties, {
-        W: false,
+      deepEqual(node.children[1].properties, {
+        W: null,
       });
 
       strictEqual(node.children[1].children.length, 1);
 
-      deepEqual(node.children[1].children[0].SGFProperties, {});
+      deepEqual(node.children[1].children[0].properties, {});
     });
 
     it('Whitespaces in SGF', () => {
-      node.innerSGF = 'AW\n [' + move1.s + '] \n  C[Co  \nol!] \n ( ; W\n[' + move2.s + ']C [)(] ) \n (\n;W[] ; )\n ';
+      node.innerSGF = `AW\n [${move1.s}] \n  C[Co  \nol!] \n ( ; W\n[${move2.s}]C [)(] ) \n (\n;W[] ; )\n `;
 
-      deepEqual(node.SGFProperties, {
+      deepEqual(node.properties, {
         AW: [move1.c],
         C: 'Co  \nol!',
       });
 
       strictEqual(node.children.length, 2);
 
-      deepEqual(node.children[0].SGFProperties, {
+      deepEqual(node.children[0].properties, {
         W: move2.c,
         C: ')(',
       });
 
-      deepEqual(node.children[1].SGFProperties, {
-        W: false,
+      deepEqual(node.children[1].properties, {
+        W: null,
       });
 
       strictEqual(node.children[1].children.length, 1);
 
-      deepEqual(node.children[1].children[0].SGFProperties, {});
+      deepEqual(node.children[1].children[0].properties, {});
     });
 
     it('Invalid SGF throws an error', () => {
-      throws( () => {
+      throws(() => {
         node.innerSGF = 'AW[fk]C[Cool!];W[hn]C';
       }, SGFSyntaxError);
 
-      throws( () => {
-        node.innerSGF = 'AW[fk]C[Cool!];W[hn]C[)(])(;W[hm];)';
-      }, SGFSyntaxError);
-
-      throws( () => {
+      throws(() => {
         node.innerSGF = 'AW[fk]C[Cool!];W[hn]C[)(](;W[hm]';
       }, SGFSyntaxError);
     });
-  });*/
+  });
 
   describe('Static methods KifuNode.fromSGF() and KifuNode.toSGF()', () => {
     it('KifuNode#fromSGF()', () => {
@@ -493,13 +462,13 @@ describe('SGF & KifuNode', () => {
       equal(node.children[0].children[0].children.length, 0);
     });
 
-    it('KifuNode.fromSGF(sgf).toSGF() == sgf', /*() => {
-      // tslint:disable-next-line:max-line-length
-      strictEqual(KifuNode.fromSGF(
-        '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))').toSGF(),
-        '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))'),
+    it('KifuNode.fromSGF(sgf).toSGF() == sgf', () => {
+      strictEqual(
+        KifuNode.fromSGF(
+          '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))').toSGF(),
+          '(;FF[4]SZ[19];AB[hm][fk]IT[]W[]C[AB[hm\\][fk\\]](;B[fk])(;B[hm]))',
       );
-    }*/);
+    });
   });
 
   /*describe("(2) Kifu specific methods.", function() {

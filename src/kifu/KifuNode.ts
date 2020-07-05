@@ -2,8 +2,7 @@ import SGFParser, { SGFSyntaxError } from '../SGFParser';
 import propertyValueTypes from './propertyValueTypes';
 import { SGFGameTree, SGFProperties } from '../SGFParser/sgfTypes';
 
-const processJSGF = function (gameTree: SGFGameTree) {
-  const rootNode = new KifuNode();
+const processJSGF = function (gameTree: SGFGameTree, rootNode: KifuNode) {
   rootNode.setSGFProperties(gameTree.sequence[0] || {});
 
   let lastNode = rootNode;
@@ -16,10 +15,17 @@ const processJSGF = function (gameTree: SGFGameTree) {
   }
 
   for (let i = 0; i < gameTree.children.length; i++) {
-    lastNode.appendChild(processJSGF(gameTree.children[i]));
+    lastNode.appendChild(processJSGF(gameTree.children[i], new KifuNode()));
   }
 
   return rootNode;
+};
+
+// Characters, which has to be escaped when transforming to SGF
+const escapeCharacters = ['\\\\', '\\]'];
+
+const escapeSGFValue = function (value: string) {
+  return escapeCharacters.reduce((prev, current) => prev.replace(new RegExp(current, 'g'), current), value);
 };
 
 /**
@@ -57,16 +63,32 @@ export default class KifuNode {
     return node;
   }
 
-  /*set innerSGF(sgf: string) {
-    this.setFromSGF(sgf);
-  }*/
+  set innerSGF(sgf: string) {
+    // clean up
+    this.clean();
 
+    let transformedSgf = sgf;
+
+    // create regular SGF from sgf-like string
+    if (transformedSgf[0] !== '(') {
+      if (transformedSgf[0] !== ';') {
+        transformedSgf = `;${transformedSgf}`;
+      }
+      transformedSgf = `(${transformedSgf})`;
+    }
+
+    KifuNode.fromSGF(transformedSgf, 0, this);
+  }
+
+  /**
+   * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
+   */
   get innerSGF(): string {
     let output = ';';
 
     for (const propIdent in this.properties) {
       if (this.properties.hasOwnProperty(propIdent)) {
-        output += `${propIdent}[${this.getSGFProperty(propIdent).join('][')}]`;
+        output += `${propIdent}[${this.getSGFProperty(propIdent).map(escapeSGFValue).join('][')}]`;
       }
     }
 
@@ -119,24 +141,6 @@ export default class KifuNode {
 
     return this.children.push(node) - 1;
   }
-
-  /**
-   * Hard clones a KNode and all of its contents.
-   *
-   * @param {boolean}  appendToParent if set true, cloned node will be appended to this parent.
-   * @returns {KifuNode}  cloned node
-   */
-
-  /*cloneNode(appendToParent?: boolean): KNode {
-    const node = new KNode();
-    node.innerSGF = this.innerSGF;
-
-    if (appendToParent && this.parent) {
-      this.parent.appendChild(node);
-    }
-
-    return node;
-  }*/
 
   /**
    * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
@@ -216,6 +220,16 @@ export default class KifuNode {
     return this;
   }
 
+  /**
+   * Remove all properties and children. Parent will remain.
+   */
+  clean() {
+    for (let i = this.children.length - 1; i >= 0; i--) {
+      this.removeChild(this.children[i]);
+    }
+    this.properties = {};
+  }
+
   /// BASIC PROPERTY GETTER and SETTER
 
   /**
@@ -246,6 +260,21 @@ export default class KifuNode {
     return this;
   }
 
+  /**
+   * Alias for `setProperty` without second parameter.
+   * @param propIdent
+   */
+  removeProperty(propIdent: string) {
+    this.setProperty(propIdent);
+  }
+
+  /**
+   * Iterates through all properties.
+   */
+  forEachProperty(callback: (propIdent: string, value: any) => void) {
+    Object.keys(this.properties).forEach((propIdent: string) => callback(propIdent, this.properties[propIdent]));
+  }
+
   /// SGF RAW METHODS
 
   /**
@@ -261,11 +290,11 @@ export default class KifuNode {
 
       if (propertyValueType.multiple) {
         return this.properties[propIdent].map(
-          (propValue: any) => propertyValueType.transformer.write(propValue).replace(/\]/g, '\\]'),
+          (propValue: any) => propertyValueType.transformer.write(propValue),
         );
       }
 
-      return [propertyValueType.transformer.write(this.properties[propIdent]).replace(/\]/g, '\\]')];
+      return [propertyValueType.transformer.write(this.properties[propIdent])];
     }
 
     return null;
@@ -297,13 +326,6 @@ export default class KifuNode {
   }
 
   /**
-   * Iterates through all properties.
-   */
-  forEachProperty(callback: (propIdent: string, value: any) => void) {
-    Object.keys(this.properties).forEach((propIdent: string) => callback(propIdent, this.properties[propIdent]));
-  }
-
-  /**
    * Sets multiple SGF properties.
    *
    * @param   {Object}   properties - map with signature propIdent -> propValues.
@@ -321,33 +343,6 @@ export default class KifuNode {
   }
 
   /**
-   * Sets properties of Kifu node based on the sgf string. Usually you won't use this method directly,
-   * but use innerSGF property instead.
-   *
-   * Basically it parsers the sgf, takes properties from it and adds them to the node.
-   * Then if there are other nodes in the string, they will be appended to the node as well.
-   *
-   * @param {string} sgf SGF text for current node. It must be without trailing `;`,
-   *                     however it can contain following nodes.
-   * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
-   */
-
-  /*setFromSGF(sgf: string) {
-    // clean up
-    for (let i = this.children.length - 1; i >= 0; i--) {
-      this.removeChild(this.children[i]);
-    }
-    this.SGFProperties = {};
-
-    // sgf sequence to parse must start with ;
-    const sgfSequence = sgf[0] === ';' ? sgf : `;${sgf}`;
-
-    const parser = new SGFParser(sgfSequence);
-
-    const sequence = parser.parseSequence();
-  }*/
-
-  /**
    * Transforms KNode object to standard SGF string.
    */
   toSGF() {
@@ -357,25 +352,29 @@ export default class KifuNode {
   /**
    * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
    */
-  clone() {
+  cloneNode(appendToParent?: boolean) {
     const node = new KifuNode();
-    // TODO - something more efficient
     const properties = JSON.parse(JSON.stringify(this.properties));
     node.properties = properties;
 
     this.children.forEach((child) => {
-      node.appendChild(child.clone());
+      node.appendChild(child.cloneNode());
     });
+
+    if (appendToParent && this.parent) {
+      this.parent.appendChild(node);
+    }
 
     return node;
   }
 
   /**
    * Creates KNode object from SGF transformed to JavaScript object.
+   *
    * @param gameTree
    */
-  static fromJS(gameTree: SGFGameTree) {
-    return processJSGF(gameTree);
+  static fromJS(gameTree: SGFGameTree, kifuNode = new KifuNode()) {
+    return processJSGF(gameTree, kifuNode);
   }
 
   /**
@@ -384,8 +383,8 @@ export default class KifuNode {
    * @param sgf
    * @param gameNo
    */
-  static fromSGF(sgf: string, gameNo: number = 0) {
+  static fromSGF(sgf: string, gameNo: number = 0, kifuNode = new KifuNode()) {
     const parser = new SGFParser(sgf);
-    return KifuNode.fromJS(parser.parseCollection()[gameNo]);
+    return KifuNode.fromJS(parser.parseCollection()[gameNo], kifuNode);
   }
 }

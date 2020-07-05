@@ -3623,8 +3623,7 @@
     };
     //# sourceMappingURL=propertyValueTypes.js.map
 
-    var processJSGF = function (gameTree) {
-        var rootNode = new KifuNode();
+    var processJSGF = function (gameTree, rootNode) {
         rootNode.setSGFProperties(gameTree.sequence[0] || {});
         var lastNode = rootNode;
         for (var i = 1; i < gameTree.sequence.length; i++) {
@@ -3634,9 +3633,14 @@
             lastNode = node;
         }
         for (var i = 0; i < gameTree.children.length; i++) {
-            lastNode.appendChild(processJSGF(gameTree.children[i]));
+            lastNode.appendChild(processJSGF(gameTree.children[i], new KifuNode()));
         }
         return rootNode;
+    };
+    // Characters, which has to be escaped when transforming to SGF
+    var escapeCharacters = ['\\\\', '\\]'];
+    var escapeSGFValue = function (value) {
+        return escapeCharacters.reduce(function (prev, current) { return prev.replace(new RegExp(current, 'g'), current); }, value);
     };
     /**
      * Class representing one kifu node.
@@ -3660,14 +3664,14 @@
             configurable: true
         });
         Object.defineProperty(KifuNode.prototype, "innerSGF", {
-            /*set innerSGF(sgf: string) {
-              this.setFromSGF(sgf);
-            }*/
+            /**
+             * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
+             */
             get: function () {
                 var output = ';';
                 for (var propIdent in this.properties) {
                     if (this.properties.hasOwnProperty(propIdent)) {
-                        output += propIdent + "[" + this.getSGFProperty(propIdent).join('][') + "]";
+                        output += propIdent + "[" + this.getSGFProperty(propIdent).map(escapeSGFValue).join('][') + "]";
                     }
                 }
                 if (this.children.length === 1) {
@@ -3677,6 +3681,19 @@
                     return this.children.reduce(function (prev, current) { return prev + "(" + current.innerSGF + ")"; }, output);
                 }
                 return output;
+            },
+            set: function (sgf) {
+                // clean up
+                this.clean();
+                var transformedSgf = sgf;
+                // create regular SGF from sgf-like string
+                if (transformedSgf[0] !== '(') {
+                    if (transformedSgf[0] !== ';') {
+                        transformedSgf = ";" + transformedSgf;
+                    }
+                    transformedSgf = "(" + transformedSgf + ")";
+                }
+                KifuNode.fromSGF(transformedSgf, 0, this);
             },
             enumerable: true,
             configurable: true
@@ -3712,22 +3729,6 @@
             node.parent = this;
             return this.children.push(node) - 1;
         };
-        /**
-         * Hard clones a KNode and all of its contents.
-         *
-         * @param {boolean}  appendToParent if set true, cloned node will be appended to this parent.
-         * @returns {KifuNode}  cloned node
-         */
-        /*cloneNode(appendToParent?: boolean): KNode {
-          const node = new KNode();
-          node.innerSGF = this.innerSGF;
-      
-          if (appendToParent && this.parent) {
-            this.parent.appendChild(node);
-          }
-      
-          return node;
-        }*/
         /**
          * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
          *
@@ -3790,6 +3791,15 @@
             this.removeChild(oldChild);
             return this;
         };
+        /**
+         * Remove all properties and children. Parent will remain.
+         */
+        KifuNode.prototype.clean = function () {
+            for (var i = this.children.length - 1; i >= 0; i--) {
+                this.removeChild(this.children[i]);
+            }
+            this.properties = {};
+        };
         /// BASIC PROPERTY GETTER and SETTER
         /**
          * Gets property by SGF property identificator. Returns property value (type depends on property type)
@@ -3815,6 +3825,20 @@
             }
             return this;
         };
+        /**
+         * Alias for `setProperty` without second parameter.
+         * @param propIdent
+         */
+        KifuNode.prototype.removeProperty = function (propIdent) {
+            this.setProperty(propIdent);
+        };
+        /**
+         * Iterates through all properties.
+         */
+        KifuNode.prototype.forEachProperty = function (callback) {
+            var _this = this;
+            Object.keys(this.properties).forEach(function (propIdent) { return callback(propIdent, _this.properties[propIdent]); });
+        };
         /// SGF RAW METHODS
         /**
          * Gets one SGF property value as string (with brackets `[` and `]`).
@@ -3826,9 +3850,9 @@
             if (this.properties[propIdent] !== undefined) {
                 var propertyValueType_1 = propertyValueTypes[propIdent] || propertyValueTypes._default;
                 if (propertyValueType_1.multiple) {
-                    return this.properties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue).replace(/\]/g, '\\]'); });
+                    return this.properties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue); });
                 }
-                return [propertyValueType_1.transformer.write(this.properties[propIdent]).replace(/\]/g, '\\]')];
+                return [propertyValueType_1.transformer.write(this.properties[propIdent])];
             }
             return null;
         };
@@ -3854,13 +3878,6 @@
             return this;
         };
         /**
-         * Iterates through all properties.
-         */
-        KifuNode.prototype.forEachProperty = function (callback) {
-            var _this = this;
-            Object.keys(this.properties).forEach(function (propIdent) { return callback(propIdent, _this.properties[propIdent]); });
-        };
-        /**
          * Sets multiple SGF properties.
          *
          * @param   {Object}   properties - map with signature propIdent -> propValues.
@@ -3875,31 +3892,6 @@
             return this;
         };
         /**
-         * Sets properties of Kifu node based on the sgf string. Usually you won't use this method directly,
-         * but use innerSGF property instead.
-         *
-         * Basically it parsers the sgf, takes properties from it and adds them to the node.
-         * Then if there are other nodes in the string, they will be appended to the node as well.
-         *
-         * @param {string} sgf SGF text for current node. It must be without trailing `;`,
-         *                     however it can contain following nodes.
-         * @throws {SGFSyntaxError} throws exception, if sgf string contains invalid SGF.
-         */
-        /*setFromSGF(sgf: string) {
-          // clean up
-          for (let i = this.children.length - 1; i >= 0; i--) {
-            this.removeChild(this.children[i]);
-          }
-          this.SGFProperties = {};
-      
-          // sgf sequence to parse must start with ;
-          const sgfSequence = sgf[0] === ';' ? sgf : `;${sgf}`;
-      
-          const parser = new SGFParser(sgfSequence);
-      
-          const sequence = parser.parseSequence();
-        }*/
-        /**
          * Transforms KNode object to standard SGF string.
          */
         KifuNode.prototype.toSGF = function () {
@@ -3908,22 +3900,26 @@
         /**
          * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
          */
-        KifuNode.prototype.clone = function () {
+        KifuNode.prototype.cloneNode = function (appendToParent) {
             var node = new KifuNode();
-            // TODO - something more efficient
             var properties = JSON.parse(JSON.stringify(this.properties));
             node.properties = properties;
             this.children.forEach(function (child) {
-                node.appendChild(child.clone());
+                node.appendChild(child.cloneNode());
             });
+            if (appendToParent && this.parent) {
+                this.parent.appendChild(node);
+            }
             return node;
         };
         /**
          * Creates KNode object from SGF transformed to JavaScript object.
+         *
          * @param gameTree
          */
-        KifuNode.fromJS = function (gameTree) {
-            return processJSGF(gameTree);
+        KifuNode.fromJS = function (gameTree, kifuNode) {
+            if (kifuNode === void 0) { kifuNode = new KifuNode(); }
+            return processJSGF(gameTree, kifuNode);
         };
         /**
          * Creates KNode object from SGF string.
@@ -3931,14 +3927,14 @@
          * @param sgf
          * @param gameNo
          */
-        KifuNode.fromSGF = function (sgf, gameNo) {
+        KifuNode.fromSGF = function (sgf, gameNo, kifuNode) {
             if (gameNo === void 0) { gameNo = 0; }
+            if (kifuNode === void 0) { kifuNode = new KifuNode(); }
             var parser = new SGFParser(sgf);
-            return KifuNode.fromJS(parser.parseCollection()[gameNo]);
+            return KifuNode.fromJS(parser.parseCollection()[gameNo], kifuNode);
         };
         return KifuNode;
     }());
-    //# sourceMappingURL=KifuNode.js.map
 
     var PropIdent;
     (function (PropIdent) {
@@ -4300,7 +4296,7 @@
          */
         PlayerBase.prototype.save = function () {
             this.playerStateStack.push({
-                rootNode: this.rootNode.clone(),
+                rootNode: this.rootNode.cloneNode(),
                 path: this.getCurrentPath(),
             });
         };
@@ -4995,9 +4991,7 @@
                             menuItemElement.className = 'wgo-player__menu-item';
                         }
                     }
-                    else {
-                        menuItemElement.blur();
-                    }
+                    menuItemElement.blur();
                 });
                 menu.appendChild(menuItemElement);
             });
