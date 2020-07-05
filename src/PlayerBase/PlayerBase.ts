@@ -41,6 +41,11 @@ export default class PlayerBase extends EventEmitter {
     this.rootNode = rootNode;
     this.currentNode = rootNode;
 
+    this.emit('loadKifu', {
+      name,
+      kifuNode: rootNode,
+      target: this,
+    });
     this.executeRoot();
   }
 
@@ -293,7 +298,13 @@ export default class PlayerBase extends EventEmitter {
   restore() {
     const lastState = this.playerStateStack.pop();
     if (lastState) {
+      // revert all node changes
+      this.first();
+
+      // load stored kifu
       this.loadKifu(lastState.rootNode);
+
+      // go to stored path
       this.goTo(lastState.path);
     }
   }

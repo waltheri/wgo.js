@@ -1,10 +1,17 @@
 import Component from './Component';
 import { SVGBoard } from '../../SVGBoard';
-import { FieldObject, BoardLabelObject, BoardMarkupObject, BoardObject, BoardLineObject } from '../../BoardBase';
+import {
+  FieldObject,
+  BoardLabelObject,
+  BoardMarkupObject,
+  BoardObject,
+  BoardLineObject,
+  BoardViewport,
+} from '../../BoardBase';
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
-import PropertiesData from '../../PlayerBase/PropertiesData';
+import { SVGDrawHandler } from '../../SVGBoard/types';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
@@ -19,13 +26,13 @@ export default class SVGBoardComponent extends Component {
   boardElement: HTMLElement;
 
   // Current board objects for stones - should match the position object of the game
-  stoneBoardsObjects: FieldObject<any>[];
+  stoneBoardsObjects: FieldObject<SVGDrawHandler>[];
 
   // Temporary board object, will be removed after each node update
-  temporaryBoardObjects: FieldObject<any>[];
+  temporaryBoardObjects: BoardObject<SVGDrawHandler>[];
 
-  // For data associated with Kifu properties, it is used to revert some board changes
-  propertiesData: PropertiesData;
+  // Board viewport stack, for efficient reverting of board viewport
+  viewportStack: BoardViewport[];
 
   boardMouseX: number;
   boardMouseY: number;
@@ -33,18 +40,16 @@ export default class SVGBoardComponent extends Component {
   constructor(player: SimplePlayer) {
     super(player);
 
-    this.propertiesData = new PropertiesData(player);
+    this.viewportStack = [];
 
     this.applyNodeChanges = this.applyNodeChanges.bind(this);
     this.clearNodeChanges = this.clearNodeChanges.bind(this);
     this.applyMarkupProperty = this.applyMarkupProperty.bind(this);
     this.applyLabelMarkupProperty = this.applyLabelMarkupProperty.bind(this);
     this.applyLineMarkupProperty = this.applyLineMarkupProperty.bind(this);
-    this.clearMarkupProperty = this.clearMarkupProperty.bind(this);
     this.applyViewportProperty = this.applyViewportProperty.bind(this);
     this.clearViewportProperty = this.clearViewportProperty.bind(this);
     this.applyMoveProperty = this.applyMoveProperty.bind(this);
-    this.clearMoveProperty = this.clearMoveProperty.bind(this);
   }
 
   create() {
@@ -102,17 +107,6 @@ export default class SVGBoardComponent extends Component {
     this.player.on('applyNodeChanges.LN', this.applyLineMarkupProperty);
     this.player.on('applyNodeChanges.AR', this.applyLineMarkupProperty);
 
-    // temporary board markup listeners - clear
-    this.player.on('clearNodeChanges.CR', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.TR', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.SQ', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.SL', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.MA', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.DD', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.LB', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.LN', this.clearMarkupProperty);
-    this.player.on('clearNodeChanges.AR', this.clearMarkupProperty);
-
     // viewport SGF property listeners
     this.player.on('applyGameChanges.VW', this.applyViewportProperty);
     this.player.on('clearGameChanges.VW', this.clearViewportProperty);
@@ -120,8 +114,6 @@ export default class SVGBoardComponent extends Component {
     // add current move marker
     this.player.on('applyNodeChanges.B', this.applyMoveProperty);
     this.player.on('applyNodeChanges.W', this.applyMoveProperty);
-    this.player.on('clearNodeChanges.B', this.clearMoveProperty);
-    this.player.on('clearNodeChanges.W', this.clearMoveProperty);
 
     return this.boardElement;
   }
@@ -144,24 +136,11 @@ export default class SVGBoardComponent extends Component {
     this.player.off('applyNodeChanges.LN', this.applyLineMarkupProperty);
     this.player.off('applyNodeChanges.AR', this.applyLineMarkupProperty);
 
-    this.player.off('clearNodeChanges.CR', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.TR', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.SQ', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.SL', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.MA', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.DD', this.clearMarkupProperty);
-
-    this.player.off('clearNodeChanges.LB', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.LN', this.clearMarkupProperty);
-    this.player.off('clearNodeChanges.AR', this.clearMarkupProperty);
-
     this.player.off('applyGameChanges.VW', this.applyViewportProperty);
     this.player.off('clearGameChanges.VW', this.clearViewportProperty);
 
     this.player.off('applyNodeChanges.B', this.applyMoveProperty);
     this.player.off('applyNodeChanges.W', this.applyMoveProperty);
-    this.player.off('clearNodeChanges.B', this.clearMoveProperty);
-    this.player.off('clearNodeChanges.W', this.clearMoveProperty);
   }
 
   protected updateStones() {
@@ -183,7 +162,7 @@ export default class SVGBoardComponent extends Component {
         if (c && !this.stoneBoardsObjects.some(
           boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
         )) {
-          const boardObject = new FieldObject<any>(c === Color.B ? 'B' : 'W');
+          const boardObject = new FieldObject<SVGDrawHandler>(c === Color.B ? 'B' : 'W');
           this.board.addObjectAt(x, y, boardObject);
           this.stoneBoardsObjects.push(boardObject);
         }
@@ -199,7 +178,8 @@ export default class SVGBoardComponent extends Component {
         if (move) {
           const obj = new BoardLabelObject(String.fromCodePoint(65 + i));
           obj.type = this.player.config.variationDrawHandler;
-          this.addTemporaryBoardObject(move.x, move.y, obj);
+          obj.setPosition(move.x, move.y);
+          this.addTemporaryBoardObject(obj);
         }
       });
       if (this.boardMouseX != null) {
@@ -273,54 +253,37 @@ export default class SVGBoardComponent extends Component {
   }
 
   private applyMarkupProperty(event: LifeCycleEvent<Point[]>) {
-    const objects: BoardObject<any>[] = [];
-
     event.value.forEach((value) => {
       // add markup
       const boardMarkup = new BoardMarkupObject(event.propIdent, this.player.game.getStone(value.x, value.y));
       boardMarkup.zIndex = 10;
-      this.board.addObjectAt(value.x, value.y, boardMarkup);
-      objects.push(boardMarkup);
+      boardMarkup.setPosition(value.x, value.y);
+      this.addTemporaryBoardObject(boardMarkup);
     });
-
-    this.propertiesData.set(event.propIdent, objects);
   }
 
   private applyLabelMarkupProperty(event: LifeCycleEvent<Label[]>) {
-    const objects: BoardObject<any>[] = [];
-
     event.value.forEach((value) => {
       // add markup
       const boardMarkup = new BoardLabelObject(value.text, this.player.game.getStone(value.x, value.y));
       boardMarkup.zIndex = 10;
-      this.board.addObjectAt(value.x, value.y, boardMarkup);
-      objects.push(boardMarkup);
+      boardMarkup.setPosition(value.x, value.y);
+      this.addTemporaryBoardObject(boardMarkup);
     });
-
-    this.propertiesData.set(event.propIdent, objects);
   }
 
   private applyLineMarkupProperty(event: LifeCycleEvent<Vector[]>) {
-    const objects: BoardObject<any>[] = [];
-
     event.value.forEach((value) => {
       // add markup
       const boardMarkup = new BoardLineObject(event.propIdent, value[0], value[1]);
       boardMarkup.zIndex = 10;
-      this.board.addObject(boardMarkup);
-      objects.push(boardMarkup);
+      this.addTemporaryBoardObject(boardMarkup);
     });
-
-    this.propertiesData.set(event.propIdent, objects);
-  }
-
-  private clearMarkupProperty(event: LifeCycleEvent<Point[]>) {
-    this.board.removeObject(this.propertiesData.get(event.propIdent));
-    this.propertiesData.clear(event.propIdent);
   }
 
   private applyViewportProperty(event: LifeCycleEvent<Vector>) {
     const currentViewport = this.board.getViewport();
+    this.viewportStack.push(currentViewport);
 
     if (event.value) {
       const minX = Math.min(event.value[0].x, event.value[1].x);
@@ -342,19 +305,24 @@ export default class SVGBoardComponent extends Component {
         left: 0,
       });
     }
-
-    this.propertiesData.set(event.propIdent, currentViewport);
   }
 
-  private clearViewportProperty(event: LifeCycleEvent<Vector>) {
-    this.board.setViewport(this.propertiesData.get(event.propIdent));
-    this.propertiesData.clear(event.propIdent, null);
+  private clearViewportProperty() {
+    const previousViewport = this.viewportStack.pop();
+    if (previousViewport) {
+      this.board.setViewport(previousViewport);
+    }
   }
 
   private applyMoveProperty(event: LifeCycleEvent<Point>) {
     if (this.player.config.highlightCurrentMove) {
-      const variationsMarkup = this.player.getVariations().length > 1 && this.player.shouldShowCurrentVariations();
-      if (isThereMarkup(event.value, this.player.currentNode.properties) || variationsMarkup) {
+      if (isThereMarkup(event.value, this.player.currentNode.properties)) {
+        // don't show current move markup, when there is markup in kifu node
+        return;
+      }
+
+      if (this.player.getVariations().length > 1 && this.player.shouldShowCurrentVariations()) {
+        // don't show current move markup, if there is multiple variations and "show current variations" style set
         return;
       }
 
@@ -363,26 +331,17 @@ export default class SVGBoardComponent extends Component {
         event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark,
       );
       boardMarkup.zIndex = 10;
-      this.board.addObjectAt(event.value.x, event.value.y, boardMarkup);
-
-      this.propertiesData.set(event.propIdent, boardMarkup);
+      boardMarkup.setPosition(event.value.x, event.value.y);
+      this.addTemporaryBoardObject(boardMarkup);
     }
   }
 
-  private clearMoveProperty(event: LifeCycleEvent<Vector>) {
-    const propertyData = this.propertiesData.get(event.propIdent);
-    if (propertyData) {
-      this.board.removeObject(propertyData);
-    }
-    this.propertiesData.clear(event.propIdent);
-  }
-
-  addTemporaryBoardObject(x: number, y: number, obj: FieldObject<any>) {
+  addTemporaryBoardObject(obj: BoardObject<SVGDrawHandler>) {
     this.temporaryBoardObjects.push(obj);
-    this.board.addObjectAt(x, y, obj);
+    this.board.addObject(obj);
   }
 
-  removeTemporaryBoardObject(obj: FieldObject<any>) {
+  removeTemporaryBoardObject(obj: FieldObject<SVGDrawHandler>) {
     this.temporaryBoardObjects = this.temporaryBoardObjects.filter(o => o !== obj);
     this.board.removeObject(obj);
   }

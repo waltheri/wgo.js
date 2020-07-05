@@ -14,6 +14,7 @@ import KifuNode from '../kifu/KifuNode';
 import { runInThisContext } from 'vm';
 import { FieldObject } from '../BoardBase';
 import { SVGDrawHandler } from '../SVGBoard/types';
+import { SimpleStone } from '../SVGBoard/svgDrawHandlers';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
@@ -28,6 +29,7 @@ export default class SimplePlayer extends PlayerBase {
   private _boardMouseMoveEvent: Function;
   private _boardMouseOutEvent: Function;
   private _boardClickEvent: Function;
+  private _nodeChange: Function;
 
   constructor(element: HTMLElement, config: PartialRecursive<SimplePlayerConfig> = {}) {
     super();
@@ -106,18 +108,29 @@ export default class SimplePlayer extends PlayerBase {
   }
 
   shouldShowVariations() {
+    // look in kifu, whether to show variation markup
     const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
     if (st != null) {
       return !(st & 2);
     }
+
+    // otherwise use configuration value
     return this.config.showVariations;
   }
 
   shouldShowCurrentVariations() {
+    // in edit mode not possible
+    if (this.editMode) {
+      return false;
+    }
+
+    // look at variation style in kifu
     const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
     if (st != null) {
       return !!(st & 1);
     }
+
+    // or use variation style from configuration
     return this.config.showCurrentVariations;
   }
 
@@ -128,50 +141,82 @@ export default class SimplePlayer extends PlayerBase {
 
       let lastX = -1;
       let lastY = -1;
-      let boardObject: FieldObject<any>;
+
+      const blackStone = new FieldObject(new SimpleStone('black'));
+      blackStone.setOpacity(0.35);
+
+      const whiteStone = new FieldObject(new SimpleStone('white'));
+      whiteStone.setOpacity(0.35);
+
+      let addedStone: FieldObject<any> = null;
 
       this._boardMouseMoveEvent = (p: Point) => {
         if (lastX !== p.x || lastY !== p.y) {
           if (this.game.isValid(p.x, p.y)) {
-            if (!boardObject) {
-              // TODO - somehow change color, when turn changes
-              boardObject = new FieldObject('MA');
+            const boardObject = this.game.turn === Color.BLACK ? blackStone : whiteStone;
+            boardObject.setPosition(p.x, p.y);
+
+            if (addedStone) {
+              this.boardComponent.board.updateObject(boardObject);
+            } else {
               this.boardComponent.board.addObject(boardObject);
+              addedStone = boardObject;
             }
 
-            boardObject.setPosition(p.x, p.y);
-            this.boardComponent.board.updateObject(boardObject);
-
-            lastX = p.x;
-            lastY = p.y;
           } else {
             this._boardMouseOutEvent();
           }
+          lastX = p.x;
+          lastY = p.y;
         }
       };
 
       this._boardMouseOutEvent = () => {
-        this.boardComponent.board.removeObject(boardObject);
-        boardObject = null;
+        if (addedStone) {
+          this.boardComponent.board.removeObject(addedStone);
+          addedStone = null;
+        }
         lastX = -1;
         lastY = -1;
       };
 
       this._boardClickEvent = (p: Point) => {
         this._boardMouseOutEvent();
+
+        if (p == null) {
+          return;
+        }
+
+        // check, whether some of the next node contains this move
+        for (let i = 0; i < this.currentNode.children.length; i++) {
+          const move = this.currentNode.children[i].getProperty('B') || this.currentNode.children[i].getProperty('W');
+          if (move.x === p.x && move.y === p.y) {
+            this.next(i);
+            return;
+          }
+        }
+
+        // otherwise play if valid
         if (this.game.isValid(p.x, p.y)) {
-          // TODO - don't play, if already played, also should avoid conflicts with variations
           this.play(p.x, p.y);
         }
+      };
+
+      this._nodeChange = () => {
+        const current = { x: lastX, y: lastY };
+        this._boardMouseOutEvent();
+        this._boardMouseMoveEvent(current);
       };
 
       this.on('boardMouseMove', this._boardMouseMoveEvent);
       this.on('boardMouseOut', this._boardMouseOutEvent);
       this.on('boardClick', this._boardClickEvent);
+      this.on('applyNodeChanges', this._nodeChange);
     } else if (!b && this.editMode) {
       this.off('boardMouseMove', this._boardMouseMoveEvent);
       this.off('boardMouseOut', this._boardMouseOutEvent);
       this.off('boardClick', this._boardClickEvent);
+      this.off('applyNodeChanges', this._nodeChange);
 
       this.editMode = false;
       this.restore();

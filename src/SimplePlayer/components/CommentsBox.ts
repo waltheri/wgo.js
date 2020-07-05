@@ -45,10 +45,12 @@ export default class CommentBox extends Component {
     if (this.player.config.formatMoves && this.player.boardComponent) {
       [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), (link: HTMLElement) => {
         const boardObject = new BoardMarkupObject('MA');
+        boardObject.zIndex = 20;
 
         link.addEventListener('mouseenter', () => {
           const point = coordinatesToPoint(link.textContent);
-          this.player.boardComponent.addTemporaryBoardObject(point.x, point.y, boardObject);
+          boardObject.setPosition(point.x, point.y);
+          this.player.boardComponent.addTemporaryBoardObject(boardObject);
         });
 
         link.addEventListener('mouseleave', () => {

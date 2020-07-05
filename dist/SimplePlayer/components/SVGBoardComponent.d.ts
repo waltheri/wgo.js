@@ -1,15 +1,15 @@
 import Component from './Component';
 import { SVGBoard } from '../../SVGBoard';
-import { FieldObject } from '../../BoardBase';
+import { FieldObject, BoardObject, BoardViewport } from '../../BoardBase';
 import { Point } from '../../types';
 import SimplePlayer from '../SimplePlayer';
-import PropertiesData from '../../PlayerBase/PropertiesData';
+import { SVGDrawHandler } from '../../SVGBoard/types';
 export default class SVGBoardComponent extends Component {
     board: SVGBoard;
     boardElement: HTMLElement;
-    stoneBoardsObjects: FieldObject<any>[];
-    temporaryBoardObjects: FieldObject<any>[];
-    propertiesData: PropertiesData;
+    stoneBoardsObjects: FieldObject<SVGDrawHandler>[];
+    temporaryBoardObjects: BoardObject<SVGDrawHandler>[];
+    viewportStack: BoardViewport[];
     boardMouseX: number;
     boardMouseY: number;
     constructor(player: SimplePlayer);
@@ -28,11 +28,9 @@ export default class SVGBoardComponent extends Component {
     private applyMarkupProperty;
     private applyLabelMarkupProperty;
     private applyLineMarkupProperty;
-    private clearMarkupProperty;
     private applyViewportProperty;
     private clearViewportProperty;
     private applyMoveProperty;
-    private clearMoveProperty;
-    addTemporaryBoardObject(x: number, y: number, obj: FieldObject<any>): void;
-    removeTemporaryBoardObject(obj: FieldObject<any>): void;
+    addTemporaryBoardObject(obj: BoardObject<SVGDrawHandler>): void;
+    removeTemporaryBoardObject(obj: FieldObject<SVGDrawHandler>): void;
 }

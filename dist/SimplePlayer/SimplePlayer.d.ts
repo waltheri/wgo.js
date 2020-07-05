@@ -16,6 +16,7 @@ export default class SimplePlayer extends PlayerBase {
     private _boardMouseMoveEvent;
     private _boardMouseOutEvent;
     private _boardClickEvent;
+    private _nodeChange;
     constructor(element: HTMLElement, config?: PartialRecursive<SimplePlayerConfig>);
     init(): void;
     destroy(): void;
