@@ -1,5 +1,12 @@
 import { BoardBaseTheme } from '../BoardBase/types';
 import { SVGDrawHandler } from '../SVGBoard/types';
+import Component from './components/Component';
+export interface SimplePlayerBoardConfig {
+}
+export interface SimplePlayerComponent<T> {
+    component: typeof Component;
+    params: T;
+}
 export interface SimplePlayerConfig {
     boardTheme: BoardBaseTheme;
     highlightCurrentMove: boolean;

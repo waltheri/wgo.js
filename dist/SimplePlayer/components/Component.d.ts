@@ -4,6 +4,8 @@ import SimplePlayer from '../SimplePlayer';
  */
 export default abstract class Component {
     player: SimplePlayer;
+    /** HTML element containing the component */
+    element: HTMLElement;
     constructor(player: SimplePlayer);
     abstract create(): HTMLElement;
     abstract destroy(): void;

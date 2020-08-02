@@ -1,2 +1,14 @@
 /dist
 /temp
+/.rpt2_cache
+/.vscode
+/demos
+/docs-src
+/gh-pages
+/src
+/test
+notes.txt
+.eslintrc
+tsconfig.json
+tslint.json
+rollup.config.js

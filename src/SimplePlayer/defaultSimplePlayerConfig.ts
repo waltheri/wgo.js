@@ -1,7 +1,18 @@
 import { defaultBoardBaseTheme } from '../BoardBase/defaultConfig';
 import { BoardBaseTheme } from '../BoardBase/types';
 import { SVGDrawHandler } from '../SVGBoard/types';
-import { Circle, Label } from '../SVGBoard/svgDrawHandlers';
+import { Circle, Label, SimpleStone } from '../SVGBoard/svgDrawHandlers';
+import Component from './components/Component';
+import SVGMarkupDrawHandler from '../SVGBoard/svgDrawHandlers/SVGMarkupDrawHandler';
+
+export interface SimplePlayerBoardConfig {
+
+}
+
+export interface SimplePlayerComponent<T> {
+  component: typeof Component;
+  params: T;
+}
 
 export interface SimplePlayerConfig {
   boardTheme: BoardBaseTheme;

@@ -10,10 +10,7 @@ import PlayerTag from './components/PlayerTag';
 import CommentBox from './components/CommentsBox';
 import GameInfoBox from './components/GameInfoBox';
 import ControlPanel from './components/ControlPanel';
-import KifuNode from '../kifu/KifuNode';
-import { runInThisContext } from 'vm';
 import { FieldObject } from '../BoardBase';
-import { SVGDrawHandler } from '../SVGBoard/types';
 import { SimpleStone } from '../SVGBoard/svgDrawHandlers';
 
 export default class SimplePlayer extends PlayerBase {
