@@ -4303,13 +4303,15 @@
          */
         PlayerBase.prototype.getCurrentPath = function () {
             var path = { depth: 0, forks: [] };
-            var node = this.currentNode;
-            while (node.parent) {
-                path.depth++;
-                if (node.parent.children.length > 1) {
-                    path.forks.push(node.parent.children.indexOf(node));
+            if (this.currentNode) {
+                var node = this.currentNode;
+                while (node.parent) {
+                    path.depth++;
+                    if (node.parent.children.length > 1) {
+                        path.forks.push(node.parent.children.indexOf(node));
+                    }
+                    node = node.parent;
                 }
-                node = node.parent;
             }
             return path;
         };
@@ -4743,18 +4745,23 @@
         }
         return false;
     }
+    //# sourceMappingURL=SVGBoardComponent.js.map
 
     var Container = /** @class */ (function (_super) {
         __extends(Container, _super);
         function Container(params) {
             var _this = _super.call(this) || this;
+            _this.children = [];
             _this.items = params.items;
             _this.direction = params.direction;
+            _this.handleResize = _this.handleResize.bind(_this);
             return _this;
         }
-        Container.prototype.create = function () {
+        Container.prototype.create = function (player) {
+            this.player = player;
             this.element = document.createElement('div');
             this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
+            player.on('resize', this.handleResize);
             return this.element;
         };
         Container.prototype.didMount = function (player) {
@@ -4764,14 +4771,43 @@
                     var child = new item.component(item.params);
                     _this.element.appendChild(child.create(player));
                     child.didMount(player);
+                    _this.children.push(child);
+                }
+                else {
+                    _this.children.push(null);
                 }
             });
         };
         Container.prototype.destroy = function (player) {
             var _this = this;
             this.children.forEach(function (child) {
-                child.destroy(player);
-                _this.element.removeChild(_this.element.firstChild);
+                if (child) {
+                    child.destroy(player);
+                    _this.element.removeChild(_this.element.firstChild);
+                }
+            });
+            player.off('resize', this.handleResize);
+        };
+        Container.prototype.handleResize = function () {
+            var _this = this;
+            var elemIt = 0;
+            this.items.forEach(function (item, ind) {
+                if (!item.condition || item.condition(_this)) {
+                    if (_this.children[ind] == null) {
+                        var child = new item.component(item.params);
+                        _this.element.insertBefore(child.create(_this.player), _this.element.children[elemIt]);
+                        child.didMount(_this.player);
+                        _this.children[ind] = child;
+                    }
+                    elemIt++;
+                }
+                else {
+                    if (_this.children[ind]) {
+                        _this.children[ind].destroy(_this.player);
+                        _this.children[ind] = null;
+                        _this.element.removeChild(_this.element.children[elemIt]);
+                    }
+                }
             });
         };
         return Container;
@@ -4815,6 +4851,7 @@
             this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
             this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
             this.player.on('applyNodeChanges', this.setCaps);
+            this.initialSet();
             return this.element;
         };
         PlayerTag.prototype.destroy = function () {
@@ -4834,6 +4871,16 @@
         };
         PlayerTag.prototype.setCaps = function () {
             this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
+        };
+        PlayerTag.prototype.initialSet = function () {
+            if (this.player.rootNode) {
+                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || '';
+                this.playerRankElement.textContent = this.player.rootNode.getProperty(this.colorChar + "R") || '';
+                this.playerTeamElement.textContent = this.player.rootNode.getProperty(this.colorChar + "T") || '';
+            }
+            if (this.player.game) {
+                this.setCaps();
+            }
         };
         return PlayerTag;
     }(Component));
@@ -4860,6 +4907,12 @@
             this.element.appendChild(this.commentsElement);
             this.player.on('applyNodeChanges.C', this.setComments);
             this.player.on('clearNodeChanges.C', this.clearComments);
+            if (this.player.currentNode) {
+                var comment = this.player.currentNode.getProperty('C');
+                if (comment) {
+                    this.setComments({ value: comment });
+                }
+            }
             return this.element;
         };
         CommentBox.prototype.destroy = function () {
@@ -4948,6 +5001,7 @@
             this.infoTable.className = 'wgo-player__box__game-info';
             this.element.appendChild(this.infoTable);
             this.player.on('beforeInit', this.printInfo);
+            this.printInfo();
             return this.element;
         };
         GameInfoBox.prototype.destroy = function () {
@@ -4971,11 +5025,13 @@
         GameInfoBox.prototype.printInfo = function () {
             var _this = this;
             this.infoTable.innerHTML = '';
-            this.player.rootNode.forEachProperty(function (propIdent, value) {
-                if (gameInfoProperties[propIdent]) {
-                    _this.addInfo(propIdent, value);
-                }
-            });
+            if (this.player.rootNode) {
+                this.player.rootNode.forEachProperty(function (propIdent, value) {
+                    if (gameInfoProperties[propIdent]) {
+                        _this.addInfo(propIdent, value);
+                    }
+                });
+            }
         };
         return GameInfoBox;
     }(Component));
@@ -5044,6 +5100,9 @@
             this.createMenuItems(menu);
             menuWrapper.appendChild(menu);
             this.player.on('applyNodeChanges', this.update);
+            if (this.player.currentNode) {
+                this.update();
+            }
             return this.element;
         };
         ControlPanel.prototype.destroy = function () {
@@ -5145,6 +5204,36 @@
     }
     //# sourceMappingURL=ControlPanel.js.map
 
+    var ContainerCondition = {
+        minWidth: function (width) {
+            return function (container) { return container.element.offsetWidth >= width; };
+        },
+        minHeight: function (height) {
+            return function (container) { return container.element.offsetHeight >= height; };
+        },
+        maxWidth: function (width) {
+            return function (container) { return container.element.offsetWidth <= width; };
+        },
+        maxHeight: function (height) {
+            return function (container) { return container.element.offsetHeight <= height; };
+        },
+        and: function () {
+            var conditions = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                conditions[_i] = arguments[_i];
+            }
+            return function (container) { return conditions.every(function (c) { return c(container); }); };
+        },
+        or: function () {
+            var conditions = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                conditions[_i] = arguments[_i];
+            }
+            return function (container) { return conditions.some(function (c) { return c(container); }); };
+        },
+    };
+    //# sourceMappingURL=ContainerCondition.js.map
+
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);
         function SimplePlayer(element, config) {
@@ -5185,22 +5274,48 @@
                     return false;
                 }
             });
+            window.addEventListener('resize', this._resizeEvent = function (e) { return _this.resize(); });
             // temp (maybe)
             // this.boardComponent = new SVGBoardComponent(this);
             this.layout = new Container({
-                direction: 'row',
+                direction: 'column',
                 items: [
-                    { component: SVGBoardComponent },
-                    { component: Container, params: {
-                            direction: 'column',
+                    {
+                        component: Container,
+                        condition: ContainerCondition.maxWidth(749),
+                        params: {
+                            direction: 'row',
                             items: [
                                 { component: PlayerTag, params: exports.Color.B },
                                 { component: PlayerTag, params: exports.Color.W },
-                                { component: ControlPanel },
-                                { component: GameInfoBox },
-                                { component: CommentBox },
                             ],
-                        } },
+                        },
+                    },
+                    {
+                        component: Container,
+                        params: {
+                            direction: 'row',
+                            items: [
+                                { component: SVGBoardComponent },
+                                {
+                                    component: Container,
+                                    condition: ContainerCondition.minWidth(650),
+                                    params: {
+                                        direction: 'column',
+                                        items: [
+                                            { component: PlayerTag, params: exports.Color.B, condition: ContainerCondition.minWidth(250) },
+                                            { component: PlayerTag, params: exports.Color.W, condition: ContainerCondition.minWidth(250) },
+                                            { component: ControlPanel, condition: ContainerCondition.minWidth(250) },
+                                            { component: GameInfoBox },
+                                            { component: CommentBox },
+                                        ],
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    { component: ControlPanel, condition: ContainerCondition.maxWidth(749) },
+                    { component: CommentBox, condition: ContainerCondition.maxWidth(649) },
                 ],
             });
             this.mainElement.appendChild(this.layout.create(this));
@@ -5210,6 +5325,9 @@
             document.removeEventListener('mousewheel', this._mouseWheelEvent);
             this._mouseWheelEvent = null;
             document.removeEventListener('keydown', this._keyEvent);
+            this._keyEvent = null;
+            window.removeEventListener('resize', this._resizeEvent);
+            this._resizeEvent = null;
         };
         SimplePlayer.prototype.getVariations = function () {
             if (this.shouldShowVariations()) {
@@ -5245,6 +5363,13 @@
             }
             // or use variation style from configuration
             return this.config.showCurrentVariations;
+        };
+        /**
+         * Can be called, when dimension of player changes, to update components or layout.
+         * It is called automatically on window resize event.
+         */
+        SimplePlayer.prototype.resize = function () {
+            this.emit('resize', this);
         };
         SimplePlayer.prototype.setEditMode = function (b) {
             var _this = this;
@@ -5325,7 +5450,6 @@
         };
         return SimplePlayer;
     }(PlayerBase));
-    //# sourceMappingURL=SimplePlayer.js.map
 
     //# sourceMappingURL=index.js.map
 

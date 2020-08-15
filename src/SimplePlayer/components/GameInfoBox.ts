@@ -48,6 +48,8 @@ export default class GameInfoBox extends Component {
 
     this.player.on('beforeInit', this.printInfo);
 
+    this.printInfo();
+
     return this.element;
   }
 
@@ -76,11 +78,12 @@ export default class GameInfoBox extends Component {
 
   printInfo() {
     this.infoTable.innerHTML = '';
-
-    this.player.rootNode.forEachProperty((propIdent, value) => {
-      if (gameInfoProperties[propIdent]) {
-        this.addInfo(propIdent, value);
-      }
-    });
+    if (this.player.rootNode) {
+      this.player.rootNode.forEachProperty((propIdent, value) => {
+        if (gameInfoProperties[propIdent]) {
+          this.addInfo(propIdent, value);
+        }
+      });
+    }
   }
 }

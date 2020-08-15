@@ -1,5 +1,4 @@
 import Component from './Component';
-import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
 import { BoardMarkupObject } from '../../BoardBase';
 
@@ -33,6 +32,13 @@ export default class CommentBox extends Component {
     this.player.on('applyNodeChanges.C', this.setComments);
     this.player.on('clearNodeChanges.C', this.clearComments);
 
+    if (this.player.currentNode) {
+      const comment = this.player.currentNode.getProperty('C');
+      if (comment) {
+        this.setComments({ value: comment });
+      }
+    }
+
     return this.element;
   }
 
@@ -41,7 +47,7 @@ export default class CommentBox extends Component {
     this.player.off('clearNodeChanges.C', this.clearComments);
   }
 
-  setComments(event: LifeCycleEvent<string>) {
+  setComments(event: { value: string }) {
     this.commentsElement.innerHTML = this.formatComment(event.value);
 
     if (this.player.config.formatMoves) {

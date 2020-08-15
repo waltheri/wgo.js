@@ -19,4 +19,5 @@ export default class PlayerTag extends Component {
     setRank(event: LifeCycleEvent<string>): void;
     setTeam(event: LifeCycleEvent<string>): void;
     setCaps(): void;
+    private initialSet;
 }

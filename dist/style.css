@@ -28,22 +28,25 @@
 }
 
 .wgo-player__container--row > .wgo-player__board {
-  width: 66.6666666%;
+  flex: 2;
 }
 
 .wgo-player__container--row > .wgo-player__container--column {
-  width: 33.3333333%;
+  flex: 1;
 }
 
 .wgo-player__box {
   background: rgba(121, 85, 72, 0.05);
-  margin-left: 1px;
   padding: 10px 15px;
   overflow: hidden;
 }
 
-.wgo-player__box + .wgo-player__box {
+.wgo-player__container--column > * + * {
   margin-top: 1px;
+}
+
+.wgo-player__container--row > * + * {
+  margin-left: 1px;
 }
 
 .wgo-player__box--stretch {
@@ -76,6 +79,8 @@
 .wgo-player__player-tag {
   display: flex;
   align-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .wgo-player__player-tag__name {
@@ -170,6 +175,8 @@
   font-size: 15px;
   border-radius: 4px;
   user-select: none;
+  max-width: 50px;
+  box-sizing: border-box;
 }
 
 .wgo-player__button:disabled {
@@ -180,6 +187,8 @@
 .wgo-player__move-number {
   width: 30px;
   font-variant: tabular-nums;
+  max-width: 50px;
+  box-sizing: border-box;
 }
 
 .wgo-player__button-group {

@@ -134,6 +134,10 @@ export default class ControlPanel extends Component {
 
     this.player.on('applyNodeChanges', this.update);
 
+    if (this.player.currentNode) {
+      this.update();
+    }
+
     return this.element;
   }
 

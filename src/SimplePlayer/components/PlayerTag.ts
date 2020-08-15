@@ -59,6 +59,8 @@ export default class PlayerTag extends Component {
     this.player.on(`beforeInit.${this.colorChar}T`, this.setTeam); // property BT or WT
     this.player.on('applyNodeChanges', this.setCaps);
 
+    this.initialSet();
+
     return this.element;
   }
 
@@ -83,5 +85,16 @@ export default class PlayerTag extends Component {
 
   setCaps() {
     this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
+  }
+
+  private initialSet() {
+    if (this.player.rootNode) {
+      this.playerNameElement.textContent = this.player.rootNode.getProperty(`P${this.colorChar}`) || '';
+      this.playerRankElement.textContent = this.player.rootNode.getProperty(`${this.colorChar}R`) || '';
+      this.playerTeamElement.textContent = this.player.rootNode.getProperty(`${this.colorChar}T`) || '';
+    }
+    if (this.player.game) {
+      this.setCaps();
+    }
   }
 }

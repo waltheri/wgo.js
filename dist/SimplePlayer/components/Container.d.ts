@@ -1,22 +1,26 @@
 import Component, { ComponentConstructor } from './Component';
 import SimplePlayer from '../SimplePlayer';
-interface ContainerItem<T> {
+export interface Condition {
+    (container: Container): boolean;
+}
+export interface ContainerItem<T> {
     component: ComponentConstructor<T>;
     params?: T;
-    condition?: (container: Container) => boolean;
+    condition?: Condition;
 }
-interface ContainerConfig {
+export interface ContainerConfig {
     direction: 'row' | 'column';
     items: ContainerItem<any>[];
 }
 export default class Container extends Component {
+    player: SimplePlayer;
     element: HTMLElement;
     direction: 'row' | 'column';
     items: ContainerItem<any>[];
     children: Component[];
     constructor(params: ContainerConfig);
-    create(): HTMLElement;
+    create(player: SimplePlayer): HTMLElement;
     didMount(player: SimplePlayer): void;
     destroy(player: SimplePlayer): void;
+    handleResize(): void;
 }
-export {};

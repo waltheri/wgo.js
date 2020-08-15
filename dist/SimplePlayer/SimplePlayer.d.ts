@@ -12,6 +12,7 @@ export default class SimplePlayer extends PlayerBase {
     coordinates: boolean;
     private _mouseWheelEvent;
     private _keyEvent;
+    private _resizeEvent;
     private _boardMouseMoveEvent;
     private _boardMouseOutEvent;
     private _boardClickEvent;
@@ -22,5 +23,10 @@ export default class SimplePlayer extends PlayerBase {
     getVariations(): Point[];
     shouldShowVariations(): boolean;
     shouldShowCurrentVariations(): boolean;
+    /**
+     * Can be called, when dimension of player changes, to update components or layout.
+     * It is called automatically on window resize event.
+     */
+    resize(): void;
     setEditMode(b: boolean): void;
 }

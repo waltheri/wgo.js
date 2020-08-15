@@ -11,6 +11,7 @@ import CommentBox from './components/CommentsBox';
 import GameInfoBox from './components/GameInfoBox';
 import ControlPanel from './components/ControlPanel';
 import { FieldObject } from '../BoardBase';
+import ContainerCondition from './components/ContainerCondition';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
@@ -22,6 +23,7 @@ export default class SimplePlayer extends PlayerBase {
 
   private _mouseWheelEvent: EventListenerOrEventListenerObject;
   private _keyEvent: EventListenerOrEventListenerObject;
+  private _resizeEvent: EventListenerOrEventListenerObject;
   private _boardMouseMoveEvent: Function;
   private _boardMouseOutEvent: Function;
   private _boardClickEvent: Function;
@@ -68,24 +70,53 @@ export default class SimplePlayer extends PlayerBase {
       }
     });
 
+    window.addEventListener('resize', this._resizeEvent = (e: any) => this.resize());
+
     // temp (maybe)
     // this.boardComponent = new SVGBoardComponent(this);
+
     this.layout = new Container({
-      direction: 'row',
+      direction: 'column',
       items: [
-        { component: SVGBoardComponent },
-        { component: Container, params: {
-          direction: 'column',
-          items: [
-            { component: PlayerTag, params: Color.B },
-            { component: PlayerTag, params: Color.W },
-            { component: ControlPanel },
-            { component: GameInfoBox },
-            { component: CommentBox },
-          ],
-        }},
+        {
+          component: Container,
+          condition: ContainerCondition.maxWidth(749),
+          params: {
+            direction: 'row',
+            items: [
+              { component: PlayerTag, params: Color.B },
+              { component: PlayerTag, params: Color.W },
+            ],
+          },
+        },
+        {
+          component: Container,
+          params: {
+            direction: 'row',
+            items: [
+              { component: SVGBoardComponent },
+              {
+                component: Container,
+                condition: ContainerCondition.minWidth(650),
+                params: {
+                  direction: 'column',
+                  items: [
+                    { component: PlayerTag, params: Color.B, condition: ContainerCondition.minWidth(250) },
+                    { component: PlayerTag, params: Color.W, condition: ContainerCondition.minWidth(250) },
+                    { component: ControlPanel, condition: ContainerCondition.minWidth(250) },
+                    { component: GameInfoBox },
+                    { component: CommentBox },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        { component: ControlPanel, condition: ContainerCondition.maxWidth(749) },
+        { component: CommentBox, condition: ContainerCondition.maxWidth(649) },
       ],
     });
+
     this.mainElement.appendChild(this.layout.create(this));
     this.layout.didMount(this);
   }
@@ -93,7 +124,12 @@ export default class SimplePlayer extends PlayerBase {
   destroy() {
     document.removeEventListener('mousewheel', this._mouseWheelEvent);
     this._mouseWheelEvent = null;
+
     document.removeEventListener('keydown', this._keyEvent);
+    this._keyEvent = null;
+
+    window.removeEventListener('resize', this._resizeEvent);
+    this._resizeEvent = null;
   }
 
   getVariations(): Point[] {
@@ -134,6 +170,14 @@ export default class SimplePlayer extends PlayerBase {
 
     // or use variation style from configuration
     return this.config.showCurrentVariations;
+  }
+
+  /**
+   * Can be called, when dimension of player changes, to update components or layout.
+   * It is called automatically on window resize event.
+   */
+  resize() {
+    this.emit('resize', this);
   }
 
   setEditMode(b: boolean) {

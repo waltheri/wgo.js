@@ -240,16 +240,19 @@ export default class PlayerBase extends EventEmitter {
    */
   getCurrentPath() {
     const path: Path = { depth: 0, forks: [] };
-    let node = this.currentNode;
 
-    while (node.parent) {
-      path.depth++;
+    if (this.currentNode) {
+      let node = this.currentNode;
 
-      if (node.parent.children.length > 1) {
-        path.forks.push(node.parent.children.indexOf(node));
+      while (node.parent) {
+        path.depth++;
+
+        if (node.parent.children.length > 1) {
+          path.forks.push(node.parent.children.indexOf(node));
+        }
+
+        node = node.parent;
       }
-
-      node = node.parent;
     }
 
     return path;
