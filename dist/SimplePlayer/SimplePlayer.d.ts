@@ -3,14 +3,13 @@ import { Point } from '../types';
 import { PlayerBase } from '../PlayerBase';
 import { SimplePlayerConfig } from './defaultSimplePlayerConfig';
 import Component from './components/Component';
-import BoardComponent from './components/BoardComponent';
 export default class SimplePlayer extends PlayerBase {
     element: HTMLElement;
     mainElement: HTMLElement;
     config: SimplePlayerConfig;
     layout: Component;
-    boardComponent: BoardComponent;
     editMode: boolean;
+    coordinates: boolean;
     private _mouseWheelEvent;
     private _keyEvent;
     private _boardMouseMoveEvent;

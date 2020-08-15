@@ -17,6 +17,8 @@ interface MenuItem {
 }
 
 export default class ControlPanel extends Component {
+  player: SimplePlayer;
+
   static menuItems: MenuItem[] = [
     {
       name: 'Edit mode',
@@ -32,15 +34,16 @@ export default class ControlPanel extends Component {
     {
       name: 'Display coordinates',
       fn(this: ControlPanel) {
-        if (this.player.boardComponent) {
-          this.player.boardComponent.board.setCoordinates(!this.player.boardComponent.board.getCoordinates());
-          return this.player.boardComponent.board.getCoordinates();
-        }
-        return false;
+        // this.player.boardComponent.board.setCoordinates(!this.player.boardComponent.board.getCoordinates());
+        // return this.player.boardComponent.board.getCoordinates();
+        this.player.emit('board.setCoordinates', !this.player.coordinates);
+        return this.player.coordinates;
       },
       checkable: true,
       defaultChecked(this: ControlPanel) {
-        return this.player.boardComponent.board.getCoordinates();
+        // return this.player.boardComponent.board.getCoordinates();
+        // todo: will be tricky
+        return false;
       },
     },
     {
@@ -59,12 +62,14 @@ export default class ControlPanel extends Component {
   next: HTMLButtonElement;
   last: HTMLButtonElement;
 
-  constructor(player: SimplePlayer) {
-    super(player);
+  constructor() {
+    super();
     this.update = this.update.bind(this);
   }
 
-  create() {
+  create(player: SimplePlayer) {
+    this.player = player;
+
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__control-panel';
 

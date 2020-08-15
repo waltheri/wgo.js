@@ -1,21 +1,23 @@
 import Component from './Component';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
-import { PropIdent } from '../../SGFParser/sgfTypes';
-import { FieldObject, BoardMarkupObject } from '../../BoardBase';
+import { BoardMarkupObject } from '../../BoardBase';
 
 export default class CommentBox extends Component {
+  player: SimplePlayer;
   element: HTMLElement;
   commentsElement: HTMLElement;
 
-  constructor(player: SimplePlayer) {
-    super(player);
+  constructor() {
+    super();
 
     this.setComments = this.setComments.bind(this);
     this.clearComments = this.clearComments.bind(this);
   }
 
-  create() {
+  create(player: SimplePlayer) {
+    this.player = player;
+
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
 
@@ -42,7 +44,7 @@ export default class CommentBox extends Component {
   setComments(event: LifeCycleEvent<string>) {
     this.commentsElement.innerHTML = this.formatComment(event.value);
 
-    if (this.player.config.formatMoves && this.player.boardComponent) {
+    if (this.player.config.formatMoves) {
       [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), (link: HTMLElement) => {
         const boardObject = new BoardMarkupObject('MA');
         boardObject.zIndex = 20;
@@ -50,11 +52,11 @@ export default class CommentBox extends Component {
         link.addEventListener('mouseenter', () => {
           const point = coordinatesToPoint(link.textContent);
           boardObject.setPosition(point.x, point.y);
-          this.player.boardComponent.addTemporaryBoardObject(boardObject);
+          this.player.emit('board.addTemporaryObject', boardObject);
         });
 
         link.addEventListener('mouseleave', () => {
-          this.player.boardComponent.removeTemporaryBoardObject(boardObject);
+          this.player.emit('board.removeTemporaryObject', boardObject);
         });
       });
     }

@@ -11,15 +11,14 @@ import CommentBox from './components/CommentsBox';
 import GameInfoBox from './components/GameInfoBox';
 import ControlPanel from './components/ControlPanel';
 import { FieldObject } from '../BoardBase';
-import BoardComponent from './components/BoardComponent';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
   mainElement: HTMLElement;
   config: SimplePlayerConfig;
   layout: Component;
-  boardComponent: BoardComponent;
   editMode: boolean;
+  coordinates: boolean;
 
   private _mouseWheelEvent: EventListenerOrEventListenerObject;
   private _keyEvent: EventListenerOrEventListenerObject;
@@ -70,18 +69,25 @@ export default class SimplePlayer extends PlayerBase {
     });
 
     // temp (maybe)
-    this.boardComponent = new SVGBoardComponent(this);
-    this.layout = new Container(this, { direction: 'row' }, [
-      this.boardComponent,
-      new Container(this, { direction: 'column' }, [
-        new PlayerTag(this, Color.B),
-        new PlayerTag(this, Color.W),
-        new ControlPanel(this),
-        new GameInfoBox(this),
-        new CommentBox(this),
-      ]),
-    ]);
-    this.mainElement.appendChild(this.layout.create());
+    // this.boardComponent = new SVGBoardComponent(this);
+    this.layout = new Container({
+      direction: 'row',
+      items: [
+        { component: SVGBoardComponent },
+        { component: Container, params: {
+          direction: 'column',
+          items: [
+            { component: PlayerTag, params: Color.B },
+            { component: PlayerTag, params: Color.W },
+            { component: ControlPanel },
+            { component: GameInfoBox },
+            { component: CommentBox },
+          ],
+        }},
+      ],
+    });
+    this.mainElement.appendChild(this.layout.create(this));
+    this.layout.didMount(this);
   }
 
   destroy() {
@@ -146,59 +152,57 @@ export default class SimplePlayer extends PlayerBase {
 
       let addedStone: FieldObject = null;
 
-      if (this.boardComponent) {
-        this._boardMouseMoveEvent = (p: Point) => {
-          if (lastX !== p.x || lastY !== p.y) {
-            if (this.game.isValid(p.x, p.y)) {
-              const boardObject = this.game.turn === Color.BLACK ? blackStone : whiteStone;
-              boardObject.setPosition(p.x, p.y);
+      this._boardMouseMoveEvent = (p: Point) => {
+        if (lastX !== p.x || lastY !== p.y) {
+          if (this.game.isValid(p.x, p.y)) {
+            const boardObject = this.game.turn === Color.BLACK ? blackStone : whiteStone;
+            boardObject.setPosition(p.x, p.y);
 
-              if (addedStone) {
-                this.boardComponent.board.updateObject(boardObject);
-              } else {
-                this.boardComponent.board.addObject(boardObject);
-                addedStone = boardObject;
-              }
-
+            if (addedStone) {
+              this.emit('board.updateTemporaryObject', boardObject);
             } else {
-              this._boardMouseOutEvent();
+              this.emit('board.addTemporaryObject', boardObject);
+              addedStone = boardObject;
             }
-            lastX = p.x;
-            lastY = p.y;
+
+          } else {
+            this._boardMouseOutEvent();
           }
-        };
+          lastX = p.x;
+          lastY = p.y;
+        }
+      };
 
-        this._boardMouseOutEvent = () => {
-          if (addedStone) {
-            this.boardComponent.board.removeObject(addedStone);
-            addedStone = null;
-          }
-          lastX = -1;
-          lastY = -1;
-        };
+      this._boardMouseOutEvent = () => {
+        if (addedStone) {
+          this.emit('board.removeTemporaryObject', addedStone);
+          addedStone = null;
+        }
+        lastX = -1;
+        lastY = -1;
+      };
 
-        this._boardClickEvent = (p: Point) => {
-          this._boardMouseOutEvent();
+      this._boardClickEvent = (p: Point) => {
+        this._boardMouseOutEvent();
 
-          if (p == null) {
+        if (p == null) {
+          return;
+        }
+
+        // check, whether some of the next node contains this move
+        for (let i = 0; i < this.currentNode.children.length; i++) {
+          const move = this.currentNode.children[i].getProperty('B') || this.currentNode.children[i].getProperty('W');
+          if (move.x === p.x && move.y === p.y) {
+            this.next(i);
             return;
           }
+        }
 
-          // check, whether some of the next node contains this move
-          for (let i = 0; i < this.currentNode.children.length; i++) {
-            const move = this.currentNode.children[i].getProperty('B') || this.currentNode.children[i].getProperty('W');
-            if (move.x === p.x && move.y === p.y) {
-              this.next(i);
-              return;
-            }
-          }
-
-          // otherwise play if valid
-          if (this.game.isValid(p.x, p.y)) {
-            this.play(p.x, p.y);
-          }
-        };
-      }
+        // otherwise play if valid
+        if (this.game.isValid(p.x, p.y)) {
+          this.play(p.x, p.y);
+        }
+      };
 
       this._nodeChange = () => {
         const current = { x: lastX, y: lastY };

@@ -3,18 +3,20 @@ import { SVGBoard } from '../../SVGBoard';
 import { FieldObject, BoardObject, BoardViewport } from '../../BoardBase';
 import { Point } from '../../types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGBoardObject } from '../../SVGBoard/types';
-import BoardComponent from './BoardComponent';
-export default class SVGBoardComponent extends Component implements BoardComponent {
+import { SVGBoardObject, SVGBoardConfig } from '../../SVGBoard/types';
+import { PartialRecursive } from '../../utils/makeConfig';
+export default class SVGBoardComponent extends Component implements Component {
+    player: SimplePlayer;
     board: SVGBoard;
+    boardConfig: PartialRecursive<SVGBoardConfig>;
     boardElement: HTMLElement;
     stoneBoardsObjects: FieldObject[];
     temporaryBoardObjects: SVGBoardObject[];
     viewportStack: BoardViewport[];
     boardMouseX: number;
     boardMouseY: number;
-    constructor(player: SimplePlayer);
-    create(): HTMLElement;
+    constructor(boardConfig?: PartialRecursive<SVGBoardConfig>);
+    create(player: SimplePlayer): HTMLElement;
     destroy(): void;
     protected updateStones(): void;
     protected addVariationMarkup(): void;
@@ -34,4 +36,6 @@ export default class SVGBoardComponent extends Component implements BoardCompone
     private applyMoveProperty;
     addTemporaryBoardObject(obj: BoardObject): void;
     removeTemporaryBoardObject(obj: FieldObject): void;
+    updateTemporaryBoardObject(obj: FieldObject): void;
+    setCoordinates(b: boolean): void;
 }

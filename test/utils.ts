@@ -1,5 +1,6 @@
-import { deepEqual, notEqual } from 'assert';
+import { deepEqual, notEqual, equal } from 'assert';
 import makeConfig from '../src/utils/makeConfig';
+import { assert } from 'console';
 
 describe('makeConfig()', () => {
   it('Basic config merging', () => {
@@ -76,6 +77,26 @@ describe('makeConfig()', () => {
         bar: 20,
       },
     });
+  });
+
+  it('Non basic objects are not merged', () => {
+    class Foo {
+      constructor(public bar: number, public baz?: string) {}
+    }
+
+    const foo = new Foo(10, 'text');
+    const defConfig: any = {
+      foo,
+      bar: 10,
+    };
+
+    const foo2 = new Foo(20);
+    const config = makeConfig(defConfig, { foo: foo2 });
+
+    equal(config.bar, 10);
+    equal(config.foo, foo2);
+    equal(config.foo.bar, 20);
+    assert(config.foo.baz == null);
   });
 
   it('Custom config is also added.', () => {

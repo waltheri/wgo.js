@@ -11,19 +11,22 @@ import {
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGBoardObject } from '../../SVGBoard/types';
+import { SVGBoardObject, SVGBoardConfig } from '../../SVGBoard/types';
 import SVGCustomFieldObject from '../../SVGBoard/SVGCustomFieldObject';
 import SVGCustomLabelObject from '../../SVGBoard/SVGCustomLabelObject';
-import BoardComponent from './BoardComponent';
+import { PartialRecursive } from '../../utils/makeConfig';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
   W: Color.WHITE,
 };
 
-export default class SVGBoardComponent extends Component implements BoardComponent {
+export default class SVGBoardComponent extends Component implements Component {
+  player: SimplePlayer;
+
   // Underlying SVG board object
   board: SVGBoard;
+  boardConfig: PartialRecursive<SVGBoardConfig>;
 
   // Main wrapper element for the board
   boardElement: HTMLElement;
@@ -40,9 +43,10 @@ export default class SVGBoardComponent extends Component implements BoardCompone
   boardMouseX: number;
   boardMouseY: number;
 
-  constructor(player: SimplePlayer) {
-    super(player);
+  constructor(boardConfig: PartialRecursive<SVGBoardConfig> = {}) {
+    super();
 
+    this.boardConfig = boardConfig;
     this.viewportStack = [];
 
     this.applyNodeChanges = this.applyNodeChanges.bind(this);
@@ -53,18 +57,23 @@ export default class SVGBoardComponent extends Component implements BoardCompone
     this.applyViewportProperty = this.applyViewportProperty.bind(this);
     this.clearViewportProperty = this.clearViewportProperty.bind(this);
     this.applyMoveProperty = this.applyMoveProperty.bind(this);
+    this.addTemporaryBoardObject = this.addTemporaryBoardObject.bind(this);
+    this.removeTemporaryBoardObject = this.removeTemporaryBoardObject.bind(this);
+    this.updateTemporaryBoardObject = this.updateTemporaryBoardObject.bind(this);
+    this.setCoordinates = this.setCoordinates.bind(this);
   }
 
-  create() {
+  create(player: SimplePlayer) {
+    this.player = player;
+    this.player.coordinates = this.boardConfig.coordinates;
+
     this.boardElement = document.createElement('div');
     this.boardElement.className = 'wgo-player__board';
 
     this.stoneBoardsObjects = [];
     this.temporaryBoardObjects = [];
 
-    this.board = new SVGBoard(this.boardElement, {
-      // theme: this.config.boardTheme,
-    });
+    this.board = new SVGBoard(this.boardElement, this.boardConfig);
 
     this.board.on('click', (event, point) => {
       this.handleBoardClick(point);
@@ -118,6 +127,11 @@ export default class SVGBoardComponent extends Component implements BoardCompone
     this.player.on('applyNodeChanges.B', this.applyMoveProperty);
     this.player.on('applyNodeChanges.W', this.applyMoveProperty);
 
+    this.player.on('board.addTemporaryObject', this.addTemporaryBoardObject);
+    this.player.on('board.removeTemporaryObject', this.removeTemporaryBoardObject);
+    this.player.on('board.updateTemporaryObject', this.updateTemporaryBoardObject);
+    this.player.on('board.setCoordinates', this.setCoordinates);
+
     return this.boardElement;
   }
 
@@ -144,6 +158,11 @@ export default class SVGBoardComponent extends Component implements BoardCompone
 
     this.player.off('applyNodeChanges.B', this.applyMoveProperty);
     this.player.off('applyNodeChanges.W', this.applyMoveProperty);
+
+    this.player.off('board.addTemporaryObject', this.addTemporaryBoardObject);
+    this.player.off('board.removeTemporaryObject', this.removeTemporaryBoardObject);
+    this.player.off('board.updateTemporaryObject', this.updateTemporaryBoardObject);
+    this.player.off('board.setCoordinates', this.setCoordinates);
   }
 
   protected updateStones() {
@@ -351,6 +370,15 @@ export default class SVGBoardComponent extends Component implements BoardCompone
   removeTemporaryBoardObject(obj: FieldObject) {
     this.temporaryBoardObjects = this.temporaryBoardObjects.filter(o => o !== obj);
     this.board.removeObject(obj);
+  }
+
+  updateTemporaryBoardObject(obj: FieldObject) {
+    this.board.updateObject(obj);
+  }
+
+  setCoordinates(b: boolean) {
+    this.player.coordinates = b;
+    this.board.setCoordinates(b);
   }
 }
 

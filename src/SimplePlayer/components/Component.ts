@@ -4,15 +4,16 @@ import SimplePlayer from '../SimplePlayer';
  * Component of Simple Board - can be board, box with comments, control panel, etc...
  */
 export default abstract class Component {
-  player: SimplePlayer;
+  /** Function which is called to create HTML element for component. */
+  abstract create(player: SimplePlayer): HTMLElement;
 
-  /** HTML element containing the component */
-  element: HTMLElement;
+  /** HTML was placed into the DOM */
+  didMount(player: SimplePlayer) {}
 
-  constructor(player: SimplePlayer) {
-    this.player = player;
-  }
+  /** Clean up */
+  abstract destroy(player: SimplePlayer): void;
+}
 
-  abstract create(): HTMLElement;
-  abstract destroy(): void;
+export interface ComponentConstructor<T> {
+  new (params: T): Component;
 }
