@@ -25,6 +25,13 @@ export default class BoardBase extends EventEmitter implements Board {
      */
     addObject(boardObject: BoardObject | BoardObject[]): void;
     /**
+     * Method to update board object. Can be called, when some params of boardObject changes.
+     * It is similar to redraw(), but only boardObject can be redrawn, so performance can/should be better.
+     *
+     * @param boardObject
+     */
+    updateObject(boardObject: BoardObject | BoardObject[]): void;
+    /**
      * Remove board object. Main function for removing graphics on the board.
      *
      * @param boardObject

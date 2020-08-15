@@ -52,6 +52,7 @@ export default class CanvasBoard extends BoardBase {
      */
     redraw(): void;
     addObject(boardObject: BoardObject | BoardObject[]): void;
+    updateObject(boardObject: BoardObject | BoardObject[]): void;
     removeObject(boardObject: BoardObject | BoardObject[]): void;
     removeAllObjects(): void;
     on(type: string, callback: (event: UIEvent, point: Point) => void): void;

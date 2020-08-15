@@ -2,14 +2,14 @@ import { PartialRecursive } from '../utils/makeConfig';
 import { Point } from '../types';
 import { PlayerBase } from '../PlayerBase';
 import { SimplePlayerConfig } from './defaultSimplePlayerConfig';
-import SVGBoardComponent from './components/SVGBoardComponent';
 import Component from './components/Component';
+import BoardComponent from './components/BoardComponent';
 export default class SimplePlayer extends PlayerBase {
     element: HTMLElement;
     mainElement: HTMLElement;
     config: SimplePlayerConfig;
     layout: Component;
-    boardComponent: SVGBoardComponent;
+    boardComponent: BoardComponent;
     editMode: boolean;
     private _mouseWheelEvent;
     private _keyEvent;

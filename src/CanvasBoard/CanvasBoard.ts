@@ -224,6 +224,11 @@ export default class CanvasBoard extends BoardBase {
     this.redraw();
   }
 
+  updateObject(boardObject: BoardObject | BoardObject[]) {
+    // just redraw everything
+    this.redraw();
+  }
+
   removeObject(boardObject: BoardObject | BoardObject[]) {
     super.removeObject(boardObject);
     this.redraw();

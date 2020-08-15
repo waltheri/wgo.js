@@ -1,6 +1,6 @@
 import Component from './Component';
-import { BoardBase } from '../../BoardBase';
+import { Board } from '../../BoardBase';
 
-export default abstract class BoardComponent extends Component {
-  //board: BoardBase;
+export default interface BoardComponent extends Component {
+  board: Board;
 }

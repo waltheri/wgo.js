@@ -17,6 +17,7 @@ export interface Board extends EventEmitter {
     setCoordinates(coordinates: boolean): void;
     redraw(): void;
     addObject(boardObject: BoardObject | BoardObject[]): void;
+    updateObject(boardObject: BoardObject | BoardObject[]): void;
     removeObject(boardObject: BoardObject | BoardObject[]): void;
     removeObjectsAt(x: number, y: number): void;
     removeAllObjects(): void;

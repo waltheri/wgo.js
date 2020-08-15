@@ -4,7 +4,8 @@ import { FieldObject, BoardObject, BoardViewport } from '../../BoardBase';
 import { Point } from '../../types';
 import SimplePlayer from '../SimplePlayer';
 import { SVGBoardObject } from '../../SVGBoard/types';
-export default class SVGBoardComponent extends Component {
+import BoardComponent from './BoardComponent';
+export default class SVGBoardComponent extends Component implements BoardComponent {
     board: SVGBoard;
     boardElement: HTMLElement;
     stoneBoardsObjects: FieldObject[];

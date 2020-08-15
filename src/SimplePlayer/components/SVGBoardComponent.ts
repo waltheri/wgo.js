@@ -11,16 +11,17 @@ import {
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGDrawHandler, SVGBoardObject } from '../../SVGBoard/types';
+import { SVGBoardObject } from '../../SVGBoard/types';
 import SVGCustomFieldObject from '../../SVGBoard/SVGCustomFieldObject';
 import SVGCustomLabelObject from '../../SVGBoard/SVGCustomLabelObject';
+import BoardComponent from './BoardComponent';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
   W: Color.WHITE,
 };
 
-export default class SVGBoardComponent extends Component {
+export default class SVGBoardComponent extends Component implements BoardComponent {
   // Underlying SVG board object
   board: SVGBoard;
 

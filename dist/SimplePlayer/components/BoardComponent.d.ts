@@ -1,3 +1,5 @@
 import Component from './Component';
-export default abstract class BoardComponent extends Component {
+import { Board } from '../../BoardBase';
+export default interface BoardComponent extends Component {
+    board: Board;
 }
