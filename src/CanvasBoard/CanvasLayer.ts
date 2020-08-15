@@ -2,7 +2,6 @@
 import CanvasBoard from './CanvasBoard';
 import { BoardObject, FieldObject } from '../BoardBase';
 import { DrawFunction } from './types';
-import { DrawHandler } from './drawHandlers';
 
 /**
  * @class
@@ -43,7 +42,7 @@ export default class CanvasLayer {
     this.context.transform(1, 0, 0, 1, linesShift, linesShift);
   }
 
-  draw(drawFunction: DrawFunction, boardObject: BoardObject<DrawHandler>) {
+  draw(drawFunction: DrawFunction, boardObject: BoardObject) {
     try {
       // create a "sandbox" for drawing function
       this.context.save();

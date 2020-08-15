@@ -1,14 +1,15 @@
-import { BoardBase, BoardViewport, BoardObject } from '../BoardBase';
+import { BoardBase, BoardViewport } from '../BoardBase';
 import { PartialRecursive } from '../utils/makeConfig';
-import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements } from './types';
+import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements, SVGBoardObject } from './types';
 import { Point } from '../types';
-export default class SVGBoard extends BoardBase<SVGDrawHandler> {
+export default class SVGBoard extends BoardBase {
     config: SVGBoardConfig;
     boardElement: HTMLElement;
     touchArea: HTMLElement;
     svgElement: SVGElement;
     defsElement: SVGElement;
-    objectsElementMap: Map<BoardObject<SVGDrawHandler>, BoardObjectSVGElements>;
+    objects: SVGBoardObject[];
+    objectsElementMap: Map<SVGBoardObject, BoardObjectSVGElements>;
     top: number;
     left: number;
     bottom: number;
@@ -23,11 +24,11 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     drawGrid(): void;
     drawCoordinates(): void;
     drawObjects(): void;
-    addObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]): void;
-    protected createObjectElements(boardObject: BoardObject<SVGDrawHandler>): void;
-    getObjectHandler(boardObject: BoardObject<SVGDrawHandler>): SVGDrawHandler;
-    removeObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]): void;
-    updateObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]): void;
+    addObject(boardObject: SVGBoardObject | SVGBoardObject[]): void;
+    protected createObjectElements(boardObject: SVGBoardObject): void;
+    getObjectHandler(boardObject: SVGBoardObject): SVGDrawHandler;
+    removeObject(boardObject: SVGBoardObject | SVGBoardObject[]): void;
+    updateObject(boardObject: SVGBoardObject | SVGBoardObject[]): void;
     setViewport(viewport?: BoardViewport): void;
     setSize(size?: number): void;
     setCoordinates(coordinates: boolean): void;

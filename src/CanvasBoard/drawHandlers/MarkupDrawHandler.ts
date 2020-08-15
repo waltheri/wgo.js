@@ -13,7 +13,7 @@ export default abstract class MarkupDrawHandler<P = {}> extends DrawHandler<Mark
   grid(
     canvasCtx: CanvasRenderingContext2D,
     boardConfig: CanvasBoardConfig,
-    boardObject: BoardMarkupObject<DrawHandler<MarkupDrawHandlerParams & P>>,
+    boardObject: BoardMarkupObject,
   ) {
     if (boardObject.variation === Color.E) {
       canvasCtx.clearRect(
@@ -27,7 +27,7 @@ export default abstract class MarkupDrawHandler<P = {}> extends DrawHandler<Mark
 
   getColor(
     boardConfig: CanvasBoardConfig,
-    boardObject: BoardMarkupObject<DrawHandler<MarkupDrawHandlerParams & P>>,
+    boardObject: BoardMarkupObject,
   ) {
     if (this.params.color) {
       return this.params.color;

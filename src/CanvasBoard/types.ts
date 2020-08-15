@@ -16,5 +16,5 @@ export interface CanvasBoardConfig extends BoardBaseConfig {
 
 export interface DrawFunction {
   // tslint:disable-next-line:max-line-length
-  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void | Promise<void>;
+  (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void | Promise<void>;
 }

@@ -2,7 +2,7 @@ import Stone from './Stone';
 import { CanvasBoardConfig } from '../types';
 
 export default class GlassStoneWhite extends Stone {
-  stone (canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig) {
+  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig) {
     const stoneRadius = boardConfig.theme.stoneSize;
     const radGrad = canvasCtx.createRadialGradient(
       -2 * stoneRadius / 5,

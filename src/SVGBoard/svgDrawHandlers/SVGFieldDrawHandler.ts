@@ -6,7 +6,7 @@ export default abstract class SVGFieldDrawHandler implements SVGDrawHandler {
   // tslint:disable-next-line:max-line-length
   abstract createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGElement | BoardObjectSVGElements;
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: FieldObject<SVGDrawHandler>, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: FieldObject, config: SVGBoardConfig) {
     const transform = `translate(${boardObject.x}, ${boardObject.y})`;
     const scale = `scale(${boardObject.scaleX}, ${boardObject.scaleY})`;
     const rotate = `rotate(${boardObject.rotate})`;

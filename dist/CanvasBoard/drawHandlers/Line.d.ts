@@ -6,6 +6,6 @@ interface LineParams {
     lineWidth?: number;
 }
 export default class Line extends DrawHandler<LineParams> {
-    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLineObject<DrawHandler<LineParams>>): void;
+    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLineObject): void;
 }
 export {};

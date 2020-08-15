@@ -11,6 +11,6 @@ export default class Line implements SVGDrawHandler {
         [OBJECTS]: SVGLineElement;
         [GRID_MASK]: SVGLineElement;
     };
-    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject<SVGDrawHandler>, config: SVGBoardConfig): void;
+    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig): void;
 }
 export {};

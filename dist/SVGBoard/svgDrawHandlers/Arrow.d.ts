@@ -12,7 +12,7 @@ export default class Arrow implements SVGDrawHandler {
         [GRID_MASK]: SVGGElement;
     };
     protected createSVGElements(): SVGGElement;
-    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject<SVGDrawHandler>, config: SVGBoardConfig): void;
-    protected updateSVGElements(elem: SVGElement, boardObject: BoardLineObject<SVGDrawHandler>): void;
+    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig): void;
+    protected updateSVGElements(elem: SVGElement, boardObject: BoardLineObject): void;
 }
 export {};

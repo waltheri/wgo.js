@@ -10,7 +10,6 @@ import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { Point } from '../types';
 import { BoardObject, BoardBase, BoardViewport } from '../BoardBase';
 import GridLayer from './GridLayer';
-import DrawHandler from './drawHandlers/DrawHandler';
 import { baseTheme } from './themes';
 import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
 
@@ -19,15 +18,15 @@ const canvasBoardDefaultConfig: CanvasBoardConfig = {
   theme: baseTheme,
 };
 
-const zIndexSorter = (obj1: BoardObject<DrawHandler>, obj2: BoardObject<DrawHandler>) => obj1.zIndex - obj2.zIndex;
+const zIndexSorter = (obj1: BoardObject, obj2: BoardObject) => obj1.zIndex - obj2.zIndex;
 
-export default class CanvasBoard extends BoardBase<DrawHandler> {
+export default class CanvasBoard extends BoardBase {
   config: CanvasBoardConfig;
   element: HTMLElement;
   wrapperElement: HTMLElement;
   boardElement: HTMLElement;
   pixelRatio: number;
-  objects: BoardObject<DrawHandler>[] = [];
+  objects: BoardObject[] = [];
   layers: {
     grid: CanvasLayer;
     shadow: CanvasLayer;
@@ -209,7 +208,7 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
     }
   }
 
-  addObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]) {
+  addObject(boardObject: BoardObject | BoardObject[]) {
     if (!Array.isArray(boardObject)) {
       if (typeof boardObject.type === 'string') {
         if (!this.config.theme.drawHandlers[boardObject.type]) {
@@ -217,9 +216,7 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
           throw new TypeError(`Board object type "${boardObject.type}" doesn't exist in \`config.theme.drawHandlers\`.`);
         }
       } else {
-        if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
-          throw new TypeError('Invalid board object type.');
-        }
+        throw new TypeError('Invalid board object type. Custom canvas board objects not yet supported.');
       }
     }
 
@@ -227,7 +224,7 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
     this.redraw();
   }
 
-  removeObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]) {
+  removeObject(boardObject: BoardObject | BoardObject[]) {
     super.removeObject(boardObject);
     this.redraw();
   }

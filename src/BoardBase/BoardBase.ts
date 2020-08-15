@@ -5,11 +5,13 @@ import { BoardObject } from '.';
 import FieldObject from './FieldObject';
 import { defaultBoardBaseConfig } from './defaultConfig';
 
-// tslint:disable-next-line:max-line-length
-export default class BoardBase<T> extends EventEmitter implements Board<T> {
+/**
+ * Board class with basic functionality which can be used for creating custom boards.
+ */
+export default class BoardBase extends EventEmitter implements Board {
   config: BoardBaseConfig;
   element: HTMLElement;
-  objects: BoardObject<T>[] = [];
+  objects: BoardObject[] = [];
 
   constructor(element: HTMLElement, config: PartialRecursive<BoardBaseConfig> = {}) {
     super();
@@ -38,7 +40,7 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
    *
    * @param boardObject
    */
-  addObject(boardObject: BoardObject<T> | BoardObject<T>[]) {
+  addObject(boardObject: BoardObject | BoardObject[]) {
     // handling multiple objects
     if (Array.isArray(boardObject)) {
       for (let i = 0; i < boardObject.length; i++) {
@@ -47,17 +49,9 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
       return;
     }
 
-    if (this.objects.indexOf(boardObject) === -1) {
+    if (!this.hasObject(boardObject)) {
       this.objects.push(boardObject);
     }
-  }
-
-  /**
-   * Shortcut method to add object and set its position.
-   */
-  addObjectAt(x: number, y: number, boardObject: FieldObject<T>) {
-    boardObject.setPosition(x, y);
-    this.addObject(boardObject);
   }
 
   /**
@@ -65,7 +59,7 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
    *
    * @param boardObject
    */
-  removeObject(boardObject: BoardObject<T> | BoardObject<T>[]) {
+  removeObject(boardObject: BoardObject | BoardObject[]) {
     // handling multiple objects
     if (Array.isArray(boardObject)) {
       for (let i = 0; i < boardObject.length; i++) {
@@ -84,6 +78,12 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
     this.objects.splice(objectPos, 1);
   }
 
+  /**
+   * Removes all objects on specified field.
+   *
+   * @param x
+   * @param y
+   */
   removeObjectsAt(x: number, y: number) {
     this.objects.forEach((obj) => {
       if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
@@ -92,11 +92,19 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
     });
   }
 
+  /**
+   * Removes all objects on the board.
+   */
   removeAllObjects() {
     this.objects = [];
   }
 
-  hasObject(boardObject: BoardObject<T>) {
+  /**
+   * Returns true if object is already on the board.
+   *
+   * @param boardObject
+   */
+  hasObject(boardObject: BoardObject) {
     return this.objects.indexOf(boardObject) >= 0;
   }
 
@@ -135,7 +143,7 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
   }
 
   /**
-	 * Get currently visible section of the board
+	 * Get currently visible section of the board.
 	 */
 
   getViewport() {
@@ -143,25 +151,36 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
   }
 
   /**
-	 * Set section of the board to be displayed
+	 * Set section of the board to be displayed.
 	 */
-
   setViewport(viewport: BoardViewport) {
     this.config.viewport = viewport;
   }
 
+  /**
+   * Helper to get board size.
+   */
   getSize() {
     return this.config.size;
   }
 
+  /**
+   * Helper to set board size.
+   */
   setSize(size: number = 19) {
     this.config.size = size;
   }
 
+  /**
+   * Returns true, if coordinates around board are visible.
+   */
   getCoordinates() {
     return this.config.coordinates;
   }
 
+  /**
+   * Enable or disable coordinates around board.
+   */
   setCoordinates(coordinates: boolean) {
     this.config.coordinates = coordinates;
   }

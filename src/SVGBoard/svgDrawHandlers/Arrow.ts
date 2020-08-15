@@ -32,7 +32,7 @@ export default class Arrow implements SVGDrawHandler {
     return group;
   }
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject<SVGDrawHandler>, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig) {
     // basic UI definitions
     elem[OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
     elem[OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
@@ -45,7 +45,7 @@ export default class Arrow implements SVGDrawHandler {
     this.updateSVGElements(elem[GRID_MASK], boardObject);
   }
 
-  protected updateSVGElements(elem: SVGElement, boardObject: BoardLineObject<SVGDrawHandler>) {
+  protected updateSVGElements(elem: SVGElement, boardObject: BoardLineObject) {
     // SVG elements of arrow
     const startCircle = elem.children[0];
     const line = elem.children[1];

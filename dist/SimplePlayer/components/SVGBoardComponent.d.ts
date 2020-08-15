@@ -3,12 +3,12 @@ import { SVGBoard } from '../../SVGBoard';
 import { FieldObject, BoardObject, BoardViewport } from '../../BoardBase';
 import { Point } from '../../types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGDrawHandler } from '../../SVGBoard/types';
+import { SVGBoardObject } from '../../SVGBoard/types';
 export default class SVGBoardComponent extends Component {
     board: SVGBoard;
     boardElement: HTMLElement;
-    stoneBoardsObjects: FieldObject<SVGDrawHandler>[];
-    temporaryBoardObjects: BoardObject<SVGDrawHandler>[];
+    stoneBoardsObjects: FieldObject[];
+    temporaryBoardObjects: SVGBoardObject[];
     viewportStack: BoardViewport[];
     boardMouseX: number;
     boardMouseY: number;
@@ -31,6 +31,6 @@ export default class SVGBoardComponent extends Component {
     private applyViewportProperty;
     private clearViewportProperty;
     private applyMoveProperty;
-    addTemporaryBoardObject(obj: BoardObject<SVGDrawHandler>): void;
-    removeTemporaryBoardObject(obj: FieldObject<SVGDrawHandler>): void;
+    addTemporaryBoardObject(obj: BoardObject): void;
+    removeTemporaryBoardObject(obj: FieldObject): void;
 }

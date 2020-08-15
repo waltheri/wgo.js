@@ -6,6 +6,6 @@ interface ArrowParams {
     lineWidth?: number;
 }
 export default class Arrow extends DrawHandler<ArrowParams> {
-    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLineObject<DrawHandler<ArrowParams>>): void;
+    stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardLineObject): void;
 }
 export {};

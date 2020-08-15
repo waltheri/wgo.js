@@ -17,7 +17,7 @@ export default abstract class SVGMarkupDrawHandler extends SVGFieldDrawHandler {
     this.params = params;
   }
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardMarkupObject<SVGDrawHandler>, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: BoardMarkupObject, config: SVGBoardConfig) {
     super.updateElement(elem, boardObject, config);
 
     if (boardObject.variation === Color.B) {

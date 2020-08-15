@@ -11,7 +11,7 @@ export default class Arrow extends DrawHandler<ArrowParams> {
   stone(
     canvasCtx: CanvasRenderingContext2D,
     boardConfig: CanvasBoardConfig,
-    boardObject: BoardLineObject<DrawHandler<ArrowParams>>,
+    boardObject: BoardLineObject,
   ) {
     canvasCtx.strokeStyle = this.params.color ? this.params.color : boardConfig.theme.markupNoneColor;
     canvasCtx.fillStyle = canvasCtx.strokeStyle;

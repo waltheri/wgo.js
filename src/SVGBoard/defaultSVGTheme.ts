@@ -31,8 +31,8 @@ const defaultSVGTheme: SVGBoardTheme = {
     LN: new drawHandlers.Line(),
     AR: new drawHandlers.Arrow(),
     DD: new drawHandlers.Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
-    //B: new drawHandlers.GlassStoneBlack(),
-    //W: new drawHandlers.GlassStoneWhite(),
+    // B: new drawHandlers.GlassStoneBlack(),
+    // W: new drawHandlers.GlassStoneWhite(),
     W: new ModernStoneWhite(),
     B: new ModernStoneBlack(),
     /*B: new drawHandlers.RealisticStone([

@@ -11,7 +11,7 @@ export default class Line extends DrawHandler<LineParams> {
   stone(
     canvasCtx: CanvasRenderingContext2D,
     boardConfig: CanvasBoardConfig,
-    boardObject: BoardLineObject<DrawHandler<LineParams>>,
+    boardObject: BoardLineObject,
   ) {
     canvasCtx.strokeStyle = this.params.color ? this.params.color : boardConfig.theme.markupNoneColor;
     canvasCtx.lineWidth = this.params.lineWidth || boardConfig.theme.markupLineWidth;

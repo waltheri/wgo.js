@@ -2,11 +2,13 @@ import EventEmitter from '../utils/EventEmitter';
 import { PartialRecursive } from '../utils/makeConfig';
 import { Board, BoardBaseConfig, BoardViewport } from './types';
 import { BoardObject } from '.';
-import FieldObject from './FieldObject';
-export default class BoardBase<T> extends EventEmitter implements Board<T> {
+/**
+ * Board class with basic functionality which can be used for creating custom boards.
+ */
+export default class BoardBase extends EventEmitter implements Board {
     config: BoardBaseConfig;
     element: HTMLElement;
-    objects: BoardObject<T>[];
+    objects: BoardObject[];
     constructor(element: HTMLElement, config?: PartialRecursive<BoardBaseConfig>);
     /**
      * Updates dimensions and redraws everything
@@ -21,20 +23,30 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
      *
      * @param boardObject
      */
-    addObject(boardObject: BoardObject<T> | BoardObject<T>[]): void;
-    /**
-     * Shortcut method to add object and set its position.
-     */
-    addObjectAt(x: number, y: number, boardObject: FieldObject<T>): void;
+    addObject(boardObject: BoardObject | BoardObject[]): void;
     /**
      * Remove board object. Main function for removing graphics on the board.
      *
      * @param boardObject
      */
-    removeObject(boardObject: BoardObject<T> | BoardObject<T>[]): void;
+    removeObject(boardObject: BoardObject | BoardObject[]): void;
+    /**
+     * Removes all objects on specified field.
+     *
+     * @param x
+     * @param y
+     */
     removeObjectsAt(x: number, y: number): void;
+    /**
+     * Removes all objects on the board.
+     */
     removeAllObjects(): void;
-    hasObject(boardObject: BoardObject<T>): boolean;
+    /**
+     * Returns true if object is already on the board.
+     *
+     * @param boardObject
+     */
+    hasObject(boardObject: BoardObject): boolean;
     /**
      * Sets width of the board, height will be automatically computed. Then everything will be redrawn.
      *
@@ -55,15 +67,27 @@ export default class BoardBase<T> extends EventEmitter implements Board<T> {
      */
     setDimensions(width: number, height: number): void;
     /**
-       * Get currently visible section of the board
+       * Get currently visible section of the board.
        */
     getViewport(): BoardViewport;
     /**
-       * Set section of the board to be displayed
+       * Set section of the board to be displayed.
        */
     setViewport(viewport: BoardViewport): void;
+    /**
+     * Helper to get board size.
+     */
     getSize(): number;
+    /**
+     * Helper to set board size.
+     */
     setSize(size?: number): void;
+    /**
+     * Returns true, if coordinates around board are visible.
+     */
     getCoordinates(): boolean;
+    /**
+     * Enable or disable coordinates around board.
+     */
     setCoordinates(coordinates: boolean): void;
 }

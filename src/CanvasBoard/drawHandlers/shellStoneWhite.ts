@@ -6,7 +6,7 @@ import { FieldObject } from '../../BoardBase';
 const shellSeed = Math.ceil(Math.random() * 9999999);
 
 export default class ShellStoneWhite extends Stone {
-  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject<Stone>) {
+  stone(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject) {
     const stoneRadius = boardConfig.theme.stoneSize;
     canvasCtx.beginPath();
     canvasCtx.fillStyle = '#aaa';

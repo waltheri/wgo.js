@@ -1,12 +1,11 @@
 import EventEmitter from '../utils/EventEmitter';
 import BoardObject from './BoardObject';
-import FieldObject from './FieldObject';
 import { Point } from '../types';
 
 /**
  * Represent graphical board renderer.
  */
-export interface Board<T = void> extends EventEmitter {
+export interface Board extends EventEmitter {
   resize(): void;
   setWidth(width: number): void;
   setHeight(height: number): void;
@@ -18,12 +17,11 @@ export interface Board<T = void> extends EventEmitter {
   getCoordinates(): boolean;
   setCoordinates(coordinates: boolean): void;
   redraw(): void;
-  addObject(boardObject: BoardObject<T> | BoardObject<T>[]): void;
-  addObjectAt(x: number, y: number, boardObject: FieldObject<T>): void;
-  removeObject(boardObject: BoardObject<T> | BoardObject<T>[]): void;
+  addObject(boardObject: BoardObject | BoardObject[]): void;
+  removeObject(boardObject: BoardObject | BoardObject[]): void;
   removeObjectsAt(x: number, y: number): void;
   removeAllObjects(): void;
-  hasObject(boardObject: BoardObject<T>): boolean;
+  hasObject(boardObject: BoardObject): boolean;
 }
 
 export interface BoardViewport {

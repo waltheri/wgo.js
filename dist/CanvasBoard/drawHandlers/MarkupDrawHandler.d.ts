@@ -7,7 +7,7 @@ interface MarkupDrawHandlerParams {
     fillColor?: string;
 }
 export default abstract class MarkupDrawHandler<P = {}> extends DrawHandler<MarkupDrawHandlerParams & P> {
-    grid(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject<DrawHandler<MarkupDrawHandlerParams & P>>): void;
-    getColor(boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject<DrawHandler<MarkupDrawHandlerParams & P>>): string;
+    grid(canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject): void;
+    getColor(boardConfig: CanvasBoardConfig, boardObject: BoardMarkupObject): string;
 }
 export {};

@@ -66,6 +66,7 @@
         }
         return SGFSyntaxError;
     }(Error));
+    //# sourceMappingURL=SGFSyntaxError.js.map
 
     /**
      * Contains methods for parsing sgf string.
@@ -260,25 +261,39 @@
         };
         return SGFParser;
     }());
+    //# sourceMappingURL=SGFParser.js.map
 
+    //# sourceMappingURL=index.js.map
+
+    /**
+     * Represents generic board object specified by type, which can be painted on the board.
+     * It contains z-index and opacity.
+     */
     var BoardObject = /** @class */ (function () {
         function BoardObject(type) {
             this.zIndex = 0;
+            this.opacity = 1;
             this.type = type;
         }
         return BoardObject;
     }());
+    //# sourceMappingURL=BoardObject.js.map
 
+    /**
+     * Represents board object specified by type, which can be painted on the specific field of the board.
+     * It can be also transformed.
+     */
     var FieldObject = /** @class */ (function (_super) {
         __extends(FieldObject, _super);
-        function FieldObject(type) {
+        function FieldObject(type, x, y) {
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
             var _this = _super.call(this, type) || this;
-            _this.x = 0;
-            _this.y = 0;
             _this.scaleX = 1;
             _this.scaleY = 1;
             _this.rotate = 0;
-            _this.opacity = 1;
+            _this.x = x;
+            _this.y = y;
             return _this;
         }
         FieldObject.prototype.setPosition = function (x, y) {
@@ -289,11 +304,9 @@
             this.scaleX = factor;
             this.scaleY = factor;
         };
-        FieldObject.prototype.setOpacity = function (value) {
-            this.opacity = value;
-        };
         return FieldObject;
     }(BoardObject));
+    //# sourceMappingURL=FieldObject.js.map
 
     /**
      * Enumeration representing stone color, can be used for representing board position.
@@ -306,35 +319,44 @@
         Color[Color["EMPTY"] = 0] = "EMPTY";
         Color[Color["E"] = 0] = "E";
     })(exports.Color || (exports.Color = {}));
+    //# sourceMappingURL=types.js.map
 
     /**
-     * Board markup object is special type of object, which can have 3 variations - for empty field
+     * Board markup object is special type of field object, which can have 3 variations - for empty field
      * and for black and white stone.
      */
     var BoardMarkupObject = /** @class */ (function (_super) {
         __extends(BoardMarkupObject, _super);
-        function BoardMarkupObject(type, variation) {
+        function BoardMarkupObject(type, x, y, variation) {
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
             if (variation === void 0) { variation = exports.Color.E; }
-            var _this = _super.call(this, type) || this;
+            var _this = _super.call(this, type, x, y) || this;
             _this.variation = variation;
             return _this;
         }
         return BoardMarkupObject;
     }(FieldObject));
+    //# sourceMappingURL=BoardMarkupObject.js.map
 
+    /**
+     * Board label object is special type of markup object, which renders text on the field.
+     */
     var BoardLabelObject = /** @class */ (function (_super) {
         __extends(BoardLabelObject, _super);
-        function BoardLabelObject(text, variation) {
-            var _this = _super.call(this, 'LB', variation) || this;
+        function BoardLabelObject(text, x, y, variation) {
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
+            var _this = _super.call(this, 'LB', x, y, variation) || this;
             _this.text = text;
             return _this;
         }
         return BoardLabelObject;
     }(BoardMarkupObject));
+    //# sourceMappingURL=BoardLabelObject.js.map
 
     /**
-     * Board markup object is special type of object, which can have 3 variations - for empty field
-     * and for black and white stone.
+     * Board line object is special type of object, which consist from start and end point.
      */
     var BoardLineObject = /** @class */ (function (_super) {
         __extends(BoardLineObject, _super);
@@ -346,6 +368,7 @@
         }
         return BoardLineObject;
     }(BoardObject));
+    //# sourceMappingURL=BoardLineObject.js.map
 
     /**
      * Simple base class for event handling. It tries to follow Node.js EventEmitter class API,
@@ -379,6 +402,7 @@
         };
         return EventEmitter;
     }());
+    //# sourceMappingURL=EventEmitter.js.map
 
     /**
      * Helper function for merging default config with provided config.
@@ -409,6 +433,7 @@
         });
         return mergedConfig;
     }
+    //# sourceMappingURL=makeConfig.js.map
 
     var defaultBoardBaseTheme = {
         // basic
@@ -477,8 +502,11 @@
         coordinateLabelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         theme: defaultBoardBaseTheme,
     };
+    //# sourceMappingURL=defaultConfig.js.map
 
-    // tslint:disable-next-line:max-line-length
+    /**
+     * Board class with basic functionality which can be used for creating custom boards.
+     */
     var BoardBase = /** @class */ (function (_super) {
         __extends(BoardBase, _super);
         function BoardBase(element, config) {
@@ -515,16 +543,9 @@
                 }
                 return;
             }
-            if (this.objects.indexOf(boardObject) === -1) {
+            if (!this.hasObject(boardObject)) {
                 this.objects.push(boardObject);
             }
-        };
-        /**
-         * Shortcut method to add object and set its position.
-         */
-        BoardBase.prototype.addObjectAt = function (x, y, boardObject) {
-            boardObject.setPosition(x, y);
-            this.addObject(boardObject);
         };
         /**
          * Remove board object. Main function for removing graphics on the board.
@@ -546,6 +567,12 @@
             }
             this.objects.splice(objectPos, 1);
         };
+        /**
+         * Removes all objects on specified field.
+         *
+         * @param x
+         * @param y
+         */
         BoardBase.prototype.removeObjectsAt = function (x, y) {
             var _this = this;
             this.objects.forEach(function (obj) {
@@ -554,9 +581,17 @@
                 }
             });
         };
+        /**
+         * Removes all objects on the board.
+         */
         BoardBase.prototype.removeAllObjects = function () {
             this.objects = [];
         };
+        /**
+         * Returns true if object is already on the board.
+         *
+         * @param boardObject
+         */
         BoardBase.prototype.hasObject = function (boardObject) {
             return this.objects.indexOf(boardObject) >= 0;
         };
@@ -592,32 +627,47 @@
             this.resize();
         };
         /**
-           * Get currently visible section of the board
+           * Get currently visible section of the board.
            */
         BoardBase.prototype.getViewport = function () {
             return this.config.viewport;
         };
         /**
-           * Set section of the board to be displayed
+           * Set section of the board to be displayed.
            */
         BoardBase.prototype.setViewport = function (viewport) {
             this.config.viewport = viewport;
         };
+        /**
+         * Helper to get board size.
+         */
         BoardBase.prototype.getSize = function () {
             return this.config.size;
         };
+        /**
+         * Helper to set board size.
+         */
         BoardBase.prototype.setSize = function (size) {
             if (size === void 0) { size = 19; }
             this.config.size = size;
         };
+        /**
+         * Returns true, if coordinates around board are visible.
+         */
         BoardBase.prototype.getCoordinates = function () {
             return this.config.coordinates;
         };
+        /**
+         * Enable or disable coordinates around board.
+         */
         BoardBase.prototype.setCoordinates = function (coordinates) {
             this.config.coordinates = coordinates;
         };
         return BoardBase;
     }(EventEmitter));
+    //# sourceMappingURL=BoardBase.js.map
+
+    //# sourceMappingURL=index.js.map
 
     /**
      * @class
@@ -685,6 +735,7 @@
         };
         return CanvasLayer;
     }());
+    //# sourceMappingURL=CanvasLayer.js.map
 
     /**
      * @class
@@ -702,6 +753,7 @@
         };
         return ShadowLayer;
     }(CanvasLayer));
+    //# sourceMappingURL=ShadowLayer.js.map
 
     var GridLayer = /** @class */ (function (_super) {
         __extends(GridLayer, _super);
@@ -776,6 +828,7 @@
         };
         return GridLayer;
     }(CanvasLayer));
+    //# sourceMappingURL=GridLayer.js.map
 
     var DrawHandler = /** @class */ (function () {
         function DrawHandler(params) {
@@ -784,6 +837,7 @@
         }
         return DrawHandler;
     }());
+    //# sourceMappingURL=DrawHandler.js.map
 
     /**
      * Provides shadow for the stone.
@@ -808,6 +862,7 @@
         };
         return Stone;
     }(DrawHandler));
+    //# sourceMappingURL=Stone.js.map
 
     var ShellStoneBlack = /** @class */ (function (_super) {
         __extends(ShellStoneBlack, _super);
@@ -837,6 +892,7 @@
         };
         return ShellStoneBlack;
     }(Stone));
+    //# sourceMappingURL=ShellStoneBlack.js.map
 
     // shell stone helping functions
     var shellSeed = Math.ceil(Math.random() * 9999999);
@@ -946,6 +1002,7 @@
         };
         return ShellStoneWhite;
     }(Stone));
+    //# sourceMappingURL=ShellStoneWhite.js.map
 
     var GlassStoneBlack = /** @class */ (function (_super) {
         __extends(GlassStoneBlack, _super);
@@ -964,6 +1021,7 @@
         };
         return GlassStoneBlack;
     }(Stone));
+    //# sourceMappingURL=GlassStoneBlack.js.map
 
     var GlassStoneWhite = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -982,6 +1040,7 @@
         };
         return GlassStoneWhite;
     }(Stone));
+    //# sourceMappingURL=GlassStoneWhite.js.map
 
     var PaintedStoneBlack = /** @class */ (function (_super) {
         __extends(PaintedStoneBlack, _super);
@@ -1005,6 +1064,7 @@
         };
         return PaintedStoneBlack;
     }(Stone));
+    //# sourceMappingURL=PaintedStoneBlack.js.map
 
     var PaintedStoneWhite = /** @class */ (function (_super) {
         __extends(PaintedStoneWhite, _super);
@@ -1028,6 +1088,7 @@
         };
         return PaintedStoneWhite;
     }(Stone));
+    //# sourceMappingURL=PaintedStoneWhite.js.map
 
     var SimpleStone = /** @class */ (function (_super) {
         __extends(SimpleStone, _super);
@@ -1047,6 +1108,7 @@
         };
         return SimpleStone;
     }(DrawHandler));
+    //# sourceMappingURL=SimpleStone.js.map
 
     // Check if image has been loaded properly
     // see https://stereochro.me/ideas/detecting-broken-images-js
@@ -1105,6 +1167,7 @@
         };
         return RealisticStone;
     }(Stone));
+    //# sourceMappingURL=RealisticStone.js.map
 
     var MarkupDrawHandler = /** @class */ (function (_super) {
         __extends(MarkupDrawHandler, _super);
@@ -1130,6 +1193,7 @@
         };
         return MarkupDrawHandler;
     }(DrawHandler));
+    //# sourceMappingURL=MarkupDrawHandler.js.map
 
     var ShapeMarkup = /** @class */ (function (_super) {
         __extends(ShapeMarkup, _super);
@@ -1151,6 +1215,7 @@
         };
         return ShapeMarkup;
     }(MarkupDrawHandler));
+    //# sourceMappingURL=ShapeMarkup.js.map
 
     var Circle = /** @class */ (function (_super) {
         __extends(Circle, _super);
@@ -1162,6 +1227,7 @@
         };
         return Circle;
     }(ShapeMarkup));
+    //# sourceMappingURL=Circle.js.map
 
     var Square = /** @class */ (function (_super) {
         __extends(Square, _super);
@@ -1173,6 +1239,7 @@
         };
         return Square;
     }(ShapeMarkup));
+    //# sourceMappingURL=Square.js.map
 
     var Triangle = /** @class */ (function (_super) {
         __extends(Triangle, _super);
@@ -1187,6 +1254,7 @@
         };
         return Triangle;
     }(ShapeMarkup));
+    //# sourceMappingURL=Triangle.js.map
 
     var Label = /** @class */ (function (_super) {
         __extends(Label, _super);
@@ -1213,6 +1281,7 @@
         };
         return Label;
     }(MarkupDrawHandler));
+    //# sourceMappingURL=Label.js.map
 
     /**
      * TODO: rename this
@@ -1232,6 +1301,7 @@
         };
         return Dot;
     }(DrawHandler));
+    //# sourceMappingURL=Dot.js.map
 
     var XMark = /** @class */ (function (_super) {
         __extends(XMark, _super);
@@ -1246,6 +1316,7 @@
         };
         return XMark;
     }(ShapeMarkup));
+    //# sourceMappingURL=XMark.js.map
 
     var Line = /** @class */ (function (_super) {
         __extends(Line, _super);
@@ -1264,6 +1335,7 @@
         };
         return Line;
     }(DrawHandler));
+    //# sourceMappingURL=Line.js.map
 
     var Arrow = /** @class */ (function (_super) {
         __extends(Arrow, _super);
@@ -1313,6 +1385,7 @@
         };
         return Arrow;
     }(DrawHandler));
+    //# sourceMappingURL=Arrow.js.map
 
     var Dim = /** @class */ (function (_super) {
         __extends(Dim, _super);
@@ -1325,8 +1398,9 @@
         };
         return Dim;
     }(DrawHandler));
+    //# sourceMappingURL=Dim.js.map
 
-
+    //# sourceMappingURL=index.js.map
 
     var index = /*#__PURE__*/Object.freeze({
         DrawHandler: DrawHandler,
@@ -1365,6 +1439,7 @@
             AR: new Arrow(),
             DD: new Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
         } });
+    //# sourceMappingURL=baseTheme.js.map
 
     var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new RealisticStone([
                 'images/stones/black00_128.png',
@@ -1384,10 +1459,13 @@
                 'images/stones/white09_128.png',
                 'images/stones/white10_128.png',
             ], new GlassStoneWhite()) }) });
+    //# sourceMappingURL=realisticTheme.js.map
 
     var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
+    //# sourceMappingURL=modernTheme.js.map
 
     // add here all themes, which should be publicly exposed
+    //# sourceMappingURL=index.js.map
 
     var index$1 = /*#__PURE__*/Object.freeze({
         baseTheme: baseTheme,
@@ -1552,9 +1630,7 @@
                     }
                 }
                 else {
-                    if (boardObject.type == null || !(boardObject.type instanceof DrawHandler)) {
-                        throw new TypeError('Invalid board object type.');
-                    }
+                    throw new TypeError('Invalid board object type. Custom canvas board objects not yet supported.');
                 }
             }
             _super.prototype.addObject.call(this, boardObject);
@@ -1607,11 +1683,15 @@
         };
         return CanvasBoard;
     }(BoardBase));
+    //# sourceMappingURL=CanvasBoard.js.map
+
+    //# sourceMappingURL=index.js.map
 
     var NS = 'http://www.w3.org/2000/svg';
     var OBJECTS = 'objects';
     var GRID_MASK = 'gridMask';
     var SHADOWS = 'shadows';
+    //# sourceMappingURL=types.js.map
 
     function line(fromX, fromY, toX, toY) {
         var line = document.createElementNS(NS, 'line');
@@ -1648,6 +1728,7 @@
         }
         return grid;
     }
+    //# sourceMappingURL=createGrid.js.map
 
     function letter(x, y, str) {
         var text = document.createElementNS(NS, 'text');
@@ -1675,6 +1756,7 @@
         }
         return coordinates;
     }
+    //# sourceMappingURL=createCoordinates.js.map
 
     var SVGFieldDrawHandler = /** @class */ (function () {
         function SVGFieldDrawHandler() {
@@ -1690,10 +1772,12 @@
         };
         return SVGFieldDrawHandler;
     }());
+    //# sourceMappingURL=SVGFieldDrawHandler.js.map
 
     function generateId(prefix) {
         return prefix + "-" + Math.floor(Math.random() * 1000000000).toString(36);
     }
+    //# sourceMappingURL=generateId.js.map
 
     var SVGStoneDrawHandler = /** @class */ (function (_super) {
         __extends(SVGStoneDrawHandler, _super);
@@ -1743,6 +1827,7 @@
         };
         return SVGStoneDrawHandler;
     }(SVGFieldDrawHandler));
+    //# sourceMappingURL=SVGStoneDrawHandler.js.map
 
     var GlassStoneBlack$1 = /** @class */ (function (_super) {
         __extends(GlassStoneBlack, _super);
@@ -1790,6 +1875,7 @@
         };
         return GlassStoneBlack;
     }(SVGStoneDrawHandler));
+    //# sourceMappingURL=GlassStoneBlack.js.map
 
     var GlassStoneWhite$1 = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -1837,6 +1923,7 @@
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
+    //# sourceMappingURL=GlassStoneWhite.js.map
 
     var SVGMarkupDrawHandler = /** @class */ (function (_super) {
         __extends(SVGMarkupDrawHandler, _super);
@@ -1864,6 +1951,7 @@
         };
         return SVGMarkupDrawHandler;
     }(SVGFieldDrawHandler));
+    //# sourceMappingURL=SVGMarkupDrawHandler.js.map
 
     var Circle$1 = /** @class */ (function (_super) {
         __extends(Circle, _super);
@@ -1888,6 +1976,7 @@
         };
         return Circle;
     }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Circle.js.map
 
     var Square$1 = /** @class */ (function (_super) {
         __extends(Square, _super);
@@ -1914,6 +2003,7 @@
         };
         return Square;
     }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Square.js.map
 
     var Triangle$1 = /** @class */ (function (_super) {
         __extends(Triangle, _super);
@@ -1934,6 +2024,7 @@
         };
         return Triangle;
     }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Triangle.js.map
 
     var XMark$1 = /** @class */ (function (_super) {
         __extends(XMark, _super);
@@ -1956,6 +2047,7 @@
         };
         return XMark;
     }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=XMark.js.map
 
     var Dot$1 = /** @class */ (function (_super) {
         __extends(Dot, _super);
@@ -1974,6 +2066,7 @@
         };
         return Dot;
     }(SVGFieldDrawHandler));
+    //# sourceMappingURL=Dot.js.map
 
     var Dim$1 = /** @class */ (function (_super) {
         __extends(Dim, _super);
@@ -1993,6 +2086,7 @@
         };
         return Dim;
     }(SVGFieldDrawHandler));
+    //# sourceMappingURL=Dim.js.map
 
     var Line$1 = /** @class */ (function () {
         function Line(params) {
@@ -2024,6 +2118,7 @@
         };
         return Line;
     }());
+    //# sourceMappingURL=Line.js.map
 
     var Arrow$1 = /** @class */ (function () {
         function Arrow(params) {
@@ -2095,6 +2190,7 @@
         };
         return Arrow;
     }());
+    //# sourceMappingURL=Arrow.js.map
 
     var Label$1 = /** @class */ (function (_super) {
         __extends(Label, _super);
@@ -2136,6 +2232,7 @@
         };
         return Label;
     }(SVGMarkupDrawHandler));
+    //# sourceMappingURL=Label.js.map
 
     var SimpleStone$1 = /** @class */ (function (_super) {
         __extends(SimpleStone, _super);
@@ -2154,6 +2251,7 @@
         };
         return SimpleStone;
     }(SVGFieldDrawHandler));
+    //# sourceMappingURL=SimpleStone.js.map
 
     var RealisticStone$1 = /** @class */ (function (_super) {
         __extends(RealisticStone, _super);
@@ -2199,6 +2297,9 @@
         };
         return RealisticStone;
     }(SVGStoneDrawHandler));
+    //# sourceMappingURL=RealisticStone.js.map
+
+    //# sourceMappingURL=index.js.map
 
     var GlassStoneWhite$2 = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -2234,6 +2335,7 @@
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
+    //# sourceMappingURL=ModernStoneWhite.js.map
 
     var GlassStoneWhite$3 = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -2269,6 +2371,7 @@
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
+    //# sourceMappingURL=ModernStoneBlack.js.map
 
     var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { 
         // backgroundImage: 'images/wood1.jpg',
@@ -2282,11 +2385,12 @@
             LN: new Line$1(),
             AR: new Arrow$1(),
             DD: new Dim$1({ color: 'rgba(0, 0, 0, 0.5)' }),
-            //B: new drawHandlers.GlassStoneBlack(),
-            //W: new drawHandlers.GlassStoneWhite(),
+            // B: new drawHandlers.GlassStoneBlack(),
+            // W: new drawHandlers.GlassStoneWhite(),
             W: new GlassStoneWhite$2(),
             B: new GlassStoneWhite$3(),
         } });
+    //# sourceMappingURL=defaultSVGTheme.js.map
 
     var svgBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: defaultSVGTheme });
     var SVGBoard = /** @class */ (function (_super) {
@@ -2294,6 +2398,7 @@
         function SVGBoard(elem, config) {
             if (config === void 0) { config = {}; }
             var _this = _super.call(this, elem, makeConfig(svgBoardDefaultConfig, config)) || this;
+            _this.objects = [];
             /** Drawing contexts - elements to put additional board objects. Similar to layers. */
             _this.contexts = {};
             _this.boardElement = document.createElement('div');
@@ -2433,7 +2538,7 @@
             handler.updateElement(elements, boardObject, this.config);
         };
         SVGBoard.prototype.getObjectHandler = function (boardObject) {
-            return typeof boardObject.type === 'string' ? this.config.theme.drawHandlers[boardObject.type] : boardObject.type;
+            return 'handler' in boardObject ? boardObject.handler : this.config.theme.drawHandlers[boardObject.type];
         };
         SVGBoard.prototype.removeObject = function (boardObject) {
             var _this = this;
@@ -2516,6 +2621,9 @@
         };
         return SVGBoard;
     }(BoardBase));
+    //# sourceMappingURL=SVGBoard.js.map
+
+    //# sourceMappingURL=index.js.map
 
     /**
      * WGo's game engine offers to set 3 rules:
@@ -2564,6 +2672,7 @@
         AGA: CHINESE_RULES,
         Chinese: CHINESE_RULES,
     };
+    //# sourceMappingURL=rules.js.map
 
     /**
      * Contains implementation of go position class.
@@ -3130,6 +3239,7 @@
     //   }
     //   return output;
     // }
+    //# sourceMappingURL=Position.js.map
 
     var Game = /** @class */ (function () {
         /**
@@ -3340,6 +3450,9 @@
         };
         return Game;
     }());
+    //# sourceMappingURL=Game.js.map
+
+    //# sourceMappingURL=index.js.map
 
     /**
      * From SGF specification, there are these types of property values:
@@ -3541,6 +3654,7 @@
         multiple: false,
         notEmpty: true,
     };
+    //# sourceMappingURL=propertyValueTypes.js.map
 
     var processJSGF = function (gameTree, rootNode) {
         rootNode.setSGFProperties(gameTree.sequence[0] || {});
@@ -3854,6 +3968,7 @@
         };
         return KifuNode;
     }());
+    //# sourceMappingURL=KifuNode.js.map
 
     var PropIdent;
     (function (PropIdent) {
@@ -3935,6 +4050,7 @@
         PropIdent["BLACK_TERRITORY"] = "TB";
         PropIdent["WHITE_TERRITORY"] = "TW";
     })(PropIdent || (PropIdent = {}));
+    //# sourceMappingURL=sgfTypes.js.map
 
     function beforeInitSZ(event) {
         event.target.params.size = event.value;
@@ -3980,6 +4096,7 @@
             event.target.game.setStone(value.x, value.y, color);
         });
     }
+    //# sourceMappingURL=basePropertyListeners.js.map
 
     var PlayerBase = /** @class */ (function (_super) {
         __extends(PlayerBase, _super);
@@ -4233,6 +4350,11 @@
         };
         return PlayerBase;
     }(EventEmitter));
+    //# sourceMappingURL=PlayerBase.js.map
+
+    //# sourceMappingURL=PropertyHandler.js.map
+
+    //# sourceMappingURL=index.js.map
 
     var defaultSimplePlayerConfig = {
         boardTheme: defaultBoardBaseTheme,
@@ -4247,6 +4369,7 @@
         formatNicks: true,
         formatMoves: true,
     };
+    //# sourceMappingURL=defaultSimplePlayerConfig.js.map
 
     /**
      * Component of Simple Board - can be board, box with comments, control panel, etc...
@@ -4257,6 +4380,29 @@
         }
         return Component;
     }());
+    //# sourceMappingURL=Component.js.map
+
+    var SVGCustomFieldObject = /** @class */ (function (_super) {
+        __extends(SVGCustomFieldObject, _super);
+        function SVGCustomFieldObject(handler, x, y) {
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
+            var _this = _super.call(this, 'custom', x, y) || this;
+            _this.handler = handler;
+            return _this;
+        }
+        return SVGCustomFieldObject;
+    }(FieldObject));
+    //# sourceMappingURL=SVGCustomFieldObject.js.map
+
+    var SVGCustomLabelObject = /** @class */ (function (_super) {
+        __extends(SVGCustomLabelObject, _super);
+        function SVGCustomLabelObject() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return SVGCustomLabelObject;
+    }(BoardLabelObject));
+    //# sourceMappingURL=SVGCustomLabelObject.js.map
 
     var colorsMap = {
         B: exports.Color.BLACK,
@@ -4368,8 +4514,8 @@
                 var _loop_2 = function (y) {
                     var c = position.get(x, y);
                     if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
-                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W');
-                        this_1.board.addObjectAt(x, y, boardObject);
+                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W', x, y);
+                        this_1.board.addObject(boardObject);
                         this_1.stoneBoardsObjects.push(boardObject);
                     }
                 };
@@ -4388,9 +4534,8 @@
             if (moves.length > 1) {
                 moves.forEach(function (move, i) {
                     if (move) {
-                        var obj = new BoardLabelObject(String.fromCodePoint(65 + i));
-                        obj.type = _this.player.config.variationDrawHandler;
-                        obj.setPosition(move.x, move.y);
+                        var obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
+                        obj.handler = _this.player.config.variationDrawHandler;
                         _this.addTemporaryBoardObject(obj);
                     }
                 });
@@ -4526,9 +4671,8 @@
                     return;
                 }
                 // add current move mark
-                var boardMarkup = new BoardMarkupObject(event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark);
+                var boardMarkup = new SVGCustomFieldObject(event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark, event.value.x, event.value.y);
                 boardMarkup.zIndex = 10;
-                boardMarkup.setPosition(event.value.x, event.value.y);
                 this.addTemporaryBoardObject(boardMarkup);
             }
         };
@@ -4592,6 +4736,7 @@
         };
         return Container;
     }(Component));
+    //# sourceMappingURL=Container.js.map
 
     var PlayerTag = /** @class */ (function (_super) {
         __extends(PlayerTag, _super);
@@ -4651,6 +4796,7 @@
         };
         return PlayerTag;
     }(Component));
+    //# sourceMappingURL=PlayerTag.js.map
 
     var CommentBox = /** @class */ (function (_super) {
         __extends(CommentBox, _super);
@@ -4720,6 +4866,7 @@
         var y = parseInt(coordinates.substr(1), 10) - 1;
         return { x: x, y: y };
     }
+    //# sourceMappingURL=CommentsBox.js.map
 
     var gameInfoProperties = {
         DT: 'Date',
@@ -4789,6 +4936,7 @@
         };
         return GameInfoBox;
     }(Component));
+    //# sourceMappingURL=GameInfoBox.js.map
 
     var ControlPanel = /** @class */ (function (_super) {
         __extends(ControlPanel, _super);
@@ -4950,6 +5098,7 @@
         element.click();
         document.body.removeChild(element);
     }
+    //# sourceMappingURL=ControlPanel.js.map
 
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);
@@ -5053,10 +5202,10 @@
                 this.editMode = true;
                 var lastX_1 = -1;
                 var lastY_1 = -1;
-                var blackStone_1 = new FieldObject(new SimpleStone$1('black'));
-                blackStone_1.setOpacity(0.35);
-                var whiteStone_1 = new FieldObject(new SimpleStone$1('white'));
-                whiteStone_1.setOpacity(0.35);
+                var blackStone_1 = new FieldObject('B');
+                blackStone_1.opacity = 0.35;
+                var whiteStone_1 = new FieldObject('W');
+                whiteStone_1.opacity = 0.35;
                 var addedStone_1 = null;
                 this._boardMouseMoveEvent = function (p) {
                     if (lastX_1 !== p.x || lastY_1 !== p.y) {
@@ -5125,8 +5274,12 @@
         };
         return SimplePlayer;
     }(PlayerBase));
+    //# sourceMappingURL=SimplePlayer.js.map
+
+    //# sourceMappingURL=index.js.map
 
     // All public API is exported here
+    //# sourceMappingURL=index.js.map
 
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;

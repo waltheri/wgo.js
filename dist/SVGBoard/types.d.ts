@@ -11,7 +11,7 @@ export interface SVGDrawHandler {
     /** Should return SVG element representing the board object, can be <g> for multiple elements. */
     createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGElement | BoardObjectSVGElements;
     /** This will be called any time, board object changes. */
-    updateElement(elem: BoardObjectSVGElements, boardObject: BoardObject<SVGDrawHandler>, config: SVGBoardConfig): void;
+    updateElement(elem: BoardObjectSVGElements, boardObject: BoardObject, config: SVGBoardConfig): void;
 }
 export interface SVGBoardTheme extends BoardBaseTheme {
     markupGridMask: number;
@@ -25,3 +25,7 @@ export interface SVGBoardTheme extends BoardBaseTheme {
 export interface SVGBoardConfig extends BoardBaseConfig {
     theme: SVGBoardTheme;
 }
+export interface SVGCustomObject extends BoardObject {
+    handler: SVGDrawHandler;
+}
+export declare type SVGBoardObject = BoardObject | SVGCustomObject;

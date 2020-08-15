@@ -11,7 +11,6 @@ import CommentBox from './components/CommentsBox';
 import GameInfoBox from './components/GameInfoBox';
 import ControlPanel from './components/ControlPanel';
 import { FieldObject } from '../BoardBase';
-import { SimpleStone } from '../SVGBoard/svgDrawHandlers';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
@@ -139,13 +138,13 @@ export default class SimplePlayer extends PlayerBase {
       let lastX = -1;
       let lastY = -1;
 
-      const blackStone = new FieldObject(new SimpleStone('black'));
-      blackStone.setOpacity(0.35);
+      const blackStone = new FieldObject('B');
+      blackStone.opacity = 0.35;
 
-      const whiteStone = new FieldObject(new SimpleStone('white'));
-      whiteStone.setOpacity(0.35);
+      const whiteStone = new FieldObject('W');
+      whiteStone.opacity = 0.35;
 
-      let addedStone: FieldObject<any> = null;
+      let addedStone: FieldObject = null;
 
       this._boardMouseMoveEvent = (p: Point) => {
         if (lastX !== p.x || lastY !== p.y) {

@@ -12,5 +12,5 @@ export interface CanvasBoardConfig extends BoardBaseConfig {
     theme: CanvasBoardTheme;
 }
 export interface DrawFunction {
-    (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject<DrawHandler>): void | Promise<void>;
+    (context: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: BoardObject): void | Promise<void>;
 }

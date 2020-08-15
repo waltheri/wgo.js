@@ -15,7 +15,7 @@ export interface SVGDrawHandler {
   createElement(config: SVGBoardConfig, addDef: (def: SVGElement) => void): SVGElement | BoardObjectSVGElements;
 
   /** This will be called any time, board object changes. */
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardObject<SVGDrawHandler>, config: SVGBoardConfig): void;
+  updateElement(elem: BoardObjectSVGElements, boardObject: BoardObject, config: SVGBoardConfig): void;
 }
 
 export interface SVGBoardTheme extends BoardBaseTheme {
@@ -33,3 +33,9 @@ export interface SVGBoardTheme extends BoardBaseTheme {
 export interface SVGBoardConfig extends BoardBaseConfig {
   theme: SVGBoardTheme;
 }
+
+export interface SVGCustomObject extends BoardObject {
+  handler: SVGDrawHandler;
+}
+
+export type SVGBoardObject = BoardObject | SVGCustomObject;

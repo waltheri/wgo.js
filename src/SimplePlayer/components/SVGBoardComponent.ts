@@ -11,7 +11,9 @@ import {
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGDrawHandler } from '../../SVGBoard/types';
+import { SVGDrawHandler, SVGBoardObject } from '../../SVGBoard/types';
+import SVGCustomFieldObject from '../../SVGBoard/SVGCustomFieldObject';
+import SVGCustomLabelObject from '../../SVGBoard/SVGCustomLabelObject';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
@@ -26,10 +28,10 @@ export default class SVGBoardComponent extends Component {
   boardElement: HTMLElement;
 
   // Current board objects for stones - should match the position object of the game
-  stoneBoardsObjects: FieldObject<SVGDrawHandler>[];
+  stoneBoardsObjects: FieldObject[];
 
   // Temporary board object, will be removed after each node update
-  temporaryBoardObjects: BoardObject<SVGDrawHandler>[];
+  temporaryBoardObjects: SVGBoardObject[];
 
   // Board viewport stack, for efficient reverting of board viewport
   viewportStack: BoardViewport[];
@@ -162,8 +164,8 @@ export default class SVGBoardComponent extends Component {
         if (c && !this.stoneBoardsObjects.some(
           boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
         )) {
-          const boardObject = new FieldObject<SVGDrawHandler>(c === Color.B ? 'B' : 'W');
-          this.board.addObjectAt(x, y, boardObject);
+          const boardObject = new FieldObject(c === Color.B ? 'B' : 'W', x, y);
+          this.board.addObject(boardObject);
           this.stoneBoardsObjects.push(boardObject);
         }
       }
@@ -176,9 +178,8 @@ export default class SVGBoardComponent extends Component {
     if (moves.length > 1) {
       moves.forEach((move, i) => {
         if (move) {
-          const obj = new BoardLabelObject(String.fromCodePoint(65 + i));
-          obj.type = this.player.config.variationDrawHandler;
-          obj.setPosition(move.x, move.y);
+          const obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
+          obj.handler = this.player.config.variationDrawHandler;
           this.addTemporaryBoardObject(obj);
         }
       });
@@ -331,21 +332,22 @@ export default class SVGBoardComponent extends Component {
       }
 
       // add current move mark
-      const boardMarkup = new BoardMarkupObject(
+      const boardMarkup = new SVGCustomFieldObject(
         event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark,
+        event.value.x,
+        event.value.y,
       );
       boardMarkup.zIndex = 10;
-      boardMarkup.setPosition(event.value.x, event.value.y);
       this.addTemporaryBoardObject(boardMarkup);
     }
   }
 
-  addTemporaryBoardObject(obj: BoardObject<SVGDrawHandler>) {
+  addTemporaryBoardObject(obj: BoardObject) {
     this.temporaryBoardObjects.push(obj);
     this.board.addObject(obj);
   }
 
-  removeTemporaryBoardObject(obj: FieldObject<SVGDrawHandler>) {
+  removeTemporaryBoardObject(obj: FieldObject) {
     this.temporaryBoardObjects = this.temporaryBoardObjects.filter(o => o !== obj);
     this.board.removeObject(obj);
   }

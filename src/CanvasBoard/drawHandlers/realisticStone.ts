@@ -43,7 +43,7 @@ export default class RealisticStone extends Stone {
     });
   }
 
-  stone (canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject<Stone>) {
+  stone (canvasCtx: CanvasRenderingContext2D, boardConfig: CanvasBoardConfig, boardObject: FieldObject) {
     const count = this.paths.length;
 
     if (count) {

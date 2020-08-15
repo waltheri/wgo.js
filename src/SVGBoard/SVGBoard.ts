@@ -1,8 +1,17 @@
-import { BoardBase, BoardViewport, BoardObject } from '../BoardBase';
+import { BoardBase, BoardViewport } from '../BoardBase';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import createGrid from './createGrid';
 import createCoordinates from './createCoordinates';
-import { SVGDrawHandler, SVGBoardConfig, NS, OBJECTS, BoardObjectSVGElements, GRID_MASK, SHADOWS } from './types';
+import {
+  SVGDrawHandler,
+  SVGBoardConfig,
+  NS,
+  OBJECTS,
+  BoardObjectSVGElements,
+  GRID_MASK,
+  SHADOWS,
+  SVGBoardObject,
+} from './types';
 import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
 import defaultSVGTheme from './defaultSVGTheme';
 import generateId from './generateId';
@@ -13,13 +22,14 @@ const svgBoardDefaultConfig: SVGBoardConfig = {
   theme: defaultSVGTheme,
 };
 
-export default class SVGBoard extends BoardBase<SVGDrawHandler> {
+export default class SVGBoard extends BoardBase {
   config: SVGBoardConfig;
   boardElement: HTMLElement;
   touchArea: HTMLElement;
   svgElement: SVGElement;
   defsElement: SVGElement;
-  objectsElementMap: Map<BoardObject<SVGDrawHandler>, BoardObjectSVGElements>;
+  objects: SVGBoardObject[] = [];
+  objectsElementMap: Map<SVGBoardObject, BoardObjectSVGElements>;
   top: number;
   left: number;
   bottom: number;
@@ -155,7 +165,7 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     this.objects.forEach(boardObject => this.createObjectElements(boardObject));
   }
 
-  addObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]) {
+  addObject(boardObject: SVGBoardObject | SVGBoardObject[]) {
     super.addObject(boardObject);
 
     if (!Array.isArray(boardObject)) {
@@ -169,7 +179,7 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     }
   }
 
-  protected createObjectElements(boardObject: BoardObject<SVGDrawHandler>) {
+  protected createObjectElements(boardObject: SVGBoardObject) {
     const handler = this.getObjectHandler(boardObject);
 
     // create element or elements and add them to the svg
@@ -187,11 +197,11 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     handler.updateElement(elements, boardObject, this.config);
   }
 
-  getObjectHandler(boardObject: BoardObject<SVGDrawHandler>) {
-    return typeof boardObject.type === 'string' ? this.config.theme.drawHandlers[boardObject.type] : boardObject.type;
+  getObjectHandler(boardObject: SVGBoardObject) {
+    return 'handler' in boardObject ? boardObject.handler : this.config.theme.drawHandlers[boardObject.type];
   }
 
-  removeObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]) {
+  removeObject(boardObject: SVGBoardObject | SVGBoardObject[]) {
     super.removeObject(boardObject);
 
     if (!Array.isArray(boardObject)) {
@@ -203,7 +213,7 @@ export default class SVGBoard extends BoardBase<SVGDrawHandler> {
     }
   }
 
-  updateObject(boardObject: BoardObject<SVGDrawHandler> | BoardObject<SVGDrawHandler>[]) {
+  updateObject(boardObject: SVGBoardObject | SVGBoardObject[]) {
     // handling multiple objects
     if (Array.isArray(boardObject)) {
       for (let i = 0; i < boardObject.length; i++) {

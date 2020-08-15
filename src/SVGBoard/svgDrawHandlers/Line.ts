@@ -23,7 +23,7 @@ export default class Line implements SVGDrawHandler {
     };
   }
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject<SVGDrawHandler>, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig) {
     elem[OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
     elem[OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth as any);
     elem[OBJECTS].setAttribute('x1', boardObject.start.x as any);

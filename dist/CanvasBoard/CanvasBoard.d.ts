@@ -7,14 +7,13 @@ import { CanvasBoardConfig } from './types';
 import { PartialRecursive } from '../utils/makeConfig';
 import { Point } from '../types';
 import { BoardObject, BoardBase, BoardViewport } from '../BoardBase';
-import DrawHandler from './drawHandlers/DrawHandler';
-export default class CanvasBoard extends BoardBase<DrawHandler> {
+export default class CanvasBoard extends BoardBase {
     config: CanvasBoardConfig;
     element: HTMLElement;
     wrapperElement: HTMLElement;
     boardElement: HTMLElement;
     pixelRatio: number;
-    objects: BoardObject<DrawHandler>[];
+    objects: BoardObject[];
     layers: {
         grid: CanvasLayer;
         shadow: CanvasLayer;
@@ -52,8 +51,8 @@ export default class CanvasBoard extends BoardBase<DrawHandler> {
      * Redraw everything.
      */
     redraw(): void;
-    addObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]): void;
-    removeObject(boardObject: BoardObject<DrawHandler> | BoardObject<DrawHandler>[]): void;
+    addObject(boardObject: BoardObject | BoardObject[]): void;
+    removeObject(boardObject: BoardObject | BoardObject[]): void;
     removeAllObjects(): void;
     on(type: string, callback: (event: UIEvent, point: Point) => void): void;
     registerBoardListener(type: string): void;

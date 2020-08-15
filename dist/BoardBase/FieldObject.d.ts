@@ -1,13 +1,15 @@
 import BoardObject from './BoardObject';
-export default class FieldObject<T> extends BoardObject<T> {
+/**
+ * Represents board object specified by type, which can be painted on the specific field of the board.
+ * It can be also transformed.
+ */
+export default class FieldObject extends BoardObject {
     x: number;
     y: number;
     scaleX: number;
     scaleY: number;
     rotate: number;
-    opacity: number;
-    constructor(type: string | T);
+    constructor(type: string, x?: number, y?: number);
     setPosition(x: number, y: number): void;
     setScale(factor: number): void;
-    setOpacity(value: number): void;
 }
