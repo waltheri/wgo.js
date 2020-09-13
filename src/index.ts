@@ -8,6 +8,7 @@ export * from './SVGBoard';
 export * from './Game';
 export { PlayerBase } from './PlayerBase';
 export { default as SimplePlayer } from './SimplePlayer';
+export * from './SimplePlayer/components';
 export { Color } from './types';
 export { default as KifuNode } from './kifu/KifuNode';
 export { default as propertyValueTypes } from './kifu/propertyValueTypes';
