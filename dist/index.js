@@ -66,7 +66,6 @@
         }
         return SGFSyntaxError;
     }(Error));
-    //# sourceMappingURL=SGFSyntaxError.js.map
 
     /**
      * Contains methods for parsing sgf string.
@@ -261,9 +260,6 @@
         };
         return SGFParser;
     }());
-    //# sourceMappingURL=SGFParser.js.map
-
-    //# sourceMappingURL=index.js.map
 
     /**
      * Represents generic board object specified by type, which can be painted on the board.
@@ -277,7 +273,6 @@
         }
         return BoardObject;
     }());
-    //# sourceMappingURL=BoardObject.js.map
 
     /**
      * Represents board object specified by type, which can be painted on the specific field of the board.
@@ -306,7 +301,6 @@
         };
         return FieldObject;
     }(BoardObject));
-    //# sourceMappingURL=FieldObject.js.map
 
     /**
      * Enumeration representing stone color, can be used for representing board position.
@@ -319,7 +313,6 @@
         Color[Color["EMPTY"] = 0] = "EMPTY";
         Color[Color["E"] = 0] = "E";
     })(exports.Color || (exports.Color = {}));
-    //# sourceMappingURL=types.js.map
 
     /**
      * Board markup object is special type of field object, which can have 3 variations - for empty field
@@ -337,7 +330,6 @@
         }
         return BoardMarkupObject;
     }(FieldObject));
-    //# sourceMappingURL=BoardMarkupObject.js.map
 
     /**
      * Board label object is special type of markup object, which renders text on the field.
@@ -353,7 +345,6 @@
         }
         return BoardLabelObject;
     }(BoardMarkupObject));
-    //# sourceMappingURL=BoardLabelObject.js.map
 
     /**
      * Board line object is special type of object, which consist from start and end point.
@@ -368,7 +359,6 @@
         }
         return BoardLineObject;
     }(BoardObject));
-    //# sourceMappingURL=BoardLineObject.js.map
 
     /**
      * Simple base class for event handling. It tries to follow Node.js EventEmitter class API,
@@ -402,7 +392,6 @@
         };
         return EventEmitter;
     }());
-    //# sourceMappingURL=EventEmitter.js.map
 
     /**
      * Helper function for merging default config with provided config.
@@ -433,7 +422,6 @@
         });
         return mergedConfig;
     }
-    //# sourceMappingURL=makeConfig.js.map
 
     var defaultBoardBaseTheme = {
         // basic
@@ -502,7 +490,6 @@
         coordinateLabelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
         theme: defaultBoardBaseTheme,
     };
-    //# sourceMappingURL=defaultConfig.js.map
 
     /**
      * Board class with basic functionality which can be used for creating custom boards.
@@ -673,9 +660,6 @@
         };
         return BoardBase;
     }(EventEmitter));
-    //# sourceMappingURL=BoardBase.js.map
-
-    //# sourceMappingURL=index.js.map
 
     /**
      * @class
@@ -743,7 +727,6 @@
         };
         return CanvasLayer;
     }());
-    //# sourceMappingURL=CanvasLayer.js.map
 
     /**
      * @class
@@ -761,7 +744,6 @@
         };
         return ShadowLayer;
     }(CanvasLayer));
-    //# sourceMappingURL=ShadowLayer.js.map
 
     var GridLayer = /** @class */ (function (_super) {
         __extends(GridLayer, _super);
@@ -836,7 +818,6 @@
         };
         return GridLayer;
     }(CanvasLayer));
-    //# sourceMappingURL=GridLayer.js.map
 
     var DrawHandler = /** @class */ (function () {
         function DrawHandler(params) {
@@ -845,7 +826,6 @@
         }
         return DrawHandler;
     }());
-    //# sourceMappingURL=DrawHandler.js.map
 
     /**
      * Provides shadow for the stone.
@@ -870,7 +850,6 @@
         };
         return Stone;
     }(DrawHandler));
-    //# sourceMappingURL=Stone.js.map
 
     var ShellStoneBlack = /** @class */ (function (_super) {
         __extends(ShellStoneBlack, _super);
@@ -900,7 +879,6 @@
         };
         return ShellStoneBlack;
     }(Stone));
-    //# sourceMappingURL=ShellStoneBlack.js.map
 
     // shell stone helping functions
     var shellSeed = Math.ceil(Math.random() * 9999999);
@@ -1010,7 +988,6 @@
         };
         return ShellStoneWhite;
     }(Stone));
-    //# sourceMappingURL=ShellStoneWhite.js.map
 
     var GlassStoneBlack = /** @class */ (function (_super) {
         __extends(GlassStoneBlack, _super);
@@ -1029,7 +1006,6 @@
         };
         return GlassStoneBlack;
     }(Stone));
-    //# sourceMappingURL=GlassStoneBlack.js.map
 
     var GlassStoneWhite = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -1048,7 +1024,6 @@
         };
         return GlassStoneWhite;
     }(Stone));
-    //# sourceMappingURL=GlassStoneWhite.js.map
 
     var PaintedStoneBlack = /** @class */ (function (_super) {
         __extends(PaintedStoneBlack, _super);
@@ -1072,7 +1047,6 @@
         };
         return PaintedStoneBlack;
     }(Stone));
-    //# sourceMappingURL=PaintedStoneBlack.js.map
 
     var PaintedStoneWhite = /** @class */ (function (_super) {
         __extends(PaintedStoneWhite, _super);
@@ -1096,7 +1070,6 @@
         };
         return PaintedStoneWhite;
     }(Stone));
-    //# sourceMappingURL=PaintedStoneWhite.js.map
 
     var SimpleStone = /** @class */ (function (_super) {
         __extends(SimpleStone, _super);
@@ -1116,7 +1089,6 @@
         };
         return SimpleStone;
     }(DrawHandler));
-    //# sourceMappingURL=SimpleStone.js.map
 
     // Check if image has been loaded properly
     // see https://stereochro.me/ideas/detecting-broken-images-js
@@ -1175,7 +1147,6 @@
         };
         return RealisticStone;
     }(Stone));
-    //# sourceMappingURL=RealisticStone.js.map
 
     var MarkupDrawHandler = /** @class */ (function (_super) {
         __extends(MarkupDrawHandler, _super);
@@ -1201,7 +1172,6 @@
         };
         return MarkupDrawHandler;
     }(DrawHandler));
-    //# sourceMappingURL=MarkupDrawHandler.js.map
 
     var ShapeMarkup = /** @class */ (function (_super) {
         __extends(ShapeMarkup, _super);
@@ -1223,7 +1193,6 @@
         };
         return ShapeMarkup;
     }(MarkupDrawHandler));
-    //# sourceMappingURL=ShapeMarkup.js.map
 
     var Circle = /** @class */ (function (_super) {
         __extends(Circle, _super);
@@ -1235,7 +1204,6 @@
         };
         return Circle;
     }(ShapeMarkup));
-    //# sourceMappingURL=Circle.js.map
 
     var Square = /** @class */ (function (_super) {
         __extends(Square, _super);
@@ -1247,7 +1215,6 @@
         };
         return Square;
     }(ShapeMarkup));
-    //# sourceMappingURL=Square.js.map
 
     var Triangle = /** @class */ (function (_super) {
         __extends(Triangle, _super);
@@ -1262,7 +1229,6 @@
         };
         return Triangle;
     }(ShapeMarkup));
-    //# sourceMappingURL=Triangle.js.map
 
     var Label = /** @class */ (function (_super) {
         __extends(Label, _super);
@@ -1289,7 +1255,6 @@
         };
         return Label;
     }(MarkupDrawHandler));
-    //# sourceMappingURL=Label.js.map
 
     /**
      * TODO: rename this
@@ -1309,7 +1274,6 @@
         };
         return Dot;
     }(DrawHandler));
-    //# sourceMappingURL=Dot.js.map
 
     var XMark = /** @class */ (function (_super) {
         __extends(XMark, _super);
@@ -1324,7 +1288,6 @@
         };
         return XMark;
     }(ShapeMarkup));
-    //# sourceMappingURL=XMark.js.map
 
     var Line = /** @class */ (function (_super) {
         __extends(Line, _super);
@@ -1343,7 +1306,6 @@
         };
         return Line;
     }(DrawHandler));
-    //# sourceMappingURL=Line.js.map
 
     var Arrow = /** @class */ (function (_super) {
         __extends(Arrow, _super);
@@ -1393,7 +1355,6 @@
         };
         return Arrow;
     }(DrawHandler));
-    //# sourceMappingURL=Arrow.js.map
 
     var Dim = /** @class */ (function (_super) {
         __extends(Dim, _super);
@@ -1406,9 +1367,8 @@
         };
         return Dim;
     }(DrawHandler));
-    //# sourceMappingURL=Dim.js.map
 
-    //# sourceMappingURL=index.js.map
+
 
     var index = /*#__PURE__*/Object.freeze({
         DrawHandler: DrawHandler,
@@ -1447,7 +1407,6 @@
             AR: new Arrow(),
             DD: new Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
         } });
-    //# sourceMappingURL=baseTheme.js.map
 
     var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new RealisticStone([
                 'images/stones/black00_128.png',
@@ -1467,13 +1426,10 @@
                 'images/stones/white09_128.png',
                 'images/stones/white10_128.png',
             ], new GlassStoneWhite()) }) });
-    //# sourceMappingURL=realisticTheme.js.map
 
     var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
-    //# sourceMappingURL=modernTheme.js.map
 
     // add here all themes, which should be publicly exposed
-    //# sourceMappingURL=index.js.map
 
     var index$1 = /*#__PURE__*/Object.freeze({
         baseTheme: baseTheme,
@@ -1695,15 +1651,11 @@
         };
         return CanvasBoard;
     }(BoardBase));
-    //# sourceMappingURL=CanvasBoard.js.map
-
-    //# sourceMappingURL=index.js.map
 
     var NS = 'http://www.w3.org/2000/svg';
     var OBJECTS = 'objects';
     var GRID_MASK = 'gridMask';
     var SHADOWS = 'shadows';
-    //# sourceMappingURL=types.js.map
 
     function line(fromX, fromY, toX, toY) {
         var line = document.createElementNS(NS, 'line');
@@ -1740,7 +1692,6 @@
         }
         return grid;
     }
-    //# sourceMappingURL=createGrid.js.map
 
     function letter(x, y, str) {
         var text = document.createElementNS(NS, 'text');
@@ -1768,7 +1719,6 @@
         }
         return coordinates;
     }
-    //# sourceMappingURL=createCoordinates.js.map
 
     var SVGFieldDrawHandler = /** @class */ (function () {
         function SVGFieldDrawHandler() {
@@ -1784,12 +1734,10 @@
         };
         return SVGFieldDrawHandler;
     }());
-    //# sourceMappingURL=SVGFieldDrawHandler.js.map
 
     function generateId(prefix) {
         return prefix + "-" + Math.floor(Math.random() * 1000000000).toString(36);
     }
-    //# sourceMappingURL=generateId.js.map
 
     var SVGStoneDrawHandler = /** @class */ (function (_super) {
         __extends(SVGStoneDrawHandler, _super);
@@ -1839,7 +1787,6 @@
         };
         return SVGStoneDrawHandler;
     }(SVGFieldDrawHandler));
-    //# sourceMappingURL=SVGStoneDrawHandler.js.map
 
     var GlassStoneBlack$1 = /** @class */ (function (_super) {
         __extends(GlassStoneBlack, _super);
@@ -1887,7 +1834,6 @@
         };
         return GlassStoneBlack;
     }(SVGStoneDrawHandler));
-    //# sourceMappingURL=GlassStoneBlack.js.map
 
     var GlassStoneWhite$1 = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -1935,7 +1881,6 @@
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
-    //# sourceMappingURL=GlassStoneWhite.js.map
 
     var SVGMarkupDrawHandler = /** @class */ (function (_super) {
         __extends(SVGMarkupDrawHandler, _super);
@@ -1963,7 +1908,6 @@
         };
         return SVGMarkupDrawHandler;
     }(SVGFieldDrawHandler));
-    //# sourceMappingURL=SVGMarkupDrawHandler.js.map
 
     var Circle$1 = /** @class */ (function (_super) {
         __extends(Circle, _super);
@@ -1988,7 +1932,6 @@
         };
         return Circle;
     }(SVGMarkupDrawHandler));
-    //# sourceMappingURL=Circle.js.map
 
     var Square$1 = /** @class */ (function (_super) {
         __extends(Square, _super);
@@ -2015,7 +1958,6 @@
         };
         return Square;
     }(SVGMarkupDrawHandler));
-    //# sourceMappingURL=Square.js.map
 
     var Triangle$1 = /** @class */ (function (_super) {
         __extends(Triangle, _super);
@@ -2036,7 +1978,6 @@
         };
         return Triangle;
     }(SVGMarkupDrawHandler));
-    //# sourceMappingURL=Triangle.js.map
 
     var XMark$1 = /** @class */ (function (_super) {
         __extends(XMark, _super);
@@ -2059,7 +2000,6 @@
         };
         return XMark;
     }(SVGMarkupDrawHandler));
-    //# sourceMappingURL=XMark.js.map
 
     var Dot$1 = /** @class */ (function (_super) {
         __extends(Dot, _super);
@@ -2078,7 +2018,6 @@
         };
         return Dot;
     }(SVGFieldDrawHandler));
-    //# sourceMappingURL=Dot.js.map
 
     var Dim$1 = /** @class */ (function (_super) {
         __extends(Dim, _super);
@@ -2098,7 +2037,6 @@
         };
         return Dim;
     }(SVGFieldDrawHandler));
-    //# sourceMappingURL=Dim.js.map
 
     var Line$1 = /** @class */ (function () {
         function Line(params) {
@@ -2130,7 +2068,6 @@
         };
         return Line;
     }());
-    //# sourceMappingURL=Line.js.map
 
     var Arrow$1 = /** @class */ (function () {
         function Arrow(params) {
@@ -2202,7 +2139,6 @@
         };
         return Arrow;
     }());
-    //# sourceMappingURL=Arrow.js.map
 
     var Label$1 = /** @class */ (function (_super) {
         __extends(Label, _super);
@@ -2244,7 +2180,6 @@
         };
         return Label;
     }(SVGMarkupDrawHandler));
-    //# sourceMappingURL=Label.js.map
 
     var SimpleStone$1 = /** @class */ (function (_super) {
         __extends(SimpleStone, _super);
@@ -2263,7 +2198,6 @@
         };
         return SimpleStone;
     }(SVGFieldDrawHandler));
-    //# sourceMappingURL=SimpleStone.js.map
 
     var RealisticStone$1 = /** @class */ (function (_super) {
         __extends(RealisticStone, _super);
@@ -2309,9 +2243,6 @@
         };
         return RealisticStone;
     }(SVGStoneDrawHandler));
-    //# sourceMappingURL=RealisticStone.js.map
-
-    //# sourceMappingURL=index.js.map
 
     var GlassStoneWhite$2 = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -2347,7 +2278,6 @@
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
-    //# sourceMappingURL=ModernStoneWhite.js.map
 
     var GlassStoneWhite$3 = /** @class */ (function (_super) {
         __extends(GlassStoneWhite, _super);
@@ -2383,7 +2313,6 @@
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
-    //# sourceMappingURL=ModernStoneBlack.js.map
 
     var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { 
         // backgroundImage: 'images/wood1.jpg',
@@ -2402,7 +2331,6 @@
             W: new GlassStoneWhite$2(),
             B: new GlassStoneWhite$3(),
         } });
-    //# sourceMappingURL=defaultSVGTheme.js.map
 
     var svgBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: defaultSVGTheme });
     var SVGBoard = /** @class */ (function (_super) {
@@ -2633,9 +2561,6 @@
         };
         return SVGBoard;
     }(BoardBase));
-    //# sourceMappingURL=SVGBoard.js.map
-
-    //# sourceMappingURL=index.js.map
 
     /**
      * WGo's game engine offers to set 3 rules:
@@ -2684,7 +2609,6 @@
         AGA: CHINESE_RULES,
         Chinese: CHINESE_RULES,
     };
-    //# sourceMappingURL=rules.js.map
 
     /**
      * Contains implementation of go position class.
@@ -3251,7 +3175,6 @@
     //   }
     //   return output;
     // }
-    //# sourceMappingURL=Position.js.map
 
     var Game = /** @class */ (function () {
         /**
@@ -3462,9 +3385,6 @@
         };
         return Game;
     }());
-    //# sourceMappingURL=Game.js.map
-
-    //# sourceMappingURL=index.js.map
 
     /**
      * From SGF specification, there are these types of property values:
@@ -3666,7 +3586,6 @@
         multiple: false,
         notEmpty: true,
     };
-    //# sourceMappingURL=propertyValueTypes.js.map
 
     var processJSGF = function (gameTree, rootNode) {
         rootNode.setSGFProperties(gameTree.sequence[0] || {});
@@ -3980,7 +3899,6 @@
         };
         return KifuNode;
     }());
-    //# sourceMappingURL=KifuNode.js.map
 
     var PropIdent;
     (function (PropIdent) {
@@ -4062,7 +3980,6 @@
         PropIdent["BLACK_TERRITORY"] = "TB";
         PropIdent["WHITE_TERRITORY"] = "TW";
     })(PropIdent || (PropIdent = {}));
-    //# sourceMappingURL=sgfTypes.js.map
 
     function beforeInitSZ(event) {
         event.target.params.size = event.value;
@@ -4108,7 +4025,6 @@
             event.target.game.setStone(value.x, value.y, color);
         });
     }
-    //# sourceMappingURL=basePropertyListeners.js.map
 
     var PlayerBase = /** @class */ (function (_super) {
         __extends(PlayerBase, _super);
@@ -4364,11 +4280,6 @@
         };
         return PlayerBase;
     }(EventEmitter));
-    //# sourceMappingURL=PlayerBase.js.map
-
-    //# sourceMappingURL=PropertyHandler.js.map
-
-    //# sourceMappingURL=index.js.map
 
     var defaultSimplePlayerConfig = {
         boardTheme: defaultBoardBaseTheme,
@@ -4383,7 +4294,6 @@
         formatNicks: true,
         formatMoves: true,
     };
-    //# sourceMappingURL=defaultSimplePlayerConfig.js.map
 
     /**
      * Component of Simple Board - can be board, box with comments, control panel, etc...
@@ -4395,7 +4305,6 @@
         Component.prototype.didMount = function (player) { };
         return Component;
     }());
-    //# sourceMappingURL=Component.js.map
 
     var SVGCustomFieldObject = /** @class */ (function (_super) {
         __extends(SVGCustomFieldObject, _super);
@@ -4408,7 +4317,6 @@
         }
         return SVGCustomFieldObject;
     }(FieldObject));
-    //# sourceMappingURL=SVGCustomFieldObject.js.map
 
     var SVGCustomLabelObject = /** @class */ (function (_super) {
         __extends(SVGCustomLabelObject, _super);
@@ -4417,7 +4325,6 @@
         }
         return SVGCustomLabelObject;
     }(BoardLabelObject));
-    //# sourceMappingURL=SVGCustomLabelObject.js.map
 
     var colorsMap = {
         B: exports.Color.BLACK,
@@ -4745,7 +4652,6 @@
         }
         return false;
     }
-    //# sourceMappingURL=SVGBoardComponent.js.map
 
     var Container = /** @class */ (function (_super) {
         __extends(Container, _super);
@@ -4812,7 +4718,6 @@
         };
         return Container;
     }(Component));
-    //# sourceMappingURL=Container.js.map
 
     var PlayerTag = /** @class */ (function (_super) {
         __extends(PlayerTag, _super);
@@ -4884,7 +4789,6 @@
         };
         return PlayerTag;
     }(Component));
-    //# sourceMappingURL=PlayerTag.js.map
 
     var CommentBox = /** @class */ (function (_super) {
         __extends(CommentBox, _super);
@@ -4961,7 +4865,6 @@
         var y = parseInt(coordinates.substr(1), 10) - 1;
         return { x: x, y: y };
     }
-    //# sourceMappingURL=CommentsBox.js.map
 
     var gameInfoProperties = {
         DT: 'Date',
@@ -5035,7 +4938,6 @@
         };
         return GameInfoBox;
     }(Component));
-    //# sourceMappingURL=GameInfoBox.js.map
 
     var ControlPanel = /** @class */ (function (_super) {
         __extends(ControlPanel, _super);
@@ -5202,7 +5104,6 @@
         element.click();
         document.body.removeChild(element);
     }
-    //# sourceMappingURL=ControlPanel.js.map
 
     var ContainerCondition = {
         minWidth: function (width) {
@@ -5232,7 +5133,6 @@
             return function (container) { return conditions.some(function (c) { return c(container); }); };
         },
     };
-    //# sourceMappingURL=ContainerCondition.js.map
 
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);
@@ -5451,10 +5351,7 @@
         return SimplePlayer;
     }(PlayerBase));
 
-    //# sourceMappingURL=index.js.map
-
     // All public API is exported here
-    //# sourceMappingURL=index.js.map
 
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;
@@ -5463,17 +5360,25 @@
     exports.BoardObject = BoardObject;
     exports.CHINESE_RULES = CHINESE_RULES;
     exports.CanvasBoard = CanvasBoard;
+    exports.CommentBox = CommentBox;
+    exports.Component = Component;
+    exports.Container = Container;
+    exports.ContainerCondition = ContainerCondition;
+    exports.ControlPanel = ControlPanel;
     exports.FieldObject = FieldObject;
     exports.Game = Game;
+    exports.GameInfoBox = GameInfoBox;
     exports.ING_RULES = ING_RULES;
     exports.JAPANESE_RULES = JAPANESE_RULES;
     exports.KifuNode = KifuNode;
     exports.NO_RULES = NO_RULES;
     exports.PlayerBase = PlayerBase;
+    exports.PlayerTag = PlayerTag;
     exports.Position = Position;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
     exports.SVGBoard = SVGBoard;
+    exports.SVGBoardComponent = SVGBoardComponent;
     exports.SimplePlayer = SimplePlayer;
     exports.drawHandlers = index;
     exports.goRules = goRules;
