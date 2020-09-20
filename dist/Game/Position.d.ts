@@ -89,7 +89,7 @@ export default class Position {
     /**
      * Returns true if stone or group on the given coordinates has at least one liberty.
      */
-    hasLiberties(x: number, y: number, alreadyTested?: {}[][], c?: Color): boolean;
+    hasLiberties(x: number, y: number, alreadyTested?: unknown[][], c?: Color): boolean;
     /**
      * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
      */

@@ -2,7 +2,7 @@ import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { Point, Color } from '../types';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { PlayerBase } from '../PlayerBase';
-import defaultSimplePlayerConfig, { SimplePlayerConfig } from './defaultSimplePlayerConfig';
+import defaultSimplePlayerConfig, { LayoutItem, SimplePlayerConfig } from './defaultSimplePlayerConfig';
 import SVGBoardComponent from './components/SVGBoardComponent';
 import Component from './components/Component';
 import Container from './components/Container';
@@ -20,6 +20,9 @@ export default class SimplePlayer extends PlayerBase {
   layout: Component;
   editMode: boolean;
   coordinates: boolean;
+  components: {
+    [key: string]: Component;
+  };
 
   private _mouseWheelEvent: EventListenerOrEventListenerObject;
   private _keyEvent: EventListenerOrEventListenerObject;
@@ -72,53 +75,54 @@ export default class SimplePlayer extends PlayerBase {
 
     window.addEventListener('resize', this._resizeEvent = (e: any) => this.resize());
 
-    // temp (maybe)
-    // this.boardComponent = new SVGBoardComponent(this);
+    this.components = {};
 
-    this.layout = new Container({
-      direction: 'column',
-      items: [
-        {
-          component: Container,
-          condition: ContainerCondition.maxWidth(749),
-          params: {
-            direction: 'row',
-            items: [
-              { component: PlayerTag, params: Color.B },
-              { component: PlayerTag, params: Color.W },
-            ],
-          },
-        },
-        {
-          component: Container,
-          params: {
-            direction: 'row',
-            items: [
-              { component: SVGBoardComponent },
-              {
-                component: Container,
-                condition: ContainerCondition.minWidth(650),
-                params: {
-                  direction: 'column',
-                  items: [
-                    { component: PlayerTag, params: Color.B, condition: ContainerCondition.minWidth(250) },
-                    { component: PlayerTag, params: Color.W, condition: ContainerCondition.minWidth(250) },
-                    { component: ControlPanel, condition: ContainerCondition.minWidth(250) },
-                    { component: GameInfoBox },
-                    { component: CommentBox },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-        { component: ControlPanel, condition: ContainerCondition.maxWidth(749) },
-        { component: CommentBox, condition: ContainerCondition.maxWidth(649) },
-      ],
+    Object.keys(this.config.components).forEach((componentName) => {
+      const declaration = this.config.components[componentName];
+      this.components[componentName] = new declaration.component(this, declaration.config);
     });
 
-    this.mainElement.appendChild(this.layout.create(this));
-    this.layout.didMount(this);
+    // this.mainElement.appendChild();
+    // this.layout.didMount(this);
+
+    this.appendComponents(this.config.layout, this.mainElement);
+  }
+
+  appendComponents(items: LayoutItem[], stack: HTMLElement) {
+    items.forEach((layoutItem) => {
+      if (typeof layoutItem === 'string') {
+        const elem = this.components[layoutItem].element || this.components[layoutItem].create();
+        stack.appendChild(elem);
+        return;
+      }
+
+      if (layoutItem.if && !layoutItem.if({ element: stack })) {
+        // temp
+        return;
+      }
+
+      let direction;
+
+      if ('column' in layoutItem) {
+        direction = 'column';
+      } else if ('row' in layoutItem) {
+        direction = 'row';
+      }
+
+      if (direction) {
+        const elem = document.createElement('div');
+        elem.className = `wgo-player__container wgo-player__container--${direction}`;
+        stack.appendChild(elem);
+        this.appendComponents((layoutItem as any)[direction], elem);
+        return;
+      }
+
+      if ('component' in layoutItem) {
+        const elem = this.components[layoutItem.component].element || this.components[layoutItem.component].create();
+        stack.appendChild(elem);
+        return;
+      }
+    });
   }
 
   destroy() {

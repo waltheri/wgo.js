@@ -17,8 +17,6 @@ interface MenuItem {
 }
 
 export default class ControlPanel extends Component {
-  player: SimplePlayer;
-
   static menuItems: MenuItem[] = [
     {
       name: 'Edit mode',
@@ -62,14 +60,12 @@ export default class ControlPanel extends Component {
   next: HTMLButtonElement;
   last: HTMLButtonElement;
 
-  constructor() {
-    super();
+  constructor(player: SimplePlayer) {
+    super(player);
     this.update = this.update.bind(this);
   }
 
-  create(player: SimplePlayer) {
-    this.player = player;
-
+  create() {
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__control-panel';
 

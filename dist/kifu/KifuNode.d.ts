@@ -18,11 +18,12 @@ export default class KifuNode {
         [key: string]: any;
     };
     constructor();
-    readonly root: KifuNode;
+    get root(): KifuNode;
+    set innerSGF(sgf: string);
     /**
-    * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
-    */
-    innerSGF: string;
+     * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
+     */
+    get innerSGF(): string;
     getPath(): Path;
     /**
      * Insert a KNode as the last child node of this node.

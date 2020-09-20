@@ -1,29 +1,29 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
     typeof define === 'function' && define.amd ? define(['exports'], factory) :
-    (global = global || self, factory(global.WGo = {}));
-}(this, function (exports) { 'use strict';
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.WGo = {}));
+}(this, (function (exports) { 'use strict';
 
     /*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
+    Copyright (c) Microsoft Corporation.
 
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted.
 
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+    REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+    AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+    INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+    LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+    OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+    PERFORMANCE OF THIS SOFTWARE.
     ***************************************************************************** */
     /* global Reflect, Promise */
 
     var extendStatics = function(d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
 
@@ -1368,9 +1368,8 @@
         return Dim;
     }(DrawHandler));
 
-
-
     var index = /*#__PURE__*/Object.freeze({
+        __proto__: null,
         DrawHandler: DrawHandler,
         ShellStoneBlack: ShellStoneBlack,
         ShellStoneWhite: ShellStoneWhite,
@@ -1394,7 +1393,7 @@
         Dim: Dim
     });
 
-    var baseTheme = __assign({}, defaultBoardBaseTheme, { snapToGrid: false, linesShift: -0.5, drawHandlers: {
+    var baseTheme = __assign(__assign({}, defaultBoardBaseTheme), { snapToGrid: false, linesShift: -0.5, drawHandlers: {
             B: new SimpleStone('#222'),
             W: new SimpleStone('#eee'),
             CR: new Circle(),
@@ -1408,7 +1407,7 @@
             DD: new Dim({ color: 'rgba(0, 0, 0, 0.5)' }),
         } });
 
-    var realisticTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new RealisticStone([
+    var realisticTheme = __assign(__assign({}, baseTheme), { font: 'calibri', backgroundImage: 'images/wood1.jpg', stoneSize: 0.48, drawHandlers: __assign(__assign({}, baseTheme.drawHandlers), { B: new RealisticStone([
                 'images/stones/black00_128.png',
                 'images/stones/black01_128.png',
                 'images/stones/black02_128.png',
@@ -1427,11 +1426,12 @@
                 'images/stones/white10_128.png',
             ], new GlassStoneWhite()) }) });
 
-    var modernTheme = __assign({}, baseTheme, { font: 'calibri', backgroundImage: '', drawHandlers: __assign({}, baseTheme.drawHandlers, { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
+    var modernTheme = __assign(__assign({}, baseTheme), { font: 'calibri', backgroundImage: '', drawHandlers: __assign(__assign({}, baseTheme.drawHandlers), { B: new ShellStoneBlack(), W: new ShellStoneWhite() }) });
 
     // add here all themes, which should be publicly exposed
 
     var index$1 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
         baseTheme: baseTheme,
         realisticTheme: realisticTheme,
         modernTheme: modernTheme
@@ -1441,7 +1441,7 @@
      * Contains implementation of go board.
      * @module CanvasBoard
      */
-    var canvasBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: baseTheme });
+    var canvasBoardDefaultConfig = __assign(__assign({}, defaultBoardBaseConfig), { theme: baseTheme });
     var zIndexSorter = function (obj1, obj2) { return obj1.zIndex - obj2.zIndex; };
     var CanvasBoard = /** @class */ (function (_super) {
         __extends(CanvasBoard, _super);
@@ -2314,9 +2314,9 @@
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
 
-    var defaultSVGTheme = __assign({}, defaultBoardBaseTheme, { 
+    var defaultSVGTheme = __assign(__assign({}, defaultBoardBaseTheme), { 
         // backgroundImage: 'images/wood1.jpg',
-        markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign({}, defaultBoardBaseTheme.coordinates, { fontSize: 0.5 }), grid: __assign({}, defaultBoardBaseTheme.grid, { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
+        markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign(__assign({}, defaultBoardBaseTheme.coordinates), { fontSize: 0.5 }), grid: __assign(__assign({}, defaultBoardBaseTheme.grid), { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
             CR: new Circle$1(),
             SQ: new Square$1(),
             LB: new Label$1(),
@@ -2332,7 +2332,7 @@
             B: new GlassStoneWhite$3(),
         } });
 
-    var svgBoardDefaultConfig = __assign({}, defaultBoardBaseConfig, { theme: defaultSVGTheme });
+    var svgBoardDefaultConfig = __assign(__assign({}, defaultBoardBaseConfig), { theme: defaultSVGTheme });
     var SVGBoard = /** @class */ (function (_super) {
         __extends(SVGBoard, _super);
         function SVGBoard(elem, config) {
@@ -2461,8 +2461,8 @@
             }
         };
         SVGBoard.prototype.createObjectElements = function (boardObject) {
-            var _this = this;
             var _a;
+            var _this = this;
             var handler = this.getObjectHandler(boardObject);
             // create element or elements and add them to the svg
             var elem = handler.createElement(this.config, function (def) { return _this.defsElement.appendChild(def); });
@@ -3211,7 +3211,7 @@
             set: function (pos) {
                 this.positionStack[this.positionStack.length - 1] = pos;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(Game.prototype, "turn", {
@@ -3221,14 +3221,14 @@
             set: function (color) {
                 this.position.turn = color;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(Game.prototype, "capCount", {
             get: function () {
                 return this.position.capCount;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         /**
@@ -3624,7 +3624,7 @@
                 }
                 return node;
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         Object.defineProperty(KifuNode.prototype, "innerSGF", {
@@ -3659,7 +3659,7 @@
                 }
                 KifuNode.fromSGF(transformedSgf, 0, this);
             },
-            enumerable: true,
+            enumerable: false,
             configurable: true
         });
         KifuNode.prototype.getPath = function () {
@@ -4281,525 +4281,35 @@
         return PlayerBase;
     }(EventEmitter));
 
-    var defaultSimplePlayerConfig = {
-        boardTheme: defaultBoardBaseTheme,
-        highlightCurrentMove: true,
-        currentMoveBlackMark: new Circle$1({ color: 'rgba(255,255,255,0.8)', fillColor: 'rgba(0,0,0,0)' }),
-        currentMoveWhiteMark: new Circle$1({ color: 'rgba(0,0,0,0.8)', fillColor: 'rgba(0,0,0,0)' }),
-        enableMouseWheel: true,
-        enableKeys: true,
-        showVariations: true,
-        showCurrentVariations: false,
-        variationDrawHandler: new Label$1({ color: '#33f' }),
-        formatNicks: true,
-        formatMoves: true,
-    };
-
     /**
      * Component of Simple Board - can be board, box with comments, control panel, etc...
      */
     var Component = /** @class */ (function () {
-        function Component() {
+        function Component(player) {
+            this.player = player;
+            this.element = null;
         }
-        /** HTML was placed into the DOM */
-        Component.prototype.didMount = function (player) { };
+        /**
+         * Called when component's root HTML element was appended to DOM, or if it was moved.
+         * In this phase component may change its appearance or behavior based on dimensions etc...
+         */
+        Component.prototype.didMount = function () { };
+        /**
+         * This will unregister all event handlers and clean the component.
+         */
+        Component.prototype.destroy = function () { };
         return Component;
     }());
 
-    var SVGCustomFieldObject = /** @class */ (function (_super) {
-        __extends(SVGCustomFieldObject, _super);
-        function SVGCustomFieldObject(handler, x, y) {
-            if (x === void 0) { x = 0; }
-            if (y === void 0) { y = 0; }
-            var _this = _super.call(this, 'custom', x, y) || this;
-            _this.handler = handler;
-            return _this;
-        }
-        return SVGCustomFieldObject;
-    }(FieldObject));
-
-    var SVGCustomLabelObject = /** @class */ (function (_super) {
-        __extends(SVGCustomLabelObject, _super);
-        function SVGCustomLabelObject() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        return SVGCustomLabelObject;
-    }(BoardLabelObject));
-
-    var colorsMap = {
-        B: exports.Color.BLACK,
-        W: exports.Color.WHITE,
-    };
-    var SVGBoardComponent = /** @class */ (function (_super) {
-        __extends(SVGBoardComponent, _super);
-        function SVGBoardComponent(boardConfig) {
-            if (boardConfig === void 0) { boardConfig = {}; }
-            var _this = _super.call(this) || this;
-            _this.boardConfig = boardConfig;
-            _this.viewportStack = [];
-            _this.applyNodeChanges = _this.applyNodeChanges.bind(_this);
-            _this.clearNodeChanges = _this.clearNodeChanges.bind(_this);
-            _this.applyMarkupProperty = _this.applyMarkupProperty.bind(_this);
-            _this.applyLabelMarkupProperty = _this.applyLabelMarkupProperty.bind(_this);
-            _this.applyLineMarkupProperty = _this.applyLineMarkupProperty.bind(_this);
-            _this.applyViewportProperty = _this.applyViewportProperty.bind(_this);
-            _this.clearViewportProperty = _this.clearViewportProperty.bind(_this);
-            _this.applyMoveProperty = _this.applyMoveProperty.bind(_this);
-            _this.addTemporaryBoardObject = _this.addTemporaryBoardObject.bind(_this);
-            _this.removeTemporaryBoardObject = _this.removeTemporaryBoardObject.bind(_this);
-            _this.updateTemporaryBoardObject = _this.updateTemporaryBoardObject.bind(_this);
-            _this.setCoordinates = _this.setCoordinates.bind(_this);
-            return _this;
-        }
-        SVGBoardComponent.prototype.create = function (player) {
-            var _this = this;
-            this.player = player;
-            this.player.coordinates = this.boardConfig.coordinates;
-            this.boardElement = document.createElement('div');
-            this.boardElement.className = 'wgo-player__board';
-            this.stoneBoardsObjects = [];
-            this.temporaryBoardObjects = [];
-            this.board = new SVGBoard(this.boardElement, this.boardConfig);
-            this.board.on('click', function (event, point) {
-                _this.handleBoardClick(point);
-            });
-            this.board.on('mousemove', function (event, point) {
-                if (!point) {
-                    if (_this.boardMouseX != null) {
-                        _this.boardMouseX = null;
-                        _this.boardMouseY = null;
-                        _this.handleBoardMouseOut();
-                    }
-                    return;
-                }
-                if (point.x !== _this.boardMouseX || point.y !== _this.boardMouseY) {
-                    _this.boardMouseX = point.x;
-                    _this.boardMouseY = point.y;
-                    _this.handleBoardMouseMove(point);
-                }
-            });
-            this.board.on('mouseout', function (event, point) {
-                if (!point && _this.boardMouseX != null) {
-                    _this.boardMouseX = null;
-                    _this.boardMouseY = null;
-                    _this.handleBoardMouseOut();
-                    return;
-                }
-            });
-            // add general node listeners - for setting stones on board based on position
-            this.player.on('applyNodeChanges', this.applyNodeChanges);
-            this.player.on('clearNodeChanges', this.clearNodeChanges);
-            // temporary board markup listeners - add
-            this.player.on('applyNodeChanges.CR', this.applyMarkupProperty);
-            this.player.on('applyNodeChanges.TR', this.applyMarkupProperty);
-            this.player.on('applyNodeChanges.SQ', this.applyMarkupProperty);
-            this.player.on('applyNodeChanges.SL', this.applyMarkupProperty);
-            this.player.on('applyNodeChanges.MA', this.applyMarkupProperty);
-            this.player.on('applyNodeChanges.DD', this.applyMarkupProperty);
-            this.player.on('applyNodeChanges.LB', this.applyLabelMarkupProperty);
-            this.player.on('applyNodeChanges.LN', this.applyLineMarkupProperty);
-            this.player.on('applyNodeChanges.AR', this.applyLineMarkupProperty);
-            // viewport SGF property listeners
-            this.player.on('applyGameChanges.VW', this.applyViewportProperty);
-            this.player.on('clearGameChanges.VW', this.clearViewportProperty);
-            // add current move marker
-            this.player.on('applyNodeChanges.B', this.applyMoveProperty);
-            this.player.on('applyNodeChanges.W', this.applyMoveProperty);
-            this.player.on('board.addTemporaryObject', this.addTemporaryBoardObject);
-            this.player.on('board.removeTemporaryObject', this.removeTemporaryBoardObject);
-            this.player.on('board.updateTemporaryObject', this.updateTemporaryBoardObject);
-            this.player.on('board.setCoordinates', this.setCoordinates);
-            return this.boardElement;
-        };
-        SVGBoardComponent.prototype.destroy = function () {
-            this.player.off('applyNodeChanges', this.applyNodeChanges);
-            this.player.off('clearNodeChanges', this.clearNodeChanges);
-            this.player.off('applyNodeChanges', this.applyNodeChanges);
-            this.player.off('clearNodeChanges', this.clearNodeChanges);
-            this.player.off('applyNodeChanges.CR', this.applyMarkupProperty);
-            this.player.off('applyNodeChanges.TR', this.applyMarkupProperty);
-            this.player.off('applyNodeChanges.SQ', this.applyMarkupProperty);
-            this.player.off('applyNodeChanges.SL', this.applyMarkupProperty);
-            this.player.off('applyNodeChanges.MA', this.applyMarkupProperty);
-            this.player.off('applyNodeChanges.DD', this.applyMarkupProperty);
-            this.player.off('applyNodeChanges.LB', this.applyLabelMarkupProperty);
-            this.player.off('applyNodeChanges.LN', this.applyLineMarkupProperty);
-            this.player.off('applyNodeChanges.AR', this.applyLineMarkupProperty);
-            this.player.off('applyGameChanges.VW', this.applyViewportProperty);
-            this.player.off('clearGameChanges.VW', this.clearViewportProperty);
-            this.player.off('applyNodeChanges.B', this.applyMoveProperty);
-            this.player.off('applyNodeChanges.W', this.applyMoveProperty);
-            this.player.off('board.addTemporaryObject', this.addTemporaryBoardObject);
-            this.player.off('board.removeTemporaryObject', this.removeTemporaryBoardObject);
-            this.player.off('board.updateTemporaryObject', this.updateTemporaryBoardObject);
-            this.player.off('board.setCoordinates', this.setCoordinates);
-        };
-        SVGBoardComponent.prototype.updateStones = function () {
-            var _this = this;
-            // Remove missing stones in current position
-            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
-                if (_this.player.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
-                    _this.board.removeObject(boardObject);
-                    return false;
-                }
-                return true;
-            });
-            // Add new stones from current position
-            var position = this.player.game.position;
-            var _loop_1 = function (x) {
-                var _loop_2 = function (y) {
-                    var c = position.get(x, y);
-                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
-                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W', x, y);
-                        this_1.board.addObject(boardObject);
-                        this_1.stoneBoardsObjects.push(boardObject);
-                    }
-                };
-                for (var y = 0; y < position.size; y++) {
-                    _loop_2(y);
-                }
-            };
-            var this_1 = this;
-            for (var x = 0; x < position.size; x++) {
-                _loop_1(x);
-            }
-        };
-        SVGBoardComponent.prototype.addVariationMarkup = function () {
-            var _this = this;
-            var moves = this.player.getVariations();
-            if (moves.length > 1) {
-                moves.forEach(function (move, i) {
-                    if (move) {
-                        var obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
-                        obj.handler = _this.player.config.variationDrawHandler;
-                        _this.addTemporaryBoardObject(obj);
-                    }
-                });
-                if (this.boardMouseX != null) {
-                    this.handleVariationCursor(this.boardMouseX, this.boardMouseY, moves);
-                }
-            }
-        };
-        SVGBoardComponent.prototype.clearTemporaryBoardObjects = function () {
-            if (this.temporaryBoardObjects.length) {
-                this.board.removeObject(this.temporaryBoardObjects);
-                this.temporaryBoardObjects = [];
-            }
-        };
-        SVGBoardComponent.prototype.handleBoardClick = function (point) {
-            this.player.emit('boardClick', point);
-            var moves = this.player.getVariations();
-            if (moves.length > 1) {
-                var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
-                if (ind >= 0) {
-                    if (this.player.shouldShowCurrentVariations()) {
-                        this.player.previous();
-                        this.player.next(ind);
-                    }
-                    else {
-                        this.player.next(ind);
-                    }
-                }
-            }
-        };
-        SVGBoardComponent.prototype.handleBoardMouseMove = function (point) {
-            this.player.emit('boardMouseMove', point);
-            this.handleVariationCursor(point.x, point.y, this.player.getVariations());
-        };
-        SVGBoardComponent.prototype.handleBoardMouseOut = function () {
-            this.player.emit('boardMouseOut');
-            this.removeVariationCursor();
-        };
-        SVGBoardComponent.prototype.handleVariationCursor = function (x, y, moves) {
-            if (moves.length > 1) {
-                var ind = moves.findIndex(function (move) { return move && move.x === x && move.y === y; });
-                if (ind >= 0) {
-                    this.boardElement.style.cursor = 'pointer';
-                    return;
-                }
-            }
-            this.removeVariationCursor();
-        };
-        SVGBoardComponent.prototype.removeVariationCursor = function () {
-            if (this.boardElement.style.cursor) {
-                this.boardElement.style.cursor = '';
-            }
-        };
-        SVGBoardComponent.prototype.applyNodeChanges = function () {
-            this.updateStones();
-            this.addVariationMarkup();
-        };
-        SVGBoardComponent.prototype.clearNodeChanges = function () {
-            this.clearTemporaryBoardObjects();
-            this.removeVariationCursor();
-        };
-        SVGBoardComponent.prototype.applyMarkupProperty = function (event) {
-            var _this = this;
-            event.value.forEach(function (value) {
-                // add markup
-                var boardMarkup = new BoardMarkupObject(event.propIdent, _this.player.game.getStone(value.x, value.y));
-                boardMarkup.zIndex = 10;
-                boardMarkup.setPosition(value.x, value.y);
-                _this.addTemporaryBoardObject(boardMarkup);
-            });
-        };
-        SVGBoardComponent.prototype.applyLabelMarkupProperty = function (event) {
-            var _this = this;
-            event.value.forEach(function (value) {
-                // add markup
-                var boardMarkup = new BoardLabelObject(value.text, _this.player.game.getStone(value.x, value.y));
-                boardMarkup.zIndex = 10;
-                boardMarkup.setPosition(value.x, value.y);
-                _this.addTemporaryBoardObject(boardMarkup);
-            });
-        };
-        SVGBoardComponent.prototype.applyLineMarkupProperty = function (event) {
-            var _this = this;
-            event.value.forEach(function (value) {
-                // add markup
-                var boardMarkup = new BoardLineObject(event.propIdent, value[0], value[1]);
-                boardMarkup.zIndex = 10;
-                _this.addTemporaryBoardObject(boardMarkup);
-            });
-        };
-        SVGBoardComponent.prototype.applyViewportProperty = function (event) {
-            var currentViewport = this.board.getViewport();
-            this.viewportStack.push(currentViewport);
-            if (event.value) {
-                var minX = Math.min(event.value[0].x, event.value[1].x);
-                var minY = Math.min(event.value[0].y, event.value[1].y);
-                var maxX = Math.max(event.value[0].x, event.value[1].x);
-                var maxY = Math.max(event.value[0].y, event.value[1].y);
-                this.board.setViewport({
-                    left: minX,
-                    top: minY,
-                    right: this.board.getSize() - maxX - 1,
-                    bottom: this.board.getSize() - maxY - 1,
-                });
-            }
-            else {
-                this.board.setViewport({
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
-                    left: 0,
-                });
-            }
-        };
-        SVGBoardComponent.prototype.clearViewportProperty = function () {
-            var previousViewport = this.viewportStack.pop();
-            if (previousViewport) {
-                this.board.setViewport(previousViewport);
-            }
-        };
-        SVGBoardComponent.prototype.applyMoveProperty = function (event) {
-            if (this.player.config.highlightCurrentMove) {
-                if (!event.value) {
-                    // no markup when pass
-                    return;
-                }
-                if (isThereMarkup(event.value, this.player.currentNode.properties)) {
-                    // don't show current move markup, when there is markup in kifu node
-                    return;
-                }
-                if (this.player.getVariations().length > 1 && this.player.shouldShowCurrentVariations()) {
-                    // don't show current move markup, if there is multiple variations and "show current variations" style set
-                    return;
-                }
-                // add current move mark
-                var boardMarkup = new SVGCustomFieldObject(event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark, event.value.x, event.value.y);
-                boardMarkup.zIndex = 10;
-                this.addTemporaryBoardObject(boardMarkup);
-            }
-        };
-        SVGBoardComponent.prototype.addTemporaryBoardObject = function (obj) {
-            this.temporaryBoardObjects.push(obj);
-            this.board.addObject(obj);
-        };
-        SVGBoardComponent.prototype.removeTemporaryBoardObject = function (obj) {
-            this.temporaryBoardObjects = this.temporaryBoardObjects.filter(function (o) { return o !== obj; });
-            this.board.removeObject(obj);
-        };
-        SVGBoardComponent.prototype.updateTemporaryBoardObject = function (obj) {
-            this.board.updateObject(obj);
-        };
-        SVGBoardComponent.prototype.setCoordinates = function (b) {
-            this.player.coordinates = b;
-            this.board.setCoordinates(b);
-        };
-        return SVGBoardComponent;
-    }(Component));
-    function samePoint(p1, p2) {
-        return p2 && p1.x === p2.x && p1.y === p2.y;
-    }
-    function isThereMarkup(field, properties) {
-        var propIdents = Object.keys(properties);
-        for (var i = 0; i < propIdents.length; i++) {
-            if (propIdents[i] === 'B' || propIdents[i] === 'W') {
-                continue;
-            }
-            var value = properties[propIdents[i]];
-            if (Array.isArray(value)) {
-                for (var j = 0; j < value.length; j++) {
-                    if (samePoint(field, value[j])) {
-                        return true;
-                    }
-                }
-            }
-            else if (samePoint(field, value)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    var Container = /** @class */ (function (_super) {
-        __extends(Container, _super);
-        function Container(params) {
-            var _this = _super.call(this) || this;
-            _this.children = [];
-            _this.items = params.items;
-            _this.direction = params.direction;
-            _this.handleResize = _this.handleResize.bind(_this);
-            return _this;
-        }
-        Container.prototype.create = function (player) {
-            this.player = player;
-            this.element = document.createElement('div');
-            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
-            player.on('resize', this.handleResize);
-            return this.element;
-        };
-        Container.prototype.didMount = function (player) {
-            var _this = this;
-            this.items.forEach(function (item) {
-                if (!item.condition || item.condition(_this)) {
-                    var child = new item.component(item.params);
-                    _this.element.appendChild(child.create(player));
-                    child.didMount(player);
-                    _this.children.push(child);
-                }
-                else {
-                    _this.children.push(null);
-                }
-            });
-        };
-        Container.prototype.destroy = function (player) {
-            var _this = this;
-            this.children.forEach(function (child) {
-                if (child) {
-                    child.destroy(player);
-                    _this.element.removeChild(_this.element.firstChild);
-                }
-            });
-            player.off('resize', this.handleResize);
-        };
-        Container.prototype.handleResize = function () {
-            var _this = this;
-            var elemIt = 0;
-            this.items.forEach(function (item, ind) {
-                if (!item.condition || item.condition(_this)) {
-                    if (_this.children[ind] == null) {
-                        var child = new item.component(item.params);
-                        _this.element.insertBefore(child.create(_this.player), _this.element.children[elemIt]);
-                        child.didMount(_this.player);
-                        _this.children[ind] = child;
-                    }
-                    elemIt++;
-                }
-                else {
-                    if (_this.children[ind]) {
-                        _this.children[ind].destroy(_this.player);
-                        _this.children[ind] = null;
-                        _this.element.removeChild(_this.element.children[elemIt]);
-                    }
-                }
-            });
-        };
-        return Container;
-    }(Component));
-
-    var PlayerTag = /** @class */ (function (_super) {
-        __extends(PlayerTag, _super);
-        function PlayerTag(color) {
-            var _this = _super.call(this) || this;
-            _this.color = color;
-            _this.colorChar = color === exports.Color.B ? 'B' : 'W';
-            _this.colorName = color === exports.Color.B ? 'black' : 'white';
-            _this.setName = _this.setName.bind(_this);
-            _this.setRank = _this.setRank.bind(_this);
-            _this.setTeam = _this.setTeam.bind(_this);
-            _this.setCaps = _this.setCaps.bind(_this);
-            return _this;
-        }
-        PlayerTag.prototype.create = function (player) {
-            this.player = player;
-            // create HTML
-            this.element = document.createElement('div');
-            this.element.className = 'wgo-player__box wgo-player__player-tag';
-            var playerElement = document.createElement('div');
-            playerElement.className = 'wgo-player__player-tag__name';
-            this.element.appendChild(playerElement);
-            this.playerNameElement = document.createElement('span');
-            playerElement.appendChild(this.playerNameElement);
-            this.playerRankElement = document.createElement('small');
-            this.playerRankElement.className = 'wgo-player__player-tag__name__rank';
-            playerElement.appendChild(this.playerRankElement);
-            this.playerCapsElement = document.createElement('div');
-            this.playerCapsElement.className = "wgo-player__player-tag__color wgo-player__player-tag__color--" + this.colorName;
-            this.playerCapsElement.textContent = '0';
-            this.element.appendChild(this.playerCapsElement);
-            // todo team
-            this.playerTeamElement = document.createElement('div');
-            // attach Kifu listeners
-            this.player.on("beforeInit.P" + this.colorChar, this.setName); // property PB or PW
-            this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
-            this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
-            this.player.on('applyNodeChanges', this.setCaps);
-            this.initialSet();
-            return this.element;
-        };
-        PlayerTag.prototype.destroy = function () {
-            this.player.off("beforeInit.P" + this.colorChar, this.setName);
-            this.player.off("beforeInit." + this.colorChar + "R", this.setRank);
-            this.player.off("beforeInit." + this.colorChar + "T", this.setTeam);
-            this.player.off('applyNodeChanges', this.setCaps);
-        };
-        PlayerTag.prototype.setName = function (event) {
-            this.playerNameElement.textContent = event.value;
-        };
-        PlayerTag.prototype.setRank = function (event) {
-            this.playerRankElement.textContent = event.value;
-        };
-        PlayerTag.prototype.setTeam = function (event) {
-            this.playerTeamElement.textContent = event.value;
-        };
-        PlayerTag.prototype.setCaps = function () {
-            this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
-        };
-        PlayerTag.prototype.initialSet = function () {
-            if (this.player.rootNode) {
-                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || '';
-                this.playerRankElement.textContent = this.player.rootNode.getProperty(this.colorChar + "R") || '';
-                this.playerTeamElement.textContent = this.player.rootNode.getProperty(this.colorChar + "T") || '';
-            }
-            if (this.player.game) {
-                this.setCaps();
-            }
-        };
-        return PlayerTag;
-    }(Component));
-
     var CommentBox = /** @class */ (function (_super) {
         __extends(CommentBox, _super);
-        function CommentBox() {
-            var _this = _super.call(this) || this;
+        function CommentBox(player) {
+            var _this = _super.call(this, player) || this;
             _this.setComments = _this.setComments.bind(_this);
             _this.clearComments = _this.clearComments.bind(_this);
             return _this;
         }
-        CommentBox.prototype.create = function (player) {
-            this.player = player;
+        CommentBox.prototype.create = function () {
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
             var title = document.createElement('div');
@@ -4866,89 +4376,109 @@
         return { x: x, y: y };
     }
 
-    var gameInfoProperties = {
-        DT: 'Date',
-        KM: 'Komi',
-        HA: 'Handicap',
-        AN: 'Annotations',
-        CP: 'Copyright',
-        GC: 'Game comments',
-        GN: 'Game name',
-        ON: 'Fuseki',
-        OT: 'Overtime',
-        TM: 'Basic time',
-        RE: 'Result',
-        RO: 'Round',
-        RU: 'Rules',
-        US: 'Recorder',
-        PC: 'Place',
-        EV: 'Event',
-        SO: 'Source',
-    };
-    var GameInfoBox = /** @class */ (function (_super) {
-        __extends(GameInfoBox, _super);
-        function GameInfoBox() {
-            var _this = _super.call(this) || this;
-            _this.printInfo = _this.printInfo.bind(_this);
+    var Container = /** @class */ (function (_super) {
+        __extends(Container, _super);
+        function Container(player, params) {
+            var _this = _super.call(this, player) || this;
+            _this.children = [];
+            _this.items = params.items;
+            _this.direction = params.direction;
+            _this.handleResize = _this.handleResize.bind(_this);
             return _this;
         }
-        GameInfoBox.prototype.create = function (player) {
-            this.player = player;
+        Container.prototype.create = function () {
             this.element = document.createElement('div');
-            this.element.className = 'wgo-player__box wgo-player__box--content';
-            var title = document.createElement('div');
-            title.innerHTML = 'Game information';
-            title.className = 'wgo-player__box__title';
-            this.element.appendChild(title);
-            this.infoTable = document.createElement('table');
-            this.infoTable.className = 'wgo-player__box__game-info';
-            this.element.appendChild(this.infoTable);
-            this.player.on('beforeInit', this.printInfo);
-            this.printInfo();
+            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
+            this.player.on('resize', this.handleResize);
             return this.element;
         };
-        GameInfoBox.prototype.destroy = function () {
-            this.player.off('beforeInit', this.printInfo);
-        };
-        GameInfoBox.prototype.addInfo = function (propIdent, value) {
-            var row = document.createElement('tr');
-            row.dataset.propIdent = propIdent;
-            this.infoTable.appendChild(row);
-            var label = document.createElement('th');
-            label.textContent = gameInfoProperties[propIdent];
-            row.appendChild(label);
-            var valueElement = document.createElement('td');
-            valueElement.textContent = value;
-            row.appendChild(valueElement);
-        };
-        GameInfoBox.prototype.removeInfo = function (propIdent) {
-            var elem = this.infoTable.querySelector("[data-id='" + propIdent + "']");
-            this.infoTable.removeChild(elem);
-        };
-        GameInfoBox.prototype.printInfo = function () {
+        Container.prototype.didMount = function () {
             var _this = this;
-            this.infoTable.innerHTML = '';
-            if (this.player.rootNode) {
-                this.player.rootNode.forEachProperty(function (propIdent, value) {
-                    if (gameInfoProperties[propIdent]) {
-                        _this.addInfo(propIdent, value);
-                    }
-                });
-            }
+            this.items.forEach(function (item) {
+                if (!item.condition || item.condition(_this)) {
+                    var child = new item.component(_this.player, item.params);
+                    _this.element.appendChild(child.create());
+                    child.didMount();
+                    _this.children.push(child);
+                }
+                else {
+                    _this.children.push(null);
+                }
+            });
         };
-        return GameInfoBox;
+        Container.prototype.destroy = function () {
+            var _this = this;
+            this.children.forEach(function (child) {
+                if (child) {
+                    child.destroy();
+                    _this.element.removeChild(_this.element.firstChild);
+                }
+            });
+            this.player.off('resize', this.handleResize);
+        };
+        Container.prototype.handleResize = function () {
+            var _this = this;
+            var elemIt = 0;
+            this.items.forEach(function (item, ind) {
+                if (!item.condition || item.condition(_this)) {
+                    if (_this.children[ind] == null) {
+                        var child = new item.component(_this.player, item.params);
+                        _this.element.insertBefore(child.create(), _this.element.children[elemIt]);
+                        child.didMount();
+                        _this.children[ind] = child;
+                    }
+                    elemIt++;
+                }
+                else {
+                    if (_this.children[ind]) {
+                        _this.children[ind].destroy();
+                        _this.children[ind] = null;
+                        _this.element.removeChild(_this.element.children[elemIt]);
+                    }
+                }
+            });
+        };
+        return Container;
     }(Component));
+
+    var ContainerCondition = {
+        minWidth: function (width) {
+            return function (container) { return container.element.offsetWidth >= width; };
+        },
+        minHeight: function (height) {
+            return function (container) { return container.element.offsetHeight >= height; };
+        },
+        maxWidth: function (width) {
+            return function (container) { return container.element.offsetWidth <= width; };
+        },
+        maxHeight: function (height) {
+            return function (container) { return container.element.offsetHeight <= height; };
+        },
+        and: function () {
+            var conditions = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                conditions[_i] = arguments[_i];
+            }
+            return function (container) { return conditions.every(function (c) { return c(container); }); };
+        },
+        or: function () {
+            var conditions = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                conditions[_i] = arguments[_i];
+            }
+            return function (container) { return conditions.some(function (c) { return c(container); }); };
+        },
+    };
 
     var ControlPanel = /** @class */ (function (_super) {
         __extends(ControlPanel, _super);
-        function ControlPanel() {
-            var _this = _super.call(this) || this;
+        function ControlPanel(player) {
+            var _this = _super.call(this, player) || this;
             _this.update = _this.update.bind(_this);
             return _this;
         }
-        ControlPanel.prototype.create = function (player) {
+        ControlPanel.prototype.create = function () {
             var _this = this;
-            this.player = player;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__control-panel';
             var buttonGroup = document.createElement('form');
@@ -5105,33 +4635,553 @@
         document.body.removeChild(element);
     }
 
-    var ContainerCondition = {
-        minWidth: function (width) {
-            return function (container) { return container.element.offsetWidth >= width; };
-        },
-        minHeight: function (height) {
-            return function (container) { return container.element.offsetHeight >= height; };
-        },
-        maxWidth: function (width) {
-            return function (container) { return container.element.offsetWidth <= width; };
-        },
-        maxHeight: function (height) {
-            return function (container) { return container.element.offsetHeight <= height; };
-        },
-        and: function () {
-            var conditions = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                conditions[_i] = arguments[_i];
+    var gameInfoProperties = {
+        DT: 'Date',
+        KM: 'Komi',
+        HA: 'Handicap',
+        AN: 'Annotations',
+        CP: 'Copyright',
+        GC: 'Game comments',
+        GN: 'Game name',
+        ON: 'Fuseki',
+        OT: 'Overtime',
+        TM: 'Basic time',
+        RE: 'Result',
+        RO: 'Round',
+        RU: 'Rules',
+        US: 'Recorder',
+        PC: 'Place',
+        EV: 'Event',
+        SO: 'Source',
+    };
+    var GameInfoBox = /** @class */ (function (_super) {
+        __extends(GameInfoBox, _super);
+        function GameInfoBox(player) {
+            var _this = _super.call(this, player) || this;
+            _this.printInfo = _this.printInfo.bind(_this);
+            return _this;
+        }
+        GameInfoBox.prototype.create = function () {
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__box--content';
+            var title = document.createElement('div');
+            title.innerHTML = 'Game information';
+            title.className = 'wgo-player__box__title';
+            this.element.appendChild(title);
+            this.infoTable = document.createElement('table');
+            this.infoTable.className = 'wgo-player__box__game-info';
+            this.element.appendChild(this.infoTable);
+            this.player.on('beforeInit', this.printInfo);
+            this.printInfo();
+            return this.element;
+        };
+        GameInfoBox.prototype.destroy = function () {
+            this.player.off('beforeInit', this.printInfo);
+        };
+        GameInfoBox.prototype.addInfo = function (propIdent, value) {
+            var row = document.createElement('tr');
+            row.dataset.propIdent = propIdent;
+            this.infoTable.appendChild(row);
+            var label = document.createElement('th');
+            label.textContent = gameInfoProperties[propIdent];
+            row.appendChild(label);
+            var valueElement = document.createElement('td');
+            valueElement.textContent = value;
+            row.appendChild(valueElement);
+        };
+        GameInfoBox.prototype.removeInfo = function (propIdent) {
+            var elem = this.infoTable.querySelector("[data-id='" + propIdent + "']");
+            this.infoTable.removeChild(elem);
+        };
+        GameInfoBox.prototype.printInfo = function () {
+            var _this = this;
+            this.infoTable.innerHTML = '';
+            if (this.player.rootNode) {
+                this.player.rootNode.forEachProperty(function (propIdent, value) {
+                    if (gameInfoProperties[propIdent]) {
+                        _this.addInfo(propIdent, value);
+                    }
+                });
             }
-            return function (container) { return conditions.every(function (c) { return c(container); }); };
-        },
-        or: function () {
-            var conditions = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                conditions[_i] = arguments[_i];
+        };
+        return GameInfoBox;
+    }(Component));
+
+    var PlayerTag = /** @class */ (function (_super) {
+        __extends(PlayerTag, _super);
+        function PlayerTag(player, color) {
+            var _this = _super.call(this, player) || this;
+            _this.color = color;
+            _this.colorChar = color === exports.Color.B ? 'B' : 'W';
+            _this.colorName = color === exports.Color.B ? 'black' : 'white';
+            _this.setName = _this.setName.bind(_this);
+            _this.setRank = _this.setRank.bind(_this);
+            _this.setTeam = _this.setTeam.bind(_this);
+            _this.setCaps = _this.setCaps.bind(_this);
+            return _this;
+        }
+        PlayerTag.prototype.create = function () {
+            // create HTML
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__player-tag';
+            var playerElement = document.createElement('div');
+            playerElement.className = 'wgo-player__player-tag__name';
+            this.element.appendChild(playerElement);
+            this.playerNameElement = document.createElement('span');
+            playerElement.appendChild(this.playerNameElement);
+            this.playerRankElement = document.createElement('small');
+            this.playerRankElement.className = 'wgo-player__player-tag__name__rank';
+            playerElement.appendChild(this.playerRankElement);
+            this.playerCapsElement = document.createElement('div');
+            this.playerCapsElement.className = "wgo-player__player-tag__color wgo-player__player-tag__color--" + this.colorName;
+            this.playerCapsElement.textContent = '0';
+            this.element.appendChild(this.playerCapsElement);
+            // todo team
+            this.playerTeamElement = document.createElement('div');
+            // attach Kifu listeners
+            this.player.on("beforeInit.P" + this.colorChar, this.setName); // property PB or PW
+            this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
+            this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
+            this.player.on('applyNodeChanges', this.setCaps);
+            this.initialSet();
+            return this.element;
+        };
+        PlayerTag.prototype.destroy = function () {
+            this.player.off("beforeInit.P" + this.colorChar, this.setName);
+            this.player.off("beforeInit." + this.colorChar + "R", this.setRank);
+            this.player.off("beforeInit." + this.colorChar + "T", this.setTeam);
+            this.player.off('applyNodeChanges', this.setCaps);
+        };
+        PlayerTag.prototype.setName = function (event) {
+            this.playerNameElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setRank = function (event) {
+            this.playerRankElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setTeam = function (event) {
+            this.playerTeamElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setCaps = function () {
+            this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
+        };
+        PlayerTag.prototype.initialSet = function () {
+            if (this.player.rootNode) {
+                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || '';
+                this.playerRankElement.textContent = this.player.rootNode.getProperty(this.colorChar + "R") || '';
+                this.playerTeamElement.textContent = this.player.rootNode.getProperty(this.colorChar + "T") || '';
             }
-            return function (container) { return conditions.some(function (c) { return c(container); }); };
+            if (this.player.game) {
+                this.setCaps();
+            }
+        };
+        return PlayerTag;
+    }(Component));
+
+    var SVGCustomFieldObject = /** @class */ (function (_super) {
+        __extends(SVGCustomFieldObject, _super);
+        function SVGCustomFieldObject(handler, x, y) {
+            if (x === void 0) { x = 0; }
+            if (y === void 0) { y = 0; }
+            var _this = _super.call(this, 'custom', x, y) || this;
+            _this.handler = handler;
+            return _this;
+        }
+        return SVGCustomFieldObject;
+    }(FieldObject));
+
+    var SVGCustomLabelObject = /** @class */ (function (_super) {
+        __extends(SVGCustomLabelObject, _super);
+        function SVGCustomLabelObject() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return SVGCustomLabelObject;
+    }(BoardLabelObject));
+
+    var colorsMap = {
+        B: exports.Color.BLACK,
+        W: exports.Color.WHITE,
+    };
+    var SVGBoardComponent = /** @class */ (function (_super) {
+        __extends(SVGBoardComponent, _super);
+        function SVGBoardComponent(player, boardConfig) {
+            if (boardConfig === void 0) { boardConfig = {}; }
+            var _this = _super.call(this, player) || this;
+            _this.boardConfig = boardConfig;
+            _this.viewportStack = [];
+            _this.applyNodeChanges = _this.applyNodeChanges.bind(_this);
+            _this.clearNodeChanges = _this.clearNodeChanges.bind(_this);
+            _this.applyMarkupProperty = _this.applyMarkupProperty.bind(_this);
+            _this.applyLabelMarkupProperty = _this.applyLabelMarkupProperty.bind(_this);
+            _this.applyLineMarkupProperty = _this.applyLineMarkupProperty.bind(_this);
+            _this.applyViewportProperty = _this.applyViewportProperty.bind(_this);
+            _this.clearViewportProperty = _this.clearViewportProperty.bind(_this);
+            _this.applyMoveProperty = _this.applyMoveProperty.bind(_this);
+            _this.addTemporaryBoardObject = _this.addTemporaryBoardObject.bind(_this);
+            _this.removeTemporaryBoardObject = _this.removeTemporaryBoardObject.bind(_this);
+            _this.updateTemporaryBoardObject = _this.updateTemporaryBoardObject.bind(_this);
+            _this.setCoordinates = _this.setCoordinates.bind(_this);
+            return _this;
+        }
+        SVGBoardComponent.prototype.create = function () {
+            var _this = this;
+            this.player.coordinates = this.boardConfig.coordinates;
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__board';
+            this.stoneBoardsObjects = [];
+            this.temporaryBoardObjects = [];
+            this.board = new SVGBoard(this.element, this.boardConfig);
+            this.board.on('click', function (event, point) {
+                _this.handleBoardClick(point);
+            });
+            this.board.on('mousemove', function (event, point) {
+                if (!point) {
+                    if (_this.boardMouseX != null) {
+                        _this.boardMouseX = null;
+                        _this.boardMouseY = null;
+                        _this.handleBoardMouseOut();
+                    }
+                    return;
+                }
+                if (point.x !== _this.boardMouseX || point.y !== _this.boardMouseY) {
+                    _this.boardMouseX = point.x;
+                    _this.boardMouseY = point.y;
+                    _this.handleBoardMouseMove(point);
+                }
+            });
+            this.board.on('mouseout', function (event, point) {
+                if (!point && _this.boardMouseX != null) {
+                    _this.boardMouseX = null;
+                    _this.boardMouseY = null;
+                    _this.handleBoardMouseOut();
+                    return;
+                }
+            });
+            // add general node listeners - for setting stones on board based on position
+            this.player.on('applyNodeChanges', this.applyNodeChanges);
+            this.player.on('clearNodeChanges', this.clearNodeChanges);
+            // temporary board markup listeners - add
+            this.player.on('applyNodeChanges.CR', this.applyMarkupProperty);
+            this.player.on('applyNodeChanges.TR', this.applyMarkupProperty);
+            this.player.on('applyNodeChanges.SQ', this.applyMarkupProperty);
+            this.player.on('applyNodeChanges.SL', this.applyMarkupProperty);
+            this.player.on('applyNodeChanges.MA', this.applyMarkupProperty);
+            this.player.on('applyNodeChanges.DD', this.applyMarkupProperty);
+            this.player.on('applyNodeChanges.LB', this.applyLabelMarkupProperty);
+            this.player.on('applyNodeChanges.LN', this.applyLineMarkupProperty);
+            this.player.on('applyNodeChanges.AR', this.applyLineMarkupProperty);
+            // viewport SGF property listeners
+            this.player.on('applyGameChanges.VW', this.applyViewportProperty);
+            this.player.on('clearGameChanges.VW', this.clearViewportProperty);
+            // add current move marker
+            this.player.on('applyNodeChanges.B', this.applyMoveProperty);
+            this.player.on('applyNodeChanges.W', this.applyMoveProperty);
+            this.player.on('board.addTemporaryObject', this.addTemporaryBoardObject);
+            this.player.on('board.removeTemporaryObject', this.removeTemporaryBoardObject);
+            this.player.on('board.updateTemporaryObject', this.updateTemporaryBoardObject);
+            this.player.on('board.setCoordinates', this.setCoordinates);
+            return this.element;
+        };
+        SVGBoardComponent.prototype.destroy = function () {
+            this.player.off('applyNodeChanges', this.applyNodeChanges);
+            this.player.off('clearNodeChanges', this.clearNodeChanges);
+            this.player.off('applyNodeChanges', this.applyNodeChanges);
+            this.player.off('clearNodeChanges', this.clearNodeChanges);
+            this.player.off('applyNodeChanges.CR', this.applyMarkupProperty);
+            this.player.off('applyNodeChanges.TR', this.applyMarkupProperty);
+            this.player.off('applyNodeChanges.SQ', this.applyMarkupProperty);
+            this.player.off('applyNodeChanges.SL', this.applyMarkupProperty);
+            this.player.off('applyNodeChanges.MA', this.applyMarkupProperty);
+            this.player.off('applyNodeChanges.DD', this.applyMarkupProperty);
+            this.player.off('applyNodeChanges.LB', this.applyLabelMarkupProperty);
+            this.player.off('applyNodeChanges.LN', this.applyLineMarkupProperty);
+            this.player.off('applyNodeChanges.AR', this.applyLineMarkupProperty);
+            this.player.off('applyGameChanges.VW', this.applyViewportProperty);
+            this.player.off('clearGameChanges.VW', this.clearViewportProperty);
+            this.player.off('applyNodeChanges.B', this.applyMoveProperty);
+            this.player.off('applyNodeChanges.W', this.applyMoveProperty);
+            this.player.off('board.addTemporaryObject', this.addTemporaryBoardObject);
+            this.player.off('board.removeTemporaryObject', this.removeTemporaryBoardObject);
+            this.player.off('board.updateTemporaryObject', this.updateTemporaryBoardObject);
+            this.player.off('board.setCoordinates', this.setCoordinates);
+        };
+        SVGBoardComponent.prototype.updateStones = function () {
+            var _this = this;
+            // Remove missing stones in current position
+            this.stoneBoardsObjects = this.stoneBoardsObjects.filter(function (boardObject) {
+                if (_this.player.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type]) {
+                    _this.board.removeObject(boardObject);
+                    return false;
+                }
+                return true;
+            });
+            // Add new stones from current position
+            var position = this.player.game.position;
+            var _loop_1 = function (x) {
+                var _loop_2 = function (y) {
+                    var c = position.get(x, y);
+                    if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
+                        var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W', x, y);
+                        this_1.board.addObject(boardObject);
+                        this_1.stoneBoardsObjects.push(boardObject);
+                    }
+                };
+                for (var y = 0; y < position.size; y++) {
+                    _loop_2(y);
+                }
+            };
+            var this_1 = this;
+            for (var x = 0; x < position.size; x++) {
+                _loop_1(x);
+            }
+        };
+        SVGBoardComponent.prototype.addVariationMarkup = function () {
+            var _this = this;
+            var moves = this.player.getVariations();
+            if (moves.length > 1) {
+                moves.forEach(function (move, i) {
+                    if (move) {
+                        var obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
+                        obj.handler = _this.player.config.variationDrawHandler;
+                        _this.addTemporaryBoardObject(obj);
+                    }
+                });
+                if (this.boardMouseX != null) {
+                    this.handleVariationCursor(this.boardMouseX, this.boardMouseY, moves);
+                }
+            }
+        };
+        SVGBoardComponent.prototype.clearTemporaryBoardObjects = function () {
+            if (this.temporaryBoardObjects.length) {
+                this.board.removeObject(this.temporaryBoardObjects);
+                this.temporaryBoardObjects = [];
+            }
+        };
+        SVGBoardComponent.prototype.handleBoardClick = function (point) {
+            this.player.emit('boardClick', point);
+            var moves = this.player.getVariations();
+            if (moves.length > 1) {
+                var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
+                if (ind >= 0) {
+                    if (this.player.shouldShowCurrentVariations()) {
+                        this.player.previous();
+                        this.player.next(ind);
+                    }
+                    else {
+                        this.player.next(ind);
+                    }
+                }
+            }
+        };
+        SVGBoardComponent.prototype.handleBoardMouseMove = function (point) {
+            this.player.emit('boardMouseMove', point);
+            this.handleVariationCursor(point.x, point.y, this.player.getVariations());
+        };
+        SVGBoardComponent.prototype.handleBoardMouseOut = function () {
+            this.player.emit('boardMouseOut');
+            this.removeVariationCursor();
+        };
+        SVGBoardComponent.prototype.handleVariationCursor = function (x, y, moves) {
+            if (moves.length > 1) {
+                var ind = moves.findIndex(function (move) { return move && move.x === x && move.y === y; });
+                if (ind >= 0) {
+                    this.element.style.cursor = 'pointer';
+                    return;
+                }
+            }
+            this.removeVariationCursor();
+        };
+        SVGBoardComponent.prototype.removeVariationCursor = function () {
+            if (this.element.style.cursor) {
+                this.element.style.cursor = '';
+            }
+        };
+        SVGBoardComponent.prototype.applyNodeChanges = function () {
+            this.updateStones();
+            this.addVariationMarkup();
+        };
+        SVGBoardComponent.prototype.clearNodeChanges = function () {
+            this.clearTemporaryBoardObjects();
+            this.removeVariationCursor();
+        };
+        SVGBoardComponent.prototype.applyMarkupProperty = function (event) {
+            var _this = this;
+            event.value.forEach(function (value) {
+                // add markup
+                var boardMarkup = new BoardMarkupObject(event.propIdent, _this.player.game.getStone(value.x, value.y));
+                boardMarkup.zIndex = 10;
+                boardMarkup.setPosition(value.x, value.y);
+                _this.addTemporaryBoardObject(boardMarkup);
+            });
+        };
+        SVGBoardComponent.prototype.applyLabelMarkupProperty = function (event) {
+            var _this = this;
+            event.value.forEach(function (value) {
+                // add markup
+                var boardMarkup = new BoardLabelObject(value.text, _this.player.game.getStone(value.x, value.y));
+                boardMarkup.zIndex = 10;
+                boardMarkup.setPosition(value.x, value.y);
+                _this.addTemporaryBoardObject(boardMarkup);
+            });
+        };
+        SVGBoardComponent.prototype.applyLineMarkupProperty = function (event) {
+            var _this = this;
+            event.value.forEach(function (value) {
+                // add markup
+                var boardMarkup = new BoardLineObject(event.propIdent, value[0], value[1]);
+                boardMarkup.zIndex = 10;
+                _this.addTemporaryBoardObject(boardMarkup);
+            });
+        };
+        SVGBoardComponent.prototype.applyViewportProperty = function (event) {
+            var currentViewport = this.board.getViewport();
+            this.viewportStack.push(currentViewport);
+            if (event.value) {
+                var minX = Math.min(event.value[0].x, event.value[1].x);
+                var minY = Math.min(event.value[0].y, event.value[1].y);
+                var maxX = Math.max(event.value[0].x, event.value[1].x);
+                var maxY = Math.max(event.value[0].y, event.value[1].y);
+                this.board.setViewport({
+                    left: minX,
+                    top: minY,
+                    right: this.board.getSize() - maxX - 1,
+                    bottom: this.board.getSize() - maxY - 1,
+                });
+            }
+            else {
+                this.board.setViewport({
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: 0,
+                });
+            }
+        };
+        SVGBoardComponent.prototype.clearViewportProperty = function () {
+            var previousViewport = this.viewportStack.pop();
+            if (previousViewport) {
+                this.board.setViewport(previousViewport);
+            }
+        };
+        SVGBoardComponent.prototype.applyMoveProperty = function (event) {
+            if (this.player.config.highlightCurrentMove) {
+                if (!event.value) {
+                    // no markup when pass
+                    return;
+                }
+                if (isThereMarkup(event.value, this.player.currentNode.properties)) {
+                    // don't show current move markup, when there is markup in kifu node
+                    return;
+                }
+                if (this.player.getVariations().length > 1 && this.player.shouldShowCurrentVariations()) {
+                    // don't show current move markup, if there is multiple variations and "show current variations" style set
+                    return;
+                }
+                // add current move mark
+                var boardMarkup = new SVGCustomFieldObject(event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark, event.value.x, event.value.y);
+                boardMarkup.zIndex = 10;
+                this.addTemporaryBoardObject(boardMarkup);
+            }
+        };
+        SVGBoardComponent.prototype.addTemporaryBoardObject = function (obj) {
+            this.temporaryBoardObjects.push(obj);
+            this.board.addObject(obj);
+        };
+        SVGBoardComponent.prototype.removeTemporaryBoardObject = function (obj) {
+            this.temporaryBoardObjects = this.temporaryBoardObjects.filter(function (o) { return o !== obj; });
+            this.board.removeObject(obj);
+        };
+        SVGBoardComponent.prototype.updateTemporaryBoardObject = function (obj) {
+            this.board.updateObject(obj);
+        };
+        SVGBoardComponent.prototype.setCoordinates = function (b) {
+            this.player.coordinates = b;
+            this.board.setCoordinates(b);
+        };
+        return SVGBoardComponent;
+    }(Component));
+    function samePoint(p1, p2) {
+        return p2 && p1.x === p2.x && p1.y === p2.y;
+    }
+    function isThereMarkup(field, properties) {
+        var propIdents = Object.keys(properties);
+        for (var i = 0; i < propIdents.length; i++) {
+            if (propIdents[i] === 'B' || propIdents[i] === 'W') {
+                continue;
+            }
+            var value = properties[propIdents[i]];
+            if (Array.isArray(value)) {
+                for (var j = 0; j < value.length; j++) {
+                    if (samePoint(field, value[j])) {
+                        return true;
+                    }
+                }
+            }
+            else if (samePoint(field, value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    var defaultSimplePlayerConfig = {
+        boardTheme: defaultBoardBaseTheme,
+        highlightCurrentMove: true,
+        currentMoveBlackMark: new Circle$1({ color: 'rgba(255,255,255,0.8)', fillColor: 'rgba(0,0,0,0)' }),
+        currentMoveWhiteMark: new Circle$1({ color: 'rgba(0,0,0,0.8)', fillColor: 'rgba(0,0,0,0)' }),
+        enableMouseWheel: true,
+        enableKeys: true,
+        showVariations: true,
+        showCurrentVariations: false,
+        variationDrawHandler: new Label$1({ color: '#33f' }),
+        formatNicks: true,
+        formatMoves: true,
+        components: {
+            board: {
+                component: SVGBoardComponent,
+            },
+            playerBlack: {
+                component: PlayerTag,
+                config: exports.Color.B,
+            },
+            playerWhite: {
+                component: PlayerTag,
+                config: exports.Color.W,
+            },
+            controlPanel: {
+                component: ControlPanel,
+            },
+            gameInfoBox: {
+                component: GameInfoBox,
+            },
+            commentBox: {
+                component: CommentBox,
+            },
         },
+        layout: [{
+                column: [
+                    {
+                        if: ContainerCondition.maxWidth(749),
+                        row: ['playerBlack', 'playerWhite'],
+                    },
+                    {
+                        row: [
+                            'board',
+                            {
+                                if: ContainerCondition.minWidth(650),
+                                column: [
+                                    { if: ContainerCondition.minWidth(250), component: 'playerBlack' },
+                                    { if: ContainerCondition.minWidth(250), component: 'playerWhite' },
+                                    { if: ContainerCondition.minWidth(250), component: 'controlPanel' },
+                                    'gameInfoBox',
+                                    'commentBox',
+                                ],
+                            },
+                        ],
+                    },
+                    { if: ContainerCondition.maxWidth(749), component: 'controlPanel' },
+                    { if: ContainerCondition.maxWidth(649), component: 'commentBox' },
+                ],
+            }],
     };
 
     var SimplePlayer = /** @class */ (function (_super) {
@@ -5175,51 +5225,47 @@
                 }
             });
             window.addEventListener('resize', this._resizeEvent = function (e) { return _this.resize(); });
-            // temp (maybe)
-            // this.boardComponent = new SVGBoardComponent(this);
-            this.layout = new Container({
-                direction: 'column',
-                items: [
-                    {
-                        component: Container,
-                        condition: ContainerCondition.maxWidth(749),
-                        params: {
-                            direction: 'row',
-                            items: [
-                                { component: PlayerTag, params: exports.Color.B },
-                                { component: PlayerTag, params: exports.Color.W },
-                            ],
-                        },
-                    },
-                    {
-                        component: Container,
-                        params: {
-                            direction: 'row',
-                            items: [
-                                { component: SVGBoardComponent },
-                                {
-                                    component: Container,
-                                    condition: ContainerCondition.minWidth(650),
-                                    params: {
-                                        direction: 'column',
-                                        items: [
-                                            { component: PlayerTag, params: exports.Color.B, condition: ContainerCondition.minWidth(250) },
-                                            { component: PlayerTag, params: exports.Color.W, condition: ContainerCondition.minWidth(250) },
-                                            { component: ControlPanel, condition: ContainerCondition.minWidth(250) },
-                                            { component: GameInfoBox },
-                                            { component: CommentBox },
-                                        ],
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                    { component: ControlPanel, condition: ContainerCondition.maxWidth(749) },
-                    { component: CommentBox, condition: ContainerCondition.maxWidth(649) },
-                ],
+            this.components = {};
+            Object.keys(this.config.components).forEach(function (componentName) {
+                var declaration = _this.config.components[componentName];
+                _this.components[componentName] = new declaration.component(_this, declaration.config);
             });
-            this.mainElement.appendChild(this.layout.create(this));
-            this.layout.didMount(this);
+            // this.mainElement.appendChild();
+            // this.layout.didMount(this);
+            this.appendComponents(this.config.layout, this.mainElement);
+        };
+        SimplePlayer.prototype.appendComponents = function (items, stack) {
+            var _this = this;
+            items.forEach(function (layoutItem) {
+                if (typeof layoutItem === 'string') {
+                    var elem = _this.components[layoutItem].element || _this.components[layoutItem].create();
+                    stack.appendChild(elem);
+                    return;
+                }
+                if (layoutItem.if && !layoutItem.if({ element: stack })) {
+                    // temp
+                    return;
+                }
+                var direction;
+                if ('column' in layoutItem) {
+                    direction = 'column';
+                }
+                else if ('row' in layoutItem) {
+                    direction = 'row';
+                }
+                if (direction) {
+                    var elem = document.createElement('div');
+                    elem.className = "wgo-player__container wgo-player__container--" + direction;
+                    stack.appendChild(elem);
+                    _this.appendComponents(layoutItem[direction], elem);
+                    return;
+                }
+                if ('component' in layoutItem) {
+                    var elem = _this.components[layoutItem.component].element || _this.components[layoutItem.component].create();
+                    stack.appendChild(elem);
+                    return;
+                }
+            });
         };
         SimplePlayer.prototype.destroy = function () {
             document.removeEventListener('mousewheel', this._mouseWheelEvent);
@@ -5351,8 +5397,6 @@
         return SimplePlayer;
     }(PlayerBase));
 
-    // All public API is exported here
-
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;
     exports.BoardLineObject = BoardLineObject;
@@ -5387,5 +5431,5 @@
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
-}));
+})));
 //# sourceMappingURL=index.js.map

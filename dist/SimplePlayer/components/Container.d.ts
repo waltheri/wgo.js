@@ -13,14 +13,12 @@ export interface ContainerConfig {
     items: ContainerItem<any>[];
 }
 export default class Container extends Component {
-    player: SimplePlayer;
-    element: HTMLElement;
     direction: 'row' | 'column';
     items: ContainerItem<any>[];
     children: Component[];
-    constructor(params: ContainerConfig);
-    create(player: SimplePlayer): HTMLElement;
-    didMount(player: SimplePlayer): void;
-    destroy(player: SimplePlayer): void;
+    constructor(player: SimplePlayer, params: ContainerConfig);
+    create(): HTMLElement;
+    didMount(): void;
+    destroy(): void;
     handleResize(): void;
 }

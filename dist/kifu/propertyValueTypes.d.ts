@@ -25,7 +25,7 @@
  *
  * {@link http://www.red-bean.com/sgf/sgf4.html}
  */
-import { Color, Point, Label } from '../types';
+import { Color, Point, Label, Vector } from '../types';
 interface PropertyValueTransformer<T = any> {
     read(str: string): T;
     write(value: T): string;
@@ -55,8 +55,8 @@ export declare const LABEL: {
     write: (value: Label) => string;
 };
 export declare const VECTOR: {
-    read: (str: string) => Point[];
-    write: (value?: Point[]) => string;
+    read: (str: string) => Vector;
+    write: (value?: Vector) => string;
 };
 interface PropertyValueDefinition<T> {
     transformer: PropertyValueTransformer<T>;

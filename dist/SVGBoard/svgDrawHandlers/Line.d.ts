@@ -8,8 +8,8 @@ export default class Line implements SVGDrawHandler {
     params: LineParams;
     constructor(params?: LineParams);
     createElement(): {
-        [OBJECTS]: SVGLineElement;
-        [GRID_MASK]: SVGLineElement;
+        objects: SVGLineElement;
+        gridMask: SVGLineElement;
     };
     updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig): void;
 }

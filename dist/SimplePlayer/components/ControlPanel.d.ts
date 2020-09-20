@@ -11,7 +11,6 @@ interface MenuItem {
     defaultChecked?(this: ControlPanel): boolean;
 }
 export default class ControlPanel extends Component {
-    player: SimplePlayer;
     static menuItems: MenuItem[];
     element: HTMLElement;
     moveNumber: HTMLInputElement;
@@ -19,8 +18,8 @@ export default class ControlPanel extends Component {
     previous: HTMLButtonElement;
     next: HTMLButtonElement;
     last: HTMLButtonElement;
-    constructor();
-    create(player: SimplePlayer): HTMLElement;
+    constructor(player: SimplePlayer);
+    create(): HTMLElement;
     destroy(): void;
     update(): void;
     createMenuItems(menu: HTMLElement): void;

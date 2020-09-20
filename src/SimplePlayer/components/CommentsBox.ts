@@ -3,20 +3,16 @@ import SimplePlayer from '../SimplePlayer';
 import { BoardMarkupObject } from '../../BoardBase';
 
 export default class CommentBox extends Component {
-  player: SimplePlayer;
-  element: HTMLElement;
   commentsElement: HTMLElement;
 
-  constructor() {
-    super();
+  constructor(player: SimplePlayer) {
+    super(player);
 
     this.setComments = this.setComments.bind(this);
     this.clearComments = this.clearComments.bind(this);
   }
 
-  create(player: SimplePlayer) {
-    this.player = player;
-
+  create() {
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
 

@@ -22,14 +22,9 @@ const colorsMap: { [key: string]: Color } = {
 };
 
 export default class SVGBoardComponent extends Component implements Component {
-  player: SimplePlayer;
-
   // Underlying SVG board object
   board: SVGBoard;
   boardConfig: PartialRecursive<SVGBoardConfig>;
-
-  // Main wrapper element for the board
-  boardElement: HTMLElement;
 
   // Current board objects for stones - should match the position object of the game
   stoneBoardsObjects: FieldObject[];
@@ -43,8 +38,8 @@ export default class SVGBoardComponent extends Component implements Component {
   boardMouseX: number;
   boardMouseY: number;
 
-  constructor(boardConfig: PartialRecursive<SVGBoardConfig> = {}) {
-    super();
+  constructor(player: SimplePlayer, boardConfig: PartialRecursive<SVGBoardConfig> = {}) {
+    super(player);
 
     this.boardConfig = boardConfig;
     this.viewportStack = [];
@@ -63,17 +58,16 @@ export default class SVGBoardComponent extends Component implements Component {
     this.setCoordinates = this.setCoordinates.bind(this);
   }
 
-  create(player: SimplePlayer) {
-    this.player = player;
+  create() {
     this.player.coordinates = this.boardConfig.coordinates;
 
-    this.boardElement = document.createElement('div');
-    this.boardElement.className = 'wgo-player__board';
+    this.element = document.createElement('div');
+    this.element.className = 'wgo-player__board';
 
     this.stoneBoardsObjects = [];
     this.temporaryBoardObjects = [];
 
-    this.board = new SVGBoard(this.boardElement, this.boardConfig);
+    this.board = new SVGBoard(this.element, this.boardConfig);
 
     this.board.on('click', (event, point) => {
       this.handleBoardClick(point);
@@ -132,7 +126,7 @@ export default class SVGBoardComponent extends Component implements Component {
     this.player.on('board.updateTemporaryObject', this.updateTemporaryBoardObject);
     this.player.on('board.setCoordinates', this.setCoordinates);
 
-    return this.boardElement;
+    return this.element;
   }
 
   destroy() {
@@ -249,7 +243,7 @@ export default class SVGBoardComponent extends Component implements Component {
       const ind = moves.findIndex(move => move && move.x === x && move.y === y);
 
       if (ind >= 0) {
-        this.boardElement.style.cursor = 'pointer';
+        this.element.style.cursor = 'pointer';
         return;
       }
     }
@@ -258,8 +252,8 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   private removeVariationCursor() {
-    if (this.boardElement.style.cursor) {
-      this.boardElement.style.cursor = '';
+    if (this.element.style.cursor) {
+      this.element.style.cursor = '';
     }
   }
 

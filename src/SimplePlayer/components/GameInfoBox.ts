@@ -22,18 +22,14 @@ const gameInfoProperties: { [key: string]: string } = {
 };
 
 export default class GameInfoBox extends Component {
-  player: SimplePlayer;
-  element: HTMLElement;
   infoTable: HTMLElement;
 
-  constructor() {
-    super();
+  constructor(player: SimplePlayer) {
+    super(player);
     this.printInfo = this.printInfo.bind(this);
   }
 
-  create(player: SimplePlayer) {
-    this.player = player;
-
+  create() {
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content';
 

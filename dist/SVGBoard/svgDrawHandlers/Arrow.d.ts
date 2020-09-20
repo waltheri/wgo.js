@@ -8,8 +8,8 @@ export default class Arrow implements SVGDrawHandler {
     params: LineParams;
     constructor(params?: LineParams);
     createElement(): {
-        [OBJECTS]: SVGGElement;
-        [GRID_MASK]: SVGGElement;
+        objects: SVGGElement;
+        gridMask: SVGGElement;
     };
     protected createSVGElements(): SVGGElement;
     updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig): void;

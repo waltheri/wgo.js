@@ -26,9 +26,11 @@ export default class Game {
      * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
      */
     constructor(size?: number, rules?: GoRules);
-    position: Position;
-    turn: Color.WHITE | Color.BLACK;
-    readonly capCount: {
+    get position(): Position;
+    set position(pos: Position);
+    get turn(): Color.WHITE | Color.BLACK;
+    set turn(color: Color.WHITE | Color.BLACK);
+    get capCount(): {
         black: number;
         white: number;
     };

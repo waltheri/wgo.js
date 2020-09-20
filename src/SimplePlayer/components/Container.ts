@@ -17,36 +17,33 @@ export interface ContainerConfig {
 }
 
 export default class Container extends Component {
-  player: SimplePlayer;
-  element: HTMLElement;
   direction: 'row' | 'column';
   items: ContainerItem<any>[];
   children: Component[] = [];
 
-  constructor(params: ContainerConfig) {
-    super();
+  constructor(player: SimplePlayer, params: ContainerConfig) {
+    super(player);
 
     this.items = params.items;
     this.direction = params.direction;
     this.handleResize = this.handleResize.bind(this);
   }
 
-  create(player: SimplePlayer) {
-    this.player = player;
+  create() {
     this.element = document.createElement('div');
     this.element.className = `wgo-player__container wgo-player__container--${this.direction}`;
 
-    player.on('resize', this.handleResize);
+    this.player.on('resize', this.handleResize);
 
     return this.element;
   }
 
-  didMount(player: SimplePlayer) {
+  didMount() {
     this.items.forEach((item) => {
       if (!item.condition || item.condition(this)) {
-        const child = new item.component(item.params);
-        this.element.appendChild(child.create(player));
-        child.didMount(player);
+        const child = new item.component(this.player, item.params);
+        this.element.appendChild(child.create());
+        child.didMount();
         this.children.push(child);
       } else {
         this.children.push(null);
@@ -54,14 +51,14 @@ export default class Container extends Component {
     });
   }
 
-  destroy(player: SimplePlayer) {
+  destroy() {
     this.children.forEach((child) => {
       if (child) {
-        child.destroy(player);
+        child.destroy();
         this.element.removeChild(this.element.firstChild);
       }
     });
-    player.off('resize', this.handleResize);
+    this.player.off('resize', this.handleResize);
   }
 
   handleResize() {
@@ -70,15 +67,15 @@ export default class Container extends Component {
     this.items.forEach((item, ind) => {
       if (!item.condition || item.condition(this)) {
         if (this.children[ind] == null) {
-          const child = new item.component(item.params);
-          this.element.insertBefore(child.create(this.player), this.element.children[elemIt]);
-          child.didMount(this.player);
+          const child = new item.component(this.player, item.params);
+          this.element.insertBefore(child.create(), this.element.children[elemIt]);
+          child.didMount();
           this.children[ind] = child;
         }
         elemIt++;
       } else {
         if (this.children[ind]) {
-          this.children[ind].destroy(this.player);
+          this.children[ind].destroy();
           this.children[ind] = null;
           this.element.removeChild(this.element.children[elemIt]);
         }
