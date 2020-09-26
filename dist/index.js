@@ -4376,71 +4376,6 @@
         return { x: x, y: y };
     }
 
-    var Container = /** @class */ (function (_super) {
-        __extends(Container, _super);
-        function Container(player, params) {
-            var _this = _super.call(this, player) || this;
-            _this.children = [];
-            _this.items = params.items;
-            _this.direction = params.direction;
-            _this.handleResize = _this.handleResize.bind(_this);
-            return _this;
-        }
-        Container.prototype.create = function () {
-            this.element = document.createElement('div');
-            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
-            this.player.on('resize', this.handleResize);
-            return this.element;
-        };
-        Container.prototype.didMount = function () {
-            var _this = this;
-            this.items.forEach(function (item) {
-                if (!item.condition || item.condition(_this)) {
-                    var child = new item.component(_this.player, item.params);
-                    _this.element.appendChild(child.create());
-                    child.didMount();
-                    _this.children.push(child);
-                }
-                else {
-                    _this.children.push(null);
-                }
-            });
-        };
-        Container.prototype.destroy = function () {
-            var _this = this;
-            this.children.forEach(function (child) {
-                if (child) {
-                    child.destroy();
-                    _this.element.removeChild(_this.element.firstChild);
-                }
-            });
-            this.player.off('resize', this.handleResize);
-        };
-        Container.prototype.handleResize = function () {
-            var _this = this;
-            var elemIt = 0;
-            this.items.forEach(function (item, ind) {
-                if (!item.condition || item.condition(_this)) {
-                    if (_this.children[ind] == null) {
-                        var child = new item.component(_this.player, item.params);
-                        _this.element.insertBefore(child.create(), _this.element.children[elemIt]);
-                        child.didMount();
-                        _this.children[ind] = child;
-                    }
-                    elemIt++;
-                }
-                else {
-                    if (_this.children[ind]) {
-                        _this.children[ind].destroy();
-                        _this.children[ind] = null;
-                        _this.element.removeChild(_this.element.children[elemIt]);
-                    }
-                }
-            });
-        };
-        return Container;
-    }(Component));
-
     var ContainerCondition = {
         minWidth: function (width) {
             return function (container) { return container.element.offsetWidth >= width; };
@@ -5184,11 +5119,164 @@
             }],
     };
 
+    /**
+     * Special kind of component which handles rendering of player's component by layout config.
+     * It should not be used directly. It is created internally by SimplePlayer and itself.
+     */
+    var Container = /** @class */ (function (_super) {
+        __extends(Container, _super);
+        function Container(player, items, direction) {
+            var _this = _super.call(this, player) || this;
+            _this.children = [];
+            _this.items = items;
+            _this.direction = direction;
+            return _this;
+        }
+        Container.prototype.create = function () {
+            this.element = document.createElement('div');
+            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
+            return this.element;
+        };
+        Container.prototype.didMount = function () {
+            var _this = this;
+            this.items.forEach(function (layoutItem, position) {
+                if (typeof layoutItem === 'string') {
+                    _this.appendComponent(_this.player.components[layoutItem], position);
+                    return;
+                }
+                if (layoutItem.if && !layoutItem.if(_this)) {
+                    if (_this.children[position]) {
+                        if ([].indexOf.call(_this.element.children, _this.children[position].element) >= 0) {
+                            _this.element.removeChild(_this.children[position].element);
+                        }
+                    }
+                    _this.children[position] = null;
+                    return;
+                }
+                if ('column' in layoutItem) {
+                    _this.appendContainer(layoutItem.column, 'column', position);
+                }
+                else if ('row' in layoutItem) {
+                    _this.appendContainer(layoutItem.row, 'row', position);
+                }
+                else if ('component' in layoutItem) {
+                    _this.appendComponent(_this.player.components[layoutItem.component], position);
+                }
+            });
+        };
+        Container.prototype.appendComponent = function (component, position) {
+            if (this.children[position] == null) {
+                var elem = component.element || component.create();
+                this.appendElementToDOM(elem, position);
+                this.children[position] = component;
+            }
+            component.didMount();
+        };
+        Container.prototype.appendContainer = function (items, direction, position) {
+            if (this.children[position] == null) {
+                var container = new Container(this.player, items, direction);
+                var elem = container.create();
+                this.appendElementToDOM(elem, position);
+                this.children[position] = container;
+            }
+            this.children[position].didMount();
+        };
+        Container.prototype.appendElementToDOM = function (elem, position) {
+            var nextComponent = null;
+            var i = position + 1;
+            // find next rendered component to use it as reference for inserting this one
+            while (i < this.children.length && nextComponent == null) {
+                nextComponent = this.children[i];
+                i++;
+            }
+            if (nextComponent) {
+                this.element.insertBefore(elem, nextComponent.element);
+            }
+            else {
+                this.element.appendChild(elem);
+            }
+        };
+        Container.prototype.destroy = function () {
+            var _this = this;
+            this.items.forEach(function (layoutItem, position) {
+                if (typeof layoutItem !== 'string' && !('component' in layoutItem)) {
+                    if (_this.children[position]) {
+                        // destroy only existing containers
+                        _this.children[position].destroy();
+                    }
+                }
+                if (_this.children[position]) {
+                    _this.element.removeChild(_this.children[position].element);
+                }
+            });
+        };
+        return Container;
+    }(Component));
+
+    /**
+     * Encapsulate main/root HTML element of the player. It is special kind of Container which
+     * register root mouse and key events for player control. This component is directly used
+     * by SimplePlayer and shouldn't be used manually.
+     */
+    var PlayerWrapper = /** @class */ (function (_super) {
+        __extends(PlayerWrapper, _super);
+        function PlayerWrapper(player, items) {
+            if (items === void 0) { items = player.config.layout; }
+            var _this = _super.call(this, player, items, '') || this;
+            _this.handleMouseWheel = _this.handleMouseWheel.bind(_this);
+            _this.handleKeydown = _this.handleKeydown.bind(_this);
+            _this.handleResize = _this.handleResize.bind(_this);
+            return _this;
+        }
+        PlayerWrapper.prototype.create = function () {
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player';
+            this.element.tabIndex = 1;
+            document.addEventListener('mousewheel', this.handleMouseWheel);
+            document.addEventListener('keydown', this.handleKeydown);
+            this.player.on('resize', this.handleResize);
+            return this.element;
+        };
+        PlayerWrapper.prototype.destroy = function () {
+            _super.prototype.destroy.call(this);
+            document.removeEventListener('mousewheel', this.handleMouseWheel);
+            document.removeEventListener('keydown', this.handleKeydown);
+            this.player.off('resize', this.handleResize);
+        };
+        PlayerWrapper.prototype.handleMouseWheel = function (e) {
+            if (document.activeElement === this.element && this.player.config.enableMouseWheel) {
+                if (e.deltaY > 0) {
+                    this.player.next();
+                }
+                else if (e.deltaY < 0) {
+                    this.player.previous();
+                }
+                return false;
+            }
+        };
+        PlayerWrapper.prototype.handleKeydown = function (e) {
+            if (document.activeElement === this.element && this.player.config.enableKeys) {
+                if (e.key === 'ArrowRight') {
+                    this.player.next();
+                }
+                else if (e.key === 'ArrowLeft') {
+                    this.player.previous();
+                }
+                return false;
+            }
+        };
+        PlayerWrapper.prototype.handleResize = function () {
+            this.didMount();
+        };
+        return PlayerWrapper;
+    }(Container));
+
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);
         function SimplePlayer(element, config) {
             if (config === void 0) { config = {}; }
             var _this = _super.call(this) || this;
+            _this.components = {};
             // merge user config with default
             _this.element = element;
             _this.config = makeConfig(defaultSimplePlayerConfig, config);
@@ -5198,80 +5286,16 @@
         SimplePlayer.prototype.init = function () {
             var _this = this;
             this.editMode = false;
-            this.mainElement = document.createElement('div');
-            this.mainElement.className = 'wgo-player';
-            this.mainElement.tabIndex = 1;
-            this.element.appendChild(this.mainElement);
-            document.addEventListener('mousewheel', this._mouseWheelEvent = function (e) {
-                if (document.activeElement === _this.mainElement && _this.config.enableMouseWheel) {
-                    if (e.deltaY > 0) {
-                        _this.next();
-                    }
-                    else if (e.deltaY < 0) {
-                        _this.previous();
-                    }
-                    return false;
-                }
-            });
-            document.addEventListener('keydown', this._keyEvent = function (e) {
-                if (document.activeElement === _this.mainElement && _this.config.enableKeys) {
-                    if (e.key === 'ArrowRight') {
-                        _this.next();
-                    }
-                    else if (e.key === 'ArrowLeft') {
-                        _this.previous();
-                    }
-                    return false;
-                }
-            });
             window.addEventListener('resize', this._resizeEvent = function (e) { return _this.resize(); });
-            this.components = {};
             Object.keys(this.config.components).forEach(function (componentName) {
                 var declaration = _this.config.components[componentName];
                 _this.components[componentName] = new declaration.component(_this, declaration.config);
             });
-            // this.mainElement.appendChild();
-            // this.layout.didMount(this);
-            this.appendComponents(this.config.layout, this.mainElement);
-        };
-        SimplePlayer.prototype.appendComponents = function (items, stack) {
-            var _this = this;
-            items.forEach(function (layoutItem) {
-                if (typeof layoutItem === 'string') {
-                    var elem = _this.components[layoutItem].element || _this.components[layoutItem].create();
-                    stack.appendChild(elem);
-                    return;
-                }
-                if (layoutItem.if && !layoutItem.if({ element: stack })) {
-                    // temp
-                    return;
-                }
-                var direction;
-                if ('column' in layoutItem) {
-                    direction = 'column';
-                }
-                else if ('row' in layoutItem) {
-                    direction = 'row';
-                }
-                if (direction) {
-                    var elem = document.createElement('div');
-                    elem.className = "wgo-player__container wgo-player__container--" + direction;
-                    stack.appendChild(elem);
-                    _this.appendComponents(layoutItem[direction], elem);
-                    return;
-                }
-                if ('component' in layoutItem) {
-                    var elem = _this.components[layoutItem.component].element || _this.components[layoutItem.component].create();
-                    stack.appendChild(elem);
-                    return;
-                }
-            });
+            this.wrapperComponent = new PlayerWrapper(this);
+            this.element.appendChild(this.wrapperComponent.create());
+            this.wrapperComponent.didMount();
         };
         SimplePlayer.prototype.destroy = function () {
-            document.removeEventListener('mousewheel', this._mouseWheelEvent);
-            this._mouseWheelEvent = null;
-            document.removeEventListener('keydown', this._keyEvent);
-            this._keyEvent = null;
             window.removeEventListener('resize', this._resizeEvent);
             this._resizeEvent = null;
         };
@@ -5406,7 +5430,6 @@
     exports.CanvasBoard = CanvasBoard;
     exports.CommentBox = CommentBox;
     exports.Component = Component;
-    exports.Container = Container;
     exports.ContainerCondition = ContainerCondition;
     exports.ControlPanel = ControlPanel;
     exports.FieldObject = FieldObject;

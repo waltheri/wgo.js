@@ -12,20 +12,17 @@ import GameInfoBox from './components/GameInfoBox';
 import ControlPanel from './components/ControlPanel';
 import { FieldObject } from '../BoardBase';
 import ContainerCondition from './components/ContainerCondition';
+import PlayerWrapper from './components/PlayerWrapper';
 
 export default class SimplePlayer extends PlayerBase {
   element: HTMLElement;
-  mainElement: HTMLElement;
   config: SimplePlayerConfig;
-  layout: Component;
+  wrapperComponent: PlayerWrapper;
   editMode: boolean;
   coordinates: boolean;
   components: {
     [key: string]: Component;
-  };
-
-  private _mouseWheelEvent: EventListenerOrEventListenerObject;
-  private _keyEvent: EventListenerOrEventListenerObject;
+  } = {};
   private _resizeEvent: EventListenerOrEventListenerObject;
   private _boardMouseMoveEvent: Function;
   private _boardMouseOutEvent: Function;
@@ -44,94 +41,20 @@ export default class SimplePlayer extends PlayerBase {
 
   init() {
     this.editMode = false;
-    this.mainElement = document.createElement('div');
-    this.mainElement.className = 'wgo-player';
-    this.mainElement.tabIndex = 1;
-    this.element.appendChild(this.mainElement);
-
-    document.addEventListener('mousewheel', this._mouseWheelEvent = (e: any) => {
-      if (document.activeElement === this.mainElement && this.config.enableMouseWheel) {
-        if (e.deltaY > 0) {
-          this.next();
-        } else if (e.deltaY < 0) {
-          this.previous();
-        }
-
-        return false;
-      }
-    });
-
-    document.addEventListener('keydown', this._keyEvent = (e: any) => {
-      if (document.activeElement === this.mainElement && this.config.enableKeys) {
-        if (e.key === 'ArrowRight') {
-          this.next();
-        } else if (e.key === 'ArrowLeft') {
-          this.previous();
-        }
-
-        return false;
-      }
-    });
 
     window.addEventListener('resize', this._resizeEvent = (e: any) => this.resize());
-
-    this.components = {};
 
     Object.keys(this.config.components).forEach((componentName) => {
       const declaration = this.config.components[componentName];
       this.components[componentName] = new declaration.component(this, declaration.config);
     });
 
-    // this.mainElement.appendChild();
-    // this.layout.didMount(this);
-
-    this.appendComponents(this.config.layout, this.mainElement);
-  }
-
-  appendComponents(items: LayoutItem[], stack: HTMLElement) {
-    items.forEach((layoutItem) => {
-      if (typeof layoutItem === 'string') {
-        const elem = this.components[layoutItem].element || this.components[layoutItem].create();
-        stack.appendChild(elem);
-        return;
-      }
-
-      if (layoutItem.if && !layoutItem.if({ element: stack })) {
-        // temp
-        return;
-      }
-
-      let direction;
-
-      if ('column' in layoutItem) {
-        direction = 'column';
-      } else if ('row' in layoutItem) {
-        direction = 'row';
-      }
-
-      if (direction) {
-        const elem = document.createElement('div');
-        elem.className = `wgo-player__container wgo-player__container--${direction}`;
-        stack.appendChild(elem);
-        this.appendComponents((layoutItem as any)[direction], elem);
-        return;
-      }
-
-      if ('component' in layoutItem) {
-        const elem = this.components[layoutItem.component].element || this.components[layoutItem.component].create();
-        stack.appendChild(elem);
-        return;
-      }
-    });
+    this.wrapperComponent = new PlayerWrapper(this);
+    this.element.appendChild(this.wrapperComponent.create());
+    this.wrapperComponent.didMount();
   }
 
   destroy() {
-    document.removeEventListener('mousewheel', this._mouseWheelEvent);
-    this._mouseWheelEvent = null;
-
-    document.removeEventListener('keydown', this._keyEvent);
-    this._keyEvent = null;
-
     window.removeEventListener('resize', this._resizeEvent);
     this._resizeEvent = null;
   }

@@ -1,20 +1,18 @@
 import { PartialRecursive } from '../utils/makeConfig';
 import { Point } from '../types';
 import { PlayerBase } from '../PlayerBase';
-import { LayoutItem, SimplePlayerConfig } from './defaultSimplePlayerConfig';
+import { SimplePlayerConfig } from './defaultSimplePlayerConfig';
 import Component from './components/Component';
+import PlayerWrapper from './components/PlayerWrapper';
 export default class SimplePlayer extends PlayerBase {
     element: HTMLElement;
-    mainElement: HTMLElement;
     config: SimplePlayerConfig;
-    layout: Component;
+    wrapperComponent: PlayerWrapper;
     editMode: boolean;
     coordinates: boolean;
     components: {
         [key: string]: Component;
     };
-    private _mouseWheelEvent;
-    private _keyEvent;
     private _resizeEvent;
     private _boardMouseMoveEvent;
     private _boardMouseOutEvent;
@@ -22,7 +20,6 @@ export default class SimplePlayer extends PlayerBase {
     private _nodeChange;
     constructor(element: HTMLElement, config?: PartialRecursive<SimplePlayerConfig>);
     init(): void;
-    appendComponents(items: LayoutItem[], stack: HTMLElement): void;
     destroy(): void;
     getVariations(): Point[];
     shouldShowVariations(): boolean;
