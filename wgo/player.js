@@ -178,17 +178,19 @@ var board_click_default = function(x,y) {
 			this.font = board.stoneRadius+"px "+(board.font || "");
 
 			xright = board.getX(-0.75);
-			xleft = board.getX(board.size-0.25);
+			xleft = board.getX(board.sizex-0.25);
 			ytop = board.getY(-0.75);
-			ybottom = board.getY(board.size-0.25);
+			ybottom = board.getY(board.sizey-0.25);
 
-			for(var i = 0; i < board.size; i++) {
+			for(var i = 0; i < board.sizey; i++) {
+				t = board.getY(i);
+				this.fillText(board.sizey-i, xright, t);
+				this.fillText(board.sizey-i, xleft, t);
+			}
+				
+			for(var i = 0; i < board.sizex; i++) {
 				ch = i+"A".charCodeAt(0);
 				if(ch >= "I".charCodeAt(0)) ch++;
-
-				t = board.getY(i);
-				this.fillText(board.size-i, xright, t);
-				this.fillText(board.size-i, xleft, t);
 
 				t = board.getX(i);
 				this.fillText(String.fromCharCode(ch), t, ytop);

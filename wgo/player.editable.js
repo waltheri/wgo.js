@@ -38,11 +38,11 @@ var edit_board_mouse_out = function() {
 
 // get differences of two positions as a change object (TODO create a better solution, without need of this function)
 var pos_diff = function(old_p, new_p) {
-	var size = old_p.size, add = [], remove = [];
+	var sizex = old_p.sizex, sizey = old_p.sizey, add = [], remove = [];
 	
-	for(var i = 0; i < size*size; i++) {
-		if(old_p.schema[i] && !new_p.schema[i]) remove.push({x:Math.floor(i/size),y:i%size});
-		else if(old_p.schema[i] != new_p.schema[i]) add.push({x:Math.floor(i/size),y:i%size,c:new_p.schema[i]});
+	for(var i = 0; i < sizex*sizey; i++) {
+		if(old_p.schema[i] && !new_p.schema[i]) remove.push({x:Math.floor(i/sizey),y:i%sizey});
+		else if(old_p.schema[i] != new_p.schema[i]) add.push({x:Math.floor(i/sizey),y:i%sizey,c:new_p.schema[i]});
 	}
 	
 	return {
