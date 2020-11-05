@@ -2,16 +2,9 @@ import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { Point, Color } from '../types';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { PlayerBase } from '../PlayerBase';
-import defaultSimplePlayerConfig, { LayoutItem, SimplePlayerConfig } from './defaultSimplePlayerConfig';
-import SVGBoardComponent from './components/SVGBoardComponent';
+import defaultSimplePlayerConfig, { SimplePlayerConfig } from './defaultSimplePlayerConfig';
 import Component from './components/Component';
-import Container from './components/Container';
-import PlayerTag from './components/PlayerTag';
-import CommentBox from './components/CommentsBox';
-import GameInfoBox from './components/GameInfoBox';
-import ControlPanel from './components/ControlPanel';
 import { FieldObject } from '../BoardBase';
-import ContainerCondition from './components/ContainerCondition';
 import PlayerWrapper from './components/PlayerWrapper';
 
 export default class SimplePlayer extends PlayerBase {

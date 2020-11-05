@@ -1,9 +1,4 @@
-import { defaultBoardBaseTheme } from '../BoardBase/defaultConfig';
-import { BoardBaseTheme } from '../BoardBase/types';
-import { SVGDrawHandler } from '../SVGBoard/types';
-import { Circle, Label, SimpleStone } from '../SVGBoard/svgDrawHandlers';
-import Component, { ComponentConstructor } from './components/Component';
-import SVGMarkupDrawHandler from '../SVGBoard/svgDrawHandlers/SVGMarkupDrawHandler';
+import { ComponentConstructor } from './components/Component';
 import { CommentBox, ContainerCondition, ControlPanel, GameInfoBox, PlayerTag, SVGBoardComponent } from './components';
 import { Color } from '../types';
 
@@ -41,15 +36,11 @@ export interface RowStack extends ConditionalItem {
 export type ComponentPlaceholder = string | ConditionalComponent;
 
 export interface SimplePlayerConfig {
-  boardTheme: BoardBaseTheme;
   highlightCurrentMove: boolean;
-  currentMoveBlackMark: SVGDrawHandler;
-  currentMoveWhiteMark: SVGDrawHandler;
   enableMouseWheel: boolean;
   enableKeys: boolean;
   showVariations: boolean;
   showCurrentVariations: boolean;
-  variationDrawHandler: SVGDrawHandler;
   formatNicks: boolean;
   formatMoves: boolean;
   components: { [key: string]: ComponentDeclaration<any> };
@@ -57,15 +48,11 @@ export interface SimplePlayerConfig {
 }
 
 const defaultSimplePlayerConfig: SimplePlayerConfig = {
-  boardTheme: defaultBoardBaseTheme,
   highlightCurrentMove: true,
-  currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)', fillColor:'rgba(0,0,0,0)' }),
-  currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)', fillColor:'rgba(0,0,0,0)' }),
   enableMouseWheel: true,
   enableKeys: true,
   showVariations: true,
   showCurrentVariations: false,
-  variationDrawHandler: new Label({ color: '#33f' }),
   formatNicks: true,
   formatMoves: true,
   components: {

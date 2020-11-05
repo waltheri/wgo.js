@@ -11,20 +11,41 @@ import {
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGBoardObject, SVGBoardConfig } from '../../SVGBoard/types';
+import { SVGBoardObject, SVGDrawHandler, SVGBoardTheme } from '../../SVGBoard/types';
 import SVGCustomFieldObject from '../../SVGBoard/SVGCustomFieldObject';
 import SVGCustomLabelObject from '../../SVGBoard/SVGCustomLabelObject';
-import { PartialRecursive } from '../../utils/makeConfig';
+import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
+import { Circle, Label as SVGLabel } from '../../SVGBoard/svgDrawHandlers';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
   W: Color.WHITE,
 };
 
+export interface SVGBoardComponentConfig {
+  coordinates: boolean;
+  currentMoveBlackMark: SVGDrawHandler;
+  currentMoveWhiteMark: SVGDrawHandler;
+  variationDrawHandler: SVGDrawHandler;
+  starPoints?: {
+    [size: number]: Point[];
+  };
+  coordinateLabelsX?: string | (string | number)[];
+  coordinateLabelsY?: string | (string | number)[];
+  theme?: PartialRecursive<SVGBoardTheme>;
+}
+
+export const defaultSVGBoardComponentConfig: SVGBoardComponentConfig = {
+  coordinates: true,
+  currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)', fillColor:'rgba(0,0,0,0)' }),
+  currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)', fillColor:'rgba(0,0,0,0)' }),
+  variationDrawHandler: new SVGLabel({ color: '#33f' }),
+};
+
 export default class SVGBoardComponent extends Component implements Component {
   // Underlying SVG board object
   board: SVGBoard;
-  boardConfig: PartialRecursive<SVGBoardConfig>;
+  config: SVGBoardComponentConfig;
 
   // Current board objects for stones - should match the position object of the game
   stoneBoardsObjects: FieldObject[];
@@ -38,10 +59,10 @@ export default class SVGBoardComponent extends Component implements Component {
   boardMouseX: number;
   boardMouseY: number;
 
-  constructor(player: SimplePlayer, boardConfig: PartialRecursive<SVGBoardConfig> = {}) {
+  constructor(player: SimplePlayer, config: PartialRecursive<SVGBoardComponentConfig> = {}) {
     super(player);
 
-    this.boardConfig = boardConfig;
+    this.config = makeConfig(defaultSVGBoardComponentConfig, config);
     this.viewportStack = [];
 
     this.applyNodeChanges = this.applyNodeChanges.bind(this);
@@ -59,7 +80,7 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   create() {
-    this.player.coordinates = this.boardConfig.coordinates;
+    this.player.coordinates = this.config.coordinates;
 
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__board';
@@ -67,7 +88,13 @@ export default class SVGBoardComponent extends Component implements Component {
     this.stoneBoardsObjects = [];
     this.temporaryBoardObjects = [];
 
-    this.board = new SVGBoard(this.element, this.boardConfig);
+    this.board = new SVGBoard(this.element, {
+      coordinates: this.config.coordinates,
+      starPoints: this.config.starPoints,
+      coordinateLabelsX: this.config.coordinateLabelsX,
+      coordinateLabelsY: this.config.coordinateLabelsY,
+      theme: this.config.theme,
+    });
 
     this.board.on('click', (event, point) => {
       this.handleBoardClick(point);
@@ -193,7 +220,7 @@ export default class SVGBoardComponent extends Component implements Component {
       moves.forEach((move, i) => {
         if (move) {
           const obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
-          obj.handler = this.player.config.variationDrawHandler;
+          obj.handler = this.config.variationDrawHandler;
           this.addTemporaryBoardObject(obj);
         }
       });
@@ -347,7 +374,7 @@ export default class SVGBoardComponent extends Component implements Component {
 
       // add current move mark
       const boardMarkup = new SVGCustomFieldObject(
-        event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark,
+        event.propIdent === 'B' ? this.config.currentMoveBlackMark : this.config.currentMoveWhiteMark,
         event.value.x,
         event.value.y,
       );

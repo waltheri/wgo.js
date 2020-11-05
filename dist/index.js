@@ -4736,12 +4736,18 @@
         B: exports.Color.BLACK,
         W: exports.Color.WHITE,
     };
+    var defaultSVGBoardComponentConfig = {
+        coordinates: true,
+        currentMoveBlackMark: new Circle$1({ color: 'rgba(255,255,255,0.8)', fillColor: 'rgba(0,0,0,0)' }),
+        currentMoveWhiteMark: new Circle$1({ color: 'rgba(0,0,0,0.8)', fillColor: 'rgba(0,0,0,0)' }),
+        variationDrawHandler: new Label$1({ color: '#33f' }),
+    };
     var SVGBoardComponent = /** @class */ (function (_super) {
         __extends(SVGBoardComponent, _super);
-        function SVGBoardComponent(player, boardConfig) {
-            if (boardConfig === void 0) { boardConfig = {}; }
+        function SVGBoardComponent(player, config) {
+            if (config === void 0) { config = {}; }
             var _this = _super.call(this, player) || this;
-            _this.boardConfig = boardConfig;
+            _this.config = makeConfig(defaultSVGBoardComponentConfig, config);
             _this.viewportStack = [];
             _this.applyNodeChanges = _this.applyNodeChanges.bind(_this);
             _this.clearNodeChanges = _this.clearNodeChanges.bind(_this);
@@ -4759,12 +4765,18 @@
         }
         SVGBoardComponent.prototype.create = function () {
             var _this = this;
-            this.player.coordinates = this.boardConfig.coordinates;
+            this.player.coordinates = this.config.coordinates;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__board';
             this.stoneBoardsObjects = [];
             this.temporaryBoardObjects = [];
-            this.board = new SVGBoard(this.element, this.boardConfig);
+            this.board = new SVGBoard(this.element, {
+                coordinates: this.config.coordinates,
+                starPoints: this.config.starPoints,
+                coordinateLabelsX: this.config.coordinateLabelsX,
+                coordinateLabelsY: this.config.coordinateLabelsY,
+                theme: this.config.theme,
+            });
             this.board.on('click', function (event, point) {
                 _this.handleBoardClick(point);
             });
@@ -4876,7 +4888,7 @@
                 moves.forEach(function (move, i) {
                     if (move) {
                         var obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
-                        obj.handler = _this.player.config.variationDrawHandler;
+                        obj.handler = _this.config.variationDrawHandler;
                         _this.addTemporaryBoardObject(obj);
                     }
                 });
@@ -5012,7 +5024,7 @@
                     return;
                 }
                 // add current move mark
-                var boardMarkup = new SVGCustomFieldObject(event.propIdent === 'B' ? this.player.config.currentMoveBlackMark : this.player.config.currentMoveWhiteMark, event.value.x, event.value.y);
+                var boardMarkup = new SVGCustomFieldObject(event.propIdent === 'B' ? this.config.currentMoveBlackMark : this.config.currentMoveWhiteMark, event.value.x, event.value.y);
                 boardMarkup.zIndex = 10;
                 this.addTemporaryBoardObject(boardMarkup);
             }
@@ -5059,15 +5071,11 @@
     }
 
     var defaultSimplePlayerConfig = {
-        boardTheme: defaultBoardBaseTheme,
         highlightCurrentMove: true,
-        currentMoveBlackMark: new Circle$1({ color: 'rgba(255,255,255,0.8)', fillColor: 'rgba(0,0,0,0)' }),
-        currentMoveWhiteMark: new Circle$1({ color: 'rgba(0,0,0,0.8)', fillColor: 'rgba(0,0,0,0)' }),
         enableMouseWheel: true,
         enableKeys: true,
         showVariations: true,
         showCurrentVariations: false,
-        variationDrawHandler: new Label$1({ color: '#33f' }),
         formatNicks: true,
         formatMoves: true,
         components: {

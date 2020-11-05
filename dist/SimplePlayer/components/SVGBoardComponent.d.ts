@@ -3,17 +3,30 @@ import { SVGBoard } from '../../SVGBoard';
 import { FieldObject, BoardObject, BoardViewport } from '../../BoardBase';
 import { Point } from '../../types';
 import SimplePlayer from '../SimplePlayer';
-import { SVGBoardObject, SVGBoardConfig } from '../../SVGBoard/types';
+import { SVGBoardObject, SVGDrawHandler, SVGBoardTheme } from '../../SVGBoard/types';
 import { PartialRecursive } from '../../utils/makeConfig';
+export interface SVGBoardComponentConfig {
+    coordinates: boolean;
+    currentMoveBlackMark: SVGDrawHandler;
+    currentMoveWhiteMark: SVGDrawHandler;
+    variationDrawHandler: SVGDrawHandler;
+    starPoints?: {
+        [size: number]: Point[];
+    };
+    coordinateLabelsX?: string | (string | number)[];
+    coordinateLabelsY?: string | (string | number)[];
+    theme?: PartialRecursive<SVGBoardTheme>;
+}
+export declare const defaultSVGBoardComponentConfig: SVGBoardComponentConfig;
 export default class SVGBoardComponent extends Component implements Component {
     board: SVGBoard;
-    boardConfig: PartialRecursive<SVGBoardConfig>;
+    config: SVGBoardComponentConfig;
     stoneBoardsObjects: FieldObject[];
     temporaryBoardObjects: SVGBoardObject[];
     viewportStack: BoardViewport[];
     boardMouseX: number;
     boardMouseY: number;
-    constructor(player: SimplePlayer, boardConfig?: PartialRecursive<SVGBoardConfig>);
+    constructor(player: SimplePlayer, config?: PartialRecursive<SVGBoardComponentConfig>);
     create(): HTMLElement;
     destroy(): void;
     protected updateStones(): void;
