@@ -7,18 +7,11 @@ import { PlayerInitParams } from './types';
 import * as basePropertyListeners from './basePropertyListeners';
 import { Color } from '../types';
 
-interface PlayerBaseState {
-  rootNode: KifuNode;
-  path: Path;
-}
-
 export default class PlayerBase extends EventEmitter {
   rootNode: KifuNode;
   currentNode: KifuNode;
   game: Game;
   params: PlayerInitParams;
-
-  protected playerStateStack: PlayerBaseState[] = [];
 
   constructor() {
     super();
@@ -283,32 +276,5 @@ export default class PlayerBase extends EventEmitter {
 
     const i = this.currentNode.appendChild(node);
     this.next(i);
-  }
-
-  /**
-   * Saves current player state - Kifu and path object.
-   */
-  save() {
-    this.playerStateStack.push({
-      rootNode: this.rootNode.cloneNode(),
-      path: this.getCurrentPath(),
-    });
-  }
-
-  /**
-   * Restores player from previously saved state.
-   */
-  restore() {
-    const lastState = this.playerStateStack.pop();
-    if (lastState) {
-      // revert all node changes
-      this.first();
-
-      // load stored kifu
-      this.loadKifu(lastState.rootNode);
-
-      // go to stored path
-      this.goTo(lastState.path);
-    }
   }
 }

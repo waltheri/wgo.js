@@ -17,7 +17,7 @@
 		"object-shorthand-properties-first": false,
 		"max-line-length": [true, 120],
 		"no-console": true,
-		"curly": [true, "all"]
+		"curly": [true]
 	},
 	"rulesDirectory": []
 }

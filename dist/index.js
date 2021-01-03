@@ -4030,7 +4030,6 @@
         __extends(PlayerBase, _super);
         function PlayerBase() {
             var _this = _super.call(this) || this;
-            _this.playerStateStack = [];
             _this.on('beforeInit.SZ', beforeInitSZ);
             _this.on('beforeInit.RU', beforeInitRU);
             _this.on('applyGameChanges.HA', applyGameChangesHA);
@@ -4255,29 +4254,6 @@
             var i = this.currentNode.appendChild(node);
             this.next(i);
         };
-        /**
-         * Saves current player state - Kifu and path object.
-         */
-        PlayerBase.prototype.save = function () {
-            this.playerStateStack.push({
-                rootNode: this.rootNode.cloneNode(),
-                path: this.getCurrentPath(),
-            });
-        };
-        /**
-         * Restores player from previously saved state.
-         */
-        PlayerBase.prototype.restore = function () {
-            var lastState = this.playerStateStack.pop();
-            if (lastState) {
-                // revert all node changes
-                this.first();
-                // load stored kifu
-                this.loadKifu(lastState.rootNode);
-                // go to stored path
-                this.goTo(lastState.path);
-            }
-        };
         return PlayerBase;
     }(EventEmitter));
 
@@ -4496,79 +4472,37 @@
         };
         ControlPanel.prototype.createMenuItems = function (menu) {
             var _this = this;
-            ControlPanel.menuItems.forEach(function (menuItem) {
+            var changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(function (key) { return _this.player.stateDefinitions[key].userCanChange; });
+            changeableStateKeys.forEach(function (key) {
+                var definition = _this.player.stateDefinitions[key];
                 var menuItemElement = document.createElement('a');
+                var value = definition.getValue();
                 menuItemElement.className = 'wgo-player__menu-item';
                 menuItemElement.tabIndex = 0;
-                menuItemElement.textContent = menuItem.name;
+                menuItemElement.textContent = definition.label;
                 menuItemElement.href = 'javascript: void(0)';
-                if (menuItem.checkable && menuItem.defaultChecked) {
-                    if (menuItem.defaultChecked.call(_this)) {
-                        menuItemElement.className += ' wgo-player__menu-item--checked';
-                    }
+                if (value) {
+                    menuItemElement.className += ' wgo-player__menu-item--checked';
                 }
                 menuItemElement.addEventListener('click', function (e) {
                     e.preventDefault();
-                    var res = menuItem.fn.call(_this);
-                    if (menuItem.checkable) {
-                        if (res) {
-                            menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
-                        }
-                        else {
-                            menuItemElement.className = 'wgo-player__menu-item';
-                        }
-                    }
+                    _this.player.emit(key + ".change", !value);
                     menuItemElement.blur();
+                });
+                _this.player.on(key + ".change", function (newValue) {
+                    value = newValue;
+                    if (newValue) {
+                        menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
+                    }
+                    else {
+                        menuItemElement.className = 'wgo-player__menu-item';
+                    }
                 });
                 menu.appendChild(menuItemElement);
             });
         };
-        ControlPanel.menuItems = [
-            {
-                name: 'Edit mode',
-                fn: function () {
-                    this.player.setEditMode(!this.player.editMode);
-                    return this.player.editMode;
-                },
-                checkable: true,
-                defaultChecked: function () {
-                    return this.player.editMode;
-                },
-            },
-            {
-                name: 'Display coordinates',
-                fn: function () {
-                    // this.player.boardComponent.board.setCoordinates(!this.player.boardComponent.board.getCoordinates());
-                    // return this.player.boardComponent.board.getCoordinates();
-                    this.player.emit('board.setCoordinates', !this.player.coordinates);
-                    return this.player.coordinates;
-                },
-                checkable: true,
-                defaultChecked: function () {
-                    // return this.player.boardComponent.board.getCoordinates();
-                    // todo: will be tricky
-                    return false;
-                },
-            },
-            {
-                name: 'Download SGF',
-                fn: function () {
-                    var name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-                    download(name, this.player.rootNode.toSGF());
-                },
-            },
-        ];
         return ControlPanel;
     }(Component));
-    function download(name, sgf) {
-        var element = document.createElement('a');
-        element.setAttribute('href', "data:application/x-go-sgf;charset=utf-8," + encodeURIComponent(sgf));
-        element.setAttribute('download', name + ".sgf");
-        element.style.display = 'none';
-        document.body.appendChild(element);
-        element.click();
-        document.body.removeChild(element);
-    }
 
     var gameInfoProperties = {
         DT: 'Date',
@@ -5078,6 +5012,11 @@
         showCurrentVariations: false,
         formatNicks: true,
         formatMoves: true,
+        extensions: {
+            editMode: {
+                enabled: false,
+            },
+        },
         components: {
             board: {
                 component: SVGBoardComponent,
@@ -5279,33 +5218,206 @@
         return PlayerWrapper;
     }(Container));
 
+    var defaultEditModeConfig = {
+        enabled: false,
+        showVariations: true,
+        userCanChange: false,
+    };
+    var EditMode = /** @class */ (function () {
+        function EditMode(player, config) {
+            var _this = this;
+            if (config === void 0) { config = {}; }
+            this.gameStateStack = [];
+            this.handleChange = function (value) {
+                if (value && !_this.config.enabled) {
+                    _this.enable();
+                }
+                else if (!value && _this.config.enabled) {
+                    _this.disable();
+                }
+            };
+            this.player = player;
+            this.config = makeConfig(defaultEditModeConfig, config);
+            this.player.registerState({
+                key: EditMode.STATE_KEY,
+                type: Boolean,
+                getValue: function () { return _this.config.enabled; },
+                userCanChange: this.config.userCanChange,
+                label: 'Edit mode',
+            });
+        }
+        EditMode.prototype.create = function () {
+            this.player.on('editMode.change', this.handleChange);
+            if (this.config.enabled) {
+                this.enable();
+            }
+        };
+        EditMode.prototype.destroy = function () {
+            this.player.off('editMode.change', this.handleChange);
+        };
+        EditMode.prototype.setEnabled = function (value) {
+            if (value !== this.config.enabled) {
+                this.player.emit('editMode.change', value);
+            }
+        };
+        EditMode.prototype.enable = function () {
+            var _this = this;
+            this.saveGameState();
+            if (this.config.showVariations) {
+                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
+            }
+            else {
+                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
+            }
+            this.config.enabled = true;
+            var lastX = -1;
+            var lastY = -1;
+            var blackStone = new FieldObject('B');
+            blackStone.opacity = 0.35;
+            var whiteStone = new FieldObject('W');
+            whiteStone.opacity = 0.35;
+            var addedStone = null;
+            this._boardMouseMoveEvent = function (p) {
+                if (lastX !== p.x || lastY !== p.y) {
+                    if (_this.player.game.isValid(p.x, p.y)) {
+                        var boardObject = _this.player.game.turn === exports.Color.BLACK ? blackStone : whiteStone;
+                        boardObject.setPosition(p.x, p.y);
+                        if (addedStone) {
+                            _this.player.emit('board.updateTemporaryObject', boardObject);
+                        }
+                        else {
+                            _this.player.emit('board.addTemporaryObject', boardObject);
+                            addedStone = boardObject;
+                        }
+                    }
+                    else {
+                        _this._boardMouseOutEvent();
+                    }
+                    lastX = p.x;
+                    lastY = p.y;
+                }
+            };
+            this._boardMouseOutEvent = function () {
+                if (addedStone) {
+                    _this.player.emit('board.removeTemporaryObject', addedStone);
+                    addedStone = null;
+                }
+                lastX = -1;
+                lastY = -1;
+            };
+            this._boardClickEvent = function (p) {
+                _this._boardMouseOutEvent();
+                if (p == null) {
+                    return;
+                }
+                // check, whether some of the next node contains this move
+                for (var i = 0; i < _this.player.currentNode.children.length; i++) {
+                    var childNode = _this.player.currentNode.children[i];
+                    var move = childNode.getProperty('B') || childNode.getProperty('W');
+                    if (move.x === p.x && move.y === p.y) {
+                        _this.player.next(i);
+                        return;
+                    }
+                }
+                // otherwise play if valid
+                if (_this.player.game.isValid(p.x, p.y)) {
+                    _this.player.play(p.x, p.y);
+                }
+            };
+            this._nodeChange = function () {
+                var current = { x: lastX, y: lastY };
+                _this._boardMouseOutEvent();
+                _this._boardMouseMoveEvent(current);
+            };
+            this.player.on('boardMouseMove', this._boardMouseMoveEvent);
+            this.player.on('boardMouseOut', this._boardMouseOutEvent);
+            this.player.on('boardClick', this._boardClickEvent);
+            this.player.on('applyNodeChanges', this._nodeChange);
+        };
+        EditMode.prototype.disable = function () {
+            this.player.off('boardMouseMove', this._boardMouseMoveEvent);
+            this.player.off('boardMouseOut', this._boardMouseOutEvent);
+            this.player.off('boardClick', this._boardClickEvent);
+            this.player.off('applyNodeChanges', this._nodeChange);
+            this.config.enabled = false;
+            this.restoreGameState();
+        };
+        /**
+         * Saves current player game state - Kifu and path object.
+         */
+        EditMode.prototype.saveGameState = function () {
+            this.gameStateStack.push({
+                rootNode: this.player.rootNode.cloneNode(),
+                path: this.player.getCurrentPath(),
+            });
+        };
+        /**
+         * Restores player from previously saved state.
+         */
+        EditMode.prototype.restoreGameState = function () {
+            var lastState = this.gameStateStack.pop();
+            if (lastState) {
+                // revert all node changes
+                this.player.first();
+                // load stored kifu
+                this.player.loadKifu(lastState.rootNode);
+                // go to stored path
+                this.player.goTo(lastState.path);
+            }
+        };
+        EditMode.STATE_KEY = 'editMode';
+        return EditMode;
+    }());
+
     var SimplePlayer = /** @class */ (function (_super) {
         __extends(SimplePlayer, _super);
         function SimplePlayer(element, config) {
             if (config === void 0) { config = {}; }
             var _this = _super.call(this) || this;
             _this.components = {};
+            _this.extensions = {};
+            _this.stateDefinitions = {};
             // merge user config with default
             _this.element = element;
             _this.config = makeConfig(defaultSimplePlayerConfig, config);
             _this.init();
             return _this;
         }
+        SimplePlayer.registerExtension = function (key, extension) {
+            SimplePlayer.registeredExtensions[key] = extension;
+        };
         SimplePlayer.prototype.init = function () {
             var _this = this;
-            this.editMode = false;
             window.addEventListener('resize', this._resizeEvent = function (e) { return _this.resize(); });
+            Object.keys(this.config.extensions).forEach(function (extension) {
+                if (_this.config.extensions[extension] == null) {
+                    return;
+                }
+                var ctor = SimplePlayer.registeredExtensions[extension];
+                if (!ctor) {
+                    // ignoring unknown extension
+                    return;
+                }
+                _this.extensions[extension] = new ctor(_this, _this.config.extensions[extension]);
+            });
             Object.keys(this.config.components).forEach(function (componentName) {
                 var declaration = _this.config.components[componentName];
                 _this.components[componentName] = new declaration.component(_this, declaration.config);
+            });
+            Object.keys(this.extensions).forEach(function (extension) {
+                _this.extensions[extension].create();
             });
             this.wrapperComponent = new PlayerWrapper(this);
             this.element.appendChild(this.wrapperComponent.create());
             this.wrapperComponent.didMount();
         };
         SimplePlayer.prototype.destroy = function () {
+            var _this = this;
             window.removeEventListener('resize', this._resizeEvent);
             this._resizeEvent = null;
+            Object.keys(this.extensions).forEach(function (extension) {
+                _this.extensions[extension].destroy();
+            });
         };
         SimplePlayer.prototype.getVariations = function () {
             if (this.shouldShowVariations()) {
@@ -5331,9 +5443,9 @@
         };
         SimplePlayer.prototype.shouldShowCurrentVariations = function () {
             // in edit mode not possible
-            if (this.editMode) {
-                return false;
-            }
+            // if (this.editMode) {
+            //   return false;
+            // }
             // look at variation style in kifu
             var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
             if (st != null) {
@@ -5349,85 +5461,16 @@
         SimplePlayer.prototype.resize = function () {
             this.emit('resize', this);
         };
-        SimplePlayer.prototype.setEditMode = function (b) {
-            var _this = this;
-            if (b && !this.editMode) {
-                this.save();
-                this.editMode = true;
-                var lastX_1 = -1;
-                var lastY_1 = -1;
-                var blackStone_1 = new FieldObject('B');
-                blackStone_1.opacity = 0.35;
-                var whiteStone_1 = new FieldObject('W');
-                whiteStone_1.opacity = 0.35;
-                var addedStone_1 = null;
-                this._boardMouseMoveEvent = function (p) {
-                    if (lastX_1 !== p.x || lastY_1 !== p.y) {
-                        if (_this.game.isValid(p.x, p.y)) {
-                            var boardObject = _this.game.turn === exports.Color.BLACK ? blackStone_1 : whiteStone_1;
-                            boardObject.setPosition(p.x, p.y);
-                            if (addedStone_1) {
-                                _this.emit('board.updateTemporaryObject', boardObject);
-                            }
-                            else {
-                                _this.emit('board.addTemporaryObject', boardObject);
-                                addedStone_1 = boardObject;
-                            }
-                        }
-                        else {
-                            _this._boardMouseOutEvent();
-                        }
-                        lastX_1 = p.x;
-                        lastY_1 = p.y;
-                    }
-                };
-                this._boardMouseOutEvent = function () {
-                    if (addedStone_1) {
-                        _this.emit('board.removeTemporaryObject', addedStone_1);
-                        addedStone_1 = null;
-                    }
-                    lastX_1 = -1;
-                    lastY_1 = -1;
-                };
-                this._boardClickEvent = function (p) {
-                    _this._boardMouseOutEvent();
-                    if (p == null) {
-                        return;
-                    }
-                    // check, whether some of the next node contains this move
-                    for (var i = 0; i < _this.currentNode.children.length; i++) {
-                        var move = _this.currentNode.children[i].getProperty('B') || _this.currentNode.children[i].getProperty('W');
-                        if (move.x === p.x && move.y === p.y) {
-                            _this.next(i);
-                            return;
-                        }
-                    }
-                    // otherwise play if valid
-                    if (_this.game.isValid(p.x, p.y)) {
-                        _this.play(p.x, p.y);
-                    }
-                };
-                this._nodeChange = function () {
-                    var current = { x: lastX_1, y: lastY_1 };
-                    _this._boardMouseOutEvent();
-                    _this._boardMouseMoveEvent(current);
-                };
-                this.on('boardMouseMove', this._boardMouseMoveEvent);
-                this.on('boardMouseOut', this._boardMouseOutEvent);
-                this.on('boardClick', this._boardClickEvent);
-                this.on('applyNodeChanges', this._nodeChange);
-            }
-            else if (!b && this.editMode) {
-                this.off('boardMouseMove', this._boardMouseMoveEvent);
-                this.off('boardMouseOut', this._boardMouseOutEvent);
-                this.off('boardClick', this._boardClickEvent);
-                this.off('applyNodeChanges', this._nodeChange);
-                this.editMode = false;
-                this.restore();
-            }
+        /**
+         * Register new public shared player state variable. It can be then observed and changed by any component/extension.
+         */
+        SimplePlayer.prototype.registerState = function (stateDefinition) {
+            this.stateDefinitions[stateDefinition.key] = stateDefinition;
         };
+        SimplePlayer.registeredExtensions = {};
         return SimplePlayer;
     }(PlayerBase));
+    SimplePlayer.registerExtension('editMode', EditMode);
 
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;

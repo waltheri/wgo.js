@@ -17,7 +17,7 @@ interface MenuItem {
 }
 
 export default class ControlPanel extends Component {
-  static menuItems: MenuItem[] = [
+  /*static menuItems: MenuItem[] = [
     {
       name: 'Edit mode',
       fn() {
@@ -51,7 +51,7 @@ export default class ControlPanel extends Component {
         download(name, this.player.rootNode.toSGF());
       },
     },
-  ];
+  ];*/
 
   element: HTMLElement;
   moveNumber: HTMLInputElement;
@@ -162,32 +162,37 @@ export default class ControlPanel extends Component {
   }
 
   createMenuItems(menu: HTMLElement) {
-    ControlPanel.menuItems.forEach((menuItem) => {
+    const changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(
+      key => this.player.stateDefinitions[key].userCanChange,
+    );
+
+    changeableStateKeys.forEach((key) => {
+      const definition = this.player.stateDefinitions[key];
       const menuItemElement = document.createElement('a');
+      let value: boolean = definition.getValue();
+
       menuItemElement.className = 'wgo-player__menu-item';
       menuItemElement.tabIndex = 0;
-      menuItemElement.textContent = menuItem.name;
+      menuItemElement.textContent = definition.label;
       menuItemElement.href = 'javascript: void(0)';
 
-      if (menuItem.checkable && menuItem.defaultChecked) {
-        if (menuItem.defaultChecked.call(this)) {
-          menuItemElement.className += ' wgo-player__menu-item--checked';
-        }
+      if (value) {
+        menuItemElement.className += ' wgo-player__menu-item--checked';
       }
 
       menuItemElement.addEventListener('click', (e) => {
         e.preventDefault();
-        const res = menuItem.fn.call(this);
-
-        if (menuItem.checkable) {
-          if (res) {
-            menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
-          } else {
-            menuItemElement.className = 'wgo-player__menu-item';
-          }
-        } else {
-        }
+        this.player.emit(`${key}.change`, !value);
         menuItemElement.blur();
+      });
+
+      this.player.on(`${key}.change`, (newValue: boolean) => {
+        value = newValue;
+        if (newValue) {
+          menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
+        } else {
+          menuItemElement.className = 'wgo-player__menu-item';
+        }
       });
 
       menu.appendChild(menuItemElement);

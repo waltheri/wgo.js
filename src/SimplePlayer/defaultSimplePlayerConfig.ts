@@ -43,6 +43,7 @@ export interface SimplePlayerConfig {
   showCurrentVariations: boolean;
   formatNicks: boolean;
   formatMoves: boolean;
+  extensions: { [key: string]: any };
   components: { [key: string]: ComponentDeclaration<any> };
   layout: LayoutItem[];
 }
@@ -55,6 +56,11 @@ const defaultSimplePlayerConfig: SimplePlayerConfig = {
   showCurrentVariations: false,
   formatNicks: true,
   formatMoves: true,
+  extensions: {
+    editMode: {
+      enabled: false,
+    },
+  },
   components: {
     board: {
       component: SVGBoardComponent,

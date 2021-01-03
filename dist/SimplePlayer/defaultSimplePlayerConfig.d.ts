@@ -30,6 +30,9 @@ export interface SimplePlayerConfig {
     showCurrentVariations: boolean;
     formatNicks: boolean;
     formatMoves: boolean;
+    extensions: {
+        [key: string]: any;
+    };
     components: {
         [key: string]: ComponentDeclaration<any>;
     };

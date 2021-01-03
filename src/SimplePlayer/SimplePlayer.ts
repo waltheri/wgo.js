@@ -1,26 +1,34 @@
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
-import { Point, Color } from '../types';
+import { Point } from '../types';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import { PlayerBase } from '../PlayerBase';
 import defaultSimplePlayerConfig, { SimplePlayerConfig } from './defaultSimplePlayerConfig';
 import Component from './components/Component';
-import { FieldObject } from '../BoardBase';
 import PlayerWrapper from './components/PlayerWrapper';
+import Extension, { ExtensionConstructor } from './extensions/Extension';
+import EditMode from './extensions/EditMode';
+
+type StateDefinition = any; // TODO
 
 export default class SimplePlayer extends PlayerBase {
+  static registeredExtensions: { [key: string]: ExtensionConstructor<any> } = {};
+  static registerExtension(key: string, extension: ExtensionConstructor<any>) {
+    SimplePlayer.registeredExtensions[key] = extension;
+  }
+
   element: HTMLElement;
   config: SimplePlayerConfig;
   wrapperComponent: PlayerWrapper;
-  editMode: boolean;
   coordinates: boolean;
   components: {
     [key: string]: Component;
   } = {};
+  extensions: {
+    [key: string]: Extension<any>;
+  } = {};
+  stateDefinitions: { [key: string]: StateDefinition } = {};
+
   private _resizeEvent: EventListenerOrEventListenerObject;
-  private _boardMouseMoveEvent: Function;
-  private _boardMouseOutEvent: Function;
-  private _boardClickEvent: Function;
-  private _nodeChange: Function;
 
   constructor(element: HTMLElement, config: PartialRecursive<SimplePlayerConfig> = {}) {
     super();
@@ -33,13 +41,30 @@ export default class SimplePlayer extends PlayerBase {
   }
 
   init() {
-    this.editMode = false;
-
     window.addEventListener('resize', this._resizeEvent = (e: any) => this.resize());
+
+    Object.keys(this.config.extensions).forEach((extension) => {
+      if (this.config.extensions[extension] == null) {
+        return;
+      }
+
+      const ctor = SimplePlayer.registeredExtensions[extension];
+
+      if (!ctor) {
+        // ignoring unknown extension
+        return;
+      }
+
+      this.extensions[extension] = new ctor(this, this.config.extensions[extension]);
+    });
 
     Object.keys(this.config.components).forEach((componentName) => {
       const declaration = this.config.components[componentName];
       this.components[componentName] = new declaration.component(this, declaration.config);
+    });
+
+    Object.keys(this.extensions).forEach((extension) => {
+      this.extensions[extension].create();
     });
 
     this.wrapperComponent = new PlayerWrapper(this);
@@ -50,6 +75,10 @@ export default class SimplePlayer extends PlayerBase {
   destroy() {
     window.removeEventListener('resize', this._resizeEvent);
     this._resizeEvent = null;
+
+    Object.keys(this.extensions).forEach((extension) => {
+      this.extensions[extension].destroy();
+    });
   }
 
   getVariations(): Point[] {
@@ -78,9 +107,9 @@ export default class SimplePlayer extends PlayerBase {
 
   shouldShowCurrentVariations() {
     // in edit mode not possible
-    if (this.editMode) {
-      return false;
-    }
+    // if (this.editMode) {
+    //   return false;
+    // }
 
     // look at variation style in kifu
     const st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
@@ -100,92 +129,12 @@ export default class SimplePlayer extends PlayerBase {
     this.emit('resize', this);
   }
 
-  setEditMode(b: boolean) {
-    if (b && !this.editMode) {
-      this.save();
-      this.editMode = true;
-
-      let lastX = -1;
-      let lastY = -1;
-
-      const blackStone = new FieldObject('B');
-      blackStone.opacity = 0.35;
-
-      const whiteStone = new FieldObject('W');
-      whiteStone.opacity = 0.35;
-
-      let addedStone: FieldObject = null;
-
-      this._boardMouseMoveEvent = (p: Point) => {
-        if (lastX !== p.x || lastY !== p.y) {
-          if (this.game.isValid(p.x, p.y)) {
-            const boardObject = this.game.turn === Color.BLACK ? blackStone : whiteStone;
-            boardObject.setPosition(p.x, p.y);
-
-            if (addedStone) {
-              this.emit('board.updateTemporaryObject', boardObject);
-            } else {
-              this.emit('board.addTemporaryObject', boardObject);
-              addedStone = boardObject;
-            }
-
-          } else {
-            this._boardMouseOutEvent();
-          }
-          lastX = p.x;
-          lastY = p.y;
-        }
-      };
-
-      this._boardMouseOutEvent = () => {
-        if (addedStone) {
-          this.emit('board.removeTemporaryObject', addedStone);
-          addedStone = null;
-        }
-        lastX = -1;
-        lastY = -1;
-      };
-
-      this._boardClickEvent = (p: Point) => {
-        this._boardMouseOutEvent();
-
-        if (p == null) {
-          return;
-        }
-
-        // check, whether some of the next node contains this move
-        for (let i = 0; i < this.currentNode.children.length; i++) {
-          const move = this.currentNode.children[i].getProperty('B') || this.currentNode.children[i].getProperty('W');
-          if (move.x === p.x && move.y === p.y) {
-            this.next(i);
-            return;
-          }
-        }
-
-        // otherwise play if valid
-        if (this.game.isValid(p.x, p.y)) {
-          this.play(p.x, p.y);
-        }
-      };
-
-      this._nodeChange = () => {
-        const current = { x: lastX, y: lastY };
-        this._boardMouseOutEvent();
-        this._boardMouseMoveEvent(current);
-      };
-
-      this.on('boardMouseMove', this._boardMouseMoveEvent);
-      this.on('boardMouseOut', this._boardMouseOutEvent);
-      this.on('boardClick', this._boardClickEvent);
-      this.on('applyNodeChanges', this._nodeChange);
-    } else if (!b && this.editMode) {
-      this.off('boardMouseMove', this._boardMouseMoveEvent);
-      this.off('boardMouseOut', this._boardMouseOutEvent);
-      this.off('boardClick', this._boardClickEvent);
-      this.off('applyNodeChanges', this._nodeChange);
-
-      this.editMode = false;
-      this.restore();
-    }
+  /**
+   * Register new public shared player state variable. It can be then observed and changed by any component/extension.
+   */
+  registerState(stateDefinition: StateDefinition) {
+    this.stateDefinitions[stateDefinition.key] = stateDefinition;
   }
 }
+
+SimplePlayer.registerExtension('editMode', EditMode);
