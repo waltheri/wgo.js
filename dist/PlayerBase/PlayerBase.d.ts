@@ -4,11 +4,13 @@ import { Game, GoRules } from '../Game';
 import { PropIdent } from '../SGFParser/sgfTypes';
 import PropertyHandler from './PropertyHandler';
 import { PlayerInitParams } from './types';
+import PlayerPlugin from './PlayerPlugin';
 export default class PlayerBase extends EventEmitter {
     rootNode: KifuNode;
     currentNode: KifuNode;
     game: Game;
     params: PlayerInitParams;
+    plugins: PlayerPlugin[];
     constructor();
     /**
      * Load game (kifu) from KifuNode.
@@ -84,4 +86,10 @@ export default class PlayerBase extends EventEmitter {
      * Play a move. New kifu node will be created and move to it
      */
     play(x: number, y: number): void;
+    /**
+     * Register player's plugin.
+     *
+     * @param plugin
+     */
+    use(plugin: PlayerPlugin): void;
 }

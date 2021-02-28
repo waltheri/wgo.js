@@ -1,5 +1,5 @@
-import SimplePlayer from '../SimplePlayer';
-import Component from './Component';
+import PlayerDOM from '../PlayerDOM';
+import PlayerDOMComponent from './PlayerDOMComponent';
 
 const gameInfoProperties: { [key: string]: string } = {
   DT: 'Date',
@@ -21,15 +21,17 @@ const gameInfoProperties: { [key: string]: string } = {
   SO: 'Source',
 };
 
-export default class GameInfoBox extends Component {
+export default class GameInfoBox implements PlayerDOMComponent {
+  element: HTMLElement;
   infoTable: HTMLElement;
+  player: PlayerDOM;
 
-  constructor(player: SimplePlayer) {
-    super(player);
+  constructor() {
     this.printInfo = this.printInfo.bind(this);
   }
 
-  create() {
+  create(player: PlayerDOM) {
+    this.player = player;
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content';
 
@@ -44,9 +46,11 @@ export default class GameInfoBox extends Component {
 
     this.player.on('beforeInit', this.printInfo);
 
-    this.printInfo();
-
     return this.element;
+  }
+
+  didMount() {
+    this.printInfo();
   }
 
   destroy() {

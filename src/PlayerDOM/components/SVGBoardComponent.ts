@@ -1,4 +1,3 @@
-import Component from './Component';
 import { SVGBoard } from '../../SVGBoard';
 import {
   FieldObject,
@@ -10,12 +9,14 @@ import {
 } from '../../BoardBase';
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
-import SimplePlayer from '../SimplePlayer';
 import { SVGBoardObject, SVGDrawHandler, SVGBoardTheme } from '../../SVGBoard/types';
 import SVGCustomFieldObject from '../../SVGBoard/SVGCustomFieldObject';
 import SVGCustomLabelObject from '../../SVGBoard/SVGCustomLabelObject';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import { Circle, Label as SVGLabel } from '../../SVGBoard/svgDrawHandlers';
+import PlayerDOMComponent from './PlayerDOMComponent';
+import PlayerDOM from '../PlayerDOM';
+import { PropIdent } from '../../SGFParser/sgfTypes';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.BLACK,
@@ -32,6 +33,9 @@ export interface SVGBoardComponentConfig {
   };
   coordinateLabelsX?: string | (string | number)[];
   coordinateLabelsY?: string | (string | number)[];
+  highlightCurrentMove: boolean;
+  showVariations: boolean;
+  showCurrentVariations: boolean;
   theme?: PartialRecursive<SVGBoardTheme>;
 }
 
@@ -40,12 +44,17 @@ export const defaultSVGBoardComponentConfig: SVGBoardComponentConfig = {
   currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)', fillColor:'rgba(0,0,0,0)' }),
   currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)', fillColor:'rgba(0,0,0,0)' }),
   variationDrawHandler: new SVGLabel({ color: '#33f' }),
+  highlightCurrentMove: true,
+  showVariations: true,
+  showCurrentVariations: false,
 };
 
-export default class SVGBoardComponent extends Component implements Component {
+export default class SVGBoardComponent implements PlayerDOMComponent {
   // Underlying SVG board object
   board: SVGBoard;
   config: SVGBoardComponentConfig;
+  element: HTMLElement;
+  player: PlayerDOM;
 
   // Current board objects for stones - should match the position object of the game
   stoneBoardsObjects: FieldObject[];
@@ -59,9 +68,7 @@ export default class SVGBoardComponent extends Component implements Component {
   boardMouseX: number;
   boardMouseY: number;
 
-  constructor(player: SimplePlayer, config: PartialRecursive<SVGBoardComponentConfig> = {}) {
-    super(player);
-
+  constructor(config: PartialRecursive<SVGBoardComponentConfig> = {}) {
     this.config = makeConfig(defaultSVGBoardComponentConfig, config);
     this.viewportStack = [];
 
@@ -79,8 +86,8 @@ export default class SVGBoardComponent extends Component implements Component {
     this.setCoordinates = this.setCoordinates.bind(this);
   }
 
-  create() {
-    this.player.coordinates = this.config.coordinates;
+  create(player: PlayerDOM) {
+    this.player = player;
 
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__board';
@@ -214,7 +221,7 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   protected addVariationMarkup() {
-    const moves = this.player.getVariations();
+    const moves = this.getVariations();
 
     if (moves.length > 1) {
       moves.forEach((move, i) => {
@@ -238,14 +245,14 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   protected handleBoardClick(point: Point) {
-    this.player.emit('boardClick', point);
+    this.player.emit('board.click', point);
 
-    const moves = this.player.getVariations();
+    const moves = this.getVariations();
     if (moves.length > 1) {
       const ind = moves.findIndex(move => move && move.x === point.x && move.y === point.y);
 
       if (ind >= 0) {
-        if (this.player.shouldShowCurrentVariations()) {
+        if (this.shouldShowCurrentVariations()) {
           this.player.previous();
           this.player.next(ind);
         } else {
@@ -256,12 +263,12 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   protected handleBoardMouseMove(point: Point) {
-    this.player.emit('boardMouseMove', point);
-    this.handleVariationCursor(point.x, point.y, this.player.getVariations());
+    this.player.emit('board.mouseMove', point);
+    this.handleVariationCursor(point.x, point.y, this.getVariations());
   }
 
   protected handleBoardMouseOut() {
-    this.player.emit('boardMouseOut');
+    this.player.emit('board.mouseOut');
     this.removeVariationCursor();
   }
 
@@ -357,7 +364,7 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   private applyMoveProperty(event: LifeCycleEvent<Point>) {
-    if (this.player.config.highlightCurrentMove) {
+    if (this.config.highlightCurrentMove) {
       if (!event.value) {
         // no markup when pass
         return;
@@ -367,7 +374,7 @@ export default class SVGBoardComponent extends Component implements Component {
         return;
       }
 
-      if (this.player.getVariations().length > 1 && this.player.shouldShowCurrentVariations()) {
+      if (this.getVariations().length > 1 && this.shouldShowCurrentVariations()) {
         // don't show current move markup, if there is multiple variations and "show current variations" style set
         return;
       }
@@ -398,8 +405,48 @@ export default class SVGBoardComponent extends Component implements Component {
   }
 
   setCoordinates(b: boolean) {
-    this.player.coordinates = b;
+    this.config.coordinates = b;
     this.board.setCoordinates(b);
+  }
+
+  getVariations(): Point[] {
+    if (this.shouldShowVariations()) {
+      if (this.shouldShowCurrentVariations()) {
+        if (this.player.currentNode.parent) {
+          return this.player.currentNode.parent.children.map(node => node.getProperty('B') || node.getProperty('W'));
+        }
+      } else {
+        return this.player.currentNode.children.map(node => node.getProperty('B') || node.getProperty('W'));
+      }
+    }
+    return [];
+  }
+
+  shouldShowVariations() {
+    // look in kifu, whether to show variation markup
+    const st = this.player.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+    if (st != null) {
+      return !(st & 2);
+    }
+
+    // otherwise use configuration value
+    return this.config.showVariations;
+  }
+
+  shouldShowCurrentVariations() {
+    // in edit mode not possible
+    // if (this.editMode) {
+    //   return false;
+    // }
+
+    // look at variation style in kifu
+    const st = this.player.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+    if (st != null) {
+      return !!(st & 1);
+    }
+
+    // or use variation style from configuration
+    return this.config.showCurrentVariations;
   }
 }
 

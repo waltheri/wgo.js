@@ -27,11 +27,11 @@
   flex-direction: column;
 }
 
-.wgo-player__container--row > .wgo-player__board {
+.wgo-player__container--row > :nth-child(1) {
   flex: 2;
 }
 
-.wgo-player__container--row > .wgo-player__container--column {
+.wgo-player__container--row > :nth-child(2) {
   flex: 1;
 }
 

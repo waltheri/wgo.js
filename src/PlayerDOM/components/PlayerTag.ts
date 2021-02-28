@@ -1,9 +1,11 @@
-import Component from './Component';
-import SimplePlayer from '../SimplePlayer';
 import { Color } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
+import PlayerDOMComponent from './PlayerDOMComponent';
+import { PlayerDOM } from '../..';
 
-export default class PlayerTag extends Component {
+export default class PlayerTag implements PlayerDOMComponent {
+  element: HTMLElement;
+  player: PlayerDOM;
   color: Color;
   colorChar: 'B' | 'W';
   colorName: 'black' | 'white';
@@ -12,9 +14,7 @@ export default class PlayerTag extends Component {
   playerTeamElement: HTMLElement;
   playerCapsElement: HTMLElement;
 
-  constructor(player: SimplePlayer, color: Color.B | Color.W) {
-    super(player);
-
+  constructor(color: Color.B | Color.W) {
     this.color = color;
     this.colorChar = color === Color.B ? 'B' : 'W';
     this.colorName = color === Color.B ? 'black' : 'white';
@@ -25,7 +25,9 @@ export default class PlayerTag extends Component {
     this.setCaps = this.setCaps.bind(this);
   }
 
-  create() {
+  create(player: PlayerDOM) {
+    this.player = player;
+
     // create HTML
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__player-tag';
@@ -55,9 +57,11 @@ export default class PlayerTag extends Component {
     this.player.on(`beforeInit.${this.colorChar}T`, this.setTeam); // property BT or WT
     this.player.on('applyNodeChanges', this.setCaps);
 
-    this.initialSet();
-
     return this.element;
+  }
+
+  didMount() {
+    this.initialSet();
   }
 
   destroy() {

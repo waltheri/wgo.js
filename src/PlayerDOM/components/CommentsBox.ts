@@ -1,18 +1,33 @@
-import Component from './Component';
-import SimplePlayer from '../SimplePlayer';
 import { BoardMarkupObject } from '../../BoardBase';
+import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
+import PlayerDOM from '../PlayerDOM';
+import PlayerDOMComponent from './PlayerDOMComponent';
 
-export default class CommentBox extends Component {
+interface CommentBoxConfig {
+  formatMoves: boolean;
+  formatNicks: boolean;
+}
+
+const defaultConfig = {
+  formatMoves: true,
+  formatNicks: true,
+};
+
+export default class CommentsBox implements PlayerDOMComponent {
+  element: HTMLElement;
   commentsElement: HTMLElement;
+  player: PlayerDOM;
+  config: CommentBoxConfig;
 
-  constructor(player: SimplePlayer) {
-    super(player);
-
+  constructor(config: PartialRecursive<CommentBoxConfig> = {}) {
+    this.config = makeConfig(defaultConfig, config);
     this.setComments = this.setComments.bind(this);
     this.clearComments = this.clearComments.bind(this);
   }
 
-  create() {
+  create(player: PlayerDOM) {
+    this.player = player;
+
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
 
@@ -46,7 +61,7 @@ export default class CommentBox extends Component {
   setComments(event: { value: string }) {
     this.commentsElement.innerHTML = this.formatComment(event.value);
 
-    if (this.player.config.formatMoves) {
+    if (this.config.formatMoves) {
       [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), (link: HTMLElement) => {
         const boardObject = new BoardMarkupObject('MA');
         boardObject.zIndex = 20;
@@ -75,11 +90,11 @@ export default class CommentBox extends Component {
     // divide text into paragraphs
     formattedText = `<p>${formattedText.replace(/\n/g, '</p><p>')}</p>`;
 
-    if (this.player.config.formatNicks) {
+    if (this.config.formatNicks) {
       formattedText = formattedText.replace(/(<p>)([^:]{3,}:)\s/g, '<p><span class="wgo-player__nick">$2</span> ');
     }
 
-    if (this.player.config.formatMoves) {
+    if (this.config.formatMoves) {
       // tslint:disable-next-line:max-line-length
       formattedText = formattedText.replace(/\b[a-zA-Z]1?\d\b/g, '<a href="javascript:void(0)" class="wgo-player__move-link">$&</a>');
     }

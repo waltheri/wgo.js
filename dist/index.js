@@ -44,6 +44,41 @@
         return __assign.apply(this, arguments);
     };
 
+    function __values(o) {
+        var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
+        if (m) return m.call(o);
+        if (o && typeof o.length === "number") return {
+            next: function () {
+                if (o && i >= o.length) o = void 0;
+                return { value: o && o[i++], done: !o };
+            }
+        };
+        throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
+    }
+
+    function __read(o, n) {
+        var m = typeof Symbol === "function" && o[Symbol.iterator];
+        if (!m) return o;
+        var i = m.call(o), r, ar = [], e;
+        try {
+            while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+        }
+        catch (error) { e = { error: error }; }
+        finally {
+            try {
+                if (r && !r.done && (m = i["return"])) m.call(i);
+            }
+            finally { if (e) throw e.error; }
+        }
+        return ar;
+    }
+
+    function __spread() {
+        for (var ar = [], i = 0; i < arguments.length; i++)
+            ar = ar.concat(__read(arguments[i]));
+        return ar;
+    }
+
     /**
      * Class for syntax errors in SGF string.
      * @ extends Error
@@ -387,7 +422,7 @@
                 args[_i - 1] = arguments[_i];
             }
             if (this._events[evName]) {
-                this._events[evName].forEach(function (fn) { return fn.apply(void 0, args); });
+                this._events[evName].forEach(function (fn) { return fn.apply(void 0, __spread(args)); });
             }
         };
         return EventEmitter;
@@ -4030,6 +4065,7 @@
         __extends(PlayerBase, _super);
         function PlayerBase() {
             var _this = _super.call(this) || this;
+            _this.plugins = [];
             _this.on('beforeInit.SZ', beforeInitSZ);
             _this.on('beforeInit.RU', beforeInitRU);
             _this.on('applyGameChanges.HA', applyGameChangesHA);
@@ -4254,142 +4290,50 @@
             var i = this.currentNode.appendChild(node);
             this.next(i);
         };
+        /**
+         * Register player's plugin.
+         *
+         * @param plugin
+         */
+        PlayerBase.prototype.use = function (plugin) {
+            if (!plugin || typeof plugin.apply !== 'function') {
+                throw new TypeError('Plugin must implement an `apply` method.');
+            }
+            plugin.apply(this);
+            this.plugins.push(plugin);
+        };
         return PlayerBase;
     }(EventEmitter));
 
-    /**
-     * Component of Simple Board - can be board, box with comments, control panel, etc...
-     */
-    var Component = /** @class */ (function () {
-        function Component(player) {
-            this.player = player;
-            this.element = null;
+    var Container = /** @class */ (function () {
+        function Container(direction, children) {
+            if (children === void 0) { children = []; }
+            this.direction = direction;
+            this.children = children;
         }
-        /**
-         * Called when component's root HTML element was appended to DOM, or if it was moved.
-         * In this phase component may change its appearance or behavior based on dimensions etc...
-         */
-        Component.prototype.didMount = function () { };
-        /**
-         * This will unregister all event handlers and clean the component.
-         */
-        Component.prototype.destroy = function () { };
-        return Component;
-    }());
-
-    var CommentBox = /** @class */ (function (_super) {
-        __extends(CommentBox, _super);
-        function CommentBox(player) {
-            var _this = _super.call(this, player) || this;
-            _this.setComments = _this.setComments.bind(_this);
-            _this.clearComments = _this.clearComments.bind(_this);
-            return _this;
-        }
-        CommentBox.prototype.create = function () {
+        Container.prototype.create = function (player) {
+            var _this = this;
             this.element = document.createElement('div');
-            this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
-            var title = document.createElement('div');
-            title.innerHTML = 'Comments';
-            title.className = 'wgo-player__box__title';
-            this.element.appendChild(title);
-            this.commentsElement = document.createElement('div');
-            this.commentsElement.className = 'wgo-player__box__content';
-            this.element.appendChild(this.commentsElement);
-            this.player.on('applyNodeChanges.C', this.setComments);
-            this.player.on('clearNodeChanges.C', this.clearComments);
-            if (this.player.currentNode) {
-                var comment = this.player.currentNode.getProperty('C');
-                if (comment) {
-                    this.setComments({ value: comment });
-                }
-            }
+            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
+            this.children.forEach(function (child) { return _this.element.appendChild(child.create(player)); });
             return this.element;
         };
-        CommentBox.prototype.destroy = function () {
-            this.player.off('applyNodeChanges.C', this.setComments);
-            this.player.off('clearNodeChanges.C', this.clearComments);
+        Container.prototype.didMount = function () {
+            this.children.forEach(function (child) { return typeof child.didMount === 'function' && child.didMount(); });
         };
-        CommentBox.prototype.setComments = function (event) {
-            var _this = this;
-            this.commentsElement.innerHTML = this.formatComment(event.value);
-            if (this.player.config.formatMoves) {
-                [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), function (link) {
-                    var boardObject = new BoardMarkupObject('MA');
-                    boardObject.zIndex = 20;
-                    link.addEventListener('mouseenter', function () {
-                        var point = coordinatesToPoint(link.textContent);
-                        boardObject.setPosition(point.x, point.y);
-                        _this.player.emit('board.addTemporaryObject', boardObject);
-                    });
-                    link.addEventListener('mouseleave', function () {
-                        _this.player.emit('board.removeTemporaryObject', boardObject);
-                    });
-                });
-            }
+        Container.prototype.destroy = function () {
+            this.children.forEach(function (child) { return typeof child.destroy === 'function' && child.destroy(); });
         };
-        CommentBox.prototype.clearComments = function () {
-            this.commentsElement.textContent = '';
-        };
-        CommentBox.prototype.formatComment = function (text) {
-            // remove HTML tags from text
-            var formattedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            // divide text into paragraphs
-            formattedText = "<p>" + formattedText.replace(/\n/g, '</p><p>') + "</p>";
-            if (this.player.config.formatNicks) {
-                formattedText = formattedText.replace(/(<p>)([^:]{3,}:)\s/g, '<p><span class="wgo-player__nick">$2</span> ');
-            }
-            if (this.player.config.formatMoves) {
-                // tslint:disable-next-line:max-line-length
-                formattedText = formattedText.replace(/\b[a-zA-Z]1?\d\b/g, '<a href="javascript:void(0)" class="wgo-player__move-link">$&</a>');
-            }
-            return formattedText;
-        };
-        return CommentBox;
-    }(Component));
-    function coordinatesToPoint(coordinates) {
-        var x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
-        var y = parseInt(coordinates.substr(1), 10) - 1;
-        return { x: x, y: y };
-    }
+        return Container;
+    }());
 
-    var ContainerCondition = {
-        minWidth: function (width) {
-            return function (container) { return container.element.offsetWidth >= width; };
-        },
-        minHeight: function (height) {
-            return function (container) { return container.element.offsetHeight >= height; };
-        },
-        maxWidth: function (width) {
-            return function (container) { return container.element.offsetWidth <= width; };
-        },
-        maxHeight: function (height) {
-            return function (container) { return container.element.offsetHeight <= height; };
-        },
-        and: function () {
-            var conditions = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                conditions[_i] = arguments[_i];
-            }
-            return function (container) { return conditions.every(function (c) { return c(container); }); };
-        },
-        or: function () {
-            var conditions = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                conditions[_i] = arguments[_i];
-            }
-            return function (container) { return conditions.some(function (c) { return c(container); }); };
-        },
-    };
-
-    var ControlPanel = /** @class */ (function (_super) {
-        __extends(ControlPanel, _super);
-        function ControlPanel(player) {
-            var _this = _super.call(this, player) || this;
-            _this.update = _this.update.bind(_this);
-            return _this;
+    var ControlPanel = /** @class */ (function () {
+        function ControlPanel() {
+            this.update = this.update.bind(this);
         }
-        ControlPanel.prototype.create = function () {
+        ControlPanel.prototype.create = function (player) {
             var _this = this;
+            this.player = player;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__control-panel';
             var buttonGroup = document.createElement('form');
@@ -4471,180 +4415,44 @@
             }
         };
         ControlPanel.prototype.createMenuItems = function (menu) {
-            var _this = this;
-            var changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(function (key) { return _this.player.stateDefinitions[key].userCanChange; });
-            changeableStateKeys.forEach(function (key) {
-                var definition = _this.player.stateDefinitions[key];
-                var menuItemElement = document.createElement('a');
-                var value = definition.getValue();
-                menuItemElement.className = 'wgo-player__menu-item';
-                menuItemElement.tabIndex = 0;
-                menuItemElement.textContent = definition.label;
-                menuItemElement.href = 'javascript: void(0)';
-                if (value) {
-                    menuItemElement.className += ' wgo-player__menu-item--checked';
+            /*const changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(
+              key => this.player.stateDefinitions[key].userCanChange,
+            );
+        
+            changeableStateKeys.forEach((key) => {
+              const definition = this.player.stateDefinitions[key];
+              const menuItemElement = document.createElement('a');
+              let value: boolean = definition.getValue();
+        
+              menuItemElement.className = 'wgo-player__menu-item';
+              menuItemElement.tabIndex = 0;
+              menuItemElement.textContent = definition.label;
+              menuItemElement.href = 'javascript: void(0)';
+        
+              if (value) {
+                menuItemElement.className += ' wgo-player__menu-item--checked';
+              }
+        
+              menuItemElement.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.player.emit(`${key}.change`, !value);
+                menuItemElement.blur();
+              });
+        
+              this.player.on(`${key}.change`, (newValue: boolean) => {
+                value = newValue;
+                if (newValue) {
+                  menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
+                } else {
+                  menuItemElement.className = 'wgo-player__menu-item';
                 }
-                menuItemElement.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    _this.player.emit(key + ".change", !value);
-                    menuItemElement.blur();
-                });
-                _this.player.on(key + ".change", function (newValue) {
-                    value = newValue;
-                    if (newValue) {
-                        menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
-                    }
-                    else {
-                        menuItemElement.className = 'wgo-player__menu-item';
-                    }
-                });
-                menu.appendChild(menuItemElement);
-            });
+              });
+        
+              menu.appendChild(menuItemElement);
+            });*/
         };
         return ControlPanel;
-    }(Component));
-
-    var gameInfoProperties = {
-        DT: 'Date',
-        KM: 'Komi',
-        HA: 'Handicap',
-        AN: 'Annotations',
-        CP: 'Copyright',
-        GC: 'Game comments',
-        GN: 'Game name',
-        ON: 'Fuseki',
-        OT: 'Overtime',
-        TM: 'Basic time',
-        RE: 'Result',
-        RO: 'Round',
-        RU: 'Rules',
-        US: 'Recorder',
-        PC: 'Place',
-        EV: 'Event',
-        SO: 'Source',
-    };
-    var GameInfoBox = /** @class */ (function (_super) {
-        __extends(GameInfoBox, _super);
-        function GameInfoBox(player) {
-            var _this = _super.call(this, player) || this;
-            _this.printInfo = _this.printInfo.bind(_this);
-            return _this;
-        }
-        GameInfoBox.prototype.create = function () {
-            this.element = document.createElement('div');
-            this.element.className = 'wgo-player__box wgo-player__box--content';
-            var title = document.createElement('div');
-            title.innerHTML = 'Game information';
-            title.className = 'wgo-player__box__title';
-            this.element.appendChild(title);
-            this.infoTable = document.createElement('table');
-            this.infoTable.className = 'wgo-player__box__game-info';
-            this.element.appendChild(this.infoTable);
-            this.player.on('beforeInit', this.printInfo);
-            this.printInfo();
-            return this.element;
-        };
-        GameInfoBox.prototype.destroy = function () {
-            this.player.off('beforeInit', this.printInfo);
-        };
-        GameInfoBox.prototype.addInfo = function (propIdent, value) {
-            var row = document.createElement('tr');
-            row.dataset.propIdent = propIdent;
-            this.infoTable.appendChild(row);
-            var label = document.createElement('th');
-            label.textContent = gameInfoProperties[propIdent];
-            row.appendChild(label);
-            var valueElement = document.createElement('td');
-            valueElement.textContent = value;
-            row.appendChild(valueElement);
-        };
-        GameInfoBox.prototype.removeInfo = function (propIdent) {
-            var elem = this.infoTable.querySelector("[data-id='" + propIdent + "']");
-            this.infoTable.removeChild(elem);
-        };
-        GameInfoBox.prototype.printInfo = function () {
-            var _this = this;
-            this.infoTable.innerHTML = '';
-            if (this.player.rootNode) {
-                this.player.rootNode.forEachProperty(function (propIdent, value) {
-                    if (gameInfoProperties[propIdent]) {
-                        _this.addInfo(propIdent, value);
-                    }
-                });
-            }
-        };
-        return GameInfoBox;
-    }(Component));
-
-    var PlayerTag = /** @class */ (function (_super) {
-        __extends(PlayerTag, _super);
-        function PlayerTag(player, color) {
-            var _this = _super.call(this, player) || this;
-            _this.color = color;
-            _this.colorChar = color === exports.Color.B ? 'B' : 'W';
-            _this.colorName = color === exports.Color.B ? 'black' : 'white';
-            _this.setName = _this.setName.bind(_this);
-            _this.setRank = _this.setRank.bind(_this);
-            _this.setTeam = _this.setTeam.bind(_this);
-            _this.setCaps = _this.setCaps.bind(_this);
-            return _this;
-        }
-        PlayerTag.prototype.create = function () {
-            // create HTML
-            this.element = document.createElement('div');
-            this.element.className = 'wgo-player__box wgo-player__player-tag';
-            var playerElement = document.createElement('div');
-            playerElement.className = 'wgo-player__player-tag__name';
-            this.element.appendChild(playerElement);
-            this.playerNameElement = document.createElement('span');
-            playerElement.appendChild(this.playerNameElement);
-            this.playerRankElement = document.createElement('small');
-            this.playerRankElement.className = 'wgo-player__player-tag__name__rank';
-            playerElement.appendChild(this.playerRankElement);
-            this.playerCapsElement = document.createElement('div');
-            this.playerCapsElement.className = "wgo-player__player-tag__color wgo-player__player-tag__color--" + this.colorName;
-            this.playerCapsElement.textContent = '0';
-            this.element.appendChild(this.playerCapsElement);
-            // todo team
-            this.playerTeamElement = document.createElement('div');
-            // attach Kifu listeners
-            this.player.on("beforeInit.P" + this.colorChar, this.setName); // property PB or PW
-            this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
-            this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
-            this.player.on('applyNodeChanges', this.setCaps);
-            this.initialSet();
-            return this.element;
-        };
-        PlayerTag.prototype.destroy = function () {
-            this.player.off("beforeInit.P" + this.colorChar, this.setName);
-            this.player.off("beforeInit." + this.colorChar + "R", this.setRank);
-            this.player.off("beforeInit." + this.colorChar + "T", this.setTeam);
-            this.player.off('applyNodeChanges', this.setCaps);
-        };
-        PlayerTag.prototype.setName = function (event) {
-            this.playerNameElement.textContent = event.value;
-        };
-        PlayerTag.prototype.setRank = function (event) {
-            this.playerRankElement.textContent = event.value;
-        };
-        PlayerTag.prototype.setTeam = function (event) {
-            this.playerTeamElement.textContent = event.value;
-        };
-        PlayerTag.prototype.setCaps = function () {
-            this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
-        };
-        PlayerTag.prototype.initialSet = function () {
-            if (this.player.rootNode) {
-                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || '';
-                this.playerRankElement.textContent = this.player.rootNode.getProperty(this.colorChar + "R") || '';
-                this.playerTeamElement.textContent = this.player.rootNode.getProperty(this.colorChar + "T") || '';
-            }
-            if (this.player.game) {
-                this.setCaps();
-            }
-        };
-        return PlayerTag;
-    }(Component));
+    }());
 
     var SVGCustomFieldObject = /** @class */ (function (_super) {
         __extends(SVGCustomFieldObject, _super);
@@ -4675,31 +4483,31 @@
         currentMoveBlackMark: new Circle$1({ color: 'rgba(255,255,255,0.8)', fillColor: 'rgba(0,0,0,0)' }),
         currentMoveWhiteMark: new Circle$1({ color: 'rgba(0,0,0,0.8)', fillColor: 'rgba(0,0,0,0)' }),
         variationDrawHandler: new Label$1({ color: '#33f' }),
+        highlightCurrentMove: true,
+        showVariations: true,
+        showCurrentVariations: false,
     };
-    var SVGBoardComponent = /** @class */ (function (_super) {
-        __extends(SVGBoardComponent, _super);
-        function SVGBoardComponent(player, config) {
+    var SVGBoardComponent = /** @class */ (function () {
+        function SVGBoardComponent(config) {
             if (config === void 0) { config = {}; }
-            var _this = _super.call(this, player) || this;
-            _this.config = makeConfig(defaultSVGBoardComponentConfig, config);
-            _this.viewportStack = [];
-            _this.applyNodeChanges = _this.applyNodeChanges.bind(_this);
-            _this.clearNodeChanges = _this.clearNodeChanges.bind(_this);
-            _this.applyMarkupProperty = _this.applyMarkupProperty.bind(_this);
-            _this.applyLabelMarkupProperty = _this.applyLabelMarkupProperty.bind(_this);
-            _this.applyLineMarkupProperty = _this.applyLineMarkupProperty.bind(_this);
-            _this.applyViewportProperty = _this.applyViewportProperty.bind(_this);
-            _this.clearViewportProperty = _this.clearViewportProperty.bind(_this);
-            _this.applyMoveProperty = _this.applyMoveProperty.bind(_this);
-            _this.addTemporaryBoardObject = _this.addTemporaryBoardObject.bind(_this);
-            _this.removeTemporaryBoardObject = _this.removeTemporaryBoardObject.bind(_this);
-            _this.updateTemporaryBoardObject = _this.updateTemporaryBoardObject.bind(_this);
-            _this.setCoordinates = _this.setCoordinates.bind(_this);
-            return _this;
+            this.config = makeConfig(defaultSVGBoardComponentConfig, config);
+            this.viewportStack = [];
+            this.applyNodeChanges = this.applyNodeChanges.bind(this);
+            this.clearNodeChanges = this.clearNodeChanges.bind(this);
+            this.applyMarkupProperty = this.applyMarkupProperty.bind(this);
+            this.applyLabelMarkupProperty = this.applyLabelMarkupProperty.bind(this);
+            this.applyLineMarkupProperty = this.applyLineMarkupProperty.bind(this);
+            this.applyViewportProperty = this.applyViewportProperty.bind(this);
+            this.clearViewportProperty = this.clearViewportProperty.bind(this);
+            this.applyMoveProperty = this.applyMoveProperty.bind(this);
+            this.addTemporaryBoardObject = this.addTemporaryBoardObject.bind(this);
+            this.removeTemporaryBoardObject = this.removeTemporaryBoardObject.bind(this);
+            this.updateTemporaryBoardObject = this.updateTemporaryBoardObject.bind(this);
+            this.setCoordinates = this.setCoordinates.bind(this);
         }
-        SVGBoardComponent.prototype.create = function () {
+        SVGBoardComponent.prototype.create = function (player) {
             var _this = this;
-            this.player.coordinates = this.config.coordinates;
+            this.player = player;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__board';
             this.stoneBoardsObjects = [];
@@ -4817,7 +4625,7 @@
         };
         SVGBoardComponent.prototype.addVariationMarkup = function () {
             var _this = this;
-            var moves = this.player.getVariations();
+            var moves = this.getVariations();
             if (moves.length > 1) {
                 moves.forEach(function (move, i) {
                     if (move) {
@@ -4838,12 +4646,12 @@
             }
         };
         SVGBoardComponent.prototype.handleBoardClick = function (point) {
-            this.player.emit('boardClick', point);
-            var moves = this.player.getVariations();
+            this.player.emit('board.click', point);
+            var moves = this.getVariations();
             if (moves.length > 1) {
                 var ind = moves.findIndex(function (move) { return move && move.x === point.x && move.y === point.y; });
                 if (ind >= 0) {
-                    if (this.player.shouldShowCurrentVariations()) {
+                    if (this.shouldShowCurrentVariations()) {
                         this.player.previous();
                         this.player.next(ind);
                     }
@@ -4854,11 +4662,11 @@
             }
         };
         SVGBoardComponent.prototype.handleBoardMouseMove = function (point) {
-            this.player.emit('boardMouseMove', point);
-            this.handleVariationCursor(point.x, point.y, this.player.getVariations());
+            this.player.emit('board.mouseMove', point);
+            this.handleVariationCursor(point.x, point.y, this.getVariations());
         };
         SVGBoardComponent.prototype.handleBoardMouseOut = function () {
-            this.player.emit('boardMouseOut');
+            this.player.emit('board.mouseOut');
             this.removeVariationCursor();
         };
         SVGBoardComponent.prototype.handleVariationCursor = function (x, y, moves) {
@@ -4944,7 +4752,7 @@
             }
         };
         SVGBoardComponent.prototype.applyMoveProperty = function (event) {
-            if (this.player.config.highlightCurrentMove) {
+            if (this.config.highlightCurrentMove) {
                 if (!event.value) {
                     // no markup when pass
                     return;
@@ -4953,7 +4761,7 @@
                     // don't show current move markup, when there is markup in kifu node
                     return;
                 }
-                if (this.player.getVariations().length > 1 && this.player.shouldShowCurrentVariations()) {
+                if (this.getVariations().length > 1 && this.shouldShowCurrentVariations()) {
                     // don't show current move markup, if there is multiple variations and "show current variations" style set
                     return;
                 }
@@ -4975,11 +4783,46 @@
             this.board.updateObject(obj);
         };
         SVGBoardComponent.prototype.setCoordinates = function (b) {
-            this.player.coordinates = b;
+            this.config.coordinates = b;
             this.board.setCoordinates(b);
         };
+        SVGBoardComponent.prototype.getVariations = function () {
+            if (this.shouldShowVariations()) {
+                if (this.shouldShowCurrentVariations()) {
+                    if (this.player.currentNode.parent) {
+                        return this.player.currentNode.parent.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+                    }
+                }
+                else {
+                    return this.player.currentNode.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+                }
+            }
+            return [];
+        };
+        SVGBoardComponent.prototype.shouldShowVariations = function () {
+            // look in kifu, whether to show variation markup
+            var st = this.player.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+            if (st != null) {
+                return !(st & 2);
+            }
+            // otherwise use configuration value
+            return this.config.showVariations;
+        };
+        SVGBoardComponent.prototype.shouldShowCurrentVariations = function () {
+            // in edit mode not possible
+            // if (this.editMode) {
+            //   return false;
+            // }
+            // look at variation style in kifu
+            var st = this.player.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+            if (st != null) {
+                return !!(st & 1);
+            }
+            // or use variation style from configuration
+            return this.config.showCurrentVariations;
+        };
         return SVGBoardComponent;
-    }(Component));
+    }());
     function samePoint(p1, p2) {
         return p2 && p1.x === p2.x && p1.y === p2.y;
     }
@@ -5004,473 +4847,406 @@
         return false;
     }
 
-    var defaultSimplePlayerConfig = {
-        highlightCurrentMove: true,
-        enableMouseWheel: true,
-        enableKeys: true,
-        showVariations: true,
-        showCurrentVariations: false,
-        formatNicks: true,
-        formatMoves: true,
-        extensions: {
-            editMode: {
-                enabled: false,
-            },
-        },
-        components: {
-            board: {
-                component: SVGBoardComponent,
-            },
-            playerBlack: {
-                component: PlayerTag,
-                config: exports.Color.B,
-            },
-            playerWhite: {
-                component: PlayerTag,
-                config: exports.Color.W,
-            },
-            controlPanel: {
-                component: ControlPanel,
-            },
-            gameInfoBox: {
-                component: GameInfoBox,
-            },
-            commentBox: {
-                component: CommentBox,
-            },
-        },
-        layout: [{
-                column: [
-                    {
-                        if: ContainerCondition.maxWidth(749),
-                        row: ['playerBlack', 'playerWhite'],
-                    },
-                    {
-                        row: [
-                            'board',
-                            {
-                                if: ContainerCondition.minWidth(650),
-                                column: [
-                                    { if: ContainerCondition.minWidth(250), component: 'playerBlack' },
-                                    { if: ContainerCondition.minWidth(250), component: 'playerWhite' },
-                                    { if: ContainerCondition.minWidth(250), component: 'controlPanel' },
-                                    'gameInfoBox',
-                                    'commentBox',
-                                ],
-                            },
-                        ],
-                    },
-                    { if: ContainerCondition.maxWidth(749), component: 'controlPanel' },
-                    { if: ContainerCondition.maxWidth(649), component: 'commentBox' },
-                ],
-            }],
-    };
-
-    /**
-     * Special kind of component which handles rendering of player's component by layout config.
-     * It should not be used directly. It is created internally by SimplePlayer and itself.
-     */
-    var Container = /** @class */ (function (_super) {
-        __extends(Container, _super);
-        function Container(player, items, direction) {
-            var _this = _super.call(this, player) || this;
-            _this.children = [];
-            _this.items = items;
-            _this.direction = direction;
-            return _this;
+    var ResponsiveComponent = /** @class */ (function () {
+        function ResponsiveComponent(params, component) {
+            this.params = params;
+            this.component = component;
+            this.visible = false;
+            this.didMount = this.didMount.bind(this);
         }
-        Container.prototype.create = function () {
-            this.element = document.createElement('div');
-            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
-            return this.element;
-        };
-        Container.prototype.didMount = function () {
-            var _this = this;
-            this.items.forEach(function (layoutItem, position) {
-                if (typeof layoutItem === 'string') {
-                    _this.appendComponent(_this.player.components[layoutItem], position);
-                    return;
-                }
-                if (layoutItem.if && !layoutItem.if(_this)) {
-                    if (_this.children[position]) {
-                        if ([].indexOf.call(_this.element.children, _this.children[position].element) >= 0) {
-                            _this.element.removeChild(_this.children[position].element);
-                        }
-                    }
-                    _this.children[position] = null;
-                    return;
-                }
-                if ('column' in layoutItem) {
-                    _this.appendContainer(layoutItem.column, 'column', position);
-                }
-                else if ('row' in layoutItem) {
-                    _this.appendContainer(layoutItem.row, 'row', position);
-                }
-                else if ('component' in layoutItem) {
-                    _this.appendComponent(_this.player.components[layoutItem.component], position);
-                }
-            });
-        };
-        Container.prototype.appendComponent = function (component, position) {
-            if (this.children[position] == null) {
-                var elem = component.element || component.create();
-                this.appendElementToDOM(elem, position);
-                this.children[position] = component;
-            }
-            component.didMount();
-        };
-        Container.prototype.appendContainer = function (items, direction, position) {
-            if (this.children[position] == null) {
-                var container = new Container(this.player, items, direction);
-                var elem = container.create();
-                this.appendElementToDOM(elem, position);
-                this.children[position] = container;
-            }
-            this.children[position].didMount();
-        };
-        Container.prototype.appendElementToDOM = function (elem, position) {
-            var nextComponent = null;
-            var i = position + 1;
-            // find next rendered component to use it as reference for inserting this one
-            while (i < this.children.length && nextComponent == null) {
-                nextComponent = this.children[i];
-                i++;
-            }
-            if (nextComponent) {
-                this.element.insertBefore(elem, nextComponent.element);
-            }
-            else {
-                this.element.appendChild(elem);
-            }
-        };
-        Container.prototype.destroy = function () {
-            var _this = this;
-            this.items.forEach(function (layoutItem, position) {
-                if (typeof layoutItem !== 'string' && !('component' in layoutItem)) {
-                    if (_this.children[position]) {
-                        // destroy only existing containers
-                        _this.children[position].destroy();
-                    }
-                }
-                if (_this.children[position]) {
-                    _this.element.removeChild(_this.children[position].element);
-                }
-            });
-        };
-        return Container;
-    }(Component));
-
-    /**
-     * Encapsulate main/root HTML element of the player. It is special kind of Container which
-     * register root mouse and key events for player control. This component is directly used
-     * by SimplePlayer and shouldn't be used manually.
-     */
-    var PlayerWrapper = /** @class */ (function (_super) {
-        __extends(PlayerWrapper, _super);
-        function PlayerWrapper(player, items) {
-            if (items === void 0) { items = player.config.layout; }
-            var _this = _super.call(this, player, items, '') || this;
-            _this.handleMouseWheel = _this.handleMouseWheel.bind(_this);
-            _this.handleKeydown = _this.handleKeydown.bind(_this);
-            _this.handleResize = _this.handleResize.bind(_this);
-            return _this;
-        }
-        PlayerWrapper.prototype.create = function () {
-            this.element = document.createElement('div');
-            this.element.className = 'wgo-player';
-            this.element.tabIndex = 1;
-            document.addEventListener('mousewheel', this.handleMouseWheel);
-            document.addEventListener('keydown', this.handleKeydown);
-            this.player.on('resize', this.handleResize);
-            return this.element;
-        };
-        PlayerWrapper.prototype.destroy = function () {
-            _super.prototype.destroy.call(this);
-            document.removeEventListener('mousewheel', this.handleMouseWheel);
-            document.removeEventListener('keydown', this.handleKeydown);
-            this.player.off('resize', this.handleResize);
-        };
-        PlayerWrapper.prototype.handleMouseWheel = function (e) {
-            if (document.activeElement === this.element && this.player.config.enableMouseWheel) {
-                if (e.deltaY > 0) {
-                    this.player.next();
-                }
-                else if (e.deltaY < 0) {
-                    this.player.previous();
-                }
-                return false;
-            }
-        };
-        PlayerWrapper.prototype.handleKeydown = function (e) {
-            if (document.activeElement === this.element && this.player.config.enableKeys) {
-                if (e.key === 'ArrowRight') {
-                    this.player.next();
-                }
-                else if (e.key === 'ArrowLeft') {
-                    this.player.previous();
-                }
-                return false;
-            }
-        };
-        PlayerWrapper.prototype.handleResize = function () {
-            this.didMount();
-        };
-        return PlayerWrapper;
-    }(Container));
-
-    var defaultEditModeConfig = {
-        enabled: false,
-        showVariations: true,
-        userCanChange: false,
-    };
-    var EditMode = /** @class */ (function () {
-        function EditMode(player, config) {
-            var _this = this;
-            if (config === void 0) { config = {}; }
-            this.gameStateStack = [];
-            this.handleChange = function (value) {
-                if (value && !_this.config.enabled) {
-                    _this.enable();
-                }
-                else if (!value && _this.config.enabled) {
-                    _this.disable();
-                }
-            };
+        ResponsiveComponent.prototype.create = function (player) {
             this.player = player;
-            this.config = makeConfig(defaultEditModeConfig, config);
-            this.player.registerState({
-                key: EditMode.STATE_KEY,
-                type: Boolean,
-                getValue: function () { return _this.config.enabled; },
-                userCanChange: this.config.userCanChange,
-                label: 'Edit mode',
-            });
-        }
-        EditMode.prototype.create = function () {
-            this.player.on('editMode.change', this.handleChange);
-            if (this.config.enabled) {
-                this.enable();
+            this.element = this.createPlaceholder();
+            this.player.on('resize', this.didMount);
+            return this.element;
+        };
+        ResponsiveComponent.prototype.didMount = function () {
+            var shouldRenderComponent = this.shouldRenderComponent();
+            if (this.visible && !shouldRenderComponent) {
+                // replace component element by placeholder
+                var placeholder = this.createPlaceholder();
+                this.element.parentElement.replaceChild(placeholder, this.element);
+                this.element = placeholder;
+                // clear component
+                if (typeof this.component.destroy === 'function') {
+                    this.component.destroy();
+                }
+                this.visible = false;
+            }
+            else if (!this.visible && shouldRenderComponent) {
+                // replaces placeholder by component element
+                var componentElement = this.component.create(this.player);
+                this.element.parentElement.replaceChild(componentElement, this.element);
+                this.element = componentElement;
+                // mount component logic if any
+                if (typeof this.component.didMount === 'function') {
+                    this.component.didMount();
+                }
+                this.visible = true;
             }
         };
-        EditMode.prototype.destroy = function () {
-            this.player.off('editMode.change', this.handleChange);
-        };
-        EditMode.prototype.setEnabled = function (value) {
-            if (value !== this.config.enabled) {
-                this.player.emit('editMode.change', value);
+        ResponsiveComponent.prototype.destroy = function () {
+            this.player.off('resize', this.didMount);
+            if (typeof this.component.destroy === 'function') {
+                this.component.destroy();
             }
         };
-        EditMode.prototype.enable = function () {
-            var _this = this;
-            this.saveGameState();
-            if (this.config.showVariations) {
-                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
+        ResponsiveComponent.prototype.shouldRenderComponent = function () {
+            var width = this.element.parentElement.offsetWidth;
+            var height = this.element.parentElement.offsetHeight;
+            if (this.params.minWidth != null && this.params.minWidth > width) {
+                return false;
             }
-            else {
-                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
+            if (this.params.minHeight != null && this.params.minHeight > height) {
+                return false;
             }
-            this.config.enabled = true;
-            var lastX = -1;
-            var lastY = -1;
-            var blackStone = new FieldObject('B');
-            blackStone.opacity = 0.35;
-            var whiteStone = new FieldObject('W');
-            whiteStone.opacity = 0.35;
-            var addedStone = null;
-            this._boardMouseMoveEvent = function (p) {
-                if (lastX !== p.x || lastY !== p.y) {
-                    if (_this.player.game.isValid(p.x, p.y)) {
-                        var boardObject = _this.player.game.turn === exports.Color.BLACK ? blackStone : whiteStone;
-                        boardObject.setPosition(p.x, p.y);
-                        if (addedStone) {
-                            _this.player.emit('board.updateTemporaryObject', boardObject);
-                        }
-                        else {
-                            _this.player.emit('board.addTemporaryObject', boardObject);
-                            addedStone = boardObject;
-                        }
-                    }
-                    else {
-                        _this._boardMouseOutEvent();
-                    }
-                    lastX = p.x;
-                    lastY = p.y;
-                }
-            };
-            this._boardMouseOutEvent = function () {
-                if (addedStone) {
-                    _this.player.emit('board.removeTemporaryObject', addedStone);
-                    addedStone = null;
-                }
-                lastX = -1;
-                lastY = -1;
-            };
-            this._boardClickEvent = function (p) {
-                _this._boardMouseOutEvent();
-                if (p == null) {
-                    return;
-                }
-                // check, whether some of the next node contains this move
-                for (var i = 0; i < _this.player.currentNode.children.length; i++) {
-                    var childNode = _this.player.currentNode.children[i];
-                    var move = childNode.getProperty('B') || childNode.getProperty('W');
-                    if (move.x === p.x && move.y === p.y) {
-                        _this.player.next(i);
-                        return;
-                    }
-                }
-                // otherwise play if valid
-                if (_this.player.game.isValid(p.x, p.y)) {
-                    _this.player.play(p.x, p.y);
-                }
-            };
-            this._nodeChange = function () {
-                var current = { x: lastX, y: lastY };
-                _this._boardMouseOutEvent();
-                _this._boardMouseMoveEvent(current);
-            };
-            this.player.on('boardMouseMove', this._boardMouseMoveEvent);
-            this.player.on('boardMouseOut', this._boardMouseOutEvent);
-            this.player.on('boardClick', this._boardClickEvent);
-            this.player.on('applyNodeChanges', this._nodeChange);
-        };
-        EditMode.prototype.disable = function () {
-            this.player.off('boardMouseMove', this._boardMouseMoveEvent);
-            this.player.off('boardMouseOut', this._boardMouseOutEvent);
-            this.player.off('boardClick', this._boardClickEvent);
-            this.player.off('applyNodeChanges', this._nodeChange);
-            this.config.enabled = false;
-            this.restoreGameState();
-        };
-        /**
-         * Saves current player game state - Kifu and path object.
-         */
-        EditMode.prototype.saveGameState = function () {
-            this.gameStateStack.push({
-                rootNode: this.player.rootNode.cloneNode(),
-                path: this.player.getCurrentPath(),
-            });
-        };
-        /**
-         * Restores player from previously saved state.
-         */
-        EditMode.prototype.restoreGameState = function () {
-            var lastState = this.gameStateStack.pop();
-            if (lastState) {
-                // revert all node changes
-                this.player.first();
-                // load stored kifu
-                this.player.loadKifu(lastState.rootNode);
-                // go to stored path
-                this.player.goTo(lastState.path);
+            if (this.params.maxWidth != null && this.params.maxWidth < width) {
+                return false;
             }
+            if (this.params.maxHeight != null && this.params.maxHeight < height) {
+                return false;
+            }
+            if (this.params.orientation === 'portrait' && width < height) {
+                return false;
+            }
+            return true;
         };
-        EditMode.STATE_KEY = 'editMode';
-        return EditMode;
+        ResponsiveComponent.prototype.createPlaceholder = function () {
+            // tslint:disable-next-line:max-line-length
+            return document.createComment(" WGo component placeholder for " + (this.component.constructor ? this.component.constructor.name : 'unknown') + " " + JSON.stringify(this.params) + " ");
+        };
+        return ResponsiveComponent;
     }());
 
-    var SimplePlayer = /** @class */ (function (_super) {
-        __extends(SimplePlayer, _super);
-        function SimplePlayer(element, config) {
+    var defaultConfig = {
+        formatMoves: true,
+        formatNicks: true,
+    };
+    var CommentsBox = /** @class */ (function () {
+        function CommentsBox(config) {
+            if (config === void 0) { config = {}; }
+            this.config = makeConfig(defaultConfig, config);
+            this.setComments = this.setComments.bind(this);
+            this.clearComments = this.clearComments.bind(this);
+        }
+        CommentsBox.prototype.create = function (player) {
+            this.player = player;
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
+            var title = document.createElement('div');
+            title.innerHTML = 'Comments';
+            title.className = 'wgo-player__box__title';
+            this.element.appendChild(title);
+            this.commentsElement = document.createElement('div');
+            this.commentsElement.className = 'wgo-player__box__content';
+            this.element.appendChild(this.commentsElement);
+            this.player.on('applyNodeChanges.C', this.setComments);
+            this.player.on('clearNodeChanges.C', this.clearComments);
+            if (this.player.currentNode) {
+                var comment = this.player.currentNode.getProperty('C');
+                if (comment) {
+                    this.setComments({ value: comment });
+                }
+            }
+            return this.element;
+        };
+        CommentsBox.prototype.destroy = function () {
+            this.player.off('applyNodeChanges.C', this.setComments);
+            this.player.off('clearNodeChanges.C', this.clearComments);
+        };
+        CommentsBox.prototype.setComments = function (event) {
+            var _this = this;
+            this.commentsElement.innerHTML = this.formatComment(event.value);
+            if (this.config.formatMoves) {
+                [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), function (link) {
+                    var boardObject = new BoardMarkupObject('MA');
+                    boardObject.zIndex = 20;
+                    link.addEventListener('mouseenter', function () {
+                        var point = coordinatesToPoint(link.textContent);
+                        boardObject.setPosition(point.x, point.y);
+                        _this.player.emit('board.addTemporaryObject', boardObject);
+                    });
+                    link.addEventListener('mouseleave', function () {
+                        _this.player.emit('board.removeTemporaryObject', boardObject);
+                    });
+                });
+            }
+        };
+        CommentsBox.prototype.clearComments = function () {
+            this.commentsElement.textContent = '';
+        };
+        CommentsBox.prototype.formatComment = function (text) {
+            // remove HTML tags from text
+            var formattedText = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            // divide text into paragraphs
+            formattedText = "<p>" + formattedText.replace(/\n/g, '</p><p>') + "</p>";
+            if (this.config.formatNicks) {
+                formattedText = formattedText.replace(/(<p>)([^:]{3,}:)\s/g, '<p><span class="wgo-player__nick">$2</span> ');
+            }
+            if (this.config.formatMoves) {
+                // tslint:disable-next-line:max-line-length
+                formattedText = formattedText.replace(/\b[a-zA-Z]1?\d\b/g, '<a href="javascript:void(0)" class="wgo-player__move-link">$&</a>');
+            }
+            return formattedText;
+        };
+        return CommentsBox;
+    }());
+    function coordinatesToPoint(coordinates) {
+        var x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
+        var y = parseInt(coordinates.substr(1), 10) - 1;
+        return { x: x, y: y };
+    }
+
+    var gameInfoProperties = {
+        DT: 'Date',
+        KM: 'Komi',
+        HA: 'Handicap',
+        AN: 'Annotations',
+        CP: 'Copyright',
+        GC: 'Game comments',
+        GN: 'Game name',
+        ON: 'Fuseki',
+        OT: 'Overtime',
+        TM: 'Basic time',
+        RE: 'Result',
+        RO: 'Round',
+        RU: 'Rules',
+        US: 'Recorder',
+        PC: 'Place',
+        EV: 'Event',
+        SO: 'Source',
+    };
+    var GameInfoBox = /** @class */ (function () {
+        function GameInfoBox() {
+            this.printInfo = this.printInfo.bind(this);
+        }
+        GameInfoBox.prototype.create = function (player) {
+            this.player = player;
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__box--content';
+            var title = document.createElement('div');
+            title.innerHTML = 'Game information';
+            title.className = 'wgo-player__box__title';
+            this.element.appendChild(title);
+            this.infoTable = document.createElement('table');
+            this.infoTable.className = 'wgo-player__box__game-info';
+            this.element.appendChild(this.infoTable);
+            this.player.on('beforeInit', this.printInfo);
+            return this.element;
+        };
+        GameInfoBox.prototype.didMount = function () {
+            this.printInfo();
+        };
+        GameInfoBox.prototype.destroy = function () {
+            this.player.off('beforeInit', this.printInfo);
+        };
+        GameInfoBox.prototype.addInfo = function (propIdent, value) {
+            var row = document.createElement('tr');
+            row.dataset.propIdent = propIdent;
+            this.infoTable.appendChild(row);
+            var label = document.createElement('th');
+            label.textContent = gameInfoProperties[propIdent];
+            row.appendChild(label);
+            var valueElement = document.createElement('td');
+            valueElement.textContent = value;
+            row.appendChild(valueElement);
+        };
+        GameInfoBox.prototype.removeInfo = function (propIdent) {
+            var elem = this.infoTable.querySelector("[data-id='" + propIdent + "']");
+            this.infoTable.removeChild(elem);
+        };
+        GameInfoBox.prototype.printInfo = function () {
+            var _this = this;
+            this.infoTable.innerHTML = '';
+            if (this.player.rootNode) {
+                this.player.rootNode.forEachProperty(function (propIdent, value) {
+                    if (gameInfoProperties[propIdent]) {
+                        _this.addInfo(propIdent, value);
+                    }
+                });
+            }
+        };
+        return GameInfoBox;
+    }());
+
+    var PlayerTag = /** @class */ (function () {
+        function PlayerTag(color) {
+            this.color = color;
+            this.colorChar = color === exports.Color.B ? 'B' : 'W';
+            this.colorName = color === exports.Color.B ? 'black' : 'white';
+            this.setName = this.setName.bind(this);
+            this.setRank = this.setRank.bind(this);
+            this.setTeam = this.setTeam.bind(this);
+            this.setCaps = this.setCaps.bind(this);
+        }
+        PlayerTag.prototype.create = function (player) {
+            this.player = player;
+            // create HTML
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__box wgo-player__player-tag';
+            var playerElement = document.createElement('div');
+            playerElement.className = 'wgo-player__player-tag__name';
+            this.element.appendChild(playerElement);
+            this.playerNameElement = document.createElement('span');
+            playerElement.appendChild(this.playerNameElement);
+            this.playerRankElement = document.createElement('small');
+            this.playerRankElement.className = 'wgo-player__player-tag__name__rank';
+            playerElement.appendChild(this.playerRankElement);
+            this.playerCapsElement = document.createElement('div');
+            this.playerCapsElement.className = "wgo-player__player-tag__color wgo-player__player-tag__color--" + this.colorName;
+            this.playerCapsElement.textContent = '0';
+            this.element.appendChild(this.playerCapsElement);
+            // todo team
+            this.playerTeamElement = document.createElement('div');
+            // attach Kifu listeners
+            this.player.on("beforeInit.P" + this.colorChar, this.setName); // property PB or PW
+            this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
+            this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
+            this.player.on('applyNodeChanges', this.setCaps);
+            return this.element;
+        };
+        PlayerTag.prototype.didMount = function () {
+            this.initialSet();
+        };
+        PlayerTag.prototype.destroy = function () {
+            this.player.off("beforeInit.P" + this.colorChar, this.setName);
+            this.player.off("beforeInit." + this.colorChar + "R", this.setRank);
+            this.player.off("beforeInit." + this.colorChar + "T", this.setTeam);
+            this.player.off('applyNodeChanges', this.setCaps);
+        };
+        PlayerTag.prototype.setName = function (event) {
+            this.playerNameElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setRank = function (event) {
+            this.playerRankElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setTeam = function (event) {
+            this.playerTeamElement.textContent = event.value;
+        };
+        PlayerTag.prototype.setCaps = function () {
+            this.playerCapsElement.textContent = this.player.game.position.capCount[this.colorName].toString();
+        };
+        PlayerTag.prototype.initialSet = function () {
+            if (this.player.rootNode) {
+                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || '';
+                this.playerRankElement.textContent = this.player.rootNode.getProperty(this.colorChar + "R") || '';
+                this.playerTeamElement.textContent = this.player.rootNode.getProperty(this.colorChar + "T") || '';
+            }
+            if (this.player.game) {
+                this.setCaps();
+            }
+        };
+        return PlayerTag;
+    }());
+
+    var defaultConfig$1 = {
+        enableMouseWheel: true,
+        enableKeys: true,
+    };
+    /**
+     * Player with support to render visual elements into the DOM.
+     */
+    var PlayerDOM = /** @class */ (function (_super) {
+        __extends(PlayerDOM, _super);
+        function PlayerDOM(config) {
             if (config === void 0) { config = {}; }
             var _this = _super.call(this) || this;
-            _this.components = {};
-            _this.extensions = {};
-            _this.stateDefinitions = {};
-            // merge user config with default
-            _this.element = element;
-            _this.config = makeConfig(defaultSimplePlayerConfig, config);
-            _this.init();
+            _this.components = new Map();
+            _this.handleResize = function () {
+                _this.emit('resize');
+            };
+            _this.handleMouseWheel = function (e) {
+                if (_this.config.enableMouseWheel) {
+                    if (e.deltaY > 0) {
+                        _this.next();
+                    }
+                    else if (e.deltaY < 0) {
+                        _this.previous();
+                    }
+                    e.preventDefault();
+                }
+            };
+            _this.handleKeydown = function (e) {
+                if (_this.config.enableKeys && _this.hasFocus()) {
+                    if (e.key === 'ArrowRight') {
+                        _this.next();
+                    }
+                    else if (e.key === 'ArrowLeft') {
+                        _this.previous();
+                    }
+                    return false;
+                }
+            };
+            _this.config = makeConfig(defaultConfig$1, config);
+            window.addEventListener('resize', _this.handleResize);
+            document.addEventListener('keydown', _this.handleKeydown);
             return _this;
         }
-        SimplePlayer.registerExtension = function (key, extension) {
-            SimplePlayer.registeredExtensions[key] = extension;
+        /**
+         * Renders PlayerDOM component into specified HTML element. If there is content inside that element
+         * it will be removed. Render method can be called multiple times - this allows to have player's component
+         * anywhere you want.
+         *
+         * @param component
+         * @param container
+         */
+        PlayerDOM.prototype.render = function (component, container) {
+            // clear content of the container
+            container.innerHTML = '';
+            // creates wrapper
+            var wrapper = this.createWrapper();
+            container.appendChild(wrapper);
+            // creates the component HTML element
+            var elem = component.create(this);
+            wrapper.appendChild(elem);
+            if (typeof component.didMount === 'function') {
+                component.didMount();
+            }
+            this.components.set(container, component);
         };
-        SimplePlayer.prototype.init = function () {
-            var _this = this;
-            window.addEventListener('resize', this._resizeEvent = function (e) { return _this.resize(); });
-            Object.keys(this.config.extensions).forEach(function (extension) {
-                if (_this.config.extensions[extension] == null) {
-                    return;
-                }
-                var ctor = SimplePlayer.registeredExtensions[extension];
-                if (!ctor) {
-                    // ignoring unknown extension
-                    return;
-                }
-                _this.extensions[extension] = new ctor(_this, _this.config.extensions[extension]);
-            });
-            Object.keys(this.config.components).forEach(function (componentName) {
-                var declaration = _this.config.components[componentName];
-                _this.components[componentName] = new declaration.component(_this, declaration.config);
-            });
-            Object.keys(this.extensions).forEach(function (extension) {
-                _this.extensions[extension].create();
-            });
-            this.wrapperComponent = new PlayerWrapper(this);
-            this.element.appendChild(this.wrapperComponent.create());
-            this.wrapperComponent.didMount();
+        /**
+         * Removes component rendered via `render` method. Call this to clean event listeners of the component.
+         *
+         * @param container
+         */
+        PlayerDOM.prototype.clear = function (container) {
+            var component = this.components.get(container);
+            if (component && typeof component.destroy === 'function') {
+                component.destroy();
+            }
+            var wrapper = container.firstChild;
+            wrapper.removeEventListener('wheel', this.handleMouseWheel);
+            container.removeChild(wrapper);
+            this.components.delete(container);
         };
-        SimplePlayer.prototype.destroy = function () {
-            var _this = this;
-            window.removeEventListener('resize', this._resizeEvent);
-            this._resizeEvent = null;
-            Object.keys(this.extensions).forEach(function (extension) {
-                _this.extensions[extension].destroy();
-            });
+        PlayerDOM.prototype.createWrapper = function () {
+            var element = document.createElement('div');
+            element.className = 'wgo-player';
+            element.tabIndex = 1;
+            element.addEventListener('wheel', this.handleMouseWheel);
+            return element;
         };
-        SimplePlayer.prototype.getVariations = function () {
-            if (this.shouldShowVariations()) {
-                if (this.shouldShowCurrentVariations()) {
-                    if (this.currentNode.parent) {
-                        return this.currentNode.parent.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+        PlayerDOM.prototype.hasFocus = function () {
+            var e_1, _a;
+            try {
+                for (var _b = __values(this.components.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var elem = _c.value;
+                    if (elem.firstChild === document.activeElement) {
+                        return true;
                     }
                 }
-                else {
-                    return this.currentNode.children.map(function (node) { return node.getProperty('B') || node.getProperty('W'); });
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
                 }
+                finally { if (e_1) throw e_1.error; }
             }
-            return [];
+            return false;
         };
-        SimplePlayer.prototype.shouldShowVariations = function () {
-            // look in kifu, whether to show variation markup
-            var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
-            if (st != null) {
-                return !(st & 2);
-            }
-            // otherwise use configuration value
-            return this.config.showVariations;
-        };
-        SimplePlayer.prototype.shouldShowCurrentVariations = function () {
-            // in edit mode not possible
-            // if (this.editMode) {
-            //   return false;
-            // }
-            // look at variation style in kifu
-            var st = this.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
-            if (st != null) {
-                return !!(st & 1);
-            }
-            // or use variation style from configuration
-            return this.config.showCurrentVariations;
-        };
-        /**
-         * Can be called, when dimension of player changes, to update components or layout.
-         * It is called automatically on window resize event.
-         */
-        SimplePlayer.prototype.resize = function () {
-            this.emit('resize', this);
-        };
-        /**
-         * Register new public shared player state variable. It can be then observed and changed by any component/extension.
-         */
-        SimplePlayer.prototype.registerState = function (stateDefinition) {
-            this.stateDefinitions[stateDefinition.key] = stateDefinition;
-        };
-        SimplePlayer.registeredExtensions = {};
-        return SimplePlayer;
+        return PlayerDOM;
     }(PlayerBase));
-    SimplePlayer.registerExtension('editMode', EditMode);
 
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;
@@ -5479,9 +5255,8 @@
     exports.BoardObject = BoardObject;
     exports.CHINESE_RULES = CHINESE_RULES;
     exports.CanvasBoard = CanvasBoard;
-    exports.CommentBox = CommentBox;
-    exports.Component = Component;
-    exports.ContainerCondition = ContainerCondition;
+    exports.CommentsBox = CommentsBox;
+    exports.Container = Container;
     exports.ControlPanel = ControlPanel;
     exports.FieldObject = FieldObject;
     exports.Game = Game;
@@ -5491,13 +5266,14 @@
     exports.KifuNode = KifuNode;
     exports.NO_RULES = NO_RULES;
     exports.PlayerBase = PlayerBase;
+    exports.PlayerDOM = PlayerDOM;
     exports.PlayerTag = PlayerTag;
     exports.Position = Position;
+    exports.ResponsiveComponent = ResponsiveComponent;
     exports.SGFParser = SGFParser;
     exports.SGFSyntaxError = SGFSyntaxError;
     exports.SVGBoard = SVGBoard;
     exports.SVGBoardComponent = SVGBoardComponent;
-    exports.SimplePlayer = SimplePlayer;
     exports.drawHandlers = index;
     exports.goRules = goRules;
     exports.propertyValueTypes = propertyValueTypes;

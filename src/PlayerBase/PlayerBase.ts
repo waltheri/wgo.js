@@ -6,15 +6,19 @@ import PropertyHandler from './PropertyHandler';
 import { PlayerInitParams } from './types';
 import * as basePropertyListeners from './basePropertyListeners';
 import { Color } from '../types';
+import PlayerPlugin from './PlayerPlugin';
 
 export default class PlayerBase extends EventEmitter {
   rootNode: KifuNode;
   currentNode: KifuNode;
   game: Game;
   params: PlayerInitParams;
+  plugins: PlayerPlugin[];
 
   constructor() {
     super();
+
+    this.plugins = [];
 
     this.on('beforeInit.SZ', basePropertyListeners.beforeInitSZ);
     this.on('beforeInit.RU', basePropertyListeners.beforeInitRU);
@@ -276,5 +280,18 @@ export default class PlayerBase extends EventEmitter {
 
     const i = this.currentNode.appendChild(node);
     this.next(i);
+  }
+
+  /**
+   * Register player's plugin.
+   *
+   * @param plugin
+   */
+  use(plugin: PlayerPlugin) {
+    if (!plugin || typeof plugin.apply !== 'function') {
+      throw new TypeError('Plugin must implement an `apply` method.');
+    }
+    plugin.apply(this);
+    this.plugins.push(plugin);
   }
 }

@@ -1,6 +1,6 @@
-import SimplePlayer from '../SimplePlayer';
-import Component from './Component';
 import { PropIdent } from '../../SGFParser/sgfTypes';
+import PlayerDOM from '../PlayerDOM';
+import PlayerDOMComponent from './PlayerDOMComponent';
 
 interface MenuItem {
   /** Title of the menu item. */
@@ -16,7 +16,7 @@ interface MenuItem {
   defaultChecked?(this: ControlPanel): boolean;
 }
 
-export default class ControlPanel extends Component {
+export default class ControlPanel implements PlayerDOMComponent {
   /*static menuItems: MenuItem[] = [
     {
       name: 'Edit mode',
@@ -54,18 +54,19 @@ export default class ControlPanel extends Component {
   ];*/
 
   element: HTMLElement;
+  player: PlayerDOM;
   moveNumber: HTMLInputElement;
   first: HTMLButtonElement;
   previous: HTMLButtonElement;
   next: HTMLButtonElement;
   last: HTMLButtonElement;
 
-  constructor(player: SimplePlayer) {
-    super(player);
+  constructor() {
     this.update = this.update.bind(this);
   }
 
-  create() {
+  create(player: PlayerDOM) {
+    this.player = player;
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__control-panel';
 
@@ -162,7 +163,7 @@ export default class ControlPanel extends Component {
   }
 
   createMenuItems(menu: HTMLElement) {
-    const changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(
+    /*const changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(
       key => this.player.stateDefinitions[key].userCanChange,
     );
 
@@ -196,7 +197,7 @@ export default class ControlPanel extends Component {
       });
 
       menu.appendChild(menuItemElement);
-    });
+    });*/
   }
 }
 

@@ -3,8 +3,8 @@ import KifuNode, { Path } from '../../kifu/KifuNode';
 import { PropIdent } from '../../SGFParser/sgfTypes';
 import { Color, Point } from '../../types';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
-import SimplePlayer from '../SimplePlayer';
-import Extension from './Extension';
+import PlayerBase from '../PlayerBase';
+import PlayerPlugin from '../PlayerPlugin';
 
 interface EditModeConfig {
   /**
@@ -18,12 +18,6 @@ interface EditModeConfig {
    * Default value: `true`
    */
   showVariations: boolean;
-
-  /**
-   * Set true if user will be turn on/off edit mode in UI.
-   * Default value: `true`
-   */
-  userCanChange: boolean;
 }
 
 interface GameState {
@@ -34,14 +28,22 @@ interface GameState {
 const defaultEditModeConfig = {
   enabled: false,
   showVariations: true,
-  userCanChange: false,
 };
 
-export default class EditMode implements Extension<EditModeConfig> {
-  static STATE_KEY = 'editMode';
-
+/**
+ * Edit mode plugin. It allows to edit game kifu without changing it - when edit mode is disabled
+ * all changes are reverted. It provides event `editMode.change` to enable/disable edit mode.
+ * It contains integration with board via these events:
+ * - board.updateTemporaryObject
+ * - board.addTemporaryObject
+ * - board.removeTemporaryObject
+ * - board.mouseMove
+ * - board.mouseOut
+ * - board.click
+ */
+export default class EditMode implements PlayerPlugin {
   config: EditModeConfig;
-  player: SimplePlayer;
+  player: PlayerBase;
 
   private gameStateStack: GameState[] = [];
 
@@ -50,20 +52,16 @@ export default class EditMode implements Extension<EditModeConfig> {
   private _boardClickEvent: Function;
   private _nodeChange: Function;
 
-  constructor(player: SimplePlayer, config: PartialRecursive<EditModeConfig> = {}) {
-    this.player = player;
+  constructor(config: PartialRecursive<EditModeConfig> = {}) {
     this.config = makeConfig(defaultEditModeConfig, config);
-
-    this.player.registerState({
-      key: EditMode.STATE_KEY,
-      type: Boolean,
-      getValue: () => this.config.enabled,
-      userCanChange: this.config.userCanChange,
-      label: 'Edit mode',
-    });
   }
 
-  public create() {
+  public apply(player: PlayerBase) {
+    if (this.player) {
+      throw new Error('This plugin instance has already been applied to a player object.');
+    }
+
+    this.player = player;
     this.player.on('editMode.change', this.handleChange);
 
     if (this.config.enabled) {
@@ -71,13 +69,44 @@ export default class EditMode implements Extension<EditModeConfig> {
     }
   }
 
-  public destroy() {
+  /*public destroy() {
     this.player.off('editMode.change', this.handleChange);
-  }
+  }*/
 
+  /**
+   * Enable/disable edit mode. Event `editMode.change` is triggered.
+   *
+   * @param value
+   */
   public setEnabled(value: boolean) {
     if (value !== this.config.enabled) {
       this.player.emit('editMode.change', value);
+    }
+  }
+
+  /**
+   * Play move if edit mode is enabled. This move will be discarded, when edit mode is disabled.
+   *
+   * @param point
+   */
+  public play(point: Point) {
+    if (!this.config.enabled) {
+      return;
+    }
+
+    // check, whether some of the next node contains this move
+    for (let i = 0; i < this.player.currentNode.children.length; i++) {
+      const childNode = this.player.currentNode.children[i];
+      const move = childNode.getProperty('B') || childNode.getProperty('W');
+      if (move.x === point.x && move.y === point.y) {
+        this.player.next(i);
+        return;
+      }
+    }
+
+    // otherwise play if valid
+    if (this.player.game.isValid(point.x, point.y)) {
+      this.player.play(point.x, point.y);
     }
   }
 
@@ -146,20 +175,7 @@ export default class EditMode implements Extension<EditModeConfig> {
         return;
       }
 
-      // check, whether some of the next node contains this move
-      for (let i = 0; i < this.player.currentNode.children.length; i++) {
-        const childNode = this.player.currentNode.children[i];
-        const move = childNode.getProperty('B') || childNode.getProperty('W');
-        if (move.x === p.x && move.y === p.y) {
-          this.player.next(i);
-          return;
-        }
-      }
-
-      // otherwise play if valid
-      if (this.player.game.isValid(p.x, p.y)) {
-        this.player.play(p.x, p.y);
-      }
+      this.play(p);
     };
 
     this._nodeChange = () => {
@@ -168,16 +184,18 @@ export default class EditMode implements Extension<EditModeConfig> {
       this._boardMouseMoveEvent(current);
     };
 
-    this.player.on('boardMouseMove', this._boardMouseMoveEvent);
-    this.player.on('boardMouseOut', this._boardMouseOutEvent);
-    this.player.on('boardClick', this._boardClickEvent);
+    this.player.on('board.mouseMove', this._boardMouseMoveEvent);
+    this.player.on('board.mouseOut', this._boardMouseOutEvent);
+    this.player.on('board.click', this._boardClickEvent);
+
     this.player.on('applyNodeChanges', this._nodeChange);
   }
 
   private disable() {
-    this.player.off('boardMouseMove', this._boardMouseMoveEvent);
-    this.player.off('boardMouseOut', this._boardMouseOutEvent);
-    this.player.off('boardClick', this._boardClickEvent);
+    this.player.off('board.mouseMove', this._boardMouseMoveEvent);
+    this.player.off('board.mouseOut', this._boardMouseOutEvent);
+    this.player.off('board.click', this._boardClickEvent);
+
     this.player.off('applyNodeChanges', this._nodeChange);
 
     this.config.enabled = false;
