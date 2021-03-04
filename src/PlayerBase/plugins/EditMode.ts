@@ -56,7 +56,7 @@ export default class EditMode implements PlayerPlugin {
     this.config = makeConfig(defaultEditModeConfig, config);
   }
 
-  public apply(player: PlayerBase) {
+  apply(player: PlayerBase) {
     if (this.player) {
       throw new Error('This plugin instance has already been applied to a player object.');
     }
@@ -78,7 +78,7 @@ export default class EditMode implements PlayerPlugin {
    *
    * @param value
    */
-  public setEnabled(value: boolean) {
+  setEnabled(value: boolean) {
     if (value !== this.config.enabled) {
       this.player.emit('editMode.change', value);
     }
@@ -89,7 +89,7 @@ export default class EditMode implements PlayerPlugin {
    *
    * @param point
    */
-  public play(point: Point) {
+  play(point: Point) {
     if (!this.config.enabled) {
       return;
     }

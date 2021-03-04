@@ -63,12 +63,11 @@ export default class CommentsBox implements PlayerDOMComponent {
 
     if (this.config.formatMoves) {
       [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), (link: HTMLElement) => {
-        const boardObject = new BoardMarkupObject('MA');
+        const point = coordinatesToPoint(link.textContent, this.player.game.size);
+        const boardObject = new BoardMarkupObject('MA', point.x, point.y, this.player.game.getStone(point.x, point.y));
         boardObject.zIndex = 20;
 
         link.addEventListener('mouseenter', () => {
-          const point = coordinatesToPoint(link.textContent);
-          boardObject.setPosition(point.x, point.y);
           this.player.emit('board.addTemporaryObject', boardObject);
         });
 
@@ -103,8 +102,8 @@ export default class CommentsBox implements PlayerDOMComponent {
   }
 }
 
-function coordinatesToPoint(coordinates: string) {
+function coordinatesToPoint(coordinates: string, boardSize: number) {
   const x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
   const y = parseInt(coordinates.substr(1), 10) - 1;
-  return { x, y };
+  return { x, y: boardSize - 1 - y };
 }

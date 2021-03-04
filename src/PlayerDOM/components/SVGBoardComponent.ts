@@ -304,9 +304,13 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   private applyMarkupProperty(event: LifeCycleEvent<Point[]>) {
     event.value.forEach((value) => {
       // add markup
-      const boardMarkup = new BoardMarkupObject(event.propIdent, this.player.game.getStone(value.x, value.y));
+      const boardMarkup = new BoardMarkupObject(
+        event.propIdent,
+        value.x,
+        value.y,
+        this.player.game.getStone(value.x, value.y),
+      );
       boardMarkup.zIndex = 10;
-      boardMarkup.setPosition(value.x, value.y);
       this.addTemporaryBoardObject(boardMarkup);
     });
   }
@@ -314,9 +318,13 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   private applyLabelMarkupProperty(event: LifeCycleEvent<Label[]>) {
     event.value.forEach((value) => {
       // add markup
-      const boardMarkup = new BoardLabelObject(value.text, this.player.game.getStone(value.x, value.y));
+      const boardMarkup = new BoardLabelObject(
+        value.text,
+        value.x,
+        value.y,
+        this.player.game.getStone(value.x, value.y),
+      );
       boardMarkup.zIndex = 10;
-      boardMarkup.setPosition(value.x, value.y);
       this.addTemporaryBoardObject(boardMarkup);
     });
   }

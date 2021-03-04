@@ -1,4 +1,7 @@
+import { SVGBoardComponent } from '.';
+import { EditMode } from '../../PlayerBase/plugins';
 import { PropIdent } from '../../SGFParser/sgfTypes';
+import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
 
@@ -16,43 +19,15 @@ interface MenuItem {
   defaultChecked?(this: ControlPanel): boolean;
 }
 
-export default class ControlPanel implements PlayerDOMComponent {
-  /*static menuItems: MenuItem[] = [
-    {
-      name: 'Edit mode',
-      fn() {
-        this.player.setEditMode(!this.player.editMode);
-        return this.player.editMode;
-      },
-      checkable: true,
-      defaultChecked(this: ControlPanel) {
-        return this.player.editMode;
-      },
-    },
-    {
-      name: 'Display coordinates',
-      fn(this: ControlPanel) {
-        // this.player.boardComponent.board.setCoordinates(!this.player.boardComponent.board.getCoordinates());
-        // return this.player.boardComponent.board.getCoordinates();
-        this.player.emit('board.setCoordinates', !this.player.coordinates);
-        return this.player.coordinates;
-      },
-      checkable: true,
-      defaultChecked(this: ControlPanel) {
-        // return this.player.boardComponent.board.getCoordinates();
-        // todo: will be tricky
-        return false;
-      },
-    },
-    {
-      name: 'Download SGF',
-      fn() {
-        const name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-        download(name, this.player.rootNode.toSGF());
-      },
-    },
-  ];*/
+interface ControlPanelConfig {
+  menuItems: MenuItem[];
+}
 
+const defaultConfig: ControlPanelConfig = {
+  menuItems: [],
+};
+
+export default class ControlPanel implements PlayerDOMComponent {
   element: HTMLElement;
   player: PlayerDOM;
   moveNumber: HTMLInputElement;
@@ -60,8 +35,10 @@ export default class ControlPanel implements PlayerDOMComponent {
   previous: HTMLButtonElement;
   next: HTMLButtonElement;
   last: HTMLButtonElement;
+  config: ControlPanelConfig;
 
-  constructor() {
+  constructor(config: PartialRecursive<ControlPanelConfig> = {}) {
+    this.config = makeConfig(defaultConfig, config);
     this.update = this.update.bind(this);
   }
 
@@ -114,20 +91,22 @@ export default class ControlPanel implements PlayerDOMComponent {
     this.last.addEventListener('click', () => this.player.last());
     buttonGroup.appendChild(this.last);
 
-    const menuWrapper = document.createElement('div');
-    menuWrapper.className = 'wgo-player__menu-wrapper';
-    this.element.appendChild(menuWrapper);
+    if (this.config.menuItems.length) {
+      const menuWrapper = document.createElement('div');
+      menuWrapper.className = 'wgo-player__menu-wrapper';
+      this.element.appendChild(menuWrapper);
 
-    const menuButton = document.createElement('button');
-    menuButton.type = 'button';
-    menuButton.className = 'wgo-player__button wgo-player__button--menu';
-    menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
-    menuWrapper.appendChild(menuButton);
+      const menuButton = document.createElement('button');
+      menuButton.type = 'button';
+      menuButton.className = 'wgo-player__button wgo-player__button--menu';
+      menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
+      menuWrapper.appendChild(menuButton);
 
-    const menu = document.createElement('div');
-    menu.className = 'wgo-player__menu';
-    this.createMenuItems(menu);
-    menuWrapper.appendChild(menu);
+      const menu = document.createElement('div');
+      menu.className = 'wgo-player__menu';
+      this.createMenuItems(menu);
+      menuWrapper.appendChild(menu);
+    }
 
     this.player.on('applyNodeChanges', this.update);
 
@@ -163,53 +142,81 @@ export default class ControlPanel implements PlayerDOMComponent {
   }
 
   createMenuItems(menu: HTMLElement) {
-    /*const changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(
-      key => this.player.stateDefinitions[key].userCanChange,
-    );
-
-    changeableStateKeys.forEach((key) => {
-      const definition = this.player.stateDefinitions[key];
+    this.config.menuItems.forEach((menuItem) => {
       const menuItemElement = document.createElement('a');
-      let value: boolean = definition.getValue();
-
       menuItemElement.className = 'wgo-player__menu-item';
       menuItemElement.tabIndex = 0;
-      menuItemElement.textContent = definition.label;
+      menuItemElement.textContent = menuItem.name;
       menuItemElement.href = 'javascript: void(0)';
 
-      if (value) {
-        menuItemElement.className += ' wgo-player__menu-item--checked';
+      if (menuItem.defaultChecked) {
+        menuItemElement.classList.add('wgo-player__menu-item--checked');
       }
 
       menuItemElement.addEventListener('click', (e) => {
         e.preventDefault();
-        this.player.emit(`${key}.change`, !value);
+
+        const res = menuItem.fn.call(this);
+
+        if (menuItem.checkable) {
+          if (!res) {
+            menuItemElement.classList.remove('wgo-player__menu-item--checked');
+          } else {
+            menuItemElement.classList.add('wgo-player__menu-item--checked');
+          }
+        }
+
         menuItemElement.blur();
       });
 
-      this.player.on(`${key}.change`, (newValue: boolean) => {
-        value = newValue;
-        if (newValue) {
-          menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
-        } else {
-          menuItemElement.className = 'wgo-player__menu-item';
-        }
-      });
-
       menu.appendChild(menuItemElement);
-    });*/
+    });
   }
-}
 
-function download(name: string, sgf: string) {
-  const element = document.createElement('a');
-  element.setAttribute('href', `data:application/x-go-sgf;charset=utf-8,${encodeURIComponent(sgf)}`);
-  element.setAttribute('download', `${name}.sgf`);
+  /**
+   * Some common menu items, probably just temporary.
+   */
+  static menuItems = {
+    /** Renders menu item with SGF download link */
+    download: {
+      name: 'Download SGF',
+      fn(this: ControlPanel) {
+        const name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+        const sgf = this.player.rootNode.toSGF();
 
-  element.style.display = 'none';
-  document.body.appendChild(element);
+        const element = document.createElement('a');
+        element.setAttribute('href', `data:application/x-go-sgf;charset=utf-8,${encodeURIComponent(sgf)}`);
+        element.setAttribute('download', `${name}.sgf`);
 
-  element.click();
+        element.style.display = 'none';
+        document.body.appendChild(element);
 
-  document.body.removeChild(element);
+        element.click();
+
+        document.body.removeChild(element);
+      },
+    },
+
+    /** Renders menu item to toggle coordinates of SVGBoardComponent */
+    displayCoordinates: (boardComponent: SVGBoardComponent) => ({
+      name: 'Display coordinates',
+      fn(this: ControlPanel) {
+        boardComponent.setCoordinates(!boardComponent.config.coordinates);
+        return boardComponent.config.coordinates;
+      },
+      checkable: true,
+      defaultChecked: boardComponent.config.coordinates,
+    }),
+
+    /** Renders menu item to toggle edit mode (using EditMode plugin) */
+    editMode: (editMode: EditMode) => ({
+      name: 'Edit mode',
+      fn() {
+        editMode.setEnabled(!editMode.config.enabled);
+        return editMode.config.enabled;
+      },
+      checkable: true,
+      defaultChecked: editMode.config.enabled,
+    }),
+  };
 }

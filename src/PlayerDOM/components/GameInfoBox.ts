@@ -1,32 +1,43 @@
+import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
 
-const gameInfoProperties: { [key: string]: string } = {
-  DT: 'Date',
-  KM: 'Komi',
-  HA: 'Handicap',
-  AN: 'Annotations',
-  CP: 'Copyright',
-  GC: 'Game comments',
-  GN: 'Game name',
-  ON: 'Fuseki',
-  OT: 'Overtime',
-  TM: 'Basic time',
-  RE: 'Result',
-  RO: 'Round',
-  RU: 'Rules',
-  US: 'Recorder',
-  PC: 'Place',
-  EV: 'Event',
-  SO: 'Source',
+interface GameInfoBoxConfig {
+  gameInfoProperties: { [key: string]: string };
+  stretch: boolean;
+}
+
+const defaultConfig = {
+  gameInfoProperties: {
+    DT: 'Date',
+    KM: 'Komi',
+    HA: 'Handicap',
+    AN: 'Annotations',
+    CP: 'Copyright',
+    GC: 'Game comments',
+    GN: 'Game name',
+    ON: 'Fuseki',
+    OT: 'Overtime',
+    TM: 'Basic time',
+    RE: 'Result',
+    RO: 'Round',
+    RU: 'Rules',
+    US: 'Recorder',
+    PC: 'Place',
+    EV: 'Event',
+    SO: 'Source',
+  },
+  stretch: false,
 };
 
 export default class GameInfoBox implements PlayerDOMComponent {
   element: HTMLElement;
   infoTable: HTMLElement;
   player: PlayerDOM;
+  config: GameInfoBoxConfig;
 
-  constructor() {
+  constructor(config: PartialRecursive<GameInfoBoxConfig> = {}) {
+    this.config = makeConfig(defaultConfig, config);
     this.printInfo = this.printInfo.bind(this);
   }
 
@@ -34,6 +45,10 @@ export default class GameInfoBox implements PlayerDOMComponent {
     this.player = player;
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content';
+
+    if (this.config.stretch) {
+      this.element.className = `${this.element.className} wgo-player__box--stretch`;
+    }
 
     const title = document.createElement('div');
     title.innerHTML = 'Game information';
@@ -63,7 +78,7 @@ export default class GameInfoBox implements PlayerDOMComponent {
     this.infoTable.appendChild(row);
 
     const label = document.createElement('th');
-    label.textContent = gameInfoProperties[propIdent];
+    label.textContent = this.config.gameInfoProperties[propIdent];
     row.appendChild(label);
 
     const valueElement = document.createElement('td');
@@ -80,7 +95,7 @@ export default class GameInfoBox implements PlayerDOMComponent {
     this.infoTable.innerHTML = '';
     if (this.player.rootNode) {
       this.player.rootNode.forEachProperty((propIdent, value) => {
-        if (gameInfoProperties[propIdent]) {
+        if (this.config.gameInfoProperties[propIdent]) {
           this.addInfo(propIdent, value);
         }
       });

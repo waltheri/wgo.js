@@ -5,11 +5,13 @@ import PlayerDOMComponent from './components/PlayerDOMComponent';
 interface PlayerDOMConfig {
   enableMouseWheel: boolean;
   enableKeys: boolean;
+  fastReplay: number;
 }
 
 const defaultConfig = {
   enableMouseWheel: true,
   enableKeys: true,
+  fastReplay: 2000,
 };
 
 /**
@@ -18,6 +20,8 @@ const defaultConfig = {
 export default class PlayerDOM extends PlayerBase {
   config: PlayerDOMConfig;
   components: Map<HTMLElement, PlayerDOMComponent> = new Map();
+  fastReplayTimeout: number;
+  fastReplayEnabled = false;
 
   constructor(config: PartialRecursive<PlayerDOMConfig> = {}) {
     super();
@@ -25,6 +29,7 @@ export default class PlayerDOM extends PlayerBase {
 
     window.addEventListener('resize', this.handleResize);
     document.addEventListener('keydown', this.handleKeydown);
+    document.addEventListener('keyup', this.handleKeyup);
   }
 
   /**
@@ -100,14 +105,34 @@ export default class PlayerDOM extends PlayerBase {
 
   private handleKeydown = (e: KeyboardEvent) => {
     if (this.config.enableKeys && this.hasFocus()) {
+      if (this.config.fastReplay >= 0 && !this.fastReplayTimeout) {
+        this.fastReplayTimeout = window.setTimeout(() => {
+          this.fastReplayEnabled = true;
+        }, this.config.fastReplay);
+      }
+
       if (e.key === 'ArrowRight') {
         this.next();
+        if (this.fastReplayEnabled) {
+          this.next();
+          this.next();
+        }
       } else if (e.key === 'ArrowLeft') {
         this.previous();
+        if (this.fastReplayEnabled) {
+          this.previous();
+          this.previous();
+        }
       }
 
       return false;
     }
+  }
+
+  private handleKeyup = () => {
+    window.clearTimeout(this.fastReplayTimeout);
+    this.fastReplayTimeout = null;
+    this.fastReplayEnabled = false;
   }
 
   private hasFocus() {

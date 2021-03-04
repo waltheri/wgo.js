@@ -4,6 +4,7 @@ import PlayerDOMComponent from './components/PlayerDOMComponent';
 interface PlayerDOMConfig {
     enableMouseWheel: boolean;
     enableKeys: boolean;
+    fastReplay: number;
 }
 /**
  * Player with support to render visual elements into the DOM.
@@ -11,6 +12,8 @@ interface PlayerDOMConfig {
 export default class PlayerDOM extends PlayerBase {
     config: PlayerDOMConfig;
     components: Map<HTMLElement, PlayerDOMComponent>;
+    fastReplayTimeout: number;
+    fastReplayEnabled: boolean;
     constructor(config?: PartialRecursive<PlayerDOMConfig>);
     /**
      * Renders PlayerDOM component into specified HTML element. If there is content inside that element
@@ -31,6 +34,7 @@ export default class PlayerDOM extends PlayerBase {
     private handleResize;
     private handleMouseWheel;
     private handleKeydown;
+    private handleKeyup;
     private hasFocus;
 }
 export {};

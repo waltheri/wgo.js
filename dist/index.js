@@ -4305,6 +4305,308 @@
         return PlayerBase;
     }(EventEmitter));
 
+    var defaultEditModeConfig = {
+        enabled: false,
+        showVariations: true,
+    };
+    /**
+     * Edit mode plugin. It allows to edit game kifu without changing it - when edit mode is disabled
+     * all changes are reverted. It provides event `editMode.change` to enable/disable edit mode.
+     * It contains integration with board via these events:
+     * - board.updateTemporaryObject
+     * - board.addTemporaryObject
+     * - board.removeTemporaryObject
+     * - board.mouseMove
+     * - board.mouseOut
+     * - board.click
+     */
+    var EditMode = /** @class */ (function () {
+        function EditMode(config) {
+            var _this = this;
+            if (config === void 0) { config = {}; }
+            this.gameStateStack = [];
+            this.handleChange = function (value) {
+                if (value && !_this.config.enabled) {
+                    _this.enable();
+                }
+                else if (!value && _this.config.enabled) {
+                    _this.disable();
+                }
+            };
+            this.config = makeConfig(defaultEditModeConfig, config);
+        }
+        EditMode.prototype.apply = function (player) {
+            if (this.player) {
+                throw new Error('This plugin instance has already been applied to a player object.');
+            }
+            this.player = player;
+            this.player.on('editMode.change', this.handleChange);
+            if (this.config.enabled) {
+                this.enable();
+            }
+        };
+        /*public destroy() {
+          this.player.off('editMode.change', this.handleChange);
+        }*/
+        /**
+         * Enable/disable edit mode. Event `editMode.change` is triggered.
+         *
+         * @param value
+         */
+        EditMode.prototype.setEnabled = function (value) {
+            if (value !== this.config.enabled) {
+                this.player.emit('editMode.change', value);
+            }
+        };
+        /**
+         * Play move if edit mode is enabled. This move will be discarded, when edit mode is disabled.
+         *
+         * @param point
+         */
+        EditMode.prototype.play = function (point) {
+            if (!this.config.enabled) {
+                return;
+            }
+            // check, whether some of the next node contains this move
+            for (var i = 0; i < this.player.currentNode.children.length; i++) {
+                var childNode = this.player.currentNode.children[i];
+                var move = childNode.getProperty('B') || childNode.getProperty('W');
+                if (move.x === point.x && move.y === point.y) {
+                    this.player.next(i);
+                    return;
+                }
+            }
+            // otherwise play if valid
+            if (this.player.game.isValid(point.x, point.y)) {
+                this.player.play(point.x, point.y);
+            }
+        };
+        EditMode.prototype.enable = function () {
+            var _this = this;
+            this.saveGameState();
+            if (this.config.showVariations) {
+                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
+            }
+            else {
+                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
+            }
+            this.config.enabled = true;
+            var lastX = -1;
+            var lastY = -1;
+            var blackStone = new FieldObject('B');
+            blackStone.opacity = 0.35;
+            var whiteStone = new FieldObject('W');
+            whiteStone.opacity = 0.35;
+            var addedStone = null;
+            this._boardMouseMoveEvent = function (p) {
+                if (lastX !== p.x || lastY !== p.y) {
+                    if (_this.player.game.isValid(p.x, p.y)) {
+                        var boardObject = _this.player.game.turn === exports.Color.BLACK ? blackStone : whiteStone;
+                        boardObject.setPosition(p.x, p.y);
+                        if (addedStone) {
+                            _this.player.emit('board.updateTemporaryObject', boardObject);
+                        }
+                        else {
+                            _this.player.emit('board.addTemporaryObject', boardObject);
+                            addedStone = boardObject;
+                        }
+                    }
+                    else {
+                        _this._boardMouseOutEvent();
+                    }
+                    lastX = p.x;
+                    lastY = p.y;
+                }
+            };
+            this._boardMouseOutEvent = function () {
+                if (addedStone) {
+                    _this.player.emit('board.removeTemporaryObject', addedStone);
+                    addedStone = null;
+                }
+                lastX = -1;
+                lastY = -1;
+            };
+            this._boardClickEvent = function (p) {
+                _this._boardMouseOutEvent();
+                if (p == null) {
+                    return;
+                }
+                _this.play(p);
+            };
+            this._nodeChange = function () {
+                var current = { x: lastX, y: lastY };
+                _this._boardMouseOutEvent();
+                _this._boardMouseMoveEvent(current);
+            };
+            this.player.on('board.mouseMove', this._boardMouseMoveEvent);
+            this.player.on('board.mouseOut', this._boardMouseOutEvent);
+            this.player.on('board.click', this._boardClickEvent);
+            this.player.on('applyNodeChanges', this._nodeChange);
+        };
+        EditMode.prototype.disable = function () {
+            this.player.off('board.mouseMove', this._boardMouseMoveEvent);
+            this.player.off('board.mouseOut', this._boardMouseOutEvent);
+            this.player.off('board.click', this._boardClickEvent);
+            this.player.off('applyNodeChanges', this._nodeChange);
+            this.config.enabled = false;
+            this.restoreGameState();
+        };
+        /**
+         * Saves current player game state - Kifu and path object.
+         */
+        EditMode.prototype.saveGameState = function () {
+            this.gameStateStack.push({
+                rootNode: this.player.rootNode.cloneNode(),
+                path: this.player.getCurrentPath(),
+            });
+        };
+        /**
+         * Restores player from previously saved state.
+         */
+        EditMode.prototype.restoreGameState = function () {
+            var lastState = this.gameStateStack.pop();
+            if (lastState) {
+                // revert all node changes
+                this.player.first();
+                // load stored kifu
+                this.player.loadKifu(lastState.rootNode);
+                // go to stored path
+                this.player.goTo(lastState.path);
+            }
+        };
+        return EditMode;
+    }());
+
+    var defaultConfig = {
+        enableMouseWheel: true,
+        enableKeys: true,
+        fastReplay: 2000,
+    };
+    /**
+     * Player with support to render visual elements into the DOM.
+     */
+    var PlayerDOM = /** @class */ (function (_super) {
+        __extends(PlayerDOM, _super);
+        function PlayerDOM(config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this) || this;
+            _this.components = new Map();
+            _this.fastReplayEnabled = false;
+            _this.handleResize = function () {
+                _this.emit('resize');
+            };
+            _this.handleMouseWheel = function (e) {
+                if (_this.config.enableMouseWheel) {
+                    if (e.deltaY > 0) {
+                        _this.next();
+                    }
+                    else if (e.deltaY < 0) {
+                        _this.previous();
+                    }
+                    e.preventDefault();
+                }
+            };
+            _this.handleKeydown = function (e) {
+                if (_this.config.enableKeys && _this.hasFocus()) {
+                    if (_this.config.fastReplay >= 0 && !_this.fastReplayTimeout) {
+                        _this.fastReplayTimeout = window.setTimeout(function () {
+                            _this.fastReplayEnabled = true;
+                        }, _this.config.fastReplay);
+                    }
+                    if (e.key === 'ArrowRight') {
+                        _this.next();
+                        if (_this.fastReplayEnabled) {
+                            _this.next();
+                            _this.next();
+                        }
+                    }
+                    else if (e.key === 'ArrowLeft') {
+                        _this.previous();
+                        if (_this.fastReplayEnabled) {
+                            _this.previous();
+                            _this.previous();
+                        }
+                    }
+                    return false;
+                }
+            };
+            _this.handleKeyup = function () {
+                window.clearTimeout(_this.fastReplayTimeout);
+                _this.fastReplayTimeout = null;
+                _this.fastReplayEnabled = false;
+            };
+            _this.config = makeConfig(defaultConfig, config);
+            window.addEventListener('resize', _this.handleResize);
+            document.addEventListener('keydown', _this.handleKeydown);
+            document.addEventListener('keyup', _this.handleKeyup);
+            return _this;
+        }
+        /**
+         * Renders PlayerDOM component into specified HTML element. If there is content inside that element
+         * it will be removed. Render method can be called multiple times - this allows to have player's component
+         * anywhere you want.
+         *
+         * @param component
+         * @param container
+         */
+        PlayerDOM.prototype.render = function (component, container) {
+            // clear content of the container
+            container.innerHTML = '';
+            // creates wrapper
+            var wrapper = this.createWrapper();
+            container.appendChild(wrapper);
+            // creates the component HTML element
+            var elem = component.create(this);
+            wrapper.appendChild(elem);
+            if (typeof component.didMount === 'function') {
+                component.didMount();
+            }
+            this.components.set(container, component);
+        };
+        /**
+         * Removes component rendered via `render` method. Call this to clean event listeners of the component.
+         *
+         * @param container
+         */
+        PlayerDOM.prototype.clear = function (container) {
+            var component = this.components.get(container);
+            if (component && typeof component.destroy === 'function') {
+                component.destroy();
+            }
+            var wrapper = container.firstChild;
+            wrapper.removeEventListener('wheel', this.handleMouseWheel);
+            container.removeChild(wrapper);
+            this.components.delete(container);
+        };
+        PlayerDOM.prototype.createWrapper = function () {
+            var element = document.createElement('div');
+            element.className = 'wgo-player';
+            element.tabIndex = 1;
+            element.addEventListener('wheel', this.handleMouseWheel);
+            return element;
+        };
+        PlayerDOM.prototype.hasFocus = function () {
+            var e_1, _a;
+            try {
+                for (var _b = __values(this.components.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var elem = _c.value;
+                    if (elem.firstChild === document.activeElement) {
+                        return true;
+                    }
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            return false;
+        };
+        return PlayerDOM;
+    }(PlayerBase));
+
     var Container = /** @class */ (function () {
         function Container(direction, children) {
             if (children === void 0) { children = []; }
@@ -4327,8 +4629,13 @@
         return Container;
     }());
 
+    var defaultConfig$1 = {
+        menuItems: [],
+    };
     var ControlPanel = /** @class */ (function () {
-        function ControlPanel() {
+        function ControlPanel(config) {
+            if (config === void 0) { config = {}; }
+            this.config = makeConfig(defaultConfig$1, config);
             this.update = this.update.bind(this);
         }
         ControlPanel.prototype.create = function (player) {
@@ -4374,18 +4681,20 @@
             this.last.innerHTML = '<span class="wgo-player__icon-to-end"></span>';
             this.last.addEventListener('click', function () { return _this.player.last(); });
             buttonGroup.appendChild(this.last);
-            var menuWrapper = document.createElement('div');
-            menuWrapper.className = 'wgo-player__menu-wrapper';
-            this.element.appendChild(menuWrapper);
-            var menuButton = document.createElement('button');
-            menuButton.type = 'button';
-            menuButton.className = 'wgo-player__button wgo-player__button--menu';
-            menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
-            menuWrapper.appendChild(menuButton);
-            var menu = document.createElement('div');
-            menu.className = 'wgo-player__menu';
-            this.createMenuItems(menu);
-            menuWrapper.appendChild(menu);
+            if (this.config.menuItems.length) {
+                var menuWrapper = document.createElement('div');
+                menuWrapper.className = 'wgo-player__menu-wrapper';
+                this.element.appendChild(menuWrapper);
+                var menuButton = document.createElement('button');
+                menuButton.type = 'button';
+                menuButton.className = 'wgo-player__button wgo-player__button--menu';
+                menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
+                menuWrapper.appendChild(menuButton);
+                var menu = document.createElement('div');
+                menu.className = 'wgo-player__menu';
+                this.createMenuItems(menu);
+                menuWrapper.appendChild(menu);
+            }
             this.player.on('applyNodeChanges', this.update);
             if (this.player.currentNode) {
                 this.update();
@@ -4415,41 +4724,71 @@
             }
         };
         ControlPanel.prototype.createMenuItems = function (menu) {
-            /*const changeableStateKeys = Object.keys(this.player.stateDefinitions).filter(
-              key => this.player.stateDefinitions[key].userCanChange,
-            );
-        
-            changeableStateKeys.forEach((key) => {
-              const definition = this.player.stateDefinitions[key];
-              const menuItemElement = document.createElement('a');
-              let value: boolean = definition.getValue();
-        
-              menuItemElement.className = 'wgo-player__menu-item';
-              menuItemElement.tabIndex = 0;
-              menuItemElement.textContent = definition.label;
-              menuItemElement.href = 'javascript: void(0)';
-        
-              if (value) {
-                menuItemElement.className += ' wgo-player__menu-item--checked';
-              }
-        
-              menuItemElement.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.player.emit(`${key}.change`, !value);
-                menuItemElement.blur();
-              });
-        
-              this.player.on(`${key}.change`, (newValue: boolean) => {
-                value = newValue;
-                if (newValue) {
-                  menuItemElement.className = 'wgo-player__menu-item wgo-player__menu-item--checked';
-                } else {
-                  menuItemElement.className = 'wgo-player__menu-item';
+            var _this = this;
+            this.config.menuItems.forEach(function (menuItem) {
+                var menuItemElement = document.createElement('a');
+                menuItemElement.className = 'wgo-player__menu-item';
+                menuItemElement.tabIndex = 0;
+                menuItemElement.textContent = menuItem.name;
+                menuItemElement.href = 'javascript: void(0)';
+                if (menuItem.defaultChecked) {
+                    menuItemElement.classList.add('wgo-player__menu-item--checked');
                 }
-              });
-        
-              menu.appendChild(menuItemElement);
-            });*/
+                menuItemElement.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var res = menuItem.fn.call(_this);
+                    if (menuItem.checkable) {
+                        if (!res) {
+                            menuItemElement.classList.remove('wgo-player__menu-item--checked');
+                        }
+                        else {
+                            menuItemElement.classList.add('wgo-player__menu-item--checked');
+                        }
+                    }
+                    menuItemElement.blur();
+                });
+                menu.appendChild(menuItemElement);
+            });
+        };
+        /**
+         * Some common menu items, probably just temporary.
+         */
+        ControlPanel.menuItems = {
+            /** Renders menu item with SGF download link */
+            download: {
+                name: 'Download SGF',
+                fn: function () {
+                    var name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+                    var sgf = this.player.rootNode.toSGF();
+                    var element = document.createElement('a');
+                    element.setAttribute('href', "data:application/x-go-sgf;charset=utf-8," + encodeURIComponent(sgf));
+                    element.setAttribute('download', name + ".sgf");
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                },
+            },
+            /** Renders menu item to toggle coordinates of SVGBoardComponent */
+            displayCoordinates: function (boardComponent) { return ({
+                name: 'Display coordinates',
+                fn: function () {
+                    boardComponent.setCoordinates(!boardComponent.config.coordinates);
+                    return boardComponent.config.coordinates;
+                },
+                checkable: true,
+                defaultChecked: boardComponent.config.coordinates,
+            }); },
+            /** Renders menu item to toggle edit mode (using EditMode plugin) */
+            editMode: function (editMode) { return ({
+                name: 'Edit mode',
+                fn: function () {
+                    editMode.setEnabled(!editMode.config.enabled);
+                    return editMode.config.enabled;
+                },
+                checkable: true,
+                defaultChecked: editMode.config.enabled,
+            }); },
         };
         return ControlPanel;
     }());
@@ -4696,9 +5035,8 @@
             var _this = this;
             event.value.forEach(function (value) {
                 // add markup
-                var boardMarkup = new BoardMarkupObject(event.propIdent, _this.player.game.getStone(value.x, value.y));
+                var boardMarkup = new BoardMarkupObject(event.propIdent, value.x, value.y, _this.player.game.getStone(value.x, value.y));
                 boardMarkup.zIndex = 10;
-                boardMarkup.setPosition(value.x, value.y);
                 _this.addTemporaryBoardObject(boardMarkup);
             });
         };
@@ -4706,9 +5044,8 @@
             var _this = this;
             event.value.forEach(function (value) {
                 // add markup
-                var boardMarkup = new BoardLabelObject(value.text, _this.player.game.getStone(value.x, value.y));
+                var boardMarkup = new BoardLabelObject(value.text, value.x, value.y, _this.player.game.getStone(value.x, value.y));
                 boardMarkup.zIndex = 10;
-                boardMarkup.setPosition(value.x, value.y);
                 _this.addTemporaryBoardObject(boardMarkup);
             });
         };
@@ -4918,14 +5255,14 @@
         return ResponsiveComponent;
     }());
 
-    var defaultConfig = {
+    var defaultConfig$2 = {
         formatMoves: true,
         formatNicks: true,
     };
     var CommentsBox = /** @class */ (function () {
         function CommentsBox(config) {
             if (config === void 0) { config = {}; }
-            this.config = makeConfig(defaultConfig, config);
+            this.config = makeConfig(defaultConfig$2, config);
             this.setComments = this.setComments.bind(this);
             this.clearComments = this.clearComments.bind(this);
         }
@@ -4959,11 +5296,10 @@
             this.commentsElement.innerHTML = this.formatComment(event.value);
             if (this.config.formatMoves) {
                 [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), function (link) {
-                    var boardObject = new BoardMarkupObject('MA');
+                    var point = coordinatesToPoint(link.textContent, _this.player.game.size);
+                    var boardObject = new BoardMarkupObject('MA', point.x, point.y, _this.player.game.getStone(point.x, point.y));
                     boardObject.zIndex = 20;
                     link.addEventListener('mouseenter', function () {
-                        var point = coordinatesToPoint(link.textContent);
-                        boardObject.setPosition(point.x, point.y);
                         _this.player.emit('board.addTemporaryObject', boardObject);
                     });
                     link.addEventListener('mouseleave', function () {
@@ -4991,39 +5327,47 @@
         };
         return CommentsBox;
     }());
-    function coordinatesToPoint(coordinates) {
+    function coordinatesToPoint(coordinates, boardSize) {
         var x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
         var y = parseInt(coordinates.substr(1), 10) - 1;
-        return { x: x, y: y };
+        return { x: x, y: boardSize - 1 - y };
     }
 
-    var gameInfoProperties = {
-        DT: 'Date',
-        KM: 'Komi',
-        HA: 'Handicap',
-        AN: 'Annotations',
-        CP: 'Copyright',
-        GC: 'Game comments',
-        GN: 'Game name',
-        ON: 'Fuseki',
-        OT: 'Overtime',
-        TM: 'Basic time',
-        RE: 'Result',
-        RO: 'Round',
-        RU: 'Rules',
-        US: 'Recorder',
-        PC: 'Place',
-        EV: 'Event',
-        SO: 'Source',
+    var defaultConfig$3 = {
+        gameInfoProperties: {
+            DT: 'Date',
+            KM: 'Komi',
+            HA: 'Handicap',
+            AN: 'Annotations',
+            CP: 'Copyright',
+            GC: 'Game comments',
+            GN: 'Game name',
+            ON: 'Fuseki',
+            OT: 'Overtime',
+            TM: 'Basic time',
+            RE: 'Result',
+            RO: 'Round',
+            RU: 'Rules',
+            US: 'Recorder',
+            PC: 'Place',
+            EV: 'Event',
+            SO: 'Source',
+        },
+        stretch: false,
     };
     var GameInfoBox = /** @class */ (function () {
-        function GameInfoBox() {
+        function GameInfoBox(config) {
+            if (config === void 0) { config = {}; }
+            this.config = makeConfig(defaultConfig$3, config);
             this.printInfo = this.printInfo.bind(this);
         }
         GameInfoBox.prototype.create = function (player) {
             this.player = player;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__box wgo-player__box--content';
+            if (this.config.stretch) {
+                this.element.className = this.element.className + " wgo-player__box--stretch";
+            }
             var title = document.createElement('div');
             title.innerHTML = 'Game information';
             title.className = 'wgo-player__box__title';
@@ -5045,7 +5389,7 @@
             row.dataset.propIdent = propIdent;
             this.infoTable.appendChild(row);
             var label = document.createElement('th');
-            label.textContent = gameInfoProperties[propIdent];
+            label.textContent = this.config.gameInfoProperties[propIdent];
             row.appendChild(label);
             var valueElement = document.createElement('td');
             valueElement.textContent = value;
@@ -5060,7 +5404,7 @@
             this.infoTable.innerHTML = '';
             if (this.player.rootNode) {
                 this.player.rootNode.forEachProperty(function (propIdent, value) {
-                    if (gameInfoProperties[propIdent]) {
+                    if (_this.config.gameInfoProperties[propIdent]) {
                         _this.addInfo(propIdent, value);
                     }
                 });
@@ -5139,115 +5483,6 @@
         return PlayerTag;
     }());
 
-    var defaultConfig$1 = {
-        enableMouseWheel: true,
-        enableKeys: true,
-    };
-    /**
-     * Player with support to render visual elements into the DOM.
-     */
-    var PlayerDOM = /** @class */ (function (_super) {
-        __extends(PlayerDOM, _super);
-        function PlayerDOM(config) {
-            if (config === void 0) { config = {}; }
-            var _this = _super.call(this) || this;
-            _this.components = new Map();
-            _this.handleResize = function () {
-                _this.emit('resize');
-            };
-            _this.handleMouseWheel = function (e) {
-                if (_this.config.enableMouseWheel) {
-                    if (e.deltaY > 0) {
-                        _this.next();
-                    }
-                    else if (e.deltaY < 0) {
-                        _this.previous();
-                    }
-                    e.preventDefault();
-                }
-            };
-            _this.handleKeydown = function (e) {
-                if (_this.config.enableKeys && _this.hasFocus()) {
-                    if (e.key === 'ArrowRight') {
-                        _this.next();
-                    }
-                    else if (e.key === 'ArrowLeft') {
-                        _this.previous();
-                    }
-                    return false;
-                }
-            };
-            _this.config = makeConfig(defaultConfig$1, config);
-            window.addEventListener('resize', _this.handleResize);
-            document.addEventListener('keydown', _this.handleKeydown);
-            return _this;
-        }
-        /**
-         * Renders PlayerDOM component into specified HTML element. If there is content inside that element
-         * it will be removed. Render method can be called multiple times - this allows to have player's component
-         * anywhere you want.
-         *
-         * @param component
-         * @param container
-         */
-        PlayerDOM.prototype.render = function (component, container) {
-            // clear content of the container
-            container.innerHTML = '';
-            // creates wrapper
-            var wrapper = this.createWrapper();
-            container.appendChild(wrapper);
-            // creates the component HTML element
-            var elem = component.create(this);
-            wrapper.appendChild(elem);
-            if (typeof component.didMount === 'function') {
-                component.didMount();
-            }
-            this.components.set(container, component);
-        };
-        /**
-         * Removes component rendered via `render` method. Call this to clean event listeners of the component.
-         *
-         * @param container
-         */
-        PlayerDOM.prototype.clear = function (container) {
-            var component = this.components.get(container);
-            if (component && typeof component.destroy === 'function') {
-                component.destroy();
-            }
-            var wrapper = container.firstChild;
-            wrapper.removeEventListener('wheel', this.handleMouseWheel);
-            container.removeChild(wrapper);
-            this.components.delete(container);
-        };
-        PlayerDOM.prototype.createWrapper = function () {
-            var element = document.createElement('div');
-            element.className = 'wgo-player';
-            element.tabIndex = 1;
-            element.addEventListener('wheel', this.handleMouseWheel);
-            return element;
-        };
-        PlayerDOM.prototype.hasFocus = function () {
-            var e_1, _a;
-            try {
-                for (var _b = __values(this.components.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var elem = _c.value;
-                    if (elem.firstChild === document.activeElement) {
-                        return true;
-                    }
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-            return false;
-        };
-        return PlayerDOM;
-    }(PlayerBase));
-
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;
     exports.BoardLineObject = BoardLineObject;
@@ -5258,6 +5493,7 @@
     exports.CommentsBox = CommentsBox;
     exports.Container = Container;
     exports.ControlPanel = ControlPanel;
+    exports.EditMode = EditMode;
     exports.FieldObject = FieldObject;
     exports.Game = Game;
     exports.GameInfoBox = GameInfoBox;
