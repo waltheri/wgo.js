@@ -10,15 +10,23 @@
 </head>
 <body>
   <div id="app"></div>
+  
   <script>
     window.$docsify = {
       name: 'WGo.js',
-      repo: '',
+      repo: 'https://github.com/waltheri/wgo.js',
       loadSidebar: true,
       subMaxLevel: 2,
     }
   </script>
-  <!-- Docsify v4 -->
+  
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-edit-on-github"></script>
+
+  <script>
+    window.$docsify.plugins = window.$docsify.plugins || [];
+    window.$docsify.plugins.push(EditOnGithubPlugin.create('https://github.com/waltheri/wgo.js/blob/gh-pages/'));
+  </script>
 </body>
 </html>
