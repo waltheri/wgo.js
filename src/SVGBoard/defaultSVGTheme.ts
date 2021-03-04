@@ -15,6 +15,11 @@ const defaultSVGTheme: SVGBoardTheme = {
     fontSize: 0.5,
   },
 
+  coordinatesTop: true,
+  coordinatesRight: true,
+  coordinatesBottom: true,
+  coordinatesLeft: true,
+
   grid: {
     ...defaultBoardBaseTheme.grid,
     linesWidth: 0.03,

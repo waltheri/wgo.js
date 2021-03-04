@@ -1,4 +1,5 @@
 import { SVGBoardComponent } from '.';
+import { PlayerBase } from '../../PlayerBase';
 import { EditMode } from '../../PlayerBase/plugins';
 import { PropIdent } from '../../SGFParser/sgfTypes';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
@@ -9,14 +10,14 @@ interface MenuItem {
   /** Title of the menu item. */
   name: string;
 
-  /** Function executed upon click. If checkable, should return new check state. */
-  fn(this: ControlPanel): boolean | void;
-
   /** If true, there can be check state of the menu item. */
   checkable?: boolean;
 
+  /** Function executed upon click. If checkable, should return new check state. */
+  handleClick(): boolean | void;
+
   /** If checkable, function which return initial check state. */
-  defaultChecked?(this: ControlPanel): boolean;
+  defaultChecked?(): boolean;
 }
 
 interface ControlPanelConfig {
@@ -149,14 +150,14 @@ export default class ControlPanel implements PlayerDOMComponent {
       menuItemElement.textContent = menuItem.name;
       menuItemElement.href = 'javascript: void(0)';
 
-      if (menuItem.defaultChecked) {
+      if (menuItem.defaultChecked && menuItem.defaultChecked()) {
         menuItemElement.classList.add('wgo-player__menu-item--checked');
       }
 
       menuItemElement.addEventListener('click', (e) => {
         e.preventDefault();
 
-        const res = menuItem.fn.call(this);
+        const res = menuItem.handleClick();
 
         if (menuItem.checkable) {
           if (!res) {
@@ -178,11 +179,11 @@ export default class ControlPanel implements PlayerDOMComponent {
    */
   static menuItems = {
     /** Renders menu item with SGF download link */
-    download: {
+    download: (player: PlayerBase) => ({
       name: 'Download SGF',
-      fn(this: ControlPanel) {
-        const name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-        const sgf = this.player.rootNode.toSGF();
+      handleClick() {
+        const name = player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+        const sgf = player.rootNode.toSGF();
 
         const element = document.createElement('a');
         element.setAttribute('href', `data:application/x-go-sgf;charset=utf-8,${encodeURIComponent(sgf)}`);
@@ -195,28 +196,28 @@ export default class ControlPanel implements PlayerDOMComponent {
 
         document.body.removeChild(element);
       },
-    },
+    }),
 
     /** Renders menu item to toggle coordinates of SVGBoardComponent */
     displayCoordinates: (boardComponent: SVGBoardComponent) => ({
       name: 'Display coordinates',
-      fn(this: ControlPanel) {
+      checkable: true,
+      handleClick() {
         boardComponent.setCoordinates(!boardComponent.config.coordinates);
         return boardComponent.config.coordinates;
       },
-      checkable: true,
-      defaultChecked: boardComponent.config.coordinates,
+      defaultChecked: () => boardComponent.config.coordinates,
     }),
 
     /** Renders menu item to toggle edit mode (using EditMode plugin) */
     editMode: (editMode: EditMode) => ({
       name: 'Edit mode',
-      fn() {
+      checkable: true,
+      handleClick() {
         editMode.setEnabled(!editMode.config.enabled);
         return editMode.config.enabled;
       },
-      checkable: true,
-      defaultChecked: editMode.config.enabled,
+      defaultChecked: () => editMode.config.enabled,
     }),
   };
 }

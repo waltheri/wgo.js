@@ -1,4 +1,4 @@
-import { SVGBoardConfig, NS } from '../types';
+import { SVGBoardConfig, NS, OBJECTS, SHADOWS } from '../types';
 import SVGStoneDrawHandler from './SVGStoneDrawHandler';
 import generateId from '../generateId';
 
@@ -58,6 +58,9 @@ export default class GlassStoneWhite extends SVGStoneDrawHandler {
     glow2.setAttribute('fill', `url(#${this.filterElement2.id})`);
     stoneGroup.appendChild(glow2);
 
-    return stoneGroup;
+    return {
+      [OBJECTS]: stoneGroup,
+      [SHADOWS]: this.createShadow(config, addDef),
+    };
   }
 }

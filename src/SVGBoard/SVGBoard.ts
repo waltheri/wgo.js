@@ -237,14 +237,15 @@ export default class SVGBoard extends BoardBase {
     super.setViewport(viewport);
 
     const { coordinates, theme, size } = this.config;
-    const { marginSize } = theme;
+    const { marginSize, coordinatesTop, coordinatesLeft, coordinatesBottom, coordinatesRight } = theme;
     const { fontSize } = theme.coordinates;
 
-    this.top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
-    this.left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
+    this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
+    this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;
     // tslint:disable-next-line:max-line-length
-    this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
-    this.right = size - 0.5 - this.left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
+    this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
+    // tslint:disable-next-line:max-line-length
+    this.right = size - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
     this.svgElement.setAttribute('viewBox', `${this.left} ${this.top} ${this.right} ${this.bottom}`);
   }
 

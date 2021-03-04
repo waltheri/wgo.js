@@ -1747,10 +1747,18 @@
         }
         coordinates.setAttribute('fill', config.theme.coordinates.color);
         for (var i = 0; i < config.size; i++) {
-            coordinates.appendChild(letter(i, -0.75, config.coordinateLabelsX[i]));
-            coordinates.appendChild(letter(i, config.size - 0.25, config.coordinateLabelsX[i]));
-            coordinates.appendChild(letter(-0.75, config.size - i - 1, config.coordinateLabelsY[i]));
-            coordinates.appendChild(letter(config.size - 0.25, config.size - i - 1, config.coordinateLabelsY[i]));
+            if (config.theme.coordinatesTop) {
+                coordinates.appendChild(letter(i, -0.75, config.coordinateLabelsX[i]));
+            }
+            if (config.theme.coordinatesBottom) {
+                coordinates.appendChild(letter(i, config.size - 0.25, config.coordinateLabelsX[i]));
+            }
+            if (config.theme.coordinatesLeft) {
+                coordinates.appendChild(letter(-0.75, config.size - i - 1, config.coordinateLabelsY[i]));
+            }
+            if (config.theme.coordinatesRight) {
+                coordinates.appendChild(letter(config.size - 0.25, config.size - i - 1, config.coordinateLabelsY[i]));
+            }
         }
         return coordinates;
     }
@@ -1829,6 +1837,7 @@
             return _super !== null && _super.apply(this, arguments) || this;
         }
         GlassStoneBlack.prototype.createElement = function (config, addDef) {
+            var _a;
             _super.prototype.createElement.call(this, config, addDef);
             if (!this.filterElement) {
                 var filter = document.createElementNS(NS, 'filter');
@@ -1865,7 +1874,10 @@
             glow2.setAttribute('fill', '#fff');
             glow2.setAttribute('filter', "url(#" + this.filterElement.id + ")");
             stoneGroup.appendChild(glow2);
-            return stoneGroup;
+            return _a = {},
+                _a[OBJECTS] = stoneGroup,
+                _a[SHADOWS] = this.createShadow(config, addDef),
+                _a;
         };
         return GlassStoneBlack;
     }(SVGStoneDrawHandler));
@@ -1876,6 +1888,7 @@
             return _super !== null && _super.apply(this, arguments) || this;
         }
         GlassStoneWhite.prototype.createElement = function (config, addDef) {
+            var _a;
             _super.prototype.createElement.call(this, config, addDef);
             if (!this.filterElement1) {
                 var filter1 = document.createElementNS(NS, 'radialGradient');
@@ -1912,7 +1925,10 @@
             glow2.setAttribute('r', config.theme.stoneSize);
             glow2.setAttribute('fill', "url(#" + this.filterElement2.id + ")");
             stoneGroup.appendChild(glow2);
-            return stoneGroup;
+            return _a = {},
+                _a[OBJECTS] = stoneGroup,
+                _a[SHADOWS] = this.createShadow(config, addDef),
+                _a;
         };
         return GlassStoneWhite;
     }(SVGStoneDrawHandler));
@@ -2351,7 +2367,7 @@
 
     var defaultSVGTheme = __assign(__assign({}, defaultBoardBaseTheme), { 
         // backgroundImage: 'images/wood1.jpg',
-        markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign(__assign({}, defaultBoardBaseTheme.coordinates), { fontSize: 0.5 }), grid: __assign(__assign({}, defaultBoardBaseTheme.grid), { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
+        markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign(__assign({}, defaultBoardBaseTheme.coordinates), { fontSize: 0.5 }), coordinatesTop: true, coordinatesRight: true, coordinatesBottom: true, coordinatesLeft: true, grid: __assign(__assign({}, defaultBoardBaseTheme.grid), { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
             CR: new Circle$1(),
             SQ: new Square$1(),
             LB: new Label$1(),
@@ -2546,13 +2562,14 @@
             if (viewport === void 0) { viewport = this.config.viewport; }
             _super.prototype.setViewport.call(this, viewport);
             var _a = this.config, coordinates = _a.coordinates, theme = _a.theme, size = _a.size;
-            var marginSize = theme.marginSize;
+            var marginSize = theme.marginSize, coordinatesTop = theme.coordinatesTop, coordinatesLeft = theme.coordinatesLeft, coordinatesBottom = theme.coordinatesBottom, coordinatesRight = theme.coordinatesRight;
             var fontSize = theme.coordinates.fontSize;
-            this.top = viewport.top - 0.5 - (coordinates && !viewport.top ? fontSize : 0) - marginSize;
-            this.left = viewport.left - 0.5 - (coordinates && !viewport.left ? fontSize : 0) - marginSize;
+            this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
+            this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;
             // tslint:disable-next-line:max-line-length
-            this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && !viewport.bottom ? fontSize : 0) + marginSize;
-            this.right = size - 0.5 - this.left - viewport.right + (coordinates && !viewport.right ? fontSize : 0) + marginSize;
+            this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
+            // tslint:disable-next-line:max-line-length
+            this.right = size - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
             this.svgElement.setAttribute('viewBox', this.left + " " + this.top + " " + this.right + " " + this.bottom);
         };
         SVGBoard.prototype.setSize = function (size) {
@@ -4724,19 +4741,18 @@
             }
         };
         ControlPanel.prototype.createMenuItems = function (menu) {
-            var _this = this;
             this.config.menuItems.forEach(function (menuItem) {
                 var menuItemElement = document.createElement('a');
                 menuItemElement.className = 'wgo-player__menu-item';
                 menuItemElement.tabIndex = 0;
                 menuItemElement.textContent = menuItem.name;
                 menuItemElement.href = 'javascript: void(0)';
-                if (menuItem.defaultChecked) {
+                if (menuItem.defaultChecked && menuItem.defaultChecked()) {
                     menuItemElement.classList.add('wgo-player__menu-item--checked');
                 }
                 menuItemElement.addEventListener('click', function (e) {
                     e.preventDefault();
-                    var res = menuItem.fn.call(_this);
+                    var res = menuItem.handleClick();
                     if (menuItem.checkable) {
                         if (!res) {
                             menuItemElement.classList.remove('wgo-player__menu-item--checked');
@@ -4755,11 +4771,11 @@
          */
         ControlPanel.menuItems = {
             /** Renders menu item with SGF download link */
-            download: {
+            download: function (player) { return ({
                 name: 'Download SGF',
-                fn: function () {
-                    var name = this.player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-                    var sgf = this.player.rootNode.toSGF();
+                handleClick: function () {
+                    var name = player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+                    var sgf = player.rootNode.toSGF();
                     var element = document.createElement('a');
                     element.setAttribute('href', "data:application/x-go-sgf;charset=utf-8," + encodeURIComponent(sgf));
                     element.setAttribute('download', name + ".sgf");
@@ -4768,26 +4784,26 @@
                     element.click();
                     document.body.removeChild(element);
                 },
-            },
+            }); },
             /** Renders menu item to toggle coordinates of SVGBoardComponent */
             displayCoordinates: function (boardComponent) { return ({
                 name: 'Display coordinates',
-                fn: function () {
+                checkable: true,
+                handleClick: function () {
                     boardComponent.setCoordinates(!boardComponent.config.coordinates);
                     return boardComponent.config.coordinates;
                 },
-                checkable: true,
-                defaultChecked: boardComponent.config.coordinates,
+                defaultChecked: function () { return boardComponent.config.coordinates; },
             }); },
             /** Renders menu item to toggle edit mode (using EditMode plugin) */
             editMode: function (editMode) { return ({
                 name: 'Edit mode',
-                fn: function () {
+                checkable: true,
+                handleClick: function () {
                     editMode.setEnabled(!editMode.config.enabled);
                     return editMode.config.enabled;
                 },
-                checkable: true,
-                defaultChecked: editMode.config.enabled,
+                defaultChecked: function () { return editMode.config.enabled; },
             }); },
         };
         return ControlPanel;
