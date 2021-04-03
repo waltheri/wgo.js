@@ -91,11 +91,11 @@
   font-size: 0.66em;
 }
 
-.wgo-player__player-tag__name__rank::before {
+.wgo-player__player-tag__name__rank:not(:empty)::before {
   content: ' (';
 }
 
-.wgo-player__player-tag__name__rank::after {
+.wgo-player__player-tag__name__rank:not(:empty)::after {
   content: ')';
 }
 

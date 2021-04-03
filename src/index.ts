@@ -2,6 +2,7 @@
 
 export { default as SGFParser, SGFSyntaxError } from './SGFParser';
 export { default as CanvasBoard } from './CanvasBoard';
+export { default as SimplePlayer } from './SimplePlayer';
 export * from './BoardBase';
 export * from './CanvasBoard';
 export * from './SVGBoard';

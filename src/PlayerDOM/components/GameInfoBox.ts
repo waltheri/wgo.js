@@ -2,12 +2,12 @@ import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
 
-interface GameInfoBoxConfig {
+export interface GameInfoBoxConfig {
   gameInfoProperties: { [key: string]: string };
   stretch: boolean;
 }
 
-const defaultConfig = {
+export const gameInfoBoxDefaultConfig = {
   gameInfoProperties: {
     DT: 'Date',
     KM: 'Komi',
@@ -37,12 +37,9 @@ export default class GameInfoBox implements PlayerDOMComponent {
   config: GameInfoBoxConfig;
 
   constructor(config: PartialRecursive<GameInfoBoxConfig> = {}) {
-    this.config = makeConfig(defaultConfig, config);
+    this.config = makeConfig(gameInfoBoxDefaultConfig, config);
     this.printInfo = this.printInfo.bind(this);
-  }
 
-  create(player: PlayerDOM) {
-    this.player = player;
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content';
 
@@ -58,18 +55,17 @@ export default class GameInfoBox implements PlayerDOMComponent {
     this.infoTable = document.createElement('table');
     this.infoTable.className = 'wgo-player__box__game-info';
     this.element.appendChild(this.infoTable);
-
-    this.player.on('beforeInit', this.printInfo);
-
-    return this.element;
   }
 
-  didMount() {
+  create(player: PlayerDOM) {
+    this.player = player;
+    this.player.on('beforeInit', this.printInfo);
     this.printInfo();
   }
 
   destroy() {
     this.player.off('beforeInit', this.printInfo);
+    this.player = null;
   }
 
   addInfo(propIdent: string, value: string) {

@@ -32,7 +32,8 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     boardMouseX: number;
     boardMouseY: number;
     constructor(config?: PartialRecursive<SVGBoardComponentConfig>);
-    create(player: PlayerDOM): HTMLElement;
+    createDOM(): void;
+    create(player: PlayerDOM): void;
     destroy(): void;
     protected updateStones(): void;
     protected addVariationMarkup(): void;

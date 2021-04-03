@@ -1,17 +1,21 @@
 import { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
-interface CommentBoxConfig {
+export interface CommentBoxConfig {
     formatMoves: boolean;
     formatNicks: boolean;
 }
+export declare const commentBoxDefaultConfig: {
+    formatMoves: boolean;
+    formatNicks: boolean;
+};
 export default class CommentsBox implements PlayerDOMComponent {
     element: HTMLElement;
     commentsElement: HTMLElement;
     player: PlayerDOM;
     config: CommentBoxConfig;
     constructor(config?: PartialRecursive<CommentBoxConfig>);
-    create(player: PlayerDOM): HTMLElement;
+    create(player: PlayerDOM): void;
     destroy(): void;
     setComments(event: {
         value: string;
@@ -19,4 +23,3 @@ export default class CommentsBox implements PlayerDOMComponent {
     clearComments(): void;
     formatComment(text: string): string;
 }
-export {};

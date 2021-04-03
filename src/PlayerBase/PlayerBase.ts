@@ -18,6 +18,7 @@ export default class PlayerBase extends EventEmitter {
   constructor() {
     super();
 
+    this.loadKifu(new KifuNode());
     this.plugins = [];
 
     this.on('beforeInit.SZ', basePropertyListeners.beforeInitSZ);

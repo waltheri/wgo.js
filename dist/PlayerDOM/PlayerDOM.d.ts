@@ -1,11 +1,16 @@
 import { PlayerBase } from '../PlayerBase';
 import { PartialRecursive } from '../utils/makeConfig';
 import PlayerDOMComponent from './components/PlayerDOMComponent';
-interface PlayerDOMConfig {
+export interface PlayerDOMConfig {
     enableMouseWheel: boolean;
     enableKeys: boolean;
     fastReplay: number;
 }
+export declare const playerDOMDefaultConfig: {
+    enableMouseWheel: boolean;
+    enableKeys: boolean;
+    fastReplay: number;
+};
 /**
  * Player with support to render visual elements into the DOM.
  */
@@ -37,4 +42,3 @@ export default class PlayerDOM extends PlayerBase {
     private handleKeyup;
     private hasFocus;
 }
-export {};

@@ -27,7 +27,8 @@ export default class ControlPanel implements PlayerDOMComponent {
     last: HTMLButtonElement;
     config: ControlPanelConfig;
     constructor(config?: PartialRecursive<ControlPanelConfig>);
-    create(player: PlayerDOM): HTMLElement;
+    createDOM(): void;
+    create(player: PlayerDOM): void;
     destroy(): void;
     update(): void;
     createMenuItems(menu: HTMLElement): void;

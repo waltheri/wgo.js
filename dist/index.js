@@ -1687,6 +1687,1842 @@
         return CanvasBoard;
     }(BoardBase));
 
+    /**
+     * From SGF specification, there are these types of property values:
+     *
+     * CValueType = (ValueType | *Compose*)
+     * ValueType  = (*None* | *Number* | *Real* | *Double* | *Color* | *SimpleText* | *Text* | *Point*  | *Move* | *Stone*)
+     *
+     * WGo's kifu node (KNode object) implements similar types with few exceptions:
+     *
+     * - Types `Number`, `Real` and `Double` are implemented by javascript's `number`.
+     * - Types `SimpleText` and `Text` are considered as the same.
+     * - Types `Point`, `Move` and `Stone` are all the same, implemented as simple object with `x` and `y` coordinates.
+     * - Type `None` is implemented as `true`
+     *
+     * Each `Compose` type, which is used in SGF, has its own type.
+     *
+     * - `Point ':' Point` (used in AR property) has special type `Line` - object with two sets of coordinates.
+     * - `Point ':' Simpletext` (used in LB property) has special type `Label` - object with coordinates and text property
+     * - `Simpletext ":" Simpletext` (used in AP property) - not implemented
+     * - `Number ":" SimpleText` (used in FG property) - not implemented
+     *
+     * Moreover each property value has these settings:
+     *
+     * - *Single value* / *Array* (more values)
+     * - *Not empty* / *Empty* (value or array can be empty)
+     *
+     * {@link http://www.red-bean.com/sgf/sgf4.html}
+     */
+    var NONE = {
+        read: function (str) { return true; },
+        write: function (value) { return ''; },
+    };
+    var NUMBER = {
+        read: function (str) { return parseFloat(str); },
+        write: function (value) { return value.toString(10); },
+    };
+    var TEXT = {
+        read: function (str) { return str; },
+        write: function (value) { return value; },
+    };
+    var COLOR = {
+        read: function (str) { return (str === 'w' || str === 'W' ? exports.Color.WHITE : exports.Color.BLACK); },
+        write: function (value) { return (value === exports.Color.WHITE ? 'W' : 'B'); },
+    };
+    var POINT = {
+        read: function (str) { return str ? {
+            x: str.charCodeAt(0) - 97,
+            y: str.charCodeAt(1) - 97,
+        } : null; },
+        write: function (value) { return value ? String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) : ''; },
+    };
+    var LABEL = {
+        read: function (str) { return ({
+            x: str.charCodeAt(0) - 97,
+            y: str.charCodeAt(1) - 97,
+            text: str.substr(3),
+        }); },
+        write: function (value) { return (String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) + ":" + value.text); },
+    };
+    var VECTOR = {
+        read: function (str) { return str ? [
+            {
+                x: str.charCodeAt(0) - 97,
+                y: str.charCodeAt(1) - 97,
+            },
+            {
+                x: str.charCodeAt(3) - 97,
+                y: str.charCodeAt(4) - 97,
+            },
+        ] : null; },
+        write: function (value) { return (
+        // tslint:disable-next-line:max-line-length
+        value ? String.fromCharCode(value[0].x + 97) + String.fromCharCode(value[0].y + 97) + ":" + (String.fromCharCode(value[1].x + 97) + String.fromCharCode(value[1].y + 97)) : ''); },
+    };
+    var propertyValueTypes = {
+        _default: {
+            transformer: TEXT,
+            multiple: false,
+            notEmpty: true,
+        },
+    };
+    /// Move properties -------------------------------------------------------------------------------
+    propertyValueTypes.B = propertyValueTypes.W = {
+        transformer: POINT,
+        multiple: false,
+        notEmpty: false,
+    };
+    propertyValueTypes.KO = {
+        transformer: NONE,
+        multiple: false,
+        notEmpty: false,
+    };
+    propertyValueTypes.MN = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Setup properties ------------------------------------------------------------------------------
+    propertyValueTypes.AB = propertyValueTypes.AW = propertyValueTypes.AE = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.PL = {
+        transformer: COLOR,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Node annotation properties --------------------------------------------------------------------
+    propertyValueTypes.C = propertyValueTypes.N = {
+        transformer: TEXT,
+        multiple: false,
+        notEmpty: true,
+    };
+    // tslint:disable-next-line:max-line-length
+    propertyValueTypes.DM = propertyValueTypes.GB = propertyValueTypes.GW = propertyValueTypes.HO = propertyValueTypes.UC = propertyValueTypes.V = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Move annotation properties --------------------------------------------------------------------
+    propertyValueTypes.BM = propertyValueTypes.TE = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    propertyValueTypes.DO = propertyValueTypes.IT = {
+        transformer: NONE,
+        multiple: false,
+        notEmpty: false,
+    };
+    /// Markup properties -----------------------------------------------------------------------------
+    // tslint:disable-next-line:max-line-length
+    propertyValueTypes.CR = propertyValueTypes.MA = propertyValueTypes.SL = propertyValueTypes.SQ = propertyValueTypes.TR = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.LB = {
+        transformer: LABEL,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.AR = propertyValueTypes.LN = {
+        transformer: VECTOR,
+        multiple: true,
+        notEmpty: true,
+    };
+    propertyValueTypes.DD = propertyValueTypes.TB = propertyValueTypes.TW = {
+        transformer: POINT,
+        multiple: true,
+        notEmpty: false,
+    };
+    /// Root properties -------------------------------------------------------------------------------
+    propertyValueTypes.AP = propertyValueTypes.CA = {
+        transformer: TEXT,
+        multiple: false,
+        notEmpty: true,
+    };
+    // note: rectangular board is not implemented (in SZ property)
+    propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = propertyValueTypes.SZ = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Game info properties --------------------------------------------------------------------------
+    propertyValueTypes.AN = propertyValueTypes.BR = propertyValueTypes.BT =
+        propertyValueTypes.CP = propertyValueTypes.DT = propertyValueTypes.EV =
+            propertyValueTypes.GN = propertyValueTypes.GC = propertyValueTypes.GN =
+                propertyValueTypes.ON = propertyValueTypes.OT = propertyValueTypes.PB =
+                    propertyValueTypes.PC = propertyValueTypes.PW = propertyValueTypes.RE =
+                        propertyValueTypes.RO = propertyValueTypes.RU = propertyValueTypes.SO =
+                            propertyValueTypes.US = propertyValueTypes.WR = propertyValueTypes.WT = {
+                                transformer: TEXT,
+                                multiple: false,
+                                notEmpty: true,
+                            };
+    propertyValueTypes.TM = propertyValueTypes.HA = propertyValueTypes.KM = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Timing properties -----------------------------------------------------------------------------
+    propertyValueTypes.BL = propertyValueTypes.WL = propertyValueTypes.OB = propertyValueTypes.OW = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    /// Miscellaneous properties ----------------------------------------------------------------------
+    propertyValueTypes.PM = {
+        transformer: NUMBER,
+        multiple: false,
+        notEmpty: true,
+    };
+    // VW property must be specified as compressed list (ab:cd) and only one value is allowed
+    // empty value [] will reset the viewport. Other options are not supported.
+    propertyValueTypes.VW = {
+        transformer: VECTOR,
+        multiple: false,
+        notEmpty: true,
+    };
+
+    var processJSGF = function (gameTree, rootNode) {
+        rootNode.setSGFProperties(gameTree.sequence[0] || {});
+        var lastNode = rootNode;
+        for (var i = 1; i < gameTree.sequence.length; i++) {
+            var node = new KifuNode();
+            node.setSGFProperties(gameTree.sequence[i]);
+            lastNode.appendChild(node);
+            lastNode = node;
+        }
+        for (var i = 0; i < gameTree.children.length; i++) {
+            lastNode.appendChild(processJSGF(gameTree.children[i], new KifuNode()));
+        }
+        return rootNode;
+    };
+    // Characters, which has to be escaped when transforming to SGF
+    var escapeCharacters = ['\\\\', '\\]'];
+    var escapeSGFValue = function (value) {
+        return escapeCharacters.reduce(function (prev, current) { return prev.replace(new RegExp(current, 'g'), current); }, value);
+    };
+    /**
+     * Class representing one kifu node.
+     */
+    var KifuNode = /** @class */ (function () {
+        function KifuNode() {
+            this.parent = null;
+            this.children = [];
+            this.properties = {};
+        }
+        Object.defineProperty(KifuNode.prototype, "root", {
+            get: function () {
+                // tslint:disable-next-line:no-this-assignment
+                var node = this;
+                while (node.parent != null) {
+                    node = node.parent;
+                }
+                return node;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(KifuNode.prototype, "innerSGF", {
+            /**
+             * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
+             */
+            get: function () {
+                var output = ';';
+                for (var propIdent in this.properties) {
+                    if (this.properties.hasOwnProperty(propIdent)) {
+                        output += propIdent + "[" + this.getSGFProperty(propIdent).map(escapeSGFValue).join('][') + "]";
+                    }
+                }
+                if (this.children.length === 1) {
+                    return "" + output + this.children[0].innerSGF;
+                }
+                if (this.children.length > 1) {
+                    return this.children.reduce(function (prev, current) { return prev + "(" + current.innerSGF + ")"; }, output);
+                }
+                return output;
+            },
+            set: function (sgf) {
+                // clean up
+                this.clean();
+                var transformedSgf = sgf;
+                // create regular SGF from sgf-like string
+                if (transformedSgf[0] !== '(') {
+                    if (transformedSgf[0] !== ';') {
+                        transformedSgf = ";" + transformedSgf;
+                    }
+                    transformedSgf = "(" + transformedSgf + ")";
+                }
+                KifuNode.fromSGF(transformedSgf, 0, this);
+            },
+            enumerable: false,
+            configurable: true
+        });
+        KifuNode.prototype.getPath = function () {
+            var path = { depth: 0, forks: [] };
+            // tslint:disable-next-line:no-this-assignment
+            var node = this;
+            while (node.parent) {
+                path.depth++;
+                if (node.parent.children.length > 1) {
+                    path.forks.unshift(node.parent.children.indexOf(node));
+                }
+                node = node.parent;
+            }
+            return path;
+        };
+        /// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)
+        /**
+         * Insert a KNode as the last child node of this node.
+         *
+         * @throws  {Error} when argument is invalid.
+         * @param   {KifuNode} node to append.
+         * @returns {number} position(index) of appended node.
+         */
+        KifuNode.prototype.appendChild = function (node) {
+            if (node == null || !(node instanceof KifuNode) || node === this) {
+                throw new Error('Invalid argument passed to `appendChild` method, KNode was expected.');
+            }
+            if (node.parent) {
+                node.parent.removeChild(node);
+            }
+            node.parent = this;
+            return this.children.push(node) - 1;
+        };
+        /**
+         * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
+         *
+         * @param   {KifuNode}   node to be tested
+         * @returns {boolean} true, if this node contains given node.
+         */
+        KifuNode.prototype.contains = function (node) {
+            if (this.children.indexOf(node) >= 0) {
+                return true;
+            }
+            return this.children.some(function (child) { return child.contains(node); });
+        };
+        /**
+         * Inserts the first KNode given in a parameter immediately before the second, child of this KNode.
+         *
+         * @throws  {Error}   when argument is invalid.
+         * @param   {KifuNode}   newNode       node to be inserted
+         * @param   {(KifuNode)} referenceNode reference node, if omitted, new node will be inserted at the end.
+         * @returns {KifuNode}   this node
+         */
+        KifuNode.prototype.insertBefore = function (newNode, referenceNode) {
+            if (newNode == null || !(newNode instanceof KifuNode) || newNode === this) {
+                throw new Error('Invalid argument passed to `insertBefore` method, KNode was expected.');
+            }
+            if (referenceNode == null) {
+                this.appendChild(newNode);
+                return this;
+            }
+            if (newNode.parent) {
+                newNode.parent.removeChild(newNode);
+            }
+            newNode.parent = this;
+            this.children.splice(this.children.indexOf(referenceNode), 0, newNode);
+            return this;
+        };
+        /**
+         * Removes a child node from the current element, which must be a child of the current node.
+         *
+         * @param   {KifuNode} child node to be removed
+         * @returns {KifuNode}  this node
+         */
+        KifuNode.prototype.removeChild = function (child) {
+            this.children.splice(this.children.indexOf(child), 1);
+            child.parent = null;
+            return this;
+        };
+        /**
+         * Replaces one child Node of the current one with the second one given in parameter.
+         *
+         * @throws  {Error} when argument is invalid
+         * @param   {KifuNode} newChild node to be inserted
+         * @param   {KifuNode} oldChild node to be replaced
+         * @returns {KifuNode} this node
+         */
+        KifuNode.prototype.replaceChild = function (newChild, oldChild) {
+            if (newChild == null || !(newChild instanceof KifuNode) || newChild === this) {
+                throw new Error('Invalid argument passed to `replaceChild` method, KNode was expected.');
+            }
+            this.insertBefore(newChild, oldChild);
+            this.removeChild(oldChild);
+            return this;
+        };
+        /**
+         * Remove all properties and children. Parent will remain.
+         */
+        KifuNode.prototype.clean = function () {
+            for (var i = this.children.length - 1; i >= 0; i--) {
+                this.removeChild(this.children[i]);
+            }
+            this.properties = {};
+        };
+        /// BASIC PROPERTY GETTER and SETTER
+        /**
+         * Gets property by SGF property identificator. Returns property value (type depends on property type)
+         *
+         * @param   {string}   propIdent - SGF property idetificator
+         * @returns {any}    property value or values or undefined, if property is missing.
+         */
+        KifuNode.prototype.getProperty = function (propIdent) {
+            return this.properties[propIdent];
+        };
+        /**
+         * Sets property by SGF property identificator.
+         *
+         * @param   {string}  propIdent - SGF property idetificator
+         * @param   {any}     value - property value or values
+         */
+        KifuNode.prototype.setProperty = function (propIdent, value) {
+            if (value === undefined) {
+                delete this.properties[propIdent];
+            }
+            else {
+                this.properties[propIdent] = value;
+            }
+            return this;
+        };
+        /**
+         * Alias for `setProperty` without second parameter.
+         * @param propIdent
+         */
+        KifuNode.prototype.removeProperty = function (propIdent) {
+            this.setProperty(propIdent);
+        };
+        /**
+         * Iterates through all properties.
+         */
+        KifuNode.prototype.forEachProperty = function (callback) {
+            var _this = this;
+            Object.keys(this.properties).forEach(function (propIdent) { return callback(propIdent, _this.properties[propIdent]); });
+        };
+        /// SGF RAW METHODS
+        /**
+         * Gets one SGF property value as string (with brackets `[` and `]`).
+         *
+         * @param   {string} propIdent SGF property identificator.
+         * @returns {string[]} Array of SGF property values or null if there is not such property.
+         */
+        KifuNode.prototype.getSGFProperty = function (propIdent) {
+            if (this.properties[propIdent] !== undefined) {
+                var propertyValueType_1 = propertyValueTypes[propIdent] || propertyValueTypes._default;
+                if (propertyValueType_1.multiple) {
+                    return this.properties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue); });
+                }
+                return [propertyValueType_1.transformer.write(this.properties[propIdent])];
+            }
+            return null;
+        };
+        /**
+         * Sets one SGF property.
+         *
+         * @param   {string}   propIdent SGF property identificator
+         * @param   {string[]} propValues SGF property values
+         * @returns {KifuNode}    this KNode for chaining
+         */
+        KifuNode.prototype.setSGFProperty = function (propIdent, propValues) {
+            var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
+            if (propValues === undefined) {
+                delete this.properties[propIdent];
+                return this;
+            }
+            if (propertyValueType.multiple) {
+                this.properties[propIdent] = propValues.map(function (val) { return propertyValueType.transformer.read(val); });
+            }
+            else {
+                this.properties[propIdent] = propertyValueType.transformer.read(propValues[0]);
+            }
+            return this;
+        };
+        /**
+         * Sets multiple SGF properties.
+         *
+         * @param   {Object}   properties - map with signature propIdent -> propValues.
+         * @returns {KifuNode}    this KNode for chaining
+         */
+        KifuNode.prototype.setSGFProperties = function (properties) {
+            for (var ident in properties) {
+                if (properties.hasOwnProperty(ident)) {
+                    this.setSGFProperty(ident, properties[ident]);
+                }
+            }
+            return this;
+        };
+        /**
+         * Transforms KNode object to standard SGF string.
+         */
+        KifuNode.prototype.toSGF = function () {
+            return "(" + this.innerSGF + ")";
+        };
+        /**
+         * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
+         */
+        KifuNode.prototype.cloneNode = function (appendToParent) {
+            var node = new KifuNode();
+            var properties = JSON.parse(JSON.stringify(this.properties));
+            node.properties = properties;
+            this.children.forEach(function (child) {
+                node.appendChild(child.cloneNode());
+            });
+            if (appendToParent && this.parent) {
+                this.parent.appendChild(node);
+            }
+            return node;
+        };
+        /**
+         * Creates KNode object from SGF transformed to JavaScript object.
+         *
+         * @param gameTree
+         */
+        KifuNode.fromJS = function (gameTree, kifuNode) {
+            if (kifuNode === void 0) { kifuNode = new KifuNode(); }
+            return processJSGF(gameTree, kifuNode);
+        };
+        /**
+         * Creates KNode object from SGF string.
+         *
+         * @param sgf
+         * @param gameNo
+         */
+        KifuNode.fromSGF = function (sgf, gameNo, kifuNode) {
+            if (gameNo === void 0) { gameNo = 0; }
+            if (kifuNode === void 0) { kifuNode = new KifuNode(); }
+            var parser = new SGFParser(sgf);
+            return KifuNode.fromJS(parser.parseCollection()[gameNo], kifuNode);
+        };
+        return KifuNode;
+    }());
+
+    /**
+     * WGo's game engine offers to set 3 rules:
+     *
+     * - *checkRepeat* - one of `repeat.KO`, `repeat.ALL`, `repeat.NONE` - defines if or when a move can be repeated.
+     * - *allowRewrite* - if set true a move can rewrite existing move (for uncommon applications)
+     * - *allowSuicide* - if set true a suicide will be allowed (and stone will be immediately captured)
+     *
+     * In this module there are some common preset rule sets (Japanese, Chinese etc...).
+     * Extend object `gameRules` if you wish to add some rule set. Names of the rules should correspond with
+     * SGF `RU` property.
+     */
+    (function (Repeating) {
+        Repeating["KO"] = "KO";
+        Repeating["ALL"] = "ALL";
+        Repeating["NONE"] = "NONE";
+    })(exports.Repeating || (exports.Repeating = {}));
+    var JAPANESE_RULES = {
+        repeating: exports.Repeating.KO,
+        allowRewrite: false,
+        allowSuicide: false,
+        komi: 6.5,
+    };
+    var CHINESE_RULES = {
+        repeating: exports.Repeating.NONE,
+        allowRewrite: false,
+        allowSuicide: false,
+        komi: 7.5,
+    };
+    var ING_RULES = {
+        repeating: exports.Repeating.NONE,
+        allowRewrite: false,
+        allowSuicide: true,
+        komi: 7.5,
+    };
+    var NO_RULES = {
+        repeating: exports.Repeating.ALL,
+        allowRewrite: true,
+        allowSuicide: true,
+        komi: 0,
+    };
+    var goRules = {
+        Japanese: JAPANESE_RULES,
+        GOE: ING_RULES,
+        NZ: ING_RULES,
+        AGA: CHINESE_RULES,
+        Chinese: CHINESE_RULES,
+    };
+
+    /**
+     * Contains implementation of go position class.
+     * @module Position
+     */
+    // creates 2-dim array
+    function createGrid(size) {
+        var grid = [];
+        for (var i = 0; i < size; i++) {
+            grid.push([]);
+        }
+        return grid;
+    }
+    /**
+     * Position class represents a state of the go game in one moment in time. It is composed from a grid containing black
+     * and white stones, capture counts, and actual turn. It is designed to be mutable.
+     */
+    var Position = /** @class */ (function () {
+        /**
+         * Creates instance of position object.
+         *
+         * @alias WGo.Position
+         * @class
+         *
+         * @param {number} [size = 19] - Size of the board.
+         */
+        function Position(size) {
+            if (size === void 0) { size = 19; }
+            /**
+             * One dimensional array containing stones of the position.
+             */
+            this.grid = [];
+            /**
+             * Contains numbers of stones that both players captured.
+             *
+             * @property {number} black - Count of white stones captured by **black**.
+             * @property {number} white - Count of black stones captured by **white**.
+             */
+            this.capCount = {
+                black: 0,
+                white: 0,
+            };
+            /**
+             * Who plays next move.
+             */
+            this.turn = exports.Color.BLACK;
+            this.size = size;
+            // init grid
+            this.clear();
+        }
+        Position.prototype.isOnPosition = function (x, y) {
+            return x >= 0 && y >= 0 && x < this.size && y < this.size;
+        };
+        /**
+         * Returns stone on the given field.
+         *
+         * @param {number} x - X coordinate
+         * @param {number} y - Y coordinate
+         * @return {Color} Color
+         */
+        Position.prototype.get = function (x, y) {
+            if (!this.isOnPosition(x, y)) {
+                return undefined;
+            }
+            return this.grid[x * this.size + y];
+        };
+        /**
+         * Sets stone on the given field.
+         *
+         * @param {number} x - X coordinate
+         * @param {number} y - Y coordinate
+         * @param {Color} c - Color
+         */
+        Position.prototype.set = function (x, y, c) {
+            if (!this.isOnPosition(x, y)) {
+                throw new TypeError('Attempt to set field outside of position.');
+            }
+            this.grid[x * this.size + y] = c;
+            return this;
+        };
+        /**
+         * Clears the whole position (every value is set to EMPTY).
+         */
+        Position.prototype.clear = function () {
+            for (var i = 0; i < this.size * this.size; i++) {
+                this.grid[i] = exports.Color.EMPTY;
+            }
+            return this;
+        };
+        /**
+         * Clones the whole position.
+         *
+         * @return {WGo.Position} Copy of the position.
+         * @todo Clone turn as well.
+         */
+        Position.prototype.clone = function () {
+            var clone = new Position(this.size);
+            clone.grid = this.grid.slice(0);
+            clone.capCount.black = this.capCount.black;
+            clone.capCount.white = this.capCount.white;
+            clone.turn = this.turn;
+            return clone;
+        };
+        /**
+         * Compares this position with another position and return object with changes
+         *
+         * @param {WGo.Position} position - Position to compare to.
+         * @return {Field[]} Array of different fields
+         */
+        Position.prototype.compare = function (position) {
+            if (position.size !== this.size) {
+                throw new TypeError('Positions of different sizes cannot be compared.');
+            }
+            var diff = [];
+            for (var i = 0; i < this.size * this.size; i++) {
+                if (this.grid[i] !== position.grid[i]) {
+                    diff.push({
+                        x: Math.floor(i / this.size),
+                        y: i % this.size,
+                        c: position.grid[i],
+                    });
+                }
+            }
+            return diff;
+        };
+        /**
+         * Sets stone on given coordinates and capture adjacent stones without liberties if there are any.
+         * If move is invalid, false is returned.
+         */
+        Position.prototype.applyMove = function (x, y, c, allowSuicide, allowRewrite) {
+            if (c === void 0) { c = this.turn; }
+            if (allowSuicide === void 0) { allowSuicide = false; }
+            if (allowRewrite === void 0) { allowRewrite = false; }
+            // check if move is on empty field of the board
+            if (!(allowRewrite || this.get(x, y) === exports.Color.EMPTY)) {
+                return false;
+            }
+            // clone position and add a stone
+            var prevColor = this.get(x, y);
+            this.set(x, y, c);
+            // check capturing of all surrounding stones
+            var capturesAbove = this.get(x, y - 1) === -c && this.captureIfNoLiberties(x, y - 1);
+            var capturesRight = this.get(x + 1, y) === -c && this.captureIfNoLiberties(x + 1, y);
+            var capturesBelow = this.get(x, y + 1) === -c && this.captureIfNoLiberties(x, y + 1);
+            var capturesLeft = this.get(x - 1, y) === -c && this.captureIfNoLiberties(x - 1, y);
+            var hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
+            // check suicide
+            if (!hasCaptured) {
+                if (!this.hasLiberties(x, y)) {
+                    if (allowSuicide) {
+                        this.capture(x, y, c);
+                    }
+                    else {
+                        // revert position
+                        this.set(x, y, prevColor);
+                        return false;
+                    }
+                }
+            }
+            this.turn = -c;
+            return true;
+        };
+        /**
+         * Validate position. Position is tested from 0:0 to size:size, if there are some moves,
+         * that should be captured, they will be removed. Returns a new Position object.
+         * This position isn't modified.
+         */
+        Position.prototype.validatePosition = function () {
+            for (var x = 0; x < this.size; x++) {
+                for (var y = 0; y < this.size; y++) {
+                    this.captureIfNoLiberties(x - 1, y);
+                }
+            }
+            return this;
+        };
+        /**
+         * Returns true if stone or group on the given coordinates has at least one liberty.
+         */
+        Position.prototype.hasLiberties = function (x, y, alreadyTested, c) {
+            if (alreadyTested === void 0) { alreadyTested = createGrid(this.size); }
+            if (c === void 0) { c = this.get(x, y); }
+            // out of the board there aren't liberties
+            if (!this.isOnPosition(x, y)) {
+                return false;
+            }
+            // however empty field means liberty
+            if (this.get(x, y) === exports.Color.EMPTY) {
+                return true;
+            }
+            // already tested field or stone of enemy isn't a liberty.
+            if (alreadyTested[x][y] || this.get(x, y) === -c) {
+                return false;
+            }
+            // set this field as tested
+            alreadyTested[x][y] = true;
+            // in this case we are checking our stone, if we get 4 false, it has no liberty
+            return (this.hasLiberties(x, y - 1, alreadyTested, c) ||
+                this.hasLiberties(x, y + 1, alreadyTested, c) ||
+                this.hasLiberties(x - 1, y, alreadyTested, c) ||
+                this.hasLiberties(x + 1, y, alreadyTested, c));
+        };
+        /**
+         * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
+         */
+        Position.prototype.captureIfNoLiberties = function (x, y) {
+            // if it has zero liberties capture it
+            if (!this.hasLiberties(x, y)) {
+                // capture stones from game
+                this.capture(x, y);
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
+         */
+        Position.prototype.capture = function (x, y, c) {
+            if (c === void 0) { c = this.get(x, y); }
+            if (this.isOnPosition(x, y) && c !== exports.Color.EMPTY && this.get(x, y) === c) {
+                this.set(x, y, exports.Color.EMPTY);
+                if (c === exports.Color.BLACK) {
+                    this.capCount.white = this.capCount.white + 1;
+                }
+                else {
+                    this.capCount.black = this.capCount.black + 1;
+                }
+                this.capture(x, y - 1, c);
+                this.capture(x, y + 1, c);
+                this.capture(x - 1, y, c);
+                this.capture(x + 1, y, c);
+            }
+        };
+        /**
+         * For debug purposes.
+         */
+        Position.prototype.toString = function () {
+            var TL = '┌';
+            var TM = '┬';
+            var TR = '┐';
+            var ML = '├';
+            var MM = '┼';
+            var MR = '┤';
+            var BL = '└';
+            var BM = '┴';
+            var BR = '┘';
+            var BS = '●';
+            var WS = '○';
+            var HF = '─'; // horizontal fill
+            var output = '   ';
+            for (var i = 0; i < this.size; i++) {
+                output += i < 9 ? i + " " : i;
+            }
+            output += '\n';
+            for (var y = 0; y < this.size; y++) {
+                for (var x = 0; x < this.size; x++) {
+                    var color = this.grid[x * this.size + y];
+                    if (x === 0) {
+                        output += (y < 10 ? " " + y : y) + " ";
+                    }
+                    if (color !== exports.Color.EMPTY) {
+                        output += color === exports.Color.BLACK ? BS : WS;
+                    }
+                    else {
+                        var char = void 0;
+                        if (y === 0) {
+                            // top line
+                            if (x === 0) {
+                                char = TL;
+                            }
+                            else if (x < this.size - 1) {
+                                char = TM;
+                            }
+                            else {
+                                char = TR;
+                            }
+                        }
+                        else if (y < this.size - 1) {
+                            // middle line
+                            if (x === 0) {
+                                char = ML;
+                            }
+                            else if (x < this.size - 1) {
+                                char = MM;
+                            }
+                            else {
+                                char = MR;
+                            }
+                        }
+                        else {
+                            // bottom line
+                            if (x === 0) {
+                                char = BL;
+                            }
+                            else if (x < this.size - 1) {
+                                char = BM;
+                            }
+                            else {
+                                char = BR;
+                            }
+                        }
+                        output += char;
+                    }
+                    if (x === this.size - 1) {
+                        if (y !== this.size - 1) {
+                            output += '\n';
+                        }
+                    }
+                    else {
+                        output += HF;
+                    }
+                }
+            }
+            return output;
+        };
+        /**
+         * Returns position grid as two dimensional array.
+         */
+        Position.prototype.toTwoDimensionalArray = function () {
+            var arr = [];
+            for (var x = 0; x < this.size; x++) {
+                arr[x] = [];
+                for (var y = 0; y < this.size; y++) {
+                    arr[x][y] = this.grid[x * this.size + y];
+                }
+            }
+            return arr;
+        };
+        return Position;
+    }());
+    // import { Color, Field, Move } from '../types';
+    // /**
+    //  * Position of the board (grid) is represented as 2 dimensional array of colors.
+    //  */
+    // export type Position = Color[][];
+    // /**
+    //  * Creates empty position (filled with Color.EMPTY) of specified size.
+    //  * @param size
+    //  */
+    // export function createPosition(size: number) {
+    //   const position: Color[][] = [];
+    //   for (let i = 0; i < size; i++) {
+    //     const row: Color[] = [];
+    //     for (let j = 0; j < size; j++) {
+    //       row.push(Color.EMPTY);
+    //     }
+    //     position.push(row);
+    //   }
+    //   return position;
+    // }
+    // /**
+    //  * Deep clones a position.
+    //  * @param position
+    //  */
+    // export function clonePosition(position: Position) {
+    //   return position.map(row => row.slice(0));
+    // }
+    // /**
+    //  * Compares position `pos1` with position `pos2` and returns all differences on `pos2`.
+    //  * @param pos1
+    //  * @param pos2
+    //  */
+    // export function comparePositions(pos1: Position, pos2: Position): Field[] {
+    //   if (pos1.length !== pos2.length) {
+    //     throw new TypeError('Positions of different sizes cannot be compared.');
+    //   }
+    //   const diff: Field[] = [];
+    //   for (let x = 0; x < pos1.length; x++) {
+    //     for (let y = 0; y < pos2.length; y++) {
+    //       if (pos1[x][y] !== pos2[x][y]) {
+    //         diff.push({ x, y, c: pos2[x][y] });
+    //       }
+    //     }
+    //   }
+    //   return diff;
+    // }
+    // function isOnBoard(position: Position, x: number, y: number) {
+    //   return x >= 0 && x < position.length && y >= 0 && y < position.length;
+    // }
+    // /**
+    //  * Creates new position with specified move (with rules applied - position won't contain captured stones).
+    //  * If move is invalid, null is returned.
+    //  */
+    // export function applyMove(position: Position, x: number, y: number, c: Color.B | Color.W, allowSuicide = false) {
+    //   // check if move is on empty field of the board
+    //   if (!isOnBoard(position, x, y) || position[x][y] !== Color.EMPTY) {
+    //     return null;
+    //   }
+    //   // clone position and add a stone
+    //   const newPosition = clonePosition(position);
+    //   newPosition[x][y] = c;
+    //   // check capturing of all surrounding stones
+    //   const capturesAbove = captureIfNoLiberties(newPosition, x, y - 1, -c);
+    //   const capturesRight = captureIfNoLiberties(newPosition, x + 1, y, -c);
+    //   const capturesBelow = captureIfNoLiberties(newPosition, x, y + 1, -c);
+    //   const capturesLeft = captureIfNoLiberties(newPosition, x - 1, y, -c);
+    //   const hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
+    //   // check suicide
+    //   if (!hasCaptured) {
+    //     if (!hasLiberties(newPosition, x, y)) {
+    //       if (allowSuicide) {
+    //         capture(newPosition, x, y, c);
+    //       } else {
+    //         return null;
+    //       }
+    //     }
+    //   }
+    //   return newPosition;
+    // }
+    // /**
+    //  * Validate position. Position is tested from 0:0 to size:size, if there are some moves,
+    //  * that should be captured, they will be removed. Returns a new Position object.
+    //  */
+    // export function getValidatedPosition(position: Position) {
+    //   const newPosition = clonePosition(position);
+    //   for (let x = 0; x < position.length; x++) {
+    //     for (let y = 0; y < position.length; y++) {
+    //       captureIfNoLiberties(newPosition, x, y);
+    //     }
+    //   }
+    //   return newPosition;
+    // }
+    // /**
+    //  * Capture stone or group of stones if they are zero liberties. Mutates the given position.
+    //  *
+    //  * @param position
+    //  * @param x
+    //  * @param y
+    //  * @param c
+    //  */
+    // function captureIfNoLiberties(position: Position, x: number, y: number, c: Color = position[x][y]) {
+    //   let hasCaptured = false;
+    //   // is there a stone possible to capture?
+    //   if (isOnBoard(position, x, y) && c !== Color.EMPTY && position[x][y] === c) {
+    //     // if it has zero liberties capture it
+    //     if (!hasLiberties(position, x, y)) {
+    //       // capture stones from game
+    //       capture(position, x, y, c);
+    //       hasCaptured = true;
+    //     }
+    //   }
+    //   return hasCaptured;
+    // }
+    // function createTestGrid(size: number) {
+    //   const grid: boolean[][] = [];
+    //   for (let i = 0; i < size; i++) {
+    //     grid.push([]);
+    //   }
+    //   return grid;
+    // }
+    // /**
+    //  * Returns true if stone or group on the given position has at least one liberty.
+    //  */
+    // function hasLiberties(
+    //   position: Position,
+    //   x: number,
+    //   y: number,
+    //   alreadyTested = createTestGrid(position.length),
+    //   c = position[x][y],
+    // ): boolean {
+    //   // out of the board there aren't liberties
+    //   if (!isOnBoard(position, x, y)) {
+    //     return false;
+    //   }
+    //   // however empty field means liberty
+    //   if (position[x][y] === Color.EMPTY) {
+    //     return true;
+    //   }
+    //   // already tested field or stone of enemy isn't a liberty.
+    //   if (alreadyTested[x][y] || position[x][y] === -c) {
+    //     return false;
+    //   }
+    //   // set this field as tested
+    //   alreadyTested[x][y] = true;
+    //   // in this case we are checking our stone, if we get 4 false, it has no liberty
+    //   return (
+    //     hasLiberties(position, x, y - 1, alreadyTested, c) ||
+    //     hasLiberties(position, x, y + 1, alreadyTested, c) ||
+    //     hasLiberties(position, x - 1, y, alreadyTested, c) ||
+    //     hasLiberties(position, x + 1, y, alreadyTested, c)
+    //   );
+    // }
+    // /**
+    //  * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
+    //  * Mutates the given position.
+    //  */
+    // function capture(position: Position, x: number, y: number, c: Color = position[x][y]) {
+    //   if (isOnBoard(position, x, y) && position[x][y] !== Color.EMPTY && position[x][y] === c) {
+    //     position[x][y] = Color.EMPTY;
+    //     capture(position, x, y - 1, c);
+    //     capture(position, x, y + 1, c);
+    //     capture(position, x - 1, y, c);
+    //     capture(position, x + 1, y, c);
+    //   }
+    // }
+    // /**
+    //  * For debug purposes.
+    //  */
+    // export function stringifyPosition(position: Position) {
+    //   const TL = '┌';
+    //   const TM = '┬';
+    //   const TR = '┐';
+    //   const ML = '├';
+    //   const MM = '┼';
+    //   const MR = '┤';
+    //   const BL = '└';
+    //   const BM = '┴';
+    //   const BR = '┘';
+    //   const BS = '●';
+    //   const WS = '○';
+    //   const HF = '─'; // horizontal fill
+    //   let output = '   ';
+    //   for (let i = 0; i < position.length; i++) {
+    //     output += i < 9 ? `${i} ` : i;
+    //   }
+    //   output += '\n';
+    //   for (let y = 0; y < position.length; y++) {
+    //     for (let x = 0; x < position.length; x++) {
+    //       const color = position[x][y];
+    //       if (x === 0) {
+    //         output += `${(y < 10 ? ` ${y}` : y)} `;
+    //       }
+    //       if (color !== Color.EMPTY) {
+    //         output += color === Color.BLACK ? BS : WS;
+    //       } else {
+    //         let char;
+    //         if (y === 0) {
+    //           // top line
+    //           if (x === 0) {
+    //             char = TL;
+    //           } else if (x < position.length - 1) {
+    //             char = TM;
+    //           } else {
+    //             char = TR;
+    //           }
+    //         } else if (y < position.length - 1) {
+    //           // middle line
+    //           if (x === 0) {
+    //             char = ML;
+    //           } else if (x < position.length - 1) {
+    //             char = MM;
+    //           } else {
+    //             char = MR;
+    //           }
+    //         } else {
+    //           // bottom line
+    //           if (x === 0) {
+    //             char = BL;
+    //           } else if (x < position.length - 1) {
+    //             char = BM;
+    //           } else {
+    //             char = BR;
+    //           }
+    //         }
+    //         output += char;
+    //       }
+    //       if (x === position.length - 1) {
+    //         if (y !== position.length - 1) {
+    //           output += '\n';
+    //         }
+    //       } else {
+    //         output += HF;
+    //       }
+    //     }
+    //   }
+    //   return output;
+    // }
+
+    var Game = /** @class */ (function () {
+        /**
+         * Creates instance of game class.
+         *
+         * @class
+         * This class implements game logic. It basically analyses given moves and returns capture stones.
+         * WGo.Game also stores every position from beginning, so it has ability to check repeating positions
+         * and it can effectively restore old positions.
+         *
+         *
+         * @param {number} [size = 19] Size of the board
+         * @param {string} [checkRepeat = KO] How to handle repeated position:
+         *
+         * * KO - ko is properly handled - position cannot be same like previous position
+         * * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
+         * * NONE - position can be repeated
+         *
+         * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
+         * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
+         */
+        function Game(size, rules) {
+            if (size === void 0) { size = 19; }
+            if (rules === void 0) { rules = JAPANESE_RULES; }
+            this.size = size;
+            this.rules = rules;
+            this.komi = rules.komi;
+            this.positionStack = [new Position(size)];
+        }
+        Object.defineProperty(Game.prototype, "position", {
+            get: function () {
+                return this.positionStack[this.positionStack.length - 1];
+            },
+            set: function (pos) {
+                this.positionStack[this.positionStack.length - 1] = pos;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Game.prototype, "turn", {
+            get: function () {
+                return this.position.turn;
+            },
+            set: function (color) {
+                this.position.turn = color;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        Object.defineProperty(Game.prototype, "capCount", {
+            get: function () {
+                return this.position.capCount;
+            },
+            enumerable: false,
+            configurable: true
+        });
+        /**
+         * Play move. You can specify color.
+         */
+        Game.prototype.play = function (x, y) {
+            var nextPosition = this.tryToPlay(x, y);
+            if (nextPosition) {
+                this.pushPosition(nextPosition);
+            }
+            return nextPosition;
+        };
+        /**
+         * Tries to play on given coordinates, returns new position after the play, or error code.
+         */
+        Game.prototype.tryToPlay = function (x, y) {
+            var nextPosition = this.position.clone();
+            var success = nextPosition.applyMove(x, y, nextPosition.turn, this.rules.allowSuicide, this.rules.allowRewrite);
+            if (success && !this.hasPositionRepeated(nextPosition)) {
+                return nextPosition;
+            }
+            return false;
+        };
+        /**
+         * @param {Position} position to check
+         * @return {boolean} Returns true if the position didn't occurred in the past (according to the rule set)
+         */
+        Game.prototype.hasPositionRepeated = function (position) {
+            var depth;
+            if (this.rules.repeating === exports.Repeating.KO && this.positionStack.length - 2 >= 0) {
+                depth = this.positionStack.length - 2;
+            }
+            else if (this.rules.repeating === exports.Repeating.NONE) {
+                depth = 0;
+            }
+            else {
+                return false;
+            }
+            for (var i = this.positionStack.length - 1; i >= depth; i--) {
+                if (this.positionStack[i].compare(position).length === 0) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+         * Play pass.
+         *
+         * @param {(BLACK|WHITE)} c color
+         */
+        Game.prototype.pass = function (c) {
+            if (c === void 0) { c = this.turn; }
+            var nextPosition = this.position.clone();
+            nextPosition.turn = -(c || this.turn);
+            this.pushPosition(nextPosition);
+        };
+        /**
+         * Finds out validity of the move.
+         *
+         * @param {number} x coordinate
+         * @param {number} y coordinate
+         * @return {boolean} true if move can be played.
+         */
+        Game.prototype.isValid = function (x, y) {
+            return !!this.tryToPlay(x, y);
+        };
+        /**
+         * Controls position of the move.
+         *
+         * @param {number} x coordinate
+         * @param {number} y coordinate
+         * @return {boolean} true if move is on board.
+         */
+        Game.prototype.isOnBoard = function (x, y) {
+            return this.position.isOnPosition(x, y);
+        };
+        /**
+         * Inserts move into current position. Use for setting position, for example in handicap game. Field must be empty.
+         *
+         * @param {number} x coordinate
+         * @param {number} y coordinate
+         * @param {Color} c color
+         * @return {boolean} true if operation is successful.
+         */
+        Game.prototype.addStone = function (x, y, c) {
+            if (this.isOnBoard(x, y) && this.position.get(x, y) === exports.Color.EMPTY) {
+                this.position.set(x, y, c);
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Removes move from current position.
+         *
+         * @param {number} x coordinate
+         * @param {number} y coordinate
+         * @return {boolean} true if operation is successful.
+         */
+        Game.prototype.removeStone = function (x, y) {
+            if (this.isOnBoard(x, y) && this.position.get(x, y) !== exports.Color.EMPTY) {
+                this.position.set(x, y, exports.Color.EMPTY);
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Set or insert move of current position.
+         *
+         * @param {number} x coordinate
+         * @param {number} y coordinate
+         * @param {(BLACK|WHITE)} [c] color
+         * @return {boolean} true if operation is successful.
+         */
+        Game.prototype.setStone = function (x, y, c) {
+            if (this.isOnBoard(x, y)) {
+                this.position.set(x, y, c);
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Get stone on given position.s
+         *
+         * @param {number} x coordinate
+         * @param {number} y coordinate
+         * @return {(Color|null)} color
+         */
+        Game.prototype.getStone = function (x, y) {
+            return this.position.get(x, y);
+        };
+        /**
+         * Add position to stack. If position isn't specified current position is cloned and stacked.
+         * Pointer of actual position is moved to the new position.
+         *
+         * @param {WGo.Position} tmp position (optional)
+         */
+        Game.prototype.pushPosition = function (pos) {
+            return this.positionStack.push(pos);
+        };
+        /**
+         * Remove current position from stack. Pointer of actual position is moved to the previous position.
+         */
+        Game.prototype.popPosition = function () {
+            if (this.positionStack.length > 1) {
+                return this.positionStack.pop();
+            }
+            return null;
+        };
+        /**
+         * Removes all positions except the initial.
+         */
+        Game.prototype.clear = function () {
+            this.positionStack = [this.positionStack[0]];
+        };
+        return Game;
+    }());
+
+    var PropIdent;
+    (function (PropIdent) {
+        // Move Properties
+        PropIdent["BLACK_MOVE"] = "B";
+        PropIdent["EXECUTE_ILLEGAL"] = "KO";
+        PropIdent["MOVE_NUMBER"] = "MN";
+        PropIdent["WHITE_MOVE"] = "W";
+        // Setup Properties
+        PropIdent["ADD_BLACK"] = "AB";
+        PropIdent["CLEAR_FIELD"] = "AE";
+        PropIdent["ADD_WHITE"] = "AW";
+        PropIdent["SET_TURN"] = "PL";
+        // Node Annotation Properties
+        PropIdent["COMMENT"] = "C";
+        PropIdent["EVEN_POSITION"] = "DM";
+        PropIdent["GOOD_FOR_BLACK"] = "GB";
+        PropIdent["GOOD_FOR_WHITE"] = "GW";
+        PropIdent["HOTSPOT"] = "HO";
+        PropIdent["NODE_NAME"] = "N";
+        PropIdent["UNCLEAR_POSITION"] = "UC";
+        PropIdent["NODE_VALUE"] = "V";
+        // Move Annotation Properties
+        PropIdent["BAD_MOVE"] = "BM";
+        PropIdent["DOUBTFUL_MOVE"] = "DM";
+        PropIdent["INTERESTING_MOVE"] = "IT";
+        PropIdent["GOOD_MOVE"] = "TE";
+        // Markup Properties
+        PropIdent["ARROW"] = "AR";
+        PropIdent["CIRCLE"] = "CR";
+        PropIdent["DIM"] = "DD";
+        PropIdent["LABEL"] = "LB";
+        PropIdent["LINE"] = "LN";
+        PropIdent["X_MARK"] = "MA";
+        PropIdent["SELECTED"] = "SL";
+        PropIdent["SQUARE"] = "SQ";
+        PropIdent["TRIANGLE"] = "TR";
+        // Root Properties
+        PropIdent["APPLICATION"] = "AP";
+        PropIdent["CHARSET"] = "CA";
+        PropIdent["SGF_VERSION"] = "FF";
+        PropIdent["GAME_TYPE"] = "GM";
+        PropIdent["VARIATIONS_STYLE"] = "ST";
+        PropIdent["BOARD_SIZE"] = "SZ";
+        // Game Info Properties
+        PropIdent["ANNOTATOR"] = "AN";
+        PropIdent["BLACK_RANK"] = "BR";
+        PropIdent["BLACK_TEAM"] = "BT";
+        PropIdent["COPYRIGHT"] = "CP";
+        PropIdent["DATE"] = "DT";
+        PropIdent["EVENT"] = "EV";
+        PropIdent["GAME_NAME"] = "GN";
+        PropIdent["GAME_COMMENT"] = "GC";
+        PropIdent["OPENING_INFO"] = "ON";
+        PropIdent["OVER_TIME"] = "OT";
+        PropIdent["BLACK_NAME"] = "BN";
+        PropIdent["PLACE"] = "PC";
+        PropIdent["WHITE_NAME"] = "PW";
+        PropIdent["RESULT"] = "RE";
+        PropIdent["ROUND"] = "RO";
+        PropIdent["RULES"] = "RU";
+        PropIdent["SOURCE"] = "SO";
+        PropIdent["TIME_LIMITS"] = "TM";
+        PropIdent["AUTHOR"] = "US";
+        PropIdent["WHITE_RANK"] = "WR";
+        PropIdent["WHITE_TEAM"] = "WT";
+        // Timing Properties
+        PropIdent["BLACK_TIME_LEFT"] = "BL";
+        PropIdent["BLACK_STONES_LEFT"] = "OB";
+        PropIdent["WHITE_STONES_LEFT"] = "OW";
+        PropIdent["WHITE_TIME_LEFT"] = "WL";
+        // Miscellaneous Properties
+        PropIdent["FIGURE"] = "FG";
+        PropIdent["PRINT_MOVE_NUMBERS"] = "PM";
+        PropIdent["BOARD_SECTION"] = "VW";
+        PropIdent["HANDICAP"] = "HA";
+        // GO specific Properties
+        PropIdent["KOMI"] = "KM";
+        PropIdent["BLACK_TERRITORY"] = "TB";
+        PropIdent["WHITE_TERRITORY"] = "TW";
+    })(PropIdent || (PropIdent = {}));
+
+    function beforeInitSZ(event) {
+        event.target.params.size = event.value;
+    }
+    function beforeInitRU(event) {
+        if (goRules[event.value]) {
+            event.target.params.rules = goRules[event.value];
+        }
+    }
+    function applyGameChangesHA(event) {
+        if (event.value > 1 &&
+            event.target.currentNode === event.target.rootNode &&
+            !event.target.getProperty(PropIdent.SET_TURN)) {
+            event.target.game.position.turn = exports.Color.WHITE;
+        }
+    }
+    function applyGameChangesMove(event) {
+        var color = event.propIdent === 'B' ? exports.Color.B : exports.Color.W;
+        // if this is false, move is pass
+        if (event.value) {
+            event.target.game.position.applyMove(event.value.x, event.value.y, color, true, true);
+        }
+        event.target.game.position.turn = -color;
+    }
+    function applyGameChangesPL(event) {
+        event.target.game.turn = event.value;
+    }
+    function applyGameChangesSetup(event) {
+        var color;
+        switch (event.propIdent) {
+            case 'AB':
+                color = exports.Color.B;
+                break;
+            case 'AW':
+                color = exports.Color.W;
+                break;
+            case 'AE':
+                color = exports.Color.E;
+                break;
+        }
+        event.value.forEach(function (value) {
+            // add stone
+            event.target.game.setStone(value.x, value.y, color);
+        });
+    }
+
+    var PlayerBase = /** @class */ (function (_super) {
+        __extends(PlayerBase, _super);
+        function PlayerBase() {
+            var _this = _super.call(this) || this;
+            _this.loadKifu(new KifuNode());
+            _this.plugins = [];
+            _this.on('beforeInit.SZ', beforeInitSZ);
+            _this.on('beforeInit.RU', beforeInitRU);
+            _this.on('applyGameChanges.HA', applyGameChangesHA);
+            _this.on('applyGameChanges.B', applyGameChangesMove);
+            _this.on('applyGameChanges.W', applyGameChangesMove);
+            _this.on('applyGameChanges.PL', applyGameChangesPL);
+            _this.on('applyGameChanges.AB', applyGameChangesSetup);
+            _this.on('applyGameChanges.AW', applyGameChangesSetup);
+            _this.on('applyGameChanges.AE', applyGameChangesSetup);
+            return _this;
+        }
+        /**
+         * Load game (kifu) from KifuNode.
+         */
+        PlayerBase.prototype.loadKifu = function (rootNode) {
+            this.rootNode = rootNode;
+            this.currentNode = rootNode;
+            this.emit('loadKifu', {
+                name: 'loadKifu',
+                kifuNode: rootNode,
+                target: this,
+            });
+            this.executeRoot();
+        };
+        /**
+         * Create new game (kifu) and init player with it.
+         */
+        PlayerBase.prototype.newGame = function (size, rules) {
+            var rootNode = new KifuNode();
+            if (size) {
+                rootNode.setProperty('SZ', size);
+            }
+            if (rules) {
+                // TODO: handle rules more correctly
+                var rulesName = Object.keys(goRules).find(function (name) { return goRules[name] === rules; });
+                if (rulesName) {
+                    rootNode.setProperty('RU', rulesName);
+                }
+            }
+            this.loadKifu(rootNode);
+        };
+        /**
+         * Executes root properties during initialization. If some properties change, call this to re-init player.
+         */
+        PlayerBase.prototype.executeRoot = function () {
+            this.params = {
+                size: 19,
+                rules: JAPANESE_RULES,
+            };
+            this.emitNodeLifeCycleEvent('beforeInit');
+            this.game = new Game(this.params.size, this.params.rules);
+            this.executeNode();
+        };
+        PlayerBase.prototype.executeNode = function () {
+            this.emitNodeLifeCycleEvent('applyGameChanges');
+            this.emitNodeLifeCycleEvent('applyNodeChanges');
+        };
+        /**
+         * Change current node to specified next node and executes its properties.
+         */
+        PlayerBase.prototype.executeNext = function (i) {
+            this.emitNodeLifeCycleEvent('clearNodeChanges');
+            this.game.pushPosition(this.game.position.clone());
+            this.currentNode = this.currentNode.children[i];
+            this.executeNode();
+        };
+        /**
+         * Change current node to previous/parent next node and executes its properties.
+         */
+        PlayerBase.prototype.executePrevious = function () {
+            this.emitNodeLifeCycleEvent('clearNodeChanges');
+            this.emitNodeLifeCycleEvent('clearGameChanges');
+            this.game.popPosition();
+            this.currentNode = this.currentNode.parent;
+            this.emitNodeLifeCycleEvent('applyNodeChanges');
+        };
+        /**
+         * Emits node life cycle method (for every property)
+         */
+        PlayerBase.prototype.emitNodeLifeCycleEvent = function (name) {
+            var _this = this;
+            this.emit(name, {
+                name: name,
+                target: this,
+            });
+            this.currentNode.forEachProperty(function (propIdent, value) {
+                _this.emit(name + "." + propIdent, {
+                    name: name,
+                    target: _this,
+                    propIdent: propIdent,
+                    value: value,
+                });
+            });
+        };
+        PlayerBase.prototype.getPropertyHandler = function (propIdent) {
+            return this.constructor.propertyHandlers[propIdent];
+        };
+        /**
+         * Gets property of current node.
+         */
+        PlayerBase.prototype.getProperty = function (propIdent) {
+            return this.currentNode.getProperty(propIdent);
+        };
+        /**
+         * Sets property of current node and execute changes.
+         */
+        PlayerBase.prototype.setProperty = function (propIdent, value) {
+            this.emitNodeLifeCycleEvent('clearNodeChanges');
+            this.emitNodeLifeCycleEvent('clearGameChanges');
+            this.currentNode.setProperty(propIdent, value);
+            this.executeNode();
+        };
+        /**
+         * Gets property of root node.
+         */
+        PlayerBase.prototype.getRootProperty = function (propIdent) {
+            return this.rootNode.getProperty(propIdent);
+        };
+        /**
+         * Returns array of next nodes (children).
+         */
+        PlayerBase.prototype.getNextNodes = function () {
+            return this.currentNode.children;
+        };
+        /**
+         * Go to (specified) next node and execute it.
+         */
+        PlayerBase.prototype.next = function (node) {
+            if (node === void 0) { node = 0; }
+            if (this.currentNode.children.length) {
+                var i = void 0;
+                if (typeof node === 'number') {
+                    i = node;
+                }
+                else {
+                    i = this.currentNode.children.indexOf(node);
+                }
+                if (this.currentNode.children[i]) {
+                    this.executeNext(i);
+                    return true;
+                }
+            }
+            return false;
+        };
+        /**
+         * Go to the previous node.
+         */
+        PlayerBase.prototype.previous = function () {
+            if (this.currentNode.parent) {
+                this.executePrevious();
+                return true;
+            }
+            return false;
+        };
+        /**
+         * Go to the first position - root node.
+         */
+        PlayerBase.prototype.first = function () {
+            // not sure if effective - TODO: check if there is a better way to do this
+            while (this.previous()) { }
+        };
+        /**
+         * Go to the last position.
+         */
+        PlayerBase.prototype.last = function () {
+            while (this.next()) { }
+        };
+        /**
+         * Go to a node specified by path or move number.
+         */
+        PlayerBase.prototype.goTo = function (pathOrMoveNumber) {
+            // TODO: check if there is a better way to do this
+            var path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
+            this.first();
+            for (var i = 0, j = 0; i < path.depth; i++) {
+                if (this.currentNode.children.length > 1) {
+                    this.next(path.forks[j++]);
+                }
+                else {
+                    this.next();
+                }
+            }
+        };
+        /**
+         * Get path to current node
+         */
+        PlayerBase.prototype.getCurrentPath = function () {
+            var path = { depth: 0, forks: [] };
+            if (this.currentNode) {
+                var node = this.currentNode;
+                while (node.parent) {
+                    path.depth++;
+                    if (node.parent.children.length > 1) {
+                        path.forks.push(node.parent.children.indexOf(node));
+                    }
+                    node = node.parent;
+                }
+            }
+            return path;
+        };
+        /**
+           * Go to previous fork (a node with more than one child).
+           */
+        PlayerBase.prototype.previousFork = function () {
+            while (this.previous()) {
+                if (this.currentNode.children.length > 1) {
+                    return;
+                }
+            }
+        };
+        /**
+         * Play a move. New kifu node will be created and move to it
+         */
+        PlayerBase.prototype.play = function (x, y) {
+            var node = new KifuNode();
+            if (this.game.turn === exports.Color.W) {
+                node.setProperty(PropIdent.WHITE_MOVE, { x: x, y: y });
+            }
+            else {
+                node.setProperty(PropIdent.BLACK_MOVE, { x: x, y: y });
+            }
+            var i = this.currentNode.appendChild(node);
+            this.next(i);
+        };
+        /**
+         * Register player's plugin.
+         *
+         * @param plugin
+         */
+        PlayerBase.prototype.use = function (plugin) {
+            if (!plugin || typeof plugin.apply !== 'function') {
+                throw new TypeError('Plugin must implement an `apply` method.');
+            }
+            plugin.apply(this);
+            this.plugins.push(plugin);
+        };
+        return PlayerBase;
+    }(EventEmitter));
+
+    var playerDOMDefaultConfig = {
+        enableMouseWheel: true,
+        enableKeys: true,
+        fastReplay: 2000,
+    };
+    /**
+     * Player with support to render visual elements into the DOM.
+     */
+    var PlayerDOM = /** @class */ (function (_super) {
+        __extends(PlayerDOM, _super);
+        function PlayerDOM(config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this) || this;
+            _this.components = new Map();
+            _this.fastReplayEnabled = false;
+            _this.handleResize = function () {
+                _this.emit('resize');
+            };
+            _this.handleMouseWheel = function (e) {
+                if (_this.config.enableMouseWheel) {
+                    if (e.deltaY > 0) {
+                        _this.next();
+                    }
+                    else if (e.deltaY < 0) {
+                        _this.previous();
+                    }
+                    e.preventDefault();
+                }
+            };
+            _this.handleKeydown = function (e) {
+                if (_this.config.enableKeys && _this.hasFocus()) {
+                    if (_this.config.fastReplay >= 0 && !_this.fastReplayTimeout) {
+                        _this.fastReplayTimeout = window.setTimeout(function () {
+                            _this.fastReplayEnabled = true;
+                        }, _this.config.fastReplay);
+                    }
+                    if (e.key === 'ArrowRight') {
+                        _this.next();
+                        if (_this.fastReplayEnabled) {
+                            _this.next();
+                            _this.next();
+                        }
+                    }
+                    else if (e.key === 'ArrowLeft') {
+                        _this.previous();
+                        if (_this.fastReplayEnabled) {
+                            _this.previous();
+                            _this.previous();
+                        }
+                    }
+                    return false;
+                }
+            };
+            _this.handleKeyup = function () {
+                window.clearTimeout(_this.fastReplayTimeout);
+                _this.fastReplayTimeout = null;
+                _this.fastReplayEnabled = false;
+            };
+            _this.config = makeConfig(playerDOMDefaultConfig, config);
+            window.addEventListener('resize', _this.handleResize);
+            document.addEventListener('keydown', _this.handleKeydown);
+            document.addEventListener('keyup', _this.handleKeyup);
+            return _this;
+        }
+        /**
+         * Renders PlayerDOM component into specified HTML element. If there is content inside that element
+         * it will be removed. Render method can be called multiple times - this allows to have player's component
+         * anywhere you want.
+         *
+         * @param component
+         * @param container
+         */
+        PlayerDOM.prototype.render = function (component, container) {
+            // clear content of the container
+            container.innerHTML = '';
+            // creates wrapper
+            var wrapper = this.createWrapper();
+            container.appendChild(wrapper);
+            // creates the component HTML element
+            wrapper.appendChild(component.element);
+            component.create(this);
+            this.components.set(container, component);
+        };
+        /**
+         * Removes component rendered via `render` method. Call this to clean event listeners of the component.
+         *
+         * @param container
+         */
+        PlayerDOM.prototype.clear = function (container) {
+            var component = this.components.get(container);
+            if (component && typeof component.destroy === 'function') {
+                component.destroy();
+            }
+            var wrapper = container.firstChild;
+            wrapper.removeEventListener('wheel', this.handleMouseWheel);
+            container.removeChild(wrapper);
+            this.components.delete(container);
+        };
+        PlayerDOM.prototype.createWrapper = function () {
+            var element = document.createElement('div');
+            element.className = 'wgo-player';
+            element.tabIndex = 1;
+            element.addEventListener('wheel', this.handleMouseWheel);
+            return element;
+        };
+        PlayerDOM.prototype.hasFocus = function () {
+            var e_1, _a;
+            try {
+                for (var _b = __values(this.components.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var elem = _c.value;
+                    if (elem.firstChild === document.activeElement) {
+                        return true;
+                    }
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            return false;
+        };
+        return PlayerDOM;
+    }(PlayerBase));
+
     var NS = 'http://www.w3.org/2000/svg';
     var OBJECTS = 'objects';
     var GRID_MASK = 'gridMask';
@@ -1709,7 +3545,7 @@
         star.setAttribute('stroke-width', '0');
         return star;
     }
-    function createGrid(config) {
+    function createGrid$1(config) {
         var linesWidth = config.theme.grid.linesWidth;
         var grid = document.createElementNS(NS, 'g');
         grid.setAttribute('stroke', config.theme.grid.linesColor);
@@ -2468,7 +4304,7 @@
             this.contexts[GRID_MASK].innerHTML = "<rect x=\"-0.5\" y=\"-0.5\" width=\"" + size + "\" height=\"" + size + "\" fill=\"white\" />";
             this.svgElement.appendChild(this.contexts[GRID_MASK]);
             // create grid
-            this.contexts.gridElement = createGrid(this.config);
+            this.contexts.gridElement = createGrid$1(this.config);
             this.contexts.gridElement.setAttribute('mask', "url(#" + this.contexts[GRID_MASK].id + ")");
             this.svgElement.appendChild(this.contexts.gridElement);
         };
@@ -2614,2201 +4450,6 @@
         return SVGBoard;
     }(BoardBase));
 
-    /**
-     * WGo's game engine offers to set 3 rules:
-     *
-     * - *checkRepeat* - one of `repeat.KO`, `repeat.ALL`, `repeat.NONE` - defines if or when a move can be repeated.
-     * - *allowRewrite* - if set true a move can rewrite existing move (for uncommon applications)
-     * - *allowSuicide* - if set true a suicide will be allowed (and stone will be immediately captured)
-     *
-     * In this module there are some common preset rule sets (Japanese, Chinese etc...).
-     * Extend object `gameRules` if you wish to add some rule set. Names of the rules should correspond with
-     * SGF `RU` property.
-     */
-    (function (Repeating) {
-        Repeating["KO"] = "KO";
-        Repeating["ALL"] = "ALL";
-        Repeating["NONE"] = "NONE";
-    })(exports.Repeating || (exports.Repeating = {}));
-    var JAPANESE_RULES = {
-        repeating: exports.Repeating.KO,
-        allowRewrite: false,
-        allowSuicide: false,
-        komi: 6.5,
-    };
-    var CHINESE_RULES = {
-        repeating: exports.Repeating.NONE,
-        allowRewrite: false,
-        allowSuicide: false,
-        komi: 7.5,
-    };
-    var ING_RULES = {
-        repeating: exports.Repeating.NONE,
-        allowRewrite: false,
-        allowSuicide: true,
-        komi: 7.5,
-    };
-    var NO_RULES = {
-        repeating: exports.Repeating.ALL,
-        allowRewrite: true,
-        allowSuicide: true,
-        komi: 0,
-    };
-    var goRules = {
-        Japanese: JAPANESE_RULES,
-        GOE: ING_RULES,
-        NZ: ING_RULES,
-        AGA: CHINESE_RULES,
-        Chinese: CHINESE_RULES,
-    };
-
-    /**
-     * Contains implementation of go position class.
-     * @module Position
-     */
-    // creates 2-dim array
-    function createGrid$1(size) {
-        var grid = [];
-        for (var i = 0; i < size; i++) {
-            grid.push([]);
-        }
-        return grid;
-    }
-    /**
-     * Position class represents a state of the go game in one moment in time. It is composed from a grid containing black
-     * and white stones, capture counts, and actual turn. It is designed to be mutable.
-     */
-    var Position = /** @class */ (function () {
-        /**
-         * Creates instance of position object.
-         *
-         * @alias WGo.Position
-         * @class
-         *
-         * @param {number} [size = 19] - Size of the board.
-         */
-        function Position(size) {
-            if (size === void 0) { size = 19; }
-            /**
-             * One dimensional array containing stones of the position.
-             */
-            this.grid = [];
-            /**
-             * Contains numbers of stones that both players captured.
-             *
-             * @property {number} black - Count of white stones captured by **black**.
-             * @property {number} white - Count of black stones captured by **white**.
-             */
-            this.capCount = {
-                black: 0,
-                white: 0,
-            };
-            /**
-             * Who plays next move.
-             */
-            this.turn = exports.Color.BLACK;
-            this.size = size;
-            // init grid
-            this.clear();
-        }
-        Position.prototype.isOnPosition = function (x, y) {
-            return x >= 0 && y >= 0 && x < this.size && y < this.size;
-        };
-        /**
-         * Returns stone on the given field.
-         *
-         * @param {number} x - X coordinate
-         * @param {number} y - Y coordinate
-         * @return {Color} Color
-         */
-        Position.prototype.get = function (x, y) {
-            if (!this.isOnPosition(x, y)) {
-                return undefined;
-            }
-            return this.grid[x * this.size + y];
-        };
-        /**
-         * Sets stone on the given field.
-         *
-         * @param {number} x - X coordinate
-         * @param {number} y - Y coordinate
-         * @param {Color} c - Color
-         */
-        Position.prototype.set = function (x, y, c) {
-            if (!this.isOnPosition(x, y)) {
-                throw new TypeError('Attempt to set field outside of position.');
-            }
-            this.grid[x * this.size + y] = c;
-            return this;
-        };
-        /**
-         * Clears the whole position (every value is set to EMPTY).
-         */
-        Position.prototype.clear = function () {
-            for (var i = 0; i < this.size * this.size; i++) {
-                this.grid[i] = exports.Color.EMPTY;
-            }
-            return this;
-        };
-        /**
-         * Clones the whole position.
-         *
-         * @return {WGo.Position} Copy of the position.
-         * @todo Clone turn as well.
-         */
-        Position.prototype.clone = function () {
-            var clone = new Position(this.size);
-            clone.grid = this.grid.slice(0);
-            clone.capCount.black = this.capCount.black;
-            clone.capCount.white = this.capCount.white;
-            clone.turn = this.turn;
-            return clone;
-        };
-        /**
-         * Compares this position with another position and return object with changes
-         *
-         * @param {WGo.Position} position - Position to compare to.
-         * @return {Field[]} Array of different fields
-         */
-        Position.prototype.compare = function (position) {
-            if (position.size !== this.size) {
-                throw new TypeError('Positions of different sizes cannot be compared.');
-            }
-            var diff = [];
-            for (var i = 0; i < this.size * this.size; i++) {
-                if (this.grid[i] !== position.grid[i]) {
-                    diff.push({
-                        x: Math.floor(i / this.size),
-                        y: i % this.size,
-                        c: position.grid[i],
-                    });
-                }
-            }
-            return diff;
-        };
-        /**
-         * Sets stone on given coordinates and capture adjacent stones without liberties if there are any.
-         * If move is invalid, false is returned.
-         */
-        Position.prototype.applyMove = function (x, y, c, allowSuicide, allowRewrite) {
-            if (c === void 0) { c = this.turn; }
-            if (allowSuicide === void 0) { allowSuicide = false; }
-            if (allowRewrite === void 0) { allowRewrite = false; }
-            // check if move is on empty field of the board
-            if (!(allowRewrite || this.get(x, y) === exports.Color.EMPTY)) {
-                return false;
-            }
-            // clone position and add a stone
-            var prevColor = this.get(x, y);
-            this.set(x, y, c);
-            // check capturing of all surrounding stones
-            var capturesAbove = this.get(x, y - 1) === -c && this.captureIfNoLiberties(x, y - 1);
-            var capturesRight = this.get(x + 1, y) === -c && this.captureIfNoLiberties(x + 1, y);
-            var capturesBelow = this.get(x, y + 1) === -c && this.captureIfNoLiberties(x, y + 1);
-            var capturesLeft = this.get(x - 1, y) === -c && this.captureIfNoLiberties(x - 1, y);
-            var hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
-            // check suicide
-            if (!hasCaptured) {
-                if (!this.hasLiberties(x, y)) {
-                    if (allowSuicide) {
-                        this.capture(x, y, c);
-                    }
-                    else {
-                        // revert position
-                        this.set(x, y, prevColor);
-                        return false;
-                    }
-                }
-            }
-            this.turn = -c;
-            return true;
-        };
-        /**
-         * Validate position. Position is tested from 0:0 to size:size, if there are some moves,
-         * that should be captured, they will be removed. Returns a new Position object.
-         * This position isn't modified.
-         */
-        Position.prototype.validatePosition = function () {
-            for (var x = 0; x < this.size; x++) {
-                for (var y = 0; y < this.size; y++) {
-                    this.captureIfNoLiberties(x - 1, y);
-                }
-            }
-            return this;
-        };
-        /**
-         * Returns true if stone or group on the given coordinates has at least one liberty.
-         */
-        Position.prototype.hasLiberties = function (x, y, alreadyTested, c) {
-            if (alreadyTested === void 0) { alreadyTested = createGrid$1(this.size); }
-            if (c === void 0) { c = this.get(x, y); }
-            // out of the board there aren't liberties
-            if (!this.isOnPosition(x, y)) {
-                return false;
-            }
-            // however empty field means liberty
-            if (this.get(x, y) === exports.Color.EMPTY) {
-                return true;
-            }
-            // already tested field or stone of enemy isn't a liberty.
-            if (alreadyTested[x][y] || this.get(x, y) === -c) {
-                return false;
-            }
-            // set this field as tested
-            alreadyTested[x][y] = true;
-            // in this case we are checking our stone, if we get 4 false, it has no liberty
-            return (this.hasLiberties(x, y - 1, alreadyTested, c) ||
-                this.hasLiberties(x, y + 1, alreadyTested, c) ||
-                this.hasLiberties(x - 1, y, alreadyTested, c) ||
-                this.hasLiberties(x + 1, y, alreadyTested, c));
-        };
-        /**
-         * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
-         */
-        Position.prototype.captureIfNoLiberties = function (x, y) {
-            // if it has zero liberties capture it
-            if (!this.hasLiberties(x, y)) {
-                // capture stones from game
-                this.capture(x, y);
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-         */
-        Position.prototype.capture = function (x, y, c) {
-            if (c === void 0) { c = this.get(x, y); }
-            if (this.isOnPosition(x, y) && c !== exports.Color.EMPTY && this.get(x, y) === c) {
-                this.set(x, y, exports.Color.EMPTY);
-                if (c === exports.Color.BLACK) {
-                    this.capCount.white = this.capCount.white + 1;
-                }
-                else {
-                    this.capCount.black = this.capCount.black + 1;
-                }
-                this.capture(x, y - 1, c);
-                this.capture(x, y + 1, c);
-                this.capture(x - 1, y, c);
-                this.capture(x + 1, y, c);
-            }
-        };
-        /**
-         * For debug purposes.
-         */
-        Position.prototype.toString = function () {
-            var TL = '┌';
-            var TM = '┬';
-            var TR = '┐';
-            var ML = '├';
-            var MM = '┼';
-            var MR = '┤';
-            var BL = '└';
-            var BM = '┴';
-            var BR = '┘';
-            var BS = '●';
-            var WS = '○';
-            var HF = '─'; // horizontal fill
-            var output = '   ';
-            for (var i = 0; i < this.size; i++) {
-                output += i < 9 ? i + " " : i;
-            }
-            output += '\n';
-            for (var y = 0; y < this.size; y++) {
-                for (var x = 0; x < this.size; x++) {
-                    var color = this.grid[x * this.size + y];
-                    if (x === 0) {
-                        output += (y < 10 ? " " + y : y) + " ";
-                    }
-                    if (color !== exports.Color.EMPTY) {
-                        output += color === exports.Color.BLACK ? BS : WS;
-                    }
-                    else {
-                        var char = void 0;
-                        if (y === 0) {
-                            // top line
-                            if (x === 0) {
-                                char = TL;
-                            }
-                            else if (x < this.size - 1) {
-                                char = TM;
-                            }
-                            else {
-                                char = TR;
-                            }
-                        }
-                        else if (y < this.size - 1) {
-                            // middle line
-                            if (x === 0) {
-                                char = ML;
-                            }
-                            else if (x < this.size - 1) {
-                                char = MM;
-                            }
-                            else {
-                                char = MR;
-                            }
-                        }
-                        else {
-                            // bottom line
-                            if (x === 0) {
-                                char = BL;
-                            }
-                            else if (x < this.size - 1) {
-                                char = BM;
-                            }
-                            else {
-                                char = BR;
-                            }
-                        }
-                        output += char;
-                    }
-                    if (x === this.size - 1) {
-                        if (y !== this.size - 1) {
-                            output += '\n';
-                        }
-                    }
-                    else {
-                        output += HF;
-                    }
-                }
-            }
-            return output;
-        };
-        /**
-         * Returns position grid as two dimensional array.
-         */
-        Position.prototype.toTwoDimensionalArray = function () {
-            var arr = [];
-            for (var x = 0; x < this.size; x++) {
-                arr[x] = [];
-                for (var y = 0; y < this.size; y++) {
-                    arr[x][y] = this.grid[x * this.size + y];
-                }
-            }
-            return arr;
-        };
-        return Position;
-    }());
-    // import { Color, Field, Move } from '../types';
-    // /**
-    //  * Position of the board (grid) is represented as 2 dimensional array of colors.
-    //  */
-    // export type Position = Color[][];
-    // /**
-    //  * Creates empty position (filled with Color.EMPTY) of specified size.
-    //  * @param size
-    //  */
-    // export function createPosition(size: number) {
-    //   const position: Color[][] = [];
-    //   for (let i = 0; i < size; i++) {
-    //     const row: Color[] = [];
-    //     for (let j = 0; j < size; j++) {
-    //       row.push(Color.EMPTY);
-    //     }
-    //     position.push(row);
-    //   }
-    //   return position;
-    // }
-    // /**
-    //  * Deep clones a position.
-    //  * @param position
-    //  */
-    // export function clonePosition(position: Position) {
-    //   return position.map(row => row.slice(0));
-    // }
-    // /**
-    //  * Compares position `pos1` with position `pos2` and returns all differences on `pos2`.
-    //  * @param pos1
-    //  * @param pos2
-    //  */
-    // export function comparePositions(pos1: Position, pos2: Position): Field[] {
-    //   if (pos1.length !== pos2.length) {
-    //     throw new TypeError('Positions of different sizes cannot be compared.');
-    //   }
-    //   const diff: Field[] = [];
-    //   for (let x = 0; x < pos1.length; x++) {
-    //     for (let y = 0; y < pos2.length; y++) {
-    //       if (pos1[x][y] !== pos2[x][y]) {
-    //         diff.push({ x, y, c: pos2[x][y] });
-    //       }
-    //     }
-    //   }
-    //   return diff;
-    // }
-    // function isOnBoard(position: Position, x: number, y: number) {
-    //   return x >= 0 && x < position.length && y >= 0 && y < position.length;
-    // }
-    // /**
-    //  * Creates new position with specified move (with rules applied - position won't contain captured stones).
-    //  * If move is invalid, null is returned.
-    //  */
-    // export function applyMove(position: Position, x: number, y: number, c: Color.B | Color.W, allowSuicide = false) {
-    //   // check if move is on empty field of the board
-    //   if (!isOnBoard(position, x, y) || position[x][y] !== Color.EMPTY) {
-    //     return null;
-    //   }
-    //   // clone position and add a stone
-    //   const newPosition = clonePosition(position);
-    //   newPosition[x][y] = c;
-    //   // check capturing of all surrounding stones
-    //   const capturesAbove = captureIfNoLiberties(newPosition, x, y - 1, -c);
-    //   const capturesRight = captureIfNoLiberties(newPosition, x + 1, y, -c);
-    //   const capturesBelow = captureIfNoLiberties(newPosition, x, y + 1, -c);
-    //   const capturesLeft = captureIfNoLiberties(newPosition, x - 1, y, -c);
-    //   const hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
-    //   // check suicide
-    //   if (!hasCaptured) {
-    //     if (!hasLiberties(newPosition, x, y)) {
-    //       if (allowSuicide) {
-    //         capture(newPosition, x, y, c);
-    //       } else {
-    //         return null;
-    //       }
-    //     }
-    //   }
-    //   return newPosition;
-    // }
-    // /**
-    //  * Validate position. Position is tested from 0:0 to size:size, if there are some moves,
-    //  * that should be captured, they will be removed. Returns a new Position object.
-    //  */
-    // export function getValidatedPosition(position: Position) {
-    //   const newPosition = clonePosition(position);
-    //   for (let x = 0; x < position.length; x++) {
-    //     for (let y = 0; y < position.length; y++) {
-    //       captureIfNoLiberties(newPosition, x, y);
-    //     }
-    //   }
-    //   return newPosition;
-    // }
-    // /**
-    //  * Capture stone or group of stones if they are zero liberties. Mutates the given position.
-    //  *
-    //  * @param position
-    //  * @param x
-    //  * @param y
-    //  * @param c
-    //  */
-    // function captureIfNoLiberties(position: Position, x: number, y: number, c: Color = position[x][y]) {
-    //   let hasCaptured = false;
-    //   // is there a stone possible to capture?
-    //   if (isOnBoard(position, x, y) && c !== Color.EMPTY && position[x][y] === c) {
-    //     // if it has zero liberties capture it
-    //     if (!hasLiberties(position, x, y)) {
-    //       // capture stones from game
-    //       capture(position, x, y, c);
-    //       hasCaptured = true;
-    //     }
-    //   }
-    //   return hasCaptured;
-    // }
-    // function createTestGrid(size: number) {
-    //   const grid: boolean[][] = [];
-    //   for (let i = 0; i < size; i++) {
-    //     grid.push([]);
-    //   }
-    //   return grid;
-    // }
-    // /**
-    //  * Returns true if stone or group on the given position has at least one liberty.
-    //  */
-    // function hasLiberties(
-    //   position: Position,
-    //   x: number,
-    //   y: number,
-    //   alreadyTested = createTestGrid(position.length),
-    //   c = position[x][y],
-    // ): boolean {
-    //   // out of the board there aren't liberties
-    //   if (!isOnBoard(position, x, y)) {
-    //     return false;
-    //   }
-    //   // however empty field means liberty
-    //   if (position[x][y] === Color.EMPTY) {
-    //     return true;
-    //   }
-    //   // already tested field or stone of enemy isn't a liberty.
-    //   if (alreadyTested[x][y] || position[x][y] === -c) {
-    //     return false;
-    //   }
-    //   // set this field as tested
-    //   alreadyTested[x][y] = true;
-    //   // in this case we are checking our stone, if we get 4 false, it has no liberty
-    //   return (
-    //     hasLiberties(position, x, y - 1, alreadyTested, c) ||
-    //     hasLiberties(position, x, y + 1, alreadyTested, c) ||
-    //     hasLiberties(position, x - 1, y, alreadyTested, c) ||
-    //     hasLiberties(position, x + 1, y, alreadyTested, c)
-    //   );
-    // }
-    // /**
-    //  * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-    //  * Mutates the given position.
-    //  */
-    // function capture(position: Position, x: number, y: number, c: Color = position[x][y]) {
-    //   if (isOnBoard(position, x, y) && position[x][y] !== Color.EMPTY && position[x][y] === c) {
-    //     position[x][y] = Color.EMPTY;
-    //     capture(position, x, y - 1, c);
-    //     capture(position, x, y + 1, c);
-    //     capture(position, x - 1, y, c);
-    //     capture(position, x + 1, y, c);
-    //   }
-    // }
-    // /**
-    //  * For debug purposes.
-    //  */
-    // export function stringifyPosition(position: Position) {
-    //   const TL = '┌';
-    //   const TM = '┬';
-    //   const TR = '┐';
-    //   const ML = '├';
-    //   const MM = '┼';
-    //   const MR = '┤';
-    //   const BL = '└';
-    //   const BM = '┴';
-    //   const BR = '┘';
-    //   const BS = '●';
-    //   const WS = '○';
-    //   const HF = '─'; // horizontal fill
-    //   let output = '   ';
-    //   for (let i = 0; i < position.length; i++) {
-    //     output += i < 9 ? `${i} ` : i;
-    //   }
-    //   output += '\n';
-    //   for (let y = 0; y < position.length; y++) {
-    //     for (let x = 0; x < position.length; x++) {
-    //       const color = position[x][y];
-    //       if (x === 0) {
-    //         output += `${(y < 10 ? ` ${y}` : y)} `;
-    //       }
-    //       if (color !== Color.EMPTY) {
-    //         output += color === Color.BLACK ? BS : WS;
-    //       } else {
-    //         let char;
-    //         if (y === 0) {
-    //           // top line
-    //           if (x === 0) {
-    //             char = TL;
-    //           } else if (x < position.length - 1) {
-    //             char = TM;
-    //           } else {
-    //             char = TR;
-    //           }
-    //         } else if (y < position.length - 1) {
-    //           // middle line
-    //           if (x === 0) {
-    //             char = ML;
-    //           } else if (x < position.length - 1) {
-    //             char = MM;
-    //           } else {
-    //             char = MR;
-    //           }
-    //         } else {
-    //           // bottom line
-    //           if (x === 0) {
-    //             char = BL;
-    //           } else if (x < position.length - 1) {
-    //             char = BM;
-    //           } else {
-    //             char = BR;
-    //           }
-    //         }
-    //         output += char;
-    //       }
-    //       if (x === position.length - 1) {
-    //         if (y !== position.length - 1) {
-    //           output += '\n';
-    //         }
-    //       } else {
-    //         output += HF;
-    //       }
-    //     }
-    //   }
-    //   return output;
-    // }
-
-    var Game = /** @class */ (function () {
-        /**
-         * Creates instance of game class.
-         *
-         * @class
-         * This class implements game logic. It basically analyses given moves and returns capture stones.
-         * WGo.Game also stores every position from beginning, so it has ability to check repeating positions
-         * and it can effectively restore old positions.
-         *
-         *
-         * @param {number} [size = 19] Size of the board
-         * @param {string} [checkRepeat = KO] How to handle repeated position:
-         *
-         * * KO - ko is properly handled - position cannot be same like previous position
-         * * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
-         * * NONE - position can be repeated
-         *
-         * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
-         * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
-         */
-        function Game(size, rules) {
-            if (size === void 0) { size = 19; }
-            if (rules === void 0) { rules = JAPANESE_RULES; }
-            this.size = size;
-            this.rules = rules;
-            this.komi = rules.komi;
-            this.positionStack = [new Position(size)];
-        }
-        Object.defineProperty(Game.prototype, "position", {
-            get: function () {
-                return this.positionStack[this.positionStack.length - 1];
-            },
-            set: function (pos) {
-                this.positionStack[this.positionStack.length - 1] = pos;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Game.prototype, "turn", {
-            get: function () {
-                return this.position.turn;
-            },
-            set: function (color) {
-                this.position.turn = color;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(Game.prototype, "capCount", {
-            get: function () {
-                return this.position.capCount;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        /**
-         * Play move. You can specify color.
-         */
-        Game.prototype.play = function (x, y) {
-            var nextPosition = this.tryToPlay(x, y);
-            if (nextPosition) {
-                this.pushPosition(nextPosition);
-            }
-            return nextPosition;
-        };
-        /**
-         * Tries to play on given coordinates, returns new position after the play, or error code.
-         */
-        Game.prototype.tryToPlay = function (x, y) {
-            var nextPosition = this.position.clone();
-            var success = nextPosition.applyMove(x, y, nextPosition.turn, this.rules.allowSuicide, this.rules.allowRewrite);
-            if (success && !this.hasPositionRepeated(nextPosition)) {
-                return nextPosition;
-            }
-            return false;
-        };
-        /**
-         * @param {Position} position to check
-         * @return {boolean} Returns true if the position didn't occurred in the past (according to the rule set)
-         */
-        Game.prototype.hasPositionRepeated = function (position) {
-            var depth;
-            if (this.rules.repeating === exports.Repeating.KO && this.positionStack.length - 2 >= 0) {
-                depth = this.positionStack.length - 2;
-            }
-            else if (this.rules.repeating === exports.Repeating.NONE) {
-                depth = 0;
-            }
-            else {
-                return false;
-            }
-            for (var i = this.positionStack.length - 1; i >= depth; i--) {
-                if (this.positionStack[i].compare(position).length === 0) {
-                    return true;
-                }
-            }
-            return false;
-        };
-        /**
-         * Play pass.
-         *
-         * @param {(BLACK|WHITE)} c color
-         */
-        Game.prototype.pass = function (c) {
-            if (c === void 0) { c = this.turn; }
-            var nextPosition = this.position.clone();
-            nextPosition.turn = -(c || this.turn);
-            this.pushPosition(nextPosition);
-        };
-        /**
-         * Finds out validity of the move.
-         *
-         * @param {number} x coordinate
-         * @param {number} y coordinate
-         * @return {boolean} true if move can be played.
-         */
-        Game.prototype.isValid = function (x, y) {
-            return !!this.tryToPlay(x, y);
-        };
-        /**
-         * Controls position of the move.
-         *
-         * @param {number} x coordinate
-         * @param {number} y coordinate
-         * @return {boolean} true if move is on board.
-         */
-        Game.prototype.isOnBoard = function (x, y) {
-            return this.position.isOnPosition(x, y);
-        };
-        /**
-         * Inserts move into current position. Use for setting position, for example in handicap game. Field must be empty.
-         *
-         * @param {number} x coordinate
-         * @param {number} y coordinate
-         * @param {Color} c color
-         * @return {boolean} true if operation is successful.
-         */
-        Game.prototype.addStone = function (x, y, c) {
-            if (this.isOnBoard(x, y) && this.position.get(x, y) === exports.Color.EMPTY) {
-                this.position.set(x, y, c);
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Removes move from current position.
-         *
-         * @param {number} x coordinate
-         * @param {number} y coordinate
-         * @return {boolean} true if operation is successful.
-         */
-        Game.prototype.removeStone = function (x, y) {
-            if (this.isOnBoard(x, y) && this.position.get(x, y) !== exports.Color.EMPTY) {
-                this.position.set(x, y, exports.Color.EMPTY);
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Set or insert move of current position.
-         *
-         * @param {number} x coordinate
-         * @param {number} y coordinate
-         * @param {(BLACK|WHITE)} [c] color
-         * @return {boolean} true if operation is successful.
-         */
-        Game.prototype.setStone = function (x, y, c) {
-            if (this.isOnBoard(x, y)) {
-                this.position.set(x, y, c);
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Get stone on given position.s
-         *
-         * @param {number} x coordinate
-         * @param {number} y coordinate
-         * @return {(Color|null)} color
-         */
-        Game.prototype.getStone = function (x, y) {
-            return this.position.get(x, y);
-        };
-        /**
-         * Add position to stack. If position isn't specified current position is cloned and stacked.
-         * Pointer of actual position is moved to the new position.
-         *
-         * @param {WGo.Position} tmp position (optional)
-         */
-        Game.prototype.pushPosition = function (pos) {
-            return this.positionStack.push(pos);
-        };
-        /**
-         * Remove current position from stack. Pointer of actual position is moved to the previous position.
-         */
-        Game.prototype.popPosition = function () {
-            if (this.positionStack.length > 1) {
-                return this.positionStack.pop();
-            }
-            return null;
-        };
-        /**
-         * Removes all positions except the initial.
-         */
-        Game.prototype.clear = function () {
-            this.positionStack = [this.positionStack[0]];
-        };
-        return Game;
-    }());
-
-    /**
-     * From SGF specification, there are these types of property values:
-     *
-     * CValueType = (ValueType | *Compose*)
-     * ValueType  = (*None* | *Number* | *Real* | *Double* | *Color* | *SimpleText* | *Text* | *Point*  | *Move* | *Stone*)
-     *
-     * WGo's kifu node (KNode object) implements similar types with few exceptions:
-     *
-     * - Types `Number`, `Real` and `Double` are implemented by javascript's `number`.
-     * - Types `SimpleText` and `Text` are considered as the same.
-     * - Types `Point`, `Move` and `Stone` are all the same, implemented as simple object with `x` and `y` coordinates.
-     * - Type `None` is implemented as `true`
-     *
-     * Each `Compose` type, which is used in SGF, has its own type.
-     *
-     * - `Point ':' Point` (used in AR property) has special type `Line` - object with two sets of coordinates.
-     * - `Point ':' Simpletext` (used in LB property) has special type `Label` - object with coordinates and text property
-     * - `Simpletext ":" Simpletext` (used in AP property) - not implemented
-     * - `Number ":" SimpleText` (used in FG property) - not implemented
-     *
-     * Moreover each property value has these settings:
-     *
-     * - *Single value* / *Array* (more values)
-     * - *Not empty* / *Empty* (value or array can be empty)
-     *
-     * {@link http://www.red-bean.com/sgf/sgf4.html}
-     */
-    var NONE = {
-        read: function (str) { return true; },
-        write: function (value) { return ''; },
-    };
-    var NUMBER = {
-        read: function (str) { return parseFloat(str); },
-        write: function (value) { return value.toString(10); },
-    };
-    var TEXT = {
-        read: function (str) { return str; },
-        write: function (value) { return value; },
-    };
-    var COLOR = {
-        read: function (str) { return (str === 'w' || str === 'W' ? exports.Color.WHITE : exports.Color.BLACK); },
-        write: function (value) { return (value === exports.Color.WHITE ? 'W' : 'B'); },
-    };
-    var POINT = {
-        read: function (str) { return str ? {
-            x: str.charCodeAt(0) - 97,
-            y: str.charCodeAt(1) - 97,
-        } : null; },
-        write: function (value) { return value ? String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) : ''; },
-    };
-    var LABEL = {
-        read: function (str) { return ({
-            x: str.charCodeAt(0) - 97,
-            y: str.charCodeAt(1) - 97,
-            text: str.substr(3),
-        }); },
-        write: function (value) { return (String.fromCharCode(value.x + 97) + String.fromCharCode(value.y + 97) + ":" + value.text); },
-    };
-    var VECTOR = {
-        read: function (str) { return str ? [
-            {
-                x: str.charCodeAt(0) - 97,
-                y: str.charCodeAt(1) - 97,
-            },
-            {
-                x: str.charCodeAt(3) - 97,
-                y: str.charCodeAt(4) - 97,
-            },
-        ] : null; },
-        write: function (value) { return (
-        // tslint:disable-next-line:max-line-length
-        value ? String.fromCharCode(value[0].x + 97) + String.fromCharCode(value[0].y + 97) + ":" + (String.fromCharCode(value[1].x + 97) + String.fromCharCode(value[1].y + 97)) : ''); },
-    };
-    var propertyValueTypes = {
-        _default: {
-            transformer: TEXT,
-            multiple: false,
-            notEmpty: true,
-        },
-    };
-    /// Move properties -------------------------------------------------------------------------------
-    propertyValueTypes.B = propertyValueTypes.W = {
-        transformer: POINT,
-        multiple: false,
-        notEmpty: false,
-    };
-    propertyValueTypes.KO = {
-        transformer: NONE,
-        multiple: false,
-        notEmpty: false,
-    };
-    propertyValueTypes.MN = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    /// Setup properties ------------------------------------------------------------------------------
-    propertyValueTypes.AB = propertyValueTypes.AW = propertyValueTypes.AE = {
-        transformer: POINT,
-        multiple: true,
-        notEmpty: true,
-    };
-    propertyValueTypes.PL = {
-        transformer: COLOR,
-        multiple: false,
-        notEmpty: true,
-    };
-    /// Node annotation properties --------------------------------------------------------------------
-    propertyValueTypes.C = propertyValueTypes.N = {
-        transformer: TEXT,
-        multiple: false,
-        notEmpty: true,
-    };
-    // tslint:disable-next-line:max-line-length
-    propertyValueTypes.DM = propertyValueTypes.GB = propertyValueTypes.GW = propertyValueTypes.HO = propertyValueTypes.UC = propertyValueTypes.V = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    /// Move annotation properties --------------------------------------------------------------------
-    propertyValueTypes.BM = propertyValueTypes.TE = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    propertyValueTypes.DO = propertyValueTypes.IT = {
-        transformer: NONE,
-        multiple: false,
-        notEmpty: false,
-    };
-    /// Markup properties -----------------------------------------------------------------------------
-    // tslint:disable-next-line:max-line-length
-    propertyValueTypes.CR = propertyValueTypes.MA = propertyValueTypes.SL = propertyValueTypes.SQ = propertyValueTypes.TR = {
-        transformer: POINT,
-        multiple: true,
-        notEmpty: true,
-    };
-    propertyValueTypes.LB = {
-        transformer: LABEL,
-        multiple: true,
-        notEmpty: true,
-    };
-    propertyValueTypes.AR = propertyValueTypes.LN = {
-        transformer: VECTOR,
-        multiple: true,
-        notEmpty: true,
-    };
-    propertyValueTypes.DD = propertyValueTypes.TB = propertyValueTypes.TW = {
-        transformer: POINT,
-        multiple: true,
-        notEmpty: false,
-    };
-    /// Root properties -------------------------------------------------------------------------------
-    propertyValueTypes.AP = propertyValueTypes.CA = {
-        transformer: TEXT,
-        multiple: false,
-        notEmpty: true,
-    };
-    // note: rectangular board is not implemented (in SZ property)
-    propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = propertyValueTypes.SZ = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    /// Game info properties --------------------------------------------------------------------------
-    propertyValueTypes.AN = propertyValueTypes.BR = propertyValueTypes.BT =
-        propertyValueTypes.CP = propertyValueTypes.DT = propertyValueTypes.EV =
-            propertyValueTypes.GN = propertyValueTypes.GC = propertyValueTypes.GN =
-                propertyValueTypes.ON = propertyValueTypes.OT = propertyValueTypes.PB =
-                    propertyValueTypes.PC = propertyValueTypes.PW = propertyValueTypes.RE =
-                        propertyValueTypes.RO = propertyValueTypes.RU = propertyValueTypes.SO =
-                            propertyValueTypes.US = propertyValueTypes.WR = propertyValueTypes.WT = {
-                                transformer: TEXT,
-                                multiple: false,
-                                notEmpty: true,
-                            };
-    propertyValueTypes.TM = propertyValueTypes.HA = propertyValueTypes.KM = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    /// Timing properties -----------------------------------------------------------------------------
-    propertyValueTypes.BL = propertyValueTypes.WL = propertyValueTypes.OB = propertyValueTypes.OW = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    /// Miscellaneous properties ----------------------------------------------------------------------
-    propertyValueTypes.PM = {
-        transformer: NUMBER,
-        multiple: false,
-        notEmpty: true,
-    };
-    // VW property must be specified as compressed list (ab:cd) and only one value is allowed
-    // empty value [] will reset the viewport. Other options are not supported.
-    propertyValueTypes.VW = {
-        transformer: VECTOR,
-        multiple: false,
-        notEmpty: true,
-    };
-
-    var processJSGF = function (gameTree, rootNode) {
-        rootNode.setSGFProperties(gameTree.sequence[0] || {});
-        var lastNode = rootNode;
-        for (var i = 1; i < gameTree.sequence.length; i++) {
-            var node = new KifuNode();
-            node.setSGFProperties(gameTree.sequence[i]);
-            lastNode.appendChild(node);
-            lastNode = node;
-        }
-        for (var i = 0; i < gameTree.children.length; i++) {
-            lastNode.appendChild(processJSGF(gameTree.children[i], new KifuNode()));
-        }
-        return rootNode;
-    };
-    // Characters, which has to be escaped when transforming to SGF
-    var escapeCharacters = ['\\\\', '\\]'];
-    var escapeSGFValue = function (value) {
-        return escapeCharacters.reduce(function (prev, current) { return prev.replace(new RegExp(current, 'g'), current); }, value);
-    };
-    /**
-     * Class representing one kifu node.
-     */
-    var KifuNode = /** @class */ (function () {
-        function KifuNode() {
-            this.parent = null;
-            this.children = [];
-            this.properties = {};
-        }
-        Object.defineProperty(KifuNode.prototype, "root", {
-            get: function () {
-                // tslint:disable-next-line:no-this-assignment
-                var node = this;
-                while (node.parent != null) {
-                    node = node.parent;
-                }
-                return node;
-            },
-            enumerable: false,
-            configurable: true
-        });
-        Object.defineProperty(KifuNode.prototype, "innerSGF", {
-            /**
-             * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
-             */
-            get: function () {
-                var output = ';';
-                for (var propIdent in this.properties) {
-                    if (this.properties.hasOwnProperty(propIdent)) {
-                        output += propIdent + "[" + this.getSGFProperty(propIdent).map(escapeSGFValue).join('][') + "]";
-                    }
-                }
-                if (this.children.length === 1) {
-                    return "" + output + this.children[0].innerSGF;
-                }
-                if (this.children.length > 1) {
-                    return this.children.reduce(function (prev, current) { return prev + "(" + current.innerSGF + ")"; }, output);
-                }
-                return output;
-            },
-            set: function (sgf) {
-                // clean up
-                this.clean();
-                var transformedSgf = sgf;
-                // create regular SGF from sgf-like string
-                if (transformedSgf[0] !== '(') {
-                    if (transformedSgf[0] !== ';') {
-                        transformedSgf = ";" + transformedSgf;
-                    }
-                    transformedSgf = "(" + transformedSgf + ")";
-                }
-                KifuNode.fromSGF(transformedSgf, 0, this);
-            },
-            enumerable: false,
-            configurable: true
-        });
-        KifuNode.prototype.getPath = function () {
-            var path = { depth: 0, forks: [] };
-            // tslint:disable-next-line:no-this-assignment
-            var node = this;
-            while (node.parent) {
-                path.depth++;
-                if (node.parent.children.length > 1) {
-                    path.forks.unshift(node.parent.children.indexOf(node));
-                }
-                node = node.parent;
-            }
-            return path;
-        };
-        /// GENERAL TREE NODE MANIPULATION METHODS (subset of DOM API's Node)
-        /**
-         * Insert a KNode as the last child node of this node.
-         *
-         * @throws  {Error} when argument is invalid.
-         * @param   {KifuNode} node to append.
-         * @returns {number} position(index) of appended node.
-         */
-        KifuNode.prototype.appendChild = function (node) {
-            if (node == null || !(node instanceof KifuNode) || node === this) {
-                throw new Error('Invalid argument passed to `appendChild` method, KNode was expected.');
-            }
-            if (node.parent) {
-                node.parent.removeChild(node);
-            }
-            node.parent = this;
-            return this.children.push(node) - 1;
-        };
-        /**
-         * Returns a Boolean value indicating whether a node is a descendant of a given node or not.
-         *
-         * @param   {KifuNode}   node to be tested
-         * @returns {boolean} true, if this node contains given node.
-         */
-        KifuNode.prototype.contains = function (node) {
-            if (this.children.indexOf(node) >= 0) {
-                return true;
-            }
-            return this.children.some(function (child) { return child.contains(node); });
-        };
-        /**
-         * Inserts the first KNode given in a parameter immediately before the second, child of this KNode.
-         *
-         * @throws  {Error}   when argument is invalid.
-         * @param   {KifuNode}   newNode       node to be inserted
-         * @param   {(KifuNode)} referenceNode reference node, if omitted, new node will be inserted at the end.
-         * @returns {KifuNode}   this node
-         */
-        KifuNode.prototype.insertBefore = function (newNode, referenceNode) {
-            if (newNode == null || !(newNode instanceof KifuNode) || newNode === this) {
-                throw new Error('Invalid argument passed to `insertBefore` method, KNode was expected.');
-            }
-            if (referenceNode == null) {
-                this.appendChild(newNode);
-                return this;
-            }
-            if (newNode.parent) {
-                newNode.parent.removeChild(newNode);
-            }
-            newNode.parent = this;
-            this.children.splice(this.children.indexOf(referenceNode), 0, newNode);
-            return this;
-        };
-        /**
-         * Removes a child node from the current element, which must be a child of the current node.
-         *
-         * @param   {KifuNode} child node to be removed
-         * @returns {KifuNode}  this node
-         */
-        KifuNode.prototype.removeChild = function (child) {
-            this.children.splice(this.children.indexOf(child), 1);
-            child.parent = null;
-            return this;
-        };
-        /**
-         * Replaces one child Node of the current one with the second one given in parameter.
-         *
-         * @throws  {Error} when argument is invalid
-         * @param   {KifuNode} newChild node to be inserted
-         * @param   {KifuNode} oldChild node to be replaced
-         * @returns {KifuNode} this node
-         */
-        KifuNode.prototype.replaceChild = function (newChild, oldChild) {
-            if (newChild == null || !(newChild instanceof KifuNode) || newChild === this) {
-                throw new Error('Invalid argument passed to `replaceChild` method, KNode was expected.');
-            }
-            this.insertBefore(newChild, oldChild);
-            this.removeChild(oldChild);
-            return this;
-        };
-        /**
-         * Remove all properties and children. Parent will remain.
-         */
-        KifuNode.prototype.clean = function () {
-            for (var i = this.children.length - 1; i >= 0; i--) {
-                this.removeChild(this.children[i]);
-            }
-            this.properties = {};
-        };
-        /// BASIC PROPERTY GETTER and SETTER
-        /**
-         * Gets property by SGF property identificator. Returns property value (type depends on property type)
-         *
-         * @param   {string}   propIdent - SGF property idetificator
-         * @returns {any}    property value or values or undefined, if property is missing.
-         */
-        KifuNode.prototype.getProperty = function (propIdent) {
-            return this.properties[propIdent];
-        };
-        /**
-         * Sets property by SGF property identificator.
-         *
-         * @param   {string}  propIdent - SGF property idetificator
-         * @param   {any}     value - property value or values
-         */
-        KifuNode.prototype.setProperty = function (propIdent, value) {
-            if (value === undefined) {
-                delete this.properties[propIdent];
-            }
-            else {
-                this.properties[propIdent] = value;
-            }
-            return this;
-        };
-        /**
-         * Alias for `setProperty` without second parameter.
-         * @param propIdent
-         */
-        KifuNode.prototype.removeProperty = function (propIdent) {
-            this.setProperty(propIdent);
-        };
-        /**
-         * Iterates through all properties.
-         */
-        KifuNode.prototype.forEachProperty = function (callback) {
-            var _this = this;
-            Object.keys(this.properties).forEach(function (propIdent) { return callback(propIdent, _this.properties[propIdent]); });
-        };
-        /// SGF RAW METHODS
-        /**
-         * Gets one SGF property value as string (with brackets `[` and `]`).
-         *
-         * @param   {string} propIdent SGF property identificator.
-         * @returns {string[]} Array of SGF property values or null if there is not such property.
-         */
-        KifuNode.prototype.getSGFProperty = function (propIdent) {
-            if (this.properties[propIdent] !== undefined) {
-                var propertyValueType_1 = propertyValueTypes[propIdent] || propertyValueTypes._default;
-                if (propertyValueType_1.multiple) {
-                    return this.properties[propIdent].map(function (propValue) { return propertyValueType_1.transformer.write(propValue); });
-                }
-                return [propertyValueType_1.transformer.write(this.properties[propIdent])];
-            }
-            return null;
-        };
-        /**
-         * Sets one SGF property.
-         *
-         * @param   {string}   propIdent SGF property identificator
-         * @param   {string[]} propValues SGF property values
-         * @returns {KifuNode}    this KNode for chaining
-         */
-        KifuNode.prototype.setSGFProperty = function (propIdent, propValues) {
-            var propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
-            if (propValues === undefined) {
-                delete this.properties[propIdent];
-                return this;
-            }
-            if (propertyValueType.multiple) {
-                this.properties[propIdent] = propValues.map(function (val) { return propertyValueType.transformer.read(val); });
-            }
-            else {
-                this.properties[propIdent] = propertyValueType.transformer.read(propValues[0]);
-            }
-            return this;
-        };
-        /**
-         * Sets multiple SGF properties.
-         *
-         * @param   {Object}   properties - map with signature propIdent -> propValues.
-         * @returns {KifuNode}    this KNode for chaining
-         */
-        KifuNode.prototype.setSGFProperties = function (properties) {
-            for (var ident in properties) {
-                if (properties.hasOwnProperty(ident)) {
-                    this.setSGFProperty(ident, properties[ident]);
-                }
-            }
-            return this;
-        };
-        /**
-         * Transforms KNode object to standard SGF string.
-         */
-        KifuNode.prototype.toSGF = function () {
-            return "(" + this.innerSGF + ")";
-        };
-        /**
-         * Deeply clones the node. If node isn't root, its predecessors won't be cloned, and the node becomes root.
-         */
-        KifuNode.prototype.cloneNode = function (appendToParent) {
-            var node = new KifuNode();
-            var properties = JSON.parse(JSON.stringify(this.properties));
-            node.properties = properties;
-            this.children.forEach(function (child) {
-                node.appendChild(child.cloneNode());
-            });
-            if (appendToParent && this.parent) {
-                this.parent.appendChild(node);
-            }
-            return node;
-        };
-        /**
-         * Creates KNode object from SGF transformed to JavaScript object.
-         *
-         * @param gameTree
-         */
-        KifuNode.fromJS = function (gameTree, kifuNode) {
-            if (kifuNode === void 0) { kifuNode = new KifuNode(); }
-            return processJSGF(gameTree, kifuNode);
-        };
-        /**
-         * Creates KNode object from SGF string.
-         *
-         * @param sgf
-         * @param gameNo
-         */
-        KifuNode.fromSGF = function (sgf, gameNo, kifuNode) {
-            if (gameNo === void 0) { gameNo = 0; }
-            if (kifuNode === void 0) { kifuNode = new KifuNode(); }
-            var parser = new SGFParser(sgf);
-            return KifuNode.fromJS(parser.parseCollection()[gameNo], kifuNode);
-        };
-        return KifuNode;
-    }());
-
-    var PropIdent;
-    (function (PropIdent) {
-        // Move Properties
-        PropIdent["BLACK_MOVE"] = "B";
-        PropIdent["EXECUTE_ILLEGAL"] = "KO";
-        PropIdent["MOVE_NUMBER"] = "MN";
-        PropIdent["WHITE_MOVE"] = "W";
-        // Setup Properties
-        PropIdent["ADD_BLACK"] = "AB";
-        PropIdent["CLEAR_FIELD"] = "AE";
-        PropIdent["ADD_WHITE"] = "AW";
-        PropIdent["SET_TURN"] = "PL";
-        // Node Annotation Properties
-        PropIdent["COMMENT"] = "C";
-        PropIdent["EVEN_POSITION"] = "DM";
-        PropIdent["GOOD_FOR_BLACK"] = "GB";
-        PropIdent["GOOD_FOR_WHITE"] = "GW";
-        PropIdent["HOTSPOT"] = "HO";
-        PropIdent["NODE_NAME"] = "N";
-        PropIdent["UNCLEAR_POSITION"] = "UC";
-        PropIdent["NODE_VALUE"] = "V";
-        // Move Annotation Properties
-        PropIdent["BAD_MOVE"] = "BM";
-        PropIdent["DOUBTFUL_MOVE"] = "DM";
-        PropIdent["INTERESTING_MOVE"] = "IT";
-        PropIdent["GOOD_MOVE"] = "TE";
-        // Markup Properties
-        PropIdent["ARROW"] = "AR";
-        PropIdent["CIRCLE"] = "CR";
-        PropIdent["DIM"] = "DD";
-        PropIdent["LABEL"] = "LB";
-        PropIdent["LINE"] = "LN";
-        PropIdent["X_MARK"] = "MA";
-        PropIdent["SELECTED"] = "SL";
-        PropIdent["SQUARE"] = "SQ";
-        PropIdent["TRIANGLE"] = "TR";
-        // Root Properties
-        PropIdent["APPLICATION"] = "AP";
-        PropIdent["CHARSET"] = "CA";
-        PropIdent["SGF_VERSION"] = "FF";
-        PropIdent["GAME_TYPE"] = "GM";
-        PropIdent["VARIATIONS_STYLE"] = "ST";
-        PropIdent["BOARD_SIZE"] = "SZ";
-        // Game Info Properties
-        PropIdent["ANNOTATOR"] = "AN";
-        PropIdent["BLACK_RANK"] = "BR";
-        PropIdent["BLACK_TEAM"] = "BT";
-        PropIdent["COPYRIGHT"] = "CP";
-        PropIdent["DATE"] = "DT";
-        PropIdent["EVENT"] = "EV";
-        PropIdent["GAME_NAME"] = "GN";
-        PropIdent["GAME_COMMENT"] = "GC";
-        PropIdent["OPENING_INFO"] = "ON";
-        PropIdent["OVER_TIME"] = "OT";
-        PropIdent["BLACK_NAME"] = "BN";
-        PropIdent["PLACE"] = "PC";
-        PropIdent["WHITE_NAME"] = "PW";
-        PropIdent["RESULT"] = "RE";
-        PropIdent["ROUND"] = "RO";
-        PropIdent["RULES"] = "RU";
-        PropIdent["SOURCE"] = "SO";
-        PropIdent["TIME_LIMITS"] = "TM";
-        PropIdent["AUTHOR"] = "US";
-        PropIdent["WHITE_RANK"] = "WR";
-        PropIdent["WHITE_TEAM"] = "WT";
-        // Timing Properties
-        PropIdent["BLACK_TIME_LEFT"] = "BL";
-        PropIdent["BLACK_STONES_LEFT"] = "OB";
-        PropIdent["WHITE_STONES_LEFT"] = "OW";
-        PropIdent["WHITE_TIME_LEFT"] = "WL";
-        // Miscellaneous Properties
-        PropIdent["FIGURE"] = "FG";
-        PropIdent["PRINT_MOVE_NUMBERS"] = "PM";
-        PropIdent["BOARD_SECTION"] = "VW";
-        PropIdent["HANDICAP"] = "HA";
-        // GO specific Properties
-        PropIdent["KOMI"] = "KM";
-        PropIdent["BLACK_TERRITORY"] = "TB";
-        PropIdent["WHITE_TERRITORY"] = "TW";
-    })(PropIdent || (PropIdent = {}));
-
-    function beforeInitSZ(event) {
-        event.target.params.size = event.value;
-    }
-    function beforeInitRU(event) {
-        if (goRules[event.value]) {
-            event.target.params.rules = goRules[event.value];
-        }
-    }
-    function applyGameChangesHA(event) {
-        if (event.value > 1 &&
-            event.target.currentNode === event.target.rootNode &&
-            !event.target.getProperty(PropIdent.SET_TURN)) {
-            event.target.game.position.turn = exports.Color.WHITE;
-        }
-    }
-    function applyGameChangesMove(event) {
-        var color = event.propIdent === 'B' ? exports.Color.B : exports.Color.W;
-        // if this is false, move is pass
-        if (event.value) {
-            event.target.game.position.applyMove(event.value.x, event.value.y, color, true, true);
-        }
-        event.target.game.position.turn = -color;
-    }
-    function applyGameChangesPL(event) {
-        event.target.game.turn = event.value;
-    }
-    function applyGameChangesSetup(event) {
-        var color;
-        switch (event.propIdent) {
-            case 'AB':
-                color = exports.Color.B;
-                break;
-            case 'AW':
-                color = exports.Color.W;
-                break;
-            case 'AE':
-                color = exports.Color.E;
-                break;
-        }
-        event.value.forEach(function (value) {
-            // add stone
-            event.target.game.setStone(value.x, value.y, color);
-        });
-    }
-
-    var PlayerBase = /** @class */ (function (_super) {
-        __extends(PlayerBase, _super);
-        function PlayerBase() {
-            var _this = _super.call(this) || this;
-            _this.plugins = [];
-            _this.on('beforeInit.SZ', beforeInitSZ);
-            _this.on('beforeInit.RU', beforeInitRU);
-            _this.on('applyGameChanges.HA', applyGameChangesHA);
-            _this.on('applyGameChanges.B', applyGameChangesMove);
-            _this.on('applyGameChanges.W', applyGameChangesMove);
-            _this.on('applyGameChanges.PL', applyGameChangesPL);
-            _this.on('applyGameChanges.AB', applyGameChangesSetup);
-            _this.on('applyGameChanges.AW', applyGameChangesSetup);
-            _this.on('applyGameChanges.AE', applyGameChangesSetup);
-            return _this;
-        }
-        /**
-         * Load game (kifu) from KifuNode.
-         */
-        PlayerBase.prototype.loadKifu = function (rootNode) {
-            this.rootNode = rootNode;
-            this.currentNode = rootNode;
-            this.emit('loadKifu', {
-                name: 'loadKifu',
-                kifuNode: rootNode,
-                target: this,
-            });
-            this.executeRoot();
-        };
-        /**
-         * Create new game (kifu) and init player with it.
-         */
-        PlayerBase.prototype.newGame = function (size, rules) {
-            var rootNode = new KifuNode();
-            if (size) {
-                rootNode.setProperty('SZ', size);
-            }
-            if (rules) {
-                // TODO: handle rules more correctly
-                var rulesName = Object.keys(goRules).find(function (name) { return goRules[name] === rules; });
-                if (rulesName) {
-                    rootNode.setProperty('RU', rulesName);
-                }
-            }
-            this.loadKifu(rootNode);
-        };
-        /**
-         * Executes root properties during initialization. If some properties change, call this to re-init player.
-         */
-        PlayerBase.prototype.executeRoot = function () {
-            this.params = {
-                size: 19,
-                rules: JAPANESE_RULES,
-            };
-            this.emitNodeLifeCycleEvent('beforeInit');
-            this.game = new Game(this.params.size, this.params.rules);
-            this.executeNode();
-        };
-        PlayerBase.prototype.executeNode = function () {
-            this.emitNodeLifeCycleEvent('applyGameChanges');
-            this.emitNodeLifeCycleEvent('applyNodeChanges');
-        };
-        /**
-         * Change current node to specified next node and executes its properties.
-         */
-        PlayerBase.prototype.executeNext = function (i) {
-            this.emitNodeLifeCycleEvent('clearNodeChanges');
-            this.game.pushPosition(this.game.position.clone());
-            this.currentNode = this.currentNode.children[i];
-            this.executeNode();
-        };
-        /**
-         * Change current node to previous/parent next node and executes its properties.
-         */
-        PlayerBase.prototype.executePrevious = function () {
-            this.emitNodeLifeCycleEvent('clearNodeChanges');
-            this.emitNodeLifeCycleEvent('clearGameChanges');
-            this.game.popPosition();
-            this.currentNode = this.currentNode.parent;
-            this.emitNodeLifeCycleEvent('applyNodeChanges');
-        };
-        /**
-         * Emits node life cycle method (for every property)
-         */
-        PlayerBase.prototype.emitNodeLifeCycleEvent = function (name) {
-            var _this = this;
-            this.emit(name, {
-                name: name,
-                target: this,
-            });
-            this.currentNode.forEachProperty(function (propIdent, value) {
-                _this.emit(name + "." + propIdent, {
-                    name: name,
-                    target: _this,
-                    propIdent: propIdent,
-                    value: value,
-                });
-            });
-        };
-        PlayerBase.prototype.getPropertyHandler = function (propIdent) {
-            return this.constructor.propertyHandlers[propIdent];
-        };
-        /**
-         * Gets property of current node.
-         */
-        PlayerBase.prototype.getProperty = function (propIdent) {
-            return this.currentNode.getProperty(propIdent);
-        };
-        /**
-         * Sets property of current node and execute changes.
-         */
-        PlayerBase.prototype.setProperty = function (propIdent, value) {
-            this.emitNodeLifeCycleEvent('clearNodeChanges');
-            this.emitNodeLifeCycleEvent('clearGameChanges');
-            this.currentNode.setProperty(propIdent, value);
-            this.executeNode();
-        };
-        /**
-         * Gets property of root node.
-         */
-        PlayerBase.prototype.getRootProperty = function (propIdent) {
-            return this.rootNode.getProperty(propIdent);
-        };
-        /**
-         * Returns array of next nodes (children).
-         */
-        PlayerBase.prototype.getNextNodes = function () {
-            return this.currentNode.children;
-        };
-        /**
-         * Go to (specified) next node and execute it.
-         */
-        PlayerBase.prototype.next = function (node) {
-            if (node === void 0) { node = 0; }
-            if (this.currentNode.children.length) {
-                var i = void 0;
-                if (typeof node === 'number') {
-                    i = node;
-                }
-                else {
-                    i = this.currentNode.children.indexOf(node);
-                }
-                if (this.currentNode.children[i]) {
-                    this.executeNext(i);
-                    return true;
-                }
-            }
-            return false;
-        };
-        /**
-         * Go to the previous node.
-         */
-        PlayerBase.prototype.previous = function () {
-            if (this.currentNode.parent) {
-                this.executePrevious();
-                return true;
-            }
-            return false;
-        };
-        /**
-         * Go to the first position - root node.
-         */
-        PlayerBase.prototype.first = function () {
-            // not sure if effective - TODO: check if there is a better way to do this
-            while (this.previous()) { }
-        };
-        /**
-         * Go to the last position.
-         */
-        PlayerBase.prototype.last = function () {
-            while (this.next()) { }
-        };
-        /**
-         * Go to a node specified by path or move number.
-         */
-        PlayerBase.prototype.goTo = function (pathOrMoveNumber) {
-            // TODO: check if there is a better way to do this
-            var path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
-            this.first();
-            for (var i = 0, j = 0; i < path.depth; i++) {
-                if (this.currentNode.children.length > 1) {
-                    this.next(path.forks[j++]);
-                }
-                else {
-                    this.next();
-                }
-            }
-        };
-        /**
-         * Get path to current node
-         */
-        PlayerBase.prototype.getCurrentPath = function () {
-            var path = { depth: 0, forks: [] };
-            if (this.currentNode) {
-                var node = this.currentNode;
-                while (node.parent) {
-                    path.depth++;
-                    if (node.parent.children.length > 1) {
-                        path.forks.push(node.parent.children.indexOf(node));
-                    }
-                    node = node.parent;
-                }
-            }
-            return path;
-        };
-        /**
-           * Go to previous fork (a node with more than one child).
-           */
-        PlayerBase.prototype.previousFork = function () {
-            while (this.previous()) {
-                if (this.currentNode.children.length > 1) {
-                    return;
-                }
-            }
-        };
-        /**
-         * Play a move. New kifu node will be created and move to it
-         */
-        PlayerBase.prototype.play = function (x, y) {
-            var node = new KifuNode();
-            if (this.game.turn === exports.Color.W) {
-                node.setProperty(PropIdent.WHITE_MOVE, { x: x, y: y });
-            }
-            else {
-                node.setProperty(PropIdent.BLACK_MOVE, { x: x, y: y });
-            }
-            var i = this.currentNode.appendChild(node);
-            this.next(i);
-        };
-        /**
-         * Register player's plugin.
-         *
-         * @param plugin
-         */
-        PlayerBase.prototype.use = function (plugin) {
-            if (!plugin || typeof plugin.apply !== 'function') {
-                throw new TypeError('Plugin must implement an `apply` method.');
-            }
-            plugin.apply(this);
-            this.plugins.push(plugin);
-        };
-        return PlayerBase;
-    }(EventEmitter));
-
-    var defaultEditModeConfig = {
-        enabled: false,
-        showVariations: true,
-    };
-    /**
-     * Edit mode plugin. It allows to edit game kifu without changing it - when edit mode is disabled
-     * all changes are reverted. It provides event `editMode.change` to enable/disable edit mode.
-     * It contains integration with board via these events:
-     * - board.updateTemporaryObject
-     * - board.addTemporaryObject
-     * - board.removeTemporaryObject
-     * - board.mouseMove
-     * - board.mouseOut
-     * - board.click
-     */
-    var EditMode = /** @class */ (function () {
-        function EditMode(config) {
-            var _this = this;
-            if (config === void 0) { config = {}; }
-            this.gameStateStack = [];
-            this.handleChange = function (value) {
-                if (value && !_this.config.enabled) {
-                    _this.enable();
-                }
-                else if (!value && _this.config.enabled) {
-                    _this.disable();
-                }
-            };
-            this.config = makeConfig(defaultEditModeConfig, config);
-        }
-        EditMode.prototype.apply = function (player) {
-            if (this.player) {
-                throw new Error('This plugin instance has already been applied to a player object.');
-            }
-            this.player = player;
-            this.player.on('editMode.change', this.handleChange);
-            if (this.config.enabled) {
-                this.enable();
-            }
-        };
-        /*public destroy() {
-          this.player.off('editMode.change', this.handleChange);
-        }*/
-        /**
-         * Enable/disable edit mode. Event `editMode.change` is triggered.
-         *
-         * @param value
-         */
-        EditMode.prototype.setEnabled = function (value) {
-            if (value !== this.config.enabled) {
-                this.player.emit('editMode.change', value);
-            }
-        };
-        /**
-         * Play move if edit mode is enabled. This move will be discarded, when edit mode is disabled.
-         *
-         * @param point
-         */
-        EditMode.prototype.play = function (point) {
-            if (!this.config.enabled) {
-                return;
-            }
-            // check, whether some of the next node contains this move
-            for (var i = 0; i < this.player.currentNode.children.length; i++) {
-                var childNode = this.player.currentNode.children[i];
-                var move = childNode.getProperty('B') || childNode.getProperty('W');
-                if (move.x === point.x && move.y === point.y) {
-                    this.player.next(i);
-                    return;
-                }
-            }
-            // otherwise play if valid
-            if (this.player.game.isValid(point.x, point.y)) {
-                this.player.play(point.x, point.y);
-            }
-        };
-        EditMode.prototype.enable = function () {
-            var _this = this;
-            this.saveGameState();
-            if (this.config.showVariations) {
-                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
-            }
-            else {
-                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
-            }
-            this.config.enabled = true;
-            var lastX = -1;
-            var lastY = -1;
-            var blackStone = new FieldObject('B');
-            blackStone.opacity = 0.35;
-            var whiteStone = new FieldObject('W');
-            whiteStone.opacity = 0.35;
-            var addedStone = null;
-            this._boardMouseMoveEvent = function (p) {
-                if (lastX !== p.x || lastY !== p.y) {
-                    if (_this.player.game.isValid(p.x, p.y)) {
-                        var boardObject = _this.player.game.turn === exports.Color.BLACK ? blackStone : whiteStone;
-                        boardObject.setPosition(p.x, p.y);
-                        if (addedStone) {
-                            _this.player.emit('board.updateTemporaryObject', boardObject);
-                        }
-                        else {
-                            _this.player.emit('board.addTemporaryObject', boardObject);
-                            addedStone = boardObject;
-                        }
-                    }
-                    else {
-                        _this._boardMouseOutEvent();
-                    }
-                    lastX = p.x;
-                    lastY = p.y;
-                }
-            };
-            this._boardMouseOutEvent = function () {
-                if (addedStone) {
-                    _this.player.emit('board.removeTemporaryObject', addedStone);
-                    addedStone = null;
-                }
-                lastX = -1;
-                lastY = -1;
-            };
-            this._boardClickEvent = function (p) {
-                _this._boardMouseOutEvent();
-                if (p == null) {
-                    return;
-                }
-                _this.play(p);
-            };
-            this._nodeChange = function () {
-                var current = { x: lastX, y: lastY };
-                _this._boardMouseOutEvent();
-                _this._boardMouseMoveEvent(current);
-            };
-            this.player.on('board.mouseMove', this._boardMouseMoveEvent);
-            this.player.on('board.mouseOut', this._boardMouseOutEvent);
-            this.player.on('board.click', this._boardClickEvent);
-            this.player.on('applyNodeChanges', this._nodeChange);
-        };
-        EditMode.prototype.disable = function () {
-            this.player.off('board.mouseMove', this._boardMouseMoveEvent);
-            this.player.off('board.mouseOut', this._boardMouseOutEvent);
-            this.player.off('board.click', this._boardClickEvent);
-            this.player.off('applyNodeChanges', this._nodeChange);
-            this.config.enabled = false;
-            this.restoreGameState();
-        };
-        /**
-         * Saves current player game state - Kifu and path object.
-         */
-        EditMode.prototype.saveGameState = function () {
-            this.gameStateStack.push({
-                rootNode: this.player.rootNode.cloneNode(),
-                path: this.player.getCurrentPath(),
-            });
-        };
-        /**
-         * Restores player from previously saved state.
-         */
-        EditMode.prototype.restoreGameState = function () {
-            var lastState = this.gameStateStack.pop();
-            if (lastState) {
-                // revert all node changes
-                this.player.first();
-                // load stored kifu
-                this.player.loadKifu(lastState.rootNode);
-                // go to stored path
-                this.player.goTo(lastState.path);
-            }
-        };
-        return EditMode;
-    }());
-
-    var defaultConfig = {
-        enableMouseWheel: true,
-        enableKeys: true,
-        fastReplay: 2000,
-    };
-    /**
-     * Player with support to render visual elements into the DOM.
-     */
-    var PlayerDOM = /** @class */ (function (_super) {
-        __extends(PlayerDOM, _super);
-        function PlayerDOM(config) {
-            if (config === void 0) { config = {}; }
-            var _this = _super.call(this) || this;
-            _this.components = new Map();
-            _this.fastReplayEnabled = false;
-            _this.handleResize = function () {
-                _this.emit('resize');
-            };
-            _this.handleMouseWheel = function (e) {
-                if (_this.config.enableMouseWheel) {
-                    if (e.deltaY > 0) {
-                        _this.next();
-                    }
-                    else if (e.deltaY < 0) {
-                        _this.previous();
-                    }
-                    e.preventDefault();
-                }
-            };
-            _this.handleKeydown = function (e) {
-                if (_this.config.enableKeys && _this.hasFocus()) {
-                    if (_this.config.fastReplay >= 0 && !_this.fastReplayTimeout) {
-                        _this.fastReplayTimeout = window.setTimeout(function () {
-                            _this.fastReplayEnabled = true;
-                        }, _this.config.fastReplay);
-                    }
-                    if (e.key === 'ArrowRight') {
-                        _this.next();
-                        if (_this.fastReplayEnabled) {
-                            _this.next();
-                            _this.next();
-                        }
-                    }
-                    else if (e.key === 'ArrowLeft') {
-                        _this.previous();
-                        if (_this.fastReplayEnabled) {
-                            _this.previous();
-                            _this.previous();
-                        }
-                    }
-                    return false;
-                }
-            };
-            _this.handleKeyup = function () {
-                window.clearTimeout(_this.fastReplayTimeout);
-                _this.fastReplayTimeout = null;
-                _this.fastReplayEnabled = false;
-            };
-            _this.config = makeConfig(defaultConfig, config);
-            window.addEventListener('resize', _this.handleResize);
-            document.addEventListener('keydown', _this.handleKeydown);
-            document.addEventListener('keyup', _this.handleKeyup);
-            return _this;
-        }
-        /**
-         * Renders PlayerDOM component into specified HTML element. If there is content inside that element
-         * it will be removed. Render method can be called multiple times - this allows to have player's component
-         * anywhere you want.
-         *
-         * @param component
-         * @param container
-         */
-        PlayerDOM.prototype.render = function (component, container) {
-            // clear content of the container
-            container.innerHTML = '';
-            // creates wrapper
-            var wrapper = this.createWrapper();
-            container.appendChild(wrapper);
-            // creates the component HTML element
-            var elem = component.create(this);
-            wrapper.appendChild(elem);
-            if (typeof component.didMount === 'function') {
-                component.didMount();
-            }
-            this.components.set(container, component);
-        };
-        /**
-         * Removes component rendered via `render` method. Call this to clean event listeners of the component.
-         *
-         * @param container
-         */
-        PlayerDOM.prototype.clear = function (container) {
-            var component = this.components.get(container);
-            if (component && typeof component.destroy === 'function') {
-                component.destroy();
-            }
-            var wrapper = container.firstChild;
-            wrapper.removeEventListener('wheel', this.handleMouseWheel);
-            container.removeChild(wrapper);
-            this.components.delete(container);
-        };
-        PlayerDOM.prototype.createWrapper = function () {
-            var element = document.createElement('div');
-            element.className = 'wgo-player';
-            element.tabIndex = 1;
-            element.addEventListener('wheel', this.handleMouseWheel);
-            return element;
-        };
-        PlayerDOM.prototype.hasFocus = function () {
-            var e_1, _a;
-            try {
-                for (var _b = __values(this.components.keys()), _c = _b.next(); !_c.done; _c = _b.next()) {
-                    var elem = _c.value;
-                    if (elem.firstChild === document.activeElement) {
-                        return true;
-                    }
-                }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-            return false;
-        };
-        return PlayerDOM;
-    }(PlayerBase));
-
-    var Container = /** @class */ (function () {
-        function Container(direction, children) {
-            if (children === void 0) { children = []; }
-            this.direction = direction;
-            this.children = children;
-        }
-        Container.prototype.create = function (player) {
-            var _this = this;
-            this.element = document.createElement('div');
-            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
-            this.children.forEach(function (child) { return _this.element.appendChild(child.create(player)); });
-            return this.element;
-        };
-        Container.prototype.didMount = function () {
-            this.children.forEach(function (child) { return typeof child.didMount === 'function' && child.didMount(); });
-        };
-        Container.prototype.destroy = function () {
-            this.children.forEach(function (child) { return typeof child.destroy === 'function' && child.destroy(); });
-        };
-        return Container;
-    }());
-
-    var defaultConfig$1 = {
-        menuItems: [],
-    };
-    var ControlPanel = /** @class */ (function () {
-        function ControlPanel(config) {
-            if (config === void 0) { config = {}; }
-            this.config = makeConfig(defaultConfig$1, config);
-            this.update = this.update.bind(this);
-        }
-        ControlPanel.prototype.create = function (player) {
-            var _this = this;
-            this.player = player;
-            this.element = document.createElement('div');
-            this.element.className = 'wgo-player__control-panel';
-            var buttonGroup = document.createElement('form');
-            buttonGroup.className = 'wgo-player__button-group';
-            this.element.appendChild(buttonGroup);
-            buttonGroup.addEventListener('submit', function (e) {
-                e.preventDefault();
-                _this.player.goTo(parseInt(_this.moveNumber.value, 10));
-            });
-            this.first = document.createElement('button');
-            this.first.type = 'button';
-            this.first.className = 'wgo-player__button';
-            this.first.innerHTML = '<span class="wgo-player__icon-to-end wgo-player__icon--reverse"></span>';
-            this.first.addEventListener('click', function () { return _this.player.first(); });
-            buttonGroup.appendChild(this.first);
-            this.previous = document.createElement('button');
-            this.previous.type = 'button';
-            this.previous.className = 'wgo-player__button';
-            this.previous.innerHTML = '<span class="wgo-player__icon-play wgo-player__icon--reverse"></span>';
-            this.previous.addEventListener('click', function () { return _this.player.previous(); });
-            buttonGroup.appendChild(this.previous);
-            this.moveNumber = document.createElement('input');
-            this.moveNumber.className = 'wgo-player__button wgo-player__move-number';
-            this.moveNumber.value = '0';
-            this.moveNumber.addEventListener('blur', function (e) {
-                _this.player.goTo(parseInt(_this.moveNumber.value, 10));
-            });
-            buttonGroup.appendChild(this.moveNumber);
-            this.next = document.createElement('button');
-            this.next.type = 'button';
-            this.next.className = 'wgo-player__button';
-            this.next.innerHTML = '<span class="wgo-player__icon-play"></span>';
-            this.next.addEventListener('click', function () { return _this.player.next(); });
-            buttonGroup.appendChild(this.next);
-            this.last = document.createElement('button');
-            this.last.type = 'button';
-            this.last.className = 'wgo-player__button';
-            this.last.innerHTML = '<span class="wgo-player__icon-to-end"></span>';
-            this.last.addEventListener('click', function () { return _this.player.last(); });
-            buttonGroup.appendChild(this.last);
-            if (this.config.menuItems.length) {
-                var menuWrapper = document.createElement('div');
-                menuWrapper.className = 'wgo-player__menu-wrapper';
-                this.element.appendChild(menuWrapper);
-                var menuButton = document.createElement('button');
-                menuButton.type = 'button';
-                menuButton.className = 'wgo-player__button wgo-player__button--menu';
-                menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
-                menuWrapper.appendChild(menuButton);
-                var menu = document.createElement('div');
-                menu.className = 'wgo-player__menu';
-                this.createMenuItems(menu);
-                menuWrapper.appendChild(menu);
-            }
-            this.player.on('applyNodeChanges', this.update);
-            if (this.player.currentNode) {
-                this.update();
-            }
-            return this.element;
-        };
-        ControlPanel.prototype.destroy = function () {
-            this.player.off('applyNodeChanges', this.update);
-        };
-        ControlPanel.prototype.update = function () {
-            this.moveNumber.value = String(this.player.getCurrentPath().depth);
-            if (!this.player.currentNode.parent) {
-                this.first.disabled = true;
-                this.previous.disabled = true;
-            }
-            else {
-                this.first.disabled = false;
-                this.previous.disabled = false;
-            }
-            if (this.player.currentNode.children.length === 0) {
-                this.next.disabled = true;
-                this.last.disabled = true;
-            }
-            else {
-                this.next.disabled = false;
-                this.last.disabled = false;
-            }
-        };
-        ControlPanel.prototype.createMenuItems = function (menu) {
-            this.config.menuItems.forEach(function (menuItem) {
-                var menuItemElement = document.createElement('a');
-                menuItemElement.className = 'wgo-player__menu-item';
-                menuItemElement.tabIndex = 0;
-                menuItemElement.textContent = menuItem.name;
-                menuItemElement.href = 'javascript: void(0)';
-                if (menuItem.defaultChecked && menuItem.defaultChecked()) {
-                    menuItemElement.classList.add('wgo-player__menu-item--checked');
-                }
-                menuItemElement.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    var res = menuItem.handleClick();
-                    if (menuItem.checkable) {
-                        if (!res) {
-                            menuItemElement.classList.remove('wgo-player__menu-item--checked');
-                        }
-                        else {
-                            menuItemElement.classList.add('wgo-player__menu-item--checked');
-                        }
-                    }
-                    menuItemElement.blur();
-                });
-                menu.appendChild(menuItemElement);
-            });
-        };
-        /**
-         * Some common menu items, probably just temporary.
-         */
-        ControlPanel.menuItems = {
-            /** Renders menu item with SGF download link */
-            download: function (player) { return ({
-                name: 'Download SGF',
-                handleClick: function () {
-                    var name = player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
-                    var sgf = player.rootNode.toSGF();
-                    var element = document.createElement('a');
-                    element.setAttribute('href', "data:application/x-go-sgf;charset=utf-8," + encodeURIComponent(sgf));
-                    element.setAttribute('download', name + ".sgf");
-                    element.style.display = 'none';
-                    document.body.appendChild(element);
-                    element.click();
-                    document.body.removeChild(element);
-                },
-            }); },
-            /** Renders menu item to toggle coordinates of SVGBoardComponent */
-            displayCoordinates: function (boardComponent) { return ({
-                name: 'Display coordinates',
-                checkable: true,
-                handleClick: function () {
-                    boardComponent.setCoordinates(!boardComponent.config.coordinates);
-                    return boardComponent.config.coordinates;
-                },
-                defaultChecked: function () { return boardComponent.config.coordinates; },
-            }); },
-            /** Renders menu item to toggle edit mode (using EditMode plugin) */
-            editMode: function (editMode) { return ({
-                name: 'Edit mode',
-                checkable: true,
-                handleClick: function () {
-                    editMode.setEnabled(!editMode.config.enabled);
-                    return editMode.config.enabled;
-                },
-                defaultChecked: function () { return editMode.config.enabled; },
-            }); },
-        };
-        return ControlPanel;
-    }());
-
     var SVGCustomFieldObject = /** @class */ (function (_super) {
         __extends(SVGCustomFieldObject, _super);
         function SVGCustomFieldObject(handler, x, y) {
@@ -4859,10 +4500,10 @@
             this.removeTemporaryBoardObject = this.removeTemporaryBoardObject.bind(this);
             this.updateTemporaryBoardObject = this.updateTemporaryBoardObject.bind(this);
             this.setCoordinates = this.setCoordinates.bind(this);
+            this.createDOM();
         }
-        SVGBoardComponent.prototype.create = function (player) {
+        SVGBoardComponent.prototype.createDOM = function () {
             var _this = this;
-            this.player = player;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__board';
             this.stoneBoardsObjects = [];
@@ -4900,6 +4541,9 @@
                     return;
                 }
             });
+        };
+        SVGBoardComponent.prototype.create = function (player) {
+            this.player = player;
             // add general node listeners - for setting stones on board based on position
             this.player.on('applyNodeChanges', this.applyNodeChanges);
             this.player.on('clearNodeChanges', this.clearNodeChanges);
@@ -4923,7 +4567,6 @@
             this.player.on('board.removeTemporaryObject', this.removeTemporaryBoardObject);
             this.player.on('board.updateTemporaryObject', this.updateTemporaryBoardObject);
             this.player.on('board.setCoordinates', this.setCoordinates);
-            return this.element;
         };
         SVGBoardComponent.prototype.destroy = function () {
             this.player.off('applyNodeChanges', this.applyNodeChanges);
@@ -4947,6 +4590,7 @@
             this.player.off('board.removeTemporaryObject', this.removeTemporaryBoardObject);
             this.player.off('board.updateTemporaryObject', this.updateTemporaryBoardObject);
             this.player.off('board.setCoordinates', this.setCoordinates);
+            this.player = null;
         };
         SVGBoardComponent.prototype.updateStones = function () {
             var _this = this;
@@ -5200,90 +4844,17 @@
         return false;
     }
 
-    var ResponsiveComponent = /** @class */ (function () {
-        function ResponsiveComponent(params, component) {
-            this.params = params;
-            this.component = component;
-            this.visible = false;
-            this.didMount = this.didMount.bind(this);
-        }
-        ResponsiveComponent.prototype.create = function (player) {
-            this.player = player;
-            this.element = this.createPlaceholder();
-            this.player.on('resize', this.didMount);
-            return this.element;
-        };
-        ResponsiveComponent.prototype.didMount = function () {
-            var shouldRenderComponent = this.shouldRenderComponent();
-            if (this.visible && !shouldRenderComponent) {
-                // replace component element by placeholder
-                var placeholder = this.createPlaceholder();
-                this.element.parentElement.replaceChild(placeholder, this.element);
-                this.element = placeholder;
-                // clear component
-                if (typeof this.component.destroy === 'function') {
-                    this.component.destroy();
-                }
-                this.visible = false;
-            }
-            else if (!this.visible && shouldRenderComponent) {
-                // replaces placeholder by component element
-                var componentElement = this.component.create(this.player);
-                this.element.parentElement.replaceChild(componentElement, this.element);
-                this.element = componentElement;
-                // mount component logic if any
-                if (typeof this.component.didMount === 'function') {
-                    this.component.didMount();
-                }
-                this.visible = true;
-            }
-        };
-        ResponsiveComponent.prototype.destroy = function () {
-            this.player.off('resize', this.didMount);
-            if (typeof this.component.destroy === 'function') {
-                this.component.destroy();
-            }
-        };
-        ResponsiveComponent.prototype.shouldRenderComponent = function () {
-            var width = this.element.parentElement.offsetWidth;
-            var height = this.element.parentElement.offsetHeight;
-            if (this.params.minWidth != null && this.params.minWidth > width) {
-                return false;
-            }
-            if (this.params.minHeight != null && this.params.minHeight > height) {
-                return false;
-            }
-            if (this.params.maxWidth != null && this.params.maxWidth < width) {
-                return false;
-            }
-            if (this.params.maxHeight != null && this.params.maxHeight < height) {
-                return false;
-            }
-            if (this.params.orientation === 'portrait' && width < height) {
-                return false;
-            }
-            return true;
-        };
-        ResponsiveComponent.prototype.createPlaceholder = function () {
-            // tslint:disable-next-line:max-line-length
-            return document.createComment(" WGo component placeholder for " + (this.component.constructor ? this.component.constructor.name : 'unknown') + " " + JSON.stringify(this.params) + " ");
-        };
-        return ResponsiveComponent;
-    }());
-
-    var defaultConfig$2 = {
+    var commentBoxDefaultConfig = {
         formatMoves: true,
         formatNicks: true,
     };
     var CommentsBox = /** @class */ (function () {
         function CommentsBox(config) {
             if (config === void 0) { config = {}; }
-            this.config = makeConfig(defaultConfig$2, config);
+            this.config = makeConfig(commentBoxDefaultConfig, config);
             this.setComments = this.setComments.bind(this);
             this.clearComments = this.clearComments.bind(this);
-        }
-        CommentsBox.prototype.create = function (player) {
-            this.player = player;
+            // create HTML
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
             var title = document.createElement('div');
@@ -5293,6 +4864,9 @@
             this.commentsElement = document.createElement('div');
             this.commentsElement.className = 'wgo-player__box__content';
             this.element.appendChild(this.commentsElement);
+        }
+        CommentsBox.prototype.create = function (player) {
+            this.player = player;
             this.player.on('applyNodeChanges.C', this.setComments);
             this.player.on('clearNodeChanges.C', this.clearComments);
             if (this.player.currentNode) {
@@ -5301,11 +4875,11 @@
                     this.setComments({ value: comment });
                 }
             }
-            return this.element;
         };
         CommentsBox.prototype.destroy = function () {
             this.player.off('applyNodeChanges.C', this.setComments);
             this.player.off('clearNodeChanges.C', this.clearComments);
+            this.player = null;
         };
         CommentsBox.prototype.setComments = function (event) {
             var _this = this;
@@ -5349,7 +4923,7 @@
         return { x: x, y: boardSize - 1 - y };
     }
 
-    var defaultConfig$3 = {
+    var gameInfoBoxDefaultConfig = {
         gameInfoProperties: {
             DT: 'Date',
             KM: 'Komi',
@@ -5374,11 +4948,8 @@
     var GameInfoBox = /** @class */ (function () {
         function GameInfoBox(config) {
             if (config === void 0) { config = {}; }
-            this.config = makeConfig(defaultConfig$3, config);
+            this.config = makeConfig(gameInfoBoxDefaultConfig, config);
             this.printInfo = this.printInfo.bind(this);
-        }
-        GameInfoBox.prototype.create = function (player) {
-            this.player = player;
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__box wgo-player__box--content';
             if (this.config.stretch) {
@@ -5391,14 +4962,15 @@
             this.infoTable = document.createElement('table');
             this.infoTable.className = 'wgo-player__box__game-info';
             this.element.appendChild(this.infoTable);
+        }
+        GameInfoBox.prototype.create = function (player) {
+            this.player = player;
             this.player.on('beforeInit', this.printInfo);
-            return this.element;
-        };
-        GameInfoBox.prototype.didMount = function () {
             this.printInfo();
         };
         GameInfoBox.prototype.destroy = function () {
             this.player.off('beforeInit', this.printInfo);
+            this.player = null;
         };
         GameInfoBox.prototype.addInfo = function (propIdent, value) {
             var row = document.createElement('tr');
@@ -5429,6 +5001,429 @@
         return GameInfoBox;
     }());
 
+    var defaultEditModeConfig = {
+        enabled: false,
+        showVariations: true,
+    };
+    /**
+     * Edit mode plugin. It allows to edit game kifu without changing it - when edit mode is disabled
+     * all changes are reverted. It provides event `editMode.change` to enable/disable edit mode.
+     * It contains integration with board via these events:
+     * - board.updateTemporaryObject
+     * - board.addTemporaryObject
+     * - board.removeTemporaryObject
+     * - board.mouseMove
+     * - board.mouseOut
+     * - board.click
+     */
+    var EditMode = /** @class */ (function () {
+        function EditMode(config) {
+            var _this = this;
+            if (config === void 0) { config = {}; }
+            this.gameStateStack = [];
+            this.handleChange = function (value) {
+                if (value && !_this.config.enabled) {
+                    _this.enable();
+                }
+                else if (!value && _this.config.enabled) {
+                    _this.disable();
+                }
+            };
+            this.config = makeConfig(defaultEditModeConfig, config);
+        }
+        EditMode.prototype.apply = function (player) {
+            if (this.player) {
+                throw new Error('This plugin instance has already been applied to a player object.');
+            }
+            this.player = player;
+            this.player.on('editMode.change', this.handleChange);
+            if (this.config.enabled) {
+                this.enable();
+            }
+        };
+        /*public destroy() {
+          this.player.off('editMode.change', this.handleChange);
+        }*/
+        /**
+         * Enable/disable edit mode. Event `editMode.change` is triggered.
+         *
+         * @param value
+         */
+        EditMode.prototype.setEnabled = function (value) {
+            if (value !== this.config.enabled) {
+                this.player.emit('editMode.change', value);
+            }
+        };
+        /**
+         * Play move if edit mode is enabled. This move will be discarded, when edit mode is disabled.
+         *
+         * @param point
+         */
+        EditMode.prototype.play = function (point) {
+            if (!this.config.enabled) {
+                return;
+            }
+            // check, whether some of the next node contains this move
+            for (var i = 0; i < this.player.currentNode.children.length; i++) {
+                var childNode = this.player.currentNode.children[i];
+                var move = childNode.getProperty('B') || childNode.getProperty('W');
+                if (move.x === point.x && move.y === point.y) {
+                    this.player.next(i);
+                    return;
+                }
+            }
+            // otherwise play if valid
+            if (this.player.game.isValid(point.x, point.y)) {
+                this.player.play(point.x, point.y);
+            }
+        };
+        EditMode.prototype.enable = function () {
+            var _this = this;
+            this.saveGameState();
+            if (this.config.showVariations) {
+                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
+            }
+            else {
+                this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
+            }
+            this.config.enabled = true;
+            var lastX = -1;
+            var lastY = -1;
+            var blackStone = new FieldObject('B');
+            blackStone.opacity = 0.35;
+            var whiteStone = new FieldObject('W');
+            whiteStone.opacity = 0.35;
+            var addedStone = null;
+            this._boardMouseMoveEvent = function (p) {
+                if (lastX !== p.x || lastY !== p.y) {
+                    if (_this.player.game.isValid(p.x, p.y)) {
+                        var boardObject = _this.player.game.turn === exports.Color.BLACK ? blackStone : whiteStone;
+                        boardObject.setPosition(p.x, p.y);
+                        if (addedStone) {
+                            _this.player.emit('board.updateTemporaryObject', boardObject);
+                        }
+                        else {
+                            _this.player.emit('board.addTemporaryObject', boardObject);
+                            addedStone = boardObject;
+                        }
+                    }
+                    else {
+                        _this._boardMouseOutEvent();
+                    }
+                    lastX = p.x;
+                    lastY = p.y;
+                }
+            };
+            this._boardMouseOutEvent = function () {
+                if (addedStone) {
+                    _this.player.emit('board.removeTemporaryObject', addedStone);
+                    addedStone = null;
+                }
+                lastX = -1;
+                lastY = -1;
+            };
+            this._boardClickEvent = function (p) {
+                _this._boardMouseOutEvent();
+                if (p == null) {
+                    return;
+                }
+                _this.play(p);
+            };
+            this._nodeChange = function () {
+                var current = { x: lastX, y: lastY };
+                _this._boardMouseOutEvent();
+                _this._boardMouseMoveEvent(current);
+            };
+            this.player.on('board.mouseMove', this._boardMouseMoveEvent);
+            this.player.on('board.mouseOut', this._boardMouseOutEvent);
+            this.player.on('board.click', this._boardClickEvent);
+            this.player.on('applyNodeChanges', this._nodeChange);
+        };
+        EditMode.prototype.disable = function () {
+            this.player.off('board.mouseMove', this._boardMouseMoveEvent);
+            this.player.off('board.mouseOut', this._boardMouseOutEvent);
+            this.player.off('board.click', this._boardClickEvent);
+            this.player.off('applyNodeChanges', this._nodeChange);
+            this.config.enabled = false;
+            this.restoreGameState();
+        };
+        /**
+         * Saves current player game state - Kifu and path object.
+         */
+        EditMode.prototype.saveGameState = function () {
+            this.gameStateStack.push({
+                rootNode: this.player.rootNode.cloneNode(),
+                path: this.player.getCurrentPath(),
+            });
+        };
+        /**
+         * Restores player from previously saved state.
+         */
+        EditMode.prototype.restoreGameState = function () {
+            var lastState = this.gameStateStack.pop();
+            if (lastState) {
+                // revert all node changes
+                this.player.first();
+                // load stored kifu
+                this.player.loadKifu(lastState.rootNode);
+                // go to stored path
+                this.player.goTo(lastState.path);
+            }
+        };
+        return EditMode;
+    }());
+
+    var Container = /** @class */ (function () {
+        function Container(direction, children) {
+            var _this = this;
+            if (children === void 0) { children = []; }
+            this.direction = direction;
+            this.children = children;
+            // create HTML
+            this.element = document.createElement('div');
+            this.element.className = "wgo-player__container wgo-player__container--" + this.direction;
+            this.children.forEach(function (child) { return _this.element.appendChild(child.element); });
+        }
+        Container.prototype.create = function (player) {
+            this.children.forEach(function (child) { return child.create(player); });
+        };
+        Container.prototype.destroy = function () {
+            this.children.forEach(function (child) { return typeof child.destroy === 'function' && child.destroy(); });
+        };
+        return Container;
+    }());
+
+    var defaultConfig = {
+        menuItems: [],
+    };
+    var ControlPanel = /** @class */ (function () {
+        function ControlPanel(config) {
+            if (config === void 0) { config = {}; }
+            this.config = makeConfig(defaultConfig, config);
+            this.update = this.update.bind(this);
+            this.createDOM();
+        }
+        ControlPanel.prototype.createDOM = function () {
+            var _this = this;
+            this.element = document.createElement('div');
+            this.element.className = 'wgo-player__control-panel';
+            var buttonGroup = document.createElement('form');
+            buttonGroup.className = 'wgo-player__button-group';
+            this.element.appendChild(buttonGroup);
+            buttonGroup.addEventListener('submit', function (e) {
+                e.preventDefault();
+                _this.player.goTo(parseInt(_this.moveNumber.value, 10));
+            });
+            this.first = document.createElement('button');
+            this.first.type = 'button';
+            this.first.className = 'wgo-player__button';
+            this.first.innerHTML = '<span class="wgo-player__icon-to-end wgo-player__icon--reverse"></span>';
+            this.first.addEventListener('click', function () { return _this.player.first(); });
+            buttonGroup.appendChild(this.first);
+            this.previous = document.createElement('button');
+            this.previous.type = 'button';
+            this.previous.className = 'wgo-player__button';
+            this.previous.innerHTML = '<span class="wgo-player__icon-play wgo-player__icon--reverse"></span>';
+            this.previous.addEventListener('click', function () { return _this.player.previous(); });
+            buttonGroup.appendChild(this.previous);
+            this.moveNumber = document.createElement('input');
+            this.moveNumber.className = 'wgo-player__button wgo-player__move-number';
+            this.moveNumber.value = '0';
+            this.moveNumber.addEventListener('blur', function (e) {
+                _this.player.goTo(parseInt(_this.moveNumber.value, 10));
+            });
+            buttonGroup.appendChild(this.moveNumber);
+            this.next = document.createElement('button');
+            this.next.type = 'button';
+            this.next.className = 'wgo-player__button';
+            this.next.innerHTML = '<span class="wgo-player__icon-play"></span>';
+            this.next.addEventListener('click', function () { return _this.player.next(); });
+            buttonGroup.appendChild(this.next);
+            this.last = document.createElement('button');
+            this.last.type = 'button';
+            this.last.className = 'wgo-player__button';
+            this.last.innerHTML = '<span class="wgo-player__icon-to-end"></span>';
+            this.last.addEventListener('click', function () { return _this.player.last(); });
+            buttonGroup.appendChild(this.last);
+            if (this.config.menuItems.length) {
+                var menuWrapper = document.createElement('div');
+                menuWrapper.className = 'wgo-player__menu-wrapper';
+                this.element.appendChild(menuWrapper);
+                var menuButton = document.createElement('button');
+                menuButton.type = 'button';
+                menuButton.className = 'wgo-player__button wgo-player__button--menu';
+                menuButton.innerHTML = '<span class="wgo-player__icon-menu"></span>';
+                menuWrapper.appendChild(menuButton);
+                var menu = document.createElement('div');
+                menu.className = 'wgo-player__menu';
+                this.createMenuItems(menu);
+                menuWrapper.appendChild(menu);
+            }
+        };
+        ControlPanel.prototype.create = function (player) {
+            this.player = player;
+            this.player.on('applyNodeChanges', this.update);
+            if (this.player.currentNode) {
+                this.update();
+            }
+        };
+        ControlPanel.prototype.destroy = function () {
+            this.player.off('applyNodeChanges', this.update);
+            this.player = null;
+        };
+        ControlPanel.prototype.update = function () {
+            this.moveNumber.value = String(this.player.getCurrentPath().depth);
+            if (!this.player.currentNode.parent) {
+                this.first.disabled = true;
+                this.previous.disabled = true;
+            }
+            else {
+                this.first.disabled = false;
+                this.previous.disabled = false;
+            }
+            if (this.player.currentNode.children.length === 0) {
+                this.next.disabled = true;
+                this.last.disabled = true;
+            }
+            else {
+                this.next.disabled = false;
+                this.last.disabled = false;
+            }
+        };
+        ControlPanel.prototype.createMenuItems = function (menu) {
+            this.config.menuItems.forEach(function (menuItem) {
+                var menuItemElement = document.createElement('a');
+                menuItemElement.className = 'wgo-player__menu-item';
+                menuItemElement.tabIndex = 0;
+                menuItemElement.textContent = menuItem.name;
+                menuItemElement.href = 'javascript: void(0)';
+                if (menuItem.defaultChecked && menuItem.defaultChecked()) {
+                    menuItemElement.classList.add('wgo-player__menu-item--checked');
+                }
+                menuItemElement.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    var res = menuItem.handleClick();
+                    if (menuItem.checkable) {
+                        if (!res) {
+                            menuItemElement.classList.remove('wgo-player__menu-item--checked');
+                        }
+                        else {
+                            menuItemElement.classList.add('wgo-player__menu-item--checked');
+                        }
+                    }
+                    menuItemElement.blur();
+                });
+                menu.appendChild(menuItemElement);
+            });
+        };
+        /**
+         * Some common menu items, probably just temporary.
+         */
+        ControlPanel.menuItems = {
+            /** Renders menu item with SGF download link */
+            download: function (player) { return ({
+                name: 'Download SGF',
+                handleClick: function () {
+                    var name = player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+                    var sgf = player.rootNode.toSGF();
+                    var element = document.createElement('a');
+                    element.setAttribute('href', "data:application/x-go-sgf;charset=utf-8," + encodeURIComponent(sgf));
+                    element.setAttribute('download', name + ".sgf");
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                },
+            }); },
+            /** Renders menu item to toggle coordinates of SVGBoardComponent */
+            displayCoordinates: function (boardComponent) { return ({
+                name: 'Display coordinates',
+                checkable: true,
+                handleClick: function () {
+                    boardComponent.setCoordinates(!boardComponent.config.coordinates);
+                    return boardComponent.config.coordinates;
+                },
+                defaultChecked: function () { return boardComponent.config.coordinates; },
+            }); },
+            /** Renders menu item to toggle edit mode (using EditMode plugin) */
+            editMode: function (editMode) { return ({
+                name: 'Edit mode',
+                checkable: true,
+                handleClick: function () {
+                    editMode.setEnabled(!editMode.config.enabled);
+                    return editMode.config.enabled;
+                },
+                defaultChecked: function () { return editMode.config.enabled; },
+            }); },
+        };
+        return ControlPanel;
+    }());
+
+    var ResponsiveComponent = /** @class */ (function () {
+        function ResponsiveComponent(params, component) {
+            this.params = params;
+            this.component = component;
+            this.resize = this.resize.bind(this);
+            this.visible = true;
+            this.element = this.component.element;
+        }
+        ResponsiveComponent.prototype.create = function (player) {
+            this.player = player;
+            this.player.on('resize', this.resize);
+            this.component.create(this.player);
+            this.resize();
+        };
+        ResponsiveComponent.prototype.resize = function () {
+            var shouldRenderComponent = this.shouldRenderComponent();
+            if (this.visible && !shouldRenderComponent) {
+                // replace component element by placeholder
+                var placeholder = this.createPlaceholder();
+                this.element.parentElement.replaceChild(placeholder, this.element);
+                this.element = placeholder;
+                this.visible = false;
+            }
+            else if (!this.visible && shouldRenderComponent) {
+                // replaces placeholder by component element
+                var componentElement = this.component.element;
+                this.element.parentElement.replaceChild(componentElement, this.element);
+                this.element = componentElement;
+                this.visible = true;
+            }
+        };
+        ResponsiveComponent.prototype.destroy = function () {
+            this.player.off('resize', this.resize);
+            this.player = null;
+            if (typeof this.component.destroy === 'function') {
+                this.component.destroy();
+            }
+        };
+        ResponsiveComponent.prototype.shouldRenderComponent = function () {
+            var width = this.element.parentElement.offsetWidth;
+            var height = this.element.parentElement.offsetHeight;
+            if (this.params.minWidth != null && this.params.minWidth > width) {
+                return false;
+            }
+            if (this.params.minHeight != null && this.params.minHeight > height) {
+                return false;
+            }
+            if (this.params.maxWidth != null && this.params.maxWidth < width) {
+                return false;
+            }
+            if (this.params.maxHeight != null && this.params.maxHeight < height) {
+                return false;
+            }
+            if (this.params.orientation === 'portrait' && width < height) {
+                return false;
+            }
+            return true;
+        };
+        ResponsiveComponent.prototype.createPlaceholder = function () {
+            // tslint:disable-next-line:max-line-length
+            return document.createComment(" WGo component placeholder for " + (this.component.constructor ? this.component.constructor.name : 'unknown') + " " + JSON.stringify(this.params) + " ");
+        };
+        return ResponsiveComponent;
+    }());
+
     var PlayerTag = /** @class */ (function () {
         function PlayerTag(color) {
             this.color = color;
@@ -5438,9 +5433,6 @@
             this.setRank = this.setRank.bind(this);
             this.setTeam = this.setTeam.bind(this);
             this.setCaps = this.setCaps.bind(this);
-        }
-        PlayerTag.prototype.create = function (player) {
-            this.player = player;
             // create HTML
             this.element = document.createElement('div');
             this.element.className = 'wgo-player__box wgo-player__player-tag';
@@ -5458,14 +5450,15 @@
             this.element.appendChild(this.playerCapsElement);
             // todo team
             this.playerTeamElement = document.createElement('div');
+        }
+        PlayerTag.prototype.create = function (player) {
+            this.player = player;
             // attach Kifu listeners
             this.player.on("beforeInit.P" + this.colorChar, this.setName); // property PB or PW
             this.player.on("beforeInit." + this.colorChar + "R", this.setRank); // property BR or WR
             this.player.on("beforeInit." + this.colorChar + "T", this.setTeam); // property BT or WT
             this.player.on('applyNodeChanges', this.setCaps);
-            return this.element;
-        };
-        PlayerTag.prototype.didMount = function () {
+            // set current (probably initial) values
             this.initialSet();
         };
         PlayerTag.prototype.destroy = function () {
@@ -5473,9 +5466,10 @@
             this.player.off("beforeInit." + this.colorChar + "R", this.setRank);
             this.player.off("beforeInit." + this.colorChar + "T", this.setTeam);
             this.player.off('applyNodeChanges', this.setCaps);
+            this.player = null;
         };
         PlayerTag.prototype.setName = function (event) {
-            this.playerNameElement.textContent = event.value;
+            this.playerNameElement.textContent = event.value || this.colorName;
         };
         PlayerTag.prototype.setRank = function (event) {
             this.playerRankElement.textContent = event.value;
@@ -5488,7 +5482,7 @@
         };
         PlayerTag.prototype.initialSet = function () {
             if (this.player.rootNode) {
-                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || '';
+                this.playerNameElement.textContent = this.player.rootNode.getProperty("P" + this.colorChar) || this.colorName;
                 this.playerRankElement.textContent = this.player.rootNode.getProperty(this.colorChar + "R") || '';
                 this.playerTeamElement.textContent = this.player.rootNode.getProperty(this.colorChar + "T") || '';
             }
@@ -5498,6 +5492,60 @@
         };
         return PlayerTag;
     }());
+
+    var defaultConfig$1 = __assign(__assign({}, playerDOMDefaultConfig), { board: defaultSVGBoardComponentConfig, comments: __assign({ enabled: true }, commentBoxDefaultConfig), gameInfo: __assign({ enabled: true }, gameInfoBoxDefaultConfig), sgfFile: null, sgf: null });
+    var SimplePlayer = /** @class */ (function (_super) {
+        __extends(SimplePlayer, _super);
+        function SimplePlayer(elem, config) {
+            if (config === void 0) { config = {}; }
+            var _this = _super.call(this) || this;
+            // TODO - already partially done in PlayerDOM
+            _this.config = makeConfig(defaultConfig$1, config);
+            _this.element = elem;
+            _this.init();
+            return _this;
+        }
+        SimplePlayer.prototype.init = function () {
+            var _this = this;
+            var editMode = new EditMode();
+            this.use(editMode);
+            var svgBoardComponent = new SVGBoardComponent(this.config.board);
+            var controlPanelConfig = {
+                menuItems: [
+                    ControlPanel.menuItems.editMode(editMode),
+                    ControlPanel.menuItems.displayCoordinates(svgBoardComponent),
+                    ControlPanel.menuItems.download(this),
+                ],
+            };
+            var component = new Container('column', [
+                new ResponsiveComponent({ maxWidth: 749 }, new Container('row', [
+                    new PlayerTag(exports.Color.B),
+                    new PlayerTag(exports.Color.W),
+                ])),
+                new Container('row', [
+                    svgBoardComponent,
+                    new ResponsiveComponent({ minWidth: 650 }, new Container('column', [
+                        new ResponsiveComponent({ minWidth: 250 }, new PlayerTag(exports.Color.B)),
+                        new ResponsiveComponent({ minWidth: 250 }, new PlayerTag(exports.Color.W)),
+                        new ResponsiveComponent({ minWidth: 250 }, new ControlPanel(controlPanelConfig)),
+                        new GameInfoBox(this.config.gameInfo),
+                        new CommentsBox(this.config.comments),
+                    ])),
+                ]),
+                new ResponsiveComponent({ maxWidth: 749 }, new ControlPanel(controlPanelConfig)),
+                new ResponsiveComponent({ maxWidth: 649 }, new CommentsBox(this.config.comments)),
+            ]);
+            this.render(component, this.element);
+            if (this.config.sgf) {
+                this.loadKifu(KifuNode.fromSGF(this.config.sgf));
+            }
+            else if (this.config.sgfFile) {
+                // TODO add some loading overlay and error state
+                fetch(this.config.sgfFile).then(function (response) { return response.text(); }).then(function (value) { return _this.loadKifu(KifuNode.fromSGF(value)); });
+            }
+        };
+        return SimplePlayer;
+    }(PlayerDOM));
 
     exports.BoardBase = BoardBase;
     exports.BoardLabelObject = BoardLabelObject;
@@ -5526,6 +5574,7 @@
     exports.SGFSyntaxError = SGFSyntaxError;
     exports.SVGBoard = SVGBoard;
     exports.SVGBoardComponent = SVGBoardComponent;
+    exports.SimplePlayer = SimplePlayer;
     exports.drawHandlers = index;
     exports.goRules = goRules;
     exports.propertyValueTypes = propertyValueTypes;

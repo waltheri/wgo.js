@@ -7,12 +7,12 @@ export default interface PlayerDOMComponent {
   /**
    *
    */
-  create(player: PlayerDOM): Node;
+  element: Node;
 
   /**
    *
    */
-  didMount?(): void;
+  create(player: PlayerDOM): void;
 
   /**
    *

@@ -2,13 +2,13 @@ import { PlayerBase } from '../PlayerBase';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import PlayerDOMComponent from './components/PlayerDOMComponent';
 
-interface PlayerDOMConfig {
+export interface PlayerDOMConfig {
   enableMouseWheel: boolean;
   enableKeys: boolean;
   fastReplay: number;
 }
 
-const defaultConfig = {
+export const playerDOMDefaultConfig = {
   enableMouseWheel: true,
   enableKeys: true,
   fastReplay: 2000,
@@ -25,7 +25,7 @@ export default class PlayerDOM extends PlayerBase {
 
   constructor(config: PartialRecursive<PlayerDOMConfig> = {}) {
     super();
-    this.config = makeConfig(defaultConfig, config);
+    this.config = makeConfig(playerDOMDefaultConfig, config);
 
     window.addEventListener('resize', this.handleResize);
     document.addEventListener('keydown', this.handleKeydown);
@@ -49,12 +49,8 @@ export default class PlayerDOM extends PlayerBase {
     container.appendChild(wrapper);
 
     // creates the component HTML element
-    const elem = component.create(this);
-    wrapper.appendChild(elem);
-
-    if (typeof component.didMount === 'function') {
-      component.didMount();
-    }
+    wrapper.appendChild(component.element);
+    component.create(this);
 
     this.components.set(container, component);
   }

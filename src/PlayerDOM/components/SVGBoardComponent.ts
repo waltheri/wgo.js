@@ -84,11 +84,11 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     this.removeTemporaryBoardObject = this.removeTemporaryBoardObject.bind(this);
     this.updateTemporaryBoardObject = this.updateTemporaryBoardObject.bind(this);
     this.setCoordinates = this.setCoordinates.bind(this);
+
+    this.createDOM();
   }
 
-  create(player: PlayerDOM) {
-    this.player = player;
-
+  createDOM() {
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__board';
 
@@ -131,6 +131,10 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
         return;
       }
     });
+  }
+
+  create(player: PlayerDOM) {
+    this.player = player;
 
     // add general node listeners - for setting stones on board based on position
     this.player.on('applyNodeChanges', this.applyNodeChanges);
@@ -159,8 +163,6 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     this.player.on('board.removeTemporaryObject', this.removeTemporaryBoardObject);
     this.player.on('board.updateTemporaryObject', this.updateTemporaryBoardObject);
     this.player.on('board.setCoordinates', this.setCoordinates);
-
-    return this.element;
   }
 
   destroy() {
@@ -191,6 +193,8 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     this.player.off('board.removeTemporaryObject', this.removeTemporaryBoardObject);
     this.player.off('board.updateTemporaryObject', this.updateTemporaryBoardObject);
     this.player.off('board.setCoordinates', this.setCoordinates);
+
+    this.player = null;
   }
 
   protected updateStones() {

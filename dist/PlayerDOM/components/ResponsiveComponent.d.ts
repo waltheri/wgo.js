@@ -10,12 +10,12 @@ interface ResponsiveComponentParams {
 export default class ResponsiveComponent implements PlayerDOMComponent {
     private params;
     private component;
-    private player;
-    private element;
-    private visible;
+    element: Node;
+    player: PlayerDOM;
+    visible: boolean;
     constructor(params: ResponsiveComponentParams, component: PlayerDOMComponent);
-    create(player: PlayerDOM): Node;
-    didMount(): void;
+    create(player: PlayerDOM): void;
+    resize(): void;
     destroy(): void;
     private shouldRenderComponent;
     private createPlaceholder;

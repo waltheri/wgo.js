@@ -10,24 +10,25 @@ interface ResponsiveComponentParams {
 }
 
 export default class ResponsiveComponent implements PlayerDOMComponent {
-  private player: PlayerDOM;
-  private element: Node;
-  private visible: boolean = false;
+  element: Node;
+  player: PlayerDOM;
+  visible: boolean;
 
   constructor(private params: ResponsiveComponentParams, private component: PlayerDOMComponent) {
-    this.didMount = this.didMount.bind(this);
+    this.resize = this.resize.bind(this);
+    this.visible = true;
+    this.element = this.component.element;
   }
 
-  create(player: PlayerDOM): Node {
+  create(player: PlayerDOM) {
     this.player = player;
-    this.element = this.createPlaceholder();
+    this.player.on('resize', this.resize);
+    this.component.create(this.player);
 
-    this.player.on('resize', this.didMount);
-
-    return this.element;
+    this.resize();
   }
 
-  didMount() {
+  resize() {
     const shouldRenderComponent = this.shouldRenderComponent();
 
     if (this.visible && !shouldRenderComponent) {
@@ -35,30 +36,19 @@ export default class ResponsiveComponent implements PlayerDOMComponent {
       const placeholder = this.createPlaceholder();
       this.element.parentElement.replaceChild(placeholder, this.element);
       this.element = placeholder;
-
-      // clear component
-      if (typeof this.component.destroy === 'function') {
-        this.component.destroy();
-      }
-
       this.visible = false;
     } else if (!this.visible && shouldRenderComponent) {
       // replaces placeholder by component element
-      const componentElement = this.component.create(this.player);
+      const componentElement = this.component.element;
       this.element.parentElement.replaceChild(componentElement, this.element);
       this.element = componentElement;
-
-      // mount component logic if any
-      if (typeof this.component.didMount === 'function') {
-        this.component.didMount();
-      }
-
       this.visible = true;
     }
   }
 
   destroy() {
-    this.player.off('resize', this.didMount);
+    this.player.off('resize', this.resize);
+    this.player = null;
 
     if (typeof this.component.destroy === 'function') {
       this.component.destroy();

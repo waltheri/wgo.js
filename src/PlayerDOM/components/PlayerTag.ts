@@ -23,10 +23,6 @@ export default class PlayerTag implements PlayerDOMComponent {
     this.setRank = this.setRank.bind(this);
     this.setTeam = this.setTeam.bind(this);
     this.setCaps = this.setCaps.bind(this);
-  }
-
-  create(player: PlayerDOM) {
-    this.player = player;
 
     // create HTML
     this.element = document.createElement('div');
@@ -50,6 +46,10 @@ export default class PlayerTag implements PlayerDOMComponent {
 
     // todo team
     this.playerTeamElement = document.createElement('div');
+  }
+
+  create(player: PlayerDOM) {
+    this.player = player;
 
     // attach Kifu listeners
     this.player.on(`beforeInit.P${this.colorChar}`, this.setName); // property PB or PW
@@ -57,10 +57,7 @@ export default class PlayerTag implements PlayerDOMComponent {
     this.player.on(`beforeInit.${this.colorChar}T`, this.setTeam); // property BT or WT
     this.player.on('applyNodeChanges', this.setCaps);
 
-    return this.element;
-  }
-
-  didMount() {
+    // set current (probably initial) values
     this.initialSet();
   }
 
@@ -69,10 +66,12 @@ export default class PlayerTag implements PlayerDOMComponent {
     this.player.off(`beforeInit.${this.colorChar}R`, this.setRank);
     this.player.off(`beforeInit.${this.colorChar}T`, this.setTeam);
     this.player.off('applyNodeChanges', this.setCaps);
+
+    this.player = null;
   }
 
   setName(event: LifeCycleEvent<string>) {
-    this.playerNameElement.textContent = event.value;
+    this.playerNameElement.textContent = event.value || this.colorName;
   }
 
   setRank(event: LifeCycleEvent<string>) {
@@ -89,7 +88,7 @@ export default class PlayerTag implements PlayerDOMComponent {
 
   private initialSet() {
     if (this.player.rootNode) {
-      this.playerNameElement.textContent = this.player.rootNode.getProperty(`P${this.colorChar}`) || '';
+      this.playerNameElement.textContent = this.player.rootNode.getProperty(`P${this.colorChar}`) || this.colorName;
       this.playerRankElement.textContent = this.player.rootNode.getProperty(`${this.colorChar}R`) || '';
       this.playerTeamElement.textContent = this.player.rootNode.getProperty(`${this.colorChar}T`) || '';
     }

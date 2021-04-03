@@ -13,8 +13,7 @@ export default class PlayerTag implements PlayerDOMComponent {
     playerTeamElement: HTMLElement;
     playerCapsElement: HTMLElement;
     constructor(color: Color.B | Color.W);
-    create(player: PlayerDOM): HTMLElement;
-    didMount(): void;
+    create(player: PlayerDOM): void;
     destroy(): void;
     setName(event: LifeCycleEvent<string>): void;
     setRank(event: LifeCycleEvent<string>): void;

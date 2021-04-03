@@ -41,10 +41,11 @@ export default class ControlPanel implements PlayerDOMComponent {
   constructor(config: PartialRecursive<ControlPanelConfig> = {}) {
     this.config = makeConfig(defaultConfig, config);
     this.update = this.update.bind(this);
+
+    this.createDOM();
   }
 
-  create(player: PlayerDOM) {
-    this.player = player;
+  createDOM() {
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__control-panel';
 
@@ -108,18 +109,20 @@ export default class ControlPanel implements PlayerDOMComponent {
       this.createMenuItems(menu);
       menuWrapper.appendChild(menu);
     }
+  }
 
+  create(player: PlayerDOM) {
+    this.player = player;
     this.player.on('applyNodeChanges', this.update);
 
     if (this.player.currentNode) {
       this.update();
     }
-
-    return this.element;
   }
 
   destroy() {
     this.player.off('applyNodeChanges', this.update);
+    this.player = null;
   }
 
   update() {

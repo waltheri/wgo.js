@@ -3,12 +3,12 @@ import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
 
-interface CommentBoxConfig {
+export interface CommentBoxConfig {
   formatMoves: boolean;
   formatNicks: boolean;
 }
 
-const defaultConfig = {
+export const commentBoxDefaultConfig = {
   formatMoves: true,
   formatNicks: true,
 };
@@ -20,14 +20,11 @@ export default class CommentsBox implements PlayerDOMComponent {
   config: CommentBoxConfig;
 
   constructor(config: PartialRecursive<CommentBoxConfig> = {}) {
-    this.config = makeConfig(defaultConfig, config);
+    this.config = makeConfig(commentBoxDefaultConfig, config);
     this.setComments = this.setComments.bind(this);
     this.clearComments = this.clearComments.bind(this);
-  }
 
-  create(player: PlayerDOM) {
-    this.player = player;
-
+    // create HTML
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
 
@@ -39,6 +36,10 @@ export default class CommentsBox implements PlayerDOMComponent {
     this.commentsElement = document.createElement('div');
     this.commentsElement.className = 'wgo-player__box__content';
     this.element.appendChild(this.commentsElement);
+  }
+
+  create(player: PlayerDOM) {
+    this.player = player;
 
     this.player.on('applyNodeChanges.C', this.setComments);
     this.player.on('clearNodeChanges.C', this.clearComments);
@@ -49,13 +50,12 @@ export default class CommentsBox implements PlayerDOMComponent {
         this.setComments({ value: comment });
       }
     }
-
-    return this.element;
   }
 
   destroy() {
     this.player.off('applyNodeChanges.C', this.setComments);
     this.player.off('clearNodeChanges.C', this.clearComments);
+    this.player = null;
   }
 
   setComments(event: { value: string }) {
