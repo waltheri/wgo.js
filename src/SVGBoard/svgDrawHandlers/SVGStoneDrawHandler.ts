@@ -1,5 +1,5 @@
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
-import { SVGBoardConfig, NS, BoardObjectSVGElements } from '../types';
+import { SVGBoardConfig, SVG_NS, BoardObjectSVGElements } from '../types';
 import generateId from '../generateId';
 
 export default abstract class SVGStoneDrawHandler extends SVGFieldDrawHandler {
@@ -31,7 +31,7 @@ export default abstract class SVGStoneDrawHandler extends SVGFieldDrawHandler {
     const stoneRadius = config.theme.stoneSize;
 
     if (!this.shadowFilterElement) {
-      const shadowFilterElement = document.createElementNS(NS, 'radialGradient');
+      const shadowFilterElement = document.createElementNS(SVG_NS, 'radialGradient');
       const blur = config.theme.shadowBlur;
 
       const startRadius = Math.max(stoneRadius - stoneRadius * blur, 0.00001);
@@ -49,7 +49,7 @@ export default abstract class SVGStoneDrawHandler extends SVGFieldDrawHandler {
       this.shadowFilterElement = shadowFilterElement;
     }
 
-    const shadow = document.createElementNS(NS, 'circle');
+    const shadow = document.createElementNS(SVG_NS, 'circle');
 
     shadow.setAttribute('cx', String(config.theme.shadowOffsetX));
     shadow.setAttribute('cy', String(config.theme.shadowOffsetY));

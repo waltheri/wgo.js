@@ -1,4 +1,4 @@
-import { SVGBoardConfig, NS, OBJECTS, SHADOWS } from '../types';
+import { SVGBoardConfig, SVG_NS, SVG_OBJECTS, SVG_SHADOWS } from '../types';
 import SVGStoneDrawHandler from './SVGStoneDrawHandler';
 import generateId from '../generateId';
 
@@ -10,7 +10,7 @@ export default class GlassStoneWhite extends SVGStoneDrawHandler {
     super.createElement(config, addDef);
 
     if (!this.filterElement1) {
-      const filter1 = document.createElementNS(NS, 'radialGradient');
+      const filter1 = document.createElementNS(SVG_NS, 'radialGradient');
       filter1.setAttribute('id', generateId('filter'));
       filter1.setAttribute('cx', '45%');
       filter1.setAttribute('cy', '45%');
@@ -27,9 +27,9 @@ export default class GlassStoneWhite extends SVGStoneDrawHandler {
       this.filterElement1 = filter1;
     }
 
-    const stoneGroup = document.createElementNS(NS, 'g');
+    const stoneGroup = document.createElementNS(SVG_NS, 'g');
 
-    const stone = document.createElementNS(NS, 'circle');
+    const stone = document.createElementNS(SVG_NS, 'circle');
     stone.setAttribute('cx', '0');
     stone.setAttribute('cy', '0');
     stone.setAttribute('fill', `url(#${this.filterElement1.id})`);
@@ -37,8 +37,8 @@ export default class GlassStoneWhite extends SVGStoneDrawHandler {
     stoneGroup.appendChild(stone);
 
     return {
-      [OBJECTS]: stoneGroup,
-      [SHADOWS]: this.createShadow(config, addDef),
+      [SVG_OBJECTS]: stoneGroup,
+      [SVG_SHADOWS]: this.createShadow(config, addDef),
     };
   }
 }

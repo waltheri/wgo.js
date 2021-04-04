@@ -1,4 +1,4 @@
-import { SVGBoardConfig, OBJECTS, BoardObjectSVGElements, GRID_MASK } from '../types';
+import { SVGBoardConfig, SVG_OBJECTS, BoardObjectSVGElements, SVG_GRID_MASK } from '../types';
 import SVGMarkupDrawHandler, { SVGMarkupDrawHandlerParams } from './SVGMarkupDrawHandler';
 import { BoardLabelObject } from '../../BoardBase';
 interface LabelParams extends SVGMarkupDrawHandlerParams {

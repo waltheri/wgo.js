@@ -3523,438 +3523,10 @@
         return PlayerDOM;
     }(PlayerBase));
 
-    var NS = 'http://www.w3.org/2000/svg';
-    var OBJECTS = 'objects';
-    var GRID_MASK = 'gridMask';
-    var SHADOWS = 'shadows';
-
-    function line(fromX, fromY, toX, toY) {
-        var line = document.createElementNS(NS, 'line');
-        line.setAttribute('x1', fromX);
-        line.setAttribute('y1', fromY);
-        line.setAttribute('x2', toX);
-        line.setAttribute('y2', toY);
-        return line;
-    }
-    function star(x, y, starSize) {
-        var star = document.createElementNS(NS, 'circle');
-        star.setAttribute('cx', x);
-        star.setAttribute('cy', y);
-        star.setAttribute('r', starSize);
-        star.setAttribute('fill', '#553310');
-        star.setAttribute('stroke-width', '0');
-        return star;
-    }
-    function createGrid$1(config) {
-        var linesWidth = config.theme.grid.linesWidth;
-        var grid = document.createElementNS(NS, 'g');
-        grid.setAttribute('stroke', config.theme.grid.linesColor);
-        grid.setAttribute('stroke-width', linesWidth.toString());
-        grid.setAttribute('fill', config.theme.grid.starColor);
-        for (var i = 0; i < config.size; i++) {
-            grid.appendChild(line(i, 0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2));
-            grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
-        }
-        var starPoints = config.starPoints[config.size];
-        if (starPoints) {
-            starPoints.forEach(function (starPoint) {
-                grid.appendChild(star(starPoint.x, starPoint.y, config.theme.grid.starSize));
-            });
-        }
-        return grid;
-    }
-
-    function letter(x, y, str) {
-        var text = document.createElementNS(NS, 'text');
-        text.setAttribute('x', x);
-        text.setAttribute('y', y);
-        text.textContent = str;
-        return text;
-    }
-    function createCoordinates(config) {
-        var coordinates = document.createElementNS(NS, 'g');
-        coordinates.style.userSelect = 'none';
-        coordinates.setAttribute('font-family', config.theme.font);
-        coordinates.setAttribute('font-size', config.theme.coordinates.fontSize);
-        coordinates.setAttribute('text-anchor', 'middle');
-        coordinates.setAttribute('dominant-baseline', 'middle');
-        if (config.theme.coordinates.bold) {
-            coordinates.setAttribute('font-weight', 'bold');
-        }
-        coordinates.setAttribute('fill', config.theme.coordinates.color);
-        for (var i = 0; i < config.size; i++) {
-            if (config.theme.coordinatesTop) {
-                coordinates.appendChild(letter(i, -0.75, config.coordinateLabelsX[i]));
-            }
-            if (config.theme.coordinatesBottom) {
-                coordinates.appendChild(letter(i, config.size - 0.25, config.coordinateLabelsX[i]));
-            }
-            if (config.theme.coordinatesLeft) {
-                coordinates.appendChild(letter(-0.75, config.size - i - 1, config.coordinateLabelsY[i]));
-            }
-            if (config.theme.coordinatesRight) {
-                coordinates.appendChild(letter(config.size - 0.25, config.size - i - 1, config.coordinateLabelsY[i]));
-            }
-        }
-        return coordinates;
-    }
-
-    var SVGFieldDrawHandler = /** @class */ (function () {
-        function SVGFieldDrawHandler() {
-        }
-        SVGFieldDrawHandler.prototype.updateElement = function (elem, boardObject, config) {
-            var transform = "translate(" + boardObject.x + ", " + boardObject.y + ")";
-            var scale = "scale(" + boardObject.scaleX + ", " + boardObject.scaleY + ")";
-            var rotate = "rotate(" + boardObject.rotate + ")";
-            Object.keys(elem).forEach(function (ctx) {
-                elem[ctx].setAttribute('transform', transform + " " + scale + " " + rotate);
-                elem[ctx].setAttribute('opacity', boardObject.opacity);
-            });
-        };
-        return SVGFieldDrawHandler;
-    }());
-
-    function generateId(prefix) {
-        return prefix + "-" + Math.floor(Math.random() * 1000000000).toString(36);
-    }
-
-    var SVGStoneDrawHandler = /** @class */ (function (_super) {
-        __extends(SVGStoneDrawHandler, _super);
-        function SVGStoneDrawHandler() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        SVGStoneDrawHandler.prototype.createElement = function (config, addDef) {
-            /*if (!this.shadowFilterElement) {
-              this.shadowFilterElement = document.createElementNS(NS, 'filter');
-              this.shadowFilterElement.setAttribute('id', generateId('filter'));
-              this.shadowFilterElement.innerHTML = `
-                <feGaussianBlur in="SourceAlpha" stdDeviation="0.05" />
-                <feOffset dx="0.03" dy="0.03" result="offsetblur" />
-                <feComponentTransfer>
-                  <feFuncA type="linear" slope="0.5" />
-                </feComponentTransfer>
-                <feMerge>
-                  <feMergeNode />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              `;
-        
-              addDef(this.shadowFilterElement);
-            }*/
-            return null;
-        };
-        SVGStoneDrawHandler.prototype.createShadow = function (config, addDef) {
-            var stoneRadius = config.theme.stoneSize;
-            if (!this.shadowFilterElement) {
-                var shadowFilterElement = document.createElementNS(NS, 'radialGradient');
-                var blur_1 = config.theme.shadowBlur;
-                var startRadius = Math.max(stoneRadius - stoneRadius * blur_1, 0.00001);
-                var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur_1;
-                shadowFilterElement.setAttribute('id', generateId('shadowFilter'));
-                shadowFilterElement.setAttribute('fr', String(startRadius));
-                shadowFilterElement.setAttribute('r', String(stopRadius));
-                shadowFilterElement.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"" + config.theme.shadowColor + "\" />\n        <stop offset=\"100%\" stop-color=\"" + config.theme.shadowTransparentColor + "\" />\n      ";
-                addDef(shadowFilterElement);
-                this.shadowFilterElement = shadowFilterElement;
-            }
-            var shadow = document.createElementNS(NS, 'circle');
-            shadow.setAttribute('cx', String(config.theme.shadowOffsetX));
-            shadow.setAttribute('cy', String(config.theme.shadowOffsetY));
-            shadow.setAttribute('r', String(stoneRadius));
-            shadow.setAttribute('fill', "url(#" + this.shadowFilterElement.id + ")");
-            return shadow;
-        };
-        return SVGStoneDrawHandler;
-    }(SVGFieldDrawHandler));
-
-    var GlassStoneBlack$1 = /** @class */ (function (_super) {
-        __extends(GlassStoneBlack, _super);
-        function GlassStoneBlack() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        GlassStoneBlack.prototype.createElement = function (config, addDef) {
-            var _a;
-            _super.prototype.createElement.call(this, config, addDef);
-            if (!this.filterElement) {
-                var filter = document.createElementNS(NS, 'filter');
-                filter.setAttribute('id', generateId('filter'));
-                filter.setAttribute('x', '-300%');
-                filter.setAttribute('y', '-300%');
-                filter.setAttribute('width', '600%');
-                filter.setAttribute('height', '600%');
-                var blur_1 = document.createElementNS(NS, 'feGaussianBlur');
-                blur_1.setAttribute('in', 'SourceGraphic');
-                blur_1.setAttribute('stdDeviation', 0.3 * config.theme.stoneSize);
-                filter.appendChild(blur_1);
-                this.filterElement = filter;
-                addDef(filter);
-            }
-            var stoneGroup = document.createElementNS(NS, 'g');
-            var stone = document.createElementNS(NS, 'circle');
-            stone.setAttribute('cx', '0');
-            stone.setAttribute('cy', '0');
-            stone.setAttribute('fill', '#000');
-            stone.setAttribute('r', config.theme.stoneSize);
-            stoneGroup.appendChild(stone);
-            var glow1 = document.createElementNS(NS, 'circle');
-            glow1.setAttribute('cx', -0.4 * config.theme.stoneSize);
-            glow1.setAttribute('cy', -0.4 * config.theme.stoneSize);
-            glow1.setAttribute('r', 0.25 * config.theme.stoneSize);
-            glow1.setAttribute('fill', '#fff');
-            glow1.setAttribute('filter', "url(#" + this.filterElement.id + ")");
-            stoneGroup.appendChild(glow1);
-            var glow2 = document.createElementNS(NS, 'circle');
-            glow2.setAttribute('cx', 0.4 * config.theme.stoneSize);
-            glow2.setAttribute('cy', 0.4 * config.theme.stoneSize);
-            glow2.setAttribute('r', 0.15 * config.theme.stoneSize);
-            glow2.setAttribute('fill', '#fff');
-            glow2.setAttribute('filter', "url(#" + this.filterElement.id + ")");
-            stoneGroup.appendChild(glow2);
-            return _a = {},
-                _a[OBJECTS] = stoneGroup,
-                _a[SHADOWS] = this.createShadow(config, addDef),
-                _a;
-        };
-        return GlassStoneBlack;
-    }(SVGStoneDrawHandler));
-
-    var GlassStoneWhite$1 = /** @class */ (function (_super) {
-        __extends(GlassStoneWhite, _super);
-        function GlassStoneWhite() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        GlassStoneWhite.prototype.createElement = function (config, addDef) {
-            var _a;
-            _super.prototype.createElement.call(this, config, addDef);
-            if (!this.filterElement1) {
-                var filter1 = document.createElementNS(NS, 'radialGradient');
-                filter1.setAttribute('id', generateId('filter'));
-                filter1.setAttribute('fx', '30%');
-                filter1.setAttribute('fy', '30%');
-                filter1.innerHTML = "\n        <stop offset=\"10%\" stop-color=\"rgba(255,255,255,0.9)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(255,255,255,0)\" />\n      ";
-                addDef(filter1);
-                this.filterElement1 = filter1;
-                var filter2 = document.createElementNS(NS, 'radialGradient');
-                filter2.setAttribute('id', generateId('filter'));
-                filter2.setAttribute('fx', '70%');
-                filter2.setAttribute('fy', '70%');
-                filter2.innerHTML = "\n        <stop offset=\"10%\" stop-color=\"rgba(255,255,255,0.7)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(255,255,255,0)\" />\n      ";
-                addDef(filter2);
-                this.filterElement2 = filter2;
-            }
-            var stoneGroup = document.createElementNS(NS, 'g');
-            var stone = document.createElementNS(NS, 'circle');
-            stone.setAttribute('cx', '0');
-            stone.setAttribute('cy', '0');
-            stone.setAttribute('fill', '#ccc');
-            stone.setAttribute('r', config.theme.stoneSize);
-            stoneGroup.appendChild(stone);
-            var glow1 = document.createElementNS(NS, 'circle');
-            glow1.setAttribute('cx', '0');
-            glow1.setAttribute('cy', '0');
-            glow1.setAttribute('r', config.theme.stoneSize);
-            glow1.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
-            stoneGroup.appendChild(glow1);
-            var glow2 = document.createElementNS(NS, 'circle');
-            glow2.setAttribute('cx', '0');
-            glow2.setAttribute('cy', '0');
-            glow2.setAttribute('r', config.theme.stoneSize);
-            glow2.setAttribute('fill', "url(#" + this.filterElement2.id + ")");
-            stoneGroup.appendChild(glow2);
-            return _a = {},
-                _a[OBJECTS] = stoneGroup,
-                _a[SHADOWS] = this.createShadow(config, addDef),
-                _a;
-        };
-        return GlassStoneWhite;
-    }(SVGStoneDrawHandler));
-
-    var SVGMarkupDrawHandler = /** @class */ (function (_super) {
-        __extends(SVGMarkupDrawHandler, _super);
-        function SVGMarkupDrawHandler(params) {
-            if (params === void 0) { params = {}; }
-            var _this = _super.call(this) || this;
-            _this.params = params;
-            return _this;
-        }
-        SVGMarkupDrawHandler.prototype.updateElement = function (elem, boardObject, config) {
-            _super.prototype.updateElement.call(this, elem, boardObject, config);
-            if (boardObject.variation === exports.Color.B) {
-                elem[OBJECTS].setAttribute('stroke', config.theme.markupBlackColor);
-                elem[OBJECTS].setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
-            }
-            else if (boardObject.variation === exports.Color.W) {
-                elem[OBJECTS].setAttribute('stroke', config.theme.markupWhiteColor);
-                elem[OBJECTS].setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
-            }
-            else {
-                elem[OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
-                elem[OBJECTS].setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
-            }
-            elem[OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
-        };
-        return SVGMarkupDrawHandler;
-    }(SVGFieldDrawHandler));
-
-    var Circle$1 = /** @class */ (function (_super) {
-        __extends(Circle, _super);
-        function Circle() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        Circle.prototype.createElement = function (config) {
-            var _a;
-            var circle = document.createElementNS(NS, 'circle');
-            circle.setAttribute('cx', '0');
-            circle.setAttribute('cy', '0');
-            circle.setAttribute('r', '0.25');
-            var mask = document.createElementNS(NS, 'circle');
-            mask.setAttribute('cx', '0');
-            mask.setAttribute('cy', '0');
-            mask.setAttribute('r', '0.35');
-            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            return _a = {},
-                _a[OBJECTS] = circle,
-                _a[GRID_MASK] = mask,
-                _a;
-        };
-        return Circle;
-    }(SVGMarkupDrawHandler));
-
-    var Square$1 = /** @class */ (function (_super) {
-        __extends(Square, _super);
-        function Square() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        Square.prototype.createElement = function (config) {
-            var _a;
-            var square = document.createElementNS(NS, 'rect');
-            square.setAttribute('x', '-0.25');
-            square.setAttribute('y', '-0.25');
-            square.setAttribute('width', '0.50');
-            square.setAttribute('height', '0.50');
-            var mask = document.createElementNS(NS, 'rect');
-            mask.setAttribute('x', '-0.35');
-            mask.setAttribute('y', '-0.35');
-            mask.setAttribute('width', '0.70');
-            mask.setAttribute('height', '0.70');
-            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            return _a = {},
-                _a[OBJECTS] = square,
-                _a[GRID_MASK] = mask,
-                _a;
-        };
-        return Square;
-    }(SVGMarkupDrawHandler));
-
-    var Triangle$1 = /** @class */ (function (_super) {
-        __extends(Triangle, _super);
-        function Triangle() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        Triangle.prototype.createElement = function (config) {
-            var _a;
-            var triangle = document.createElementNS(NS, 'polygon');
-            triangle.setAttribute('points', '0,-0.25 -0.25,0.166666 0.25,0.166666');
-            var mask = document.createElementNS(NS, 'polygon');
-            mask.setAttribute('points', '0,-0.35 -0.35,0.2333333 0.35,0.2333333');
-            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            return _a = {},
-                _a[OBJECTS] = triangle,
-                _a[GRID_MASK] = mask,
-                _a;
-        };
-        return Triangle;
-    }(SVGMarkupDrawHandler));
-
-    var XMark$1 = /** @class */ (function (_super) {
-        __extends(XMark, _super);
-        function XMark() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        XMark.prototype.createElement = function (config) {
-            var _a;
-            var path = document.createElementNS(NS, 'path');
-            path.setAttribute('d', 'M -0.20,-0.20 L 0.20,0.20 M 0.20,-0.20 L -0.20,0.20');
-            var mask = document.createElementNS(NS, 'circle');
-            mask.setAttribute('cx', '0');
-            mask.setAttribute('cy', '0');
-            mask.setAttribute('r', '0.15');
-            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            return _a = {},
-                _a[OBJECTS] = path,
-                _a[GRID_MASK] = mask,
-                _a;
-        };
-        return XMark;
-    }(SVGMarkupDrawHandler));
-
-    var Dot$1 = /** @class */ (function (_super) {
-        __extends(Dot, _super);
-        function Dot(params) {
-            var _this = _super.call(this) || this;
-            _this.params = params;
-            return _this;
-        }
-        Dot.prototype.createElement = function () {
-            var circle = document.createElementNS(NS, 'circle');
-            circle.setAttribute('cx', '0');
-            circle.setAttribute('cy', '0');
-            circle.setAttribute('r', '0.15');
-            circle.setAttribute('fill', this.params.color);
-            return circle;
-        };
-        return Dot;
-    }(SVGFieldDrawHandler));
-
-    var Dim$1 = /** @class */ (function (_super) {
-        __extends(Dim, _super);
-        function Dim(params) {
-            var _this = _super.call(this) || this;
-            _this.params = params;
-            return _this;
-        }
-        Dim.prototype.createElement = function () {
-            var rect = document.createElementNS(NS, 'rect');
-            rect.setAttribute('x', '-0.5');
-            rect.setAttribute('y', '-0.5');
-            rect.setAttribute('width', '1');
-            rect.setAttribute('height', '1');
-            rect.setAttribute('fill', this.params.color);
-            return rect;
-        };
-        return Dim;
-    }(SVGFieldDrawHandler));
-
-    var Line$1 = /** @class */ (function () {
-        function Line(params) {
-            if (params === void 0) { params = {}; }
-            this.params = params;
-        }
-        Line.prototype.createElement = function () {
-            var _a;
-            var line = document.createElementNS(NS, 'line');
-            var mask = document.createElementNS(NS, 'line');
-            return _a = {},
-                _a[OBJECTS] = line,
-                _a[GRID_MASK] = mask,
-                _a;
-        };
-        Line.prototype.updateElement = function (elem, boardObject, config) {
-            elem[OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
-            elem[OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
-            elem[OBJECTS].setAttribute('x1', boardObject.start.x);
-            elem[OBJECTS].setAttribute('y1', boardObject.start.y);
-            elem[OBJECTS].setAttribute('x2', boardObject.end.x);
-            elem[OBJECTS].setAttribute('y2', boardObject.end.y);
-            elem[GRID_MASK].setAttribute('stroke', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            elem[GRID_MASK].setAttribute('stroke-width', (this.params.lineWidth || config.theme.markupLineWidth) * 2);
-            elem[GRID_MASK].setAttribute('x1', boardObject.start.x);
-            elem[GRID_MASK].setAttribute('y1', boardObject.start.y);
-            elem[GRID_MASK].setAttribute('x2', boardObject.end.x);
-            elem[GRID_MASK].setAttribute('y2', boardObject.end.y);
-        };
-        return Line;
-    }());
+    var SVG_NS = 'http://www.w3.org/2000/svg';
+    var SVG_OBJECTS = 'objects';
+    var SVG_GRID_MASK = 'gridMask';
+    var SVG_SHADOWS = 'shadows';
 
     var Arrow$1 = /** @class */ (function () {
         function Arrow(params) {
@@ -3964,15 +3536,15 @@
         Arrow.prototype.createElement = function () {
             var _a;
             return _a = {},
-                _a[OBJECTS] = this.createSVGElements(),
-                _a[GRID_MASK] = this.createSVGElements(),
+                _a[SVG_OBJECTS] = this.createSVGElements(),
+                _a[SVG_GRID_MASK] = this.createSVGElements(),
                 _a;
         };
         Arrow.prototype.createSVGElements = function () {
-            var group = document.createElementNS(NS, 'g');
-            var startCircle = document.createElementNS(NS, 'circle');
-            var line = document.createElementNS(NS, 'line');
-            var endTriangle = document.createElementNS(NS, 'polygon');
+            var group = document.createElementNS(SVG_NS, 'g');
+            var startCircle = document.createElementNS(SVG_NS, 'circle');
+            var line = document.createElementNS(SVG_NS, 'line');
+            var endTriangle = document.createElementNS(SVG_NS, 'polygon');
             group.appendChild(startCircle);
             group.appendChild(line);
             group.appendChild(endTriangle);
@@ -3980,14 +3552,14 @@
         };
         Arrow.prototype.updateElement = function (elem, boardObject, config) {
             // basic UI definitions
-            elem[OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
-            elem[OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
-            elem[OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
-            this.updateSVGElements(elem[OBJECTS], boardObject);
-            elem[GRID_MASK].setAttribute('stroke', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            elem[GRID_MASK].setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
-            elem[GRID_MASK].setAttribute('stroke-width', (this.params.lineWidth || config.theme.markupLineWidth) * 3);
-            this.updateSVGElements(elem[GRID_MASK], boardObject);
+            elem[SVG_OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
+            elem[SVG_OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
+            elem[SVG_OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
+            this.updateSVGElements(elem[SVG_OBJECTS], boardObject);
+            elem[SVG_GRID_MASK].setAttribute('stroke', "rgba(0,0,0," + config.theme.markupGridMask + ")");
+            elem[SVG_GRID_MASK].setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
+            elem[SVG_GRID_MASK].setAttribute('stroke-width', (this.params.lineWidth || config.theme.markupLineWidth) * 3);
+            this.updateSVGElements(elem[SVG_GRID_MASK], boardObject);
         };
         Arrow.prototype.updateSVGElements = function (elem, boardObject) {
             // SVG elements of arrow
@@ -4027,6 +3599,264 @@
         return Arrow;
     }());
 
+    var SVGFieldDrawHandler = /** @class */ (function () {
+        function SVGFieldDrawHandler() {
+        }
+        SVGFieldDrawHandler.prototype.updateElement = function (elem, boardObject, config) {
+            var transform = "translate(" + boardObject.x + ", " + boardObject.y + ")";
+            var scale = "scale(" + boardObject.scaleX + ", " + boardObject.scaleY + ")";
+            var rotate = "rotate(" + boardObject.rotate + ")";
+            Object.keys(elem).forEach(function (ctx) {
+                elem[ctx].setAttribute('transform', transform + " " + scale + " " + rotate);
+                elem[ctx].setAttribute('opacity', boardObject.opacity);
+            });
+        };
+        return SVGFieldDrawHandler;
+    }());
+
+    var SVGMarkupDrawHandler = /** @class */ (function (_super) {
+        __extends(SVGMarkupDrawHandler, _super);
+        function SVGMarkupDrawHandler(params) {
+            if (params === void 0) { params = {}; }
+            var _this = _super.call(this) || this;
+            _this.params = params;
+            return _this;
+        }
+        SVGMarkupDrawHandler.prototype.updateElement = function (elem, boardObject, config) {
+            _super.prototype.updateElement.call(this, elem, boardObject, config);
+            if (boardObject.variation === exports.Color.B) {
+                elem[SVG_OBJECTS].setAttribute('stroke', config.theme.markupBlackColor);
+                elem[SVG_OBJECTS].setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
+            }
+            else if (boardObject.variation === exports.Color.W) {
+                elem[SVG_OBJECTS].setAttribute('stroke', config.theme.markupWhiteColor);
+                elem[SVG_OBJECTS].setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
+            }
+            else {
+                elem[SVG_OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
+                elem[SVG_OBJECTS].setAttribute('fill', this.params.fillColor || 'rgba(0,0,0,0)');
+            }
+            elem[SVG_OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
+        };
+        return SVGMarkupDrawHandler;
+    }(SVGFieldDrawHandler));
+
+    var Circle$1 = /** @class */ (function (_super) {
+        __extends(Circle, _super);
+        function Circle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Circle.prototype.createElement = function (config) {
+            var _a;
+            var circle = document.createElementNS(SVG_NS, 'circle');
+            circle.setAttribute('cx', '0');
+            circle.setAttribute('cy', '0');
+            circle.setAttribute('r', '0.25');
+            var mask = document.createElementNS(SVG_NS, 'circle');
+            mask.setAttribute('cx', '0');
+            mask.setAttribute('cy', '0');
+            mask.setAttribute('r', '0.35');
+            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
+            return _a = {},
+                _a[SVG_OBJECTS] = circle,
+                _a[SVG_GRID_MASK] = mask,
+                _a;
+        };
+        return Circle;
+    }(SVGMarkupDrawHandler));
+
+    var Dim$1 = /** @class */ (function (_super) {
+        __extends(Dim, _super);
+        function Dim(params) {
+            var _this = _super.call(this) || this;
+            _this.params = params;
+            return _this;
+        }
+        Dim.prototype.createElement = function () {
+            var rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('x', '-0.5');
+            rect.setAttribute('y', '-0.5');
+            rect.setAttribute('width', '1');
+            rect.setAttribute('height', '1');
+            rect.setAttribute('fill', this.params.color);
+            return rect;
+        };
+        return Dim;
+    }(SVGFieldDrawHandler));
+
+    var Dot$1 = /** @class */ (function (_super) {
+        __extends(Dot, _super);
+        function Dot(params) {
+            var _this = _super.call(this) || this;
+            _this.params = params;
+            return _this;
+        }
+        Dot.prototype.createElement = function () {
+            var circle = document.createElementNS(SVG_NS, 'circle');
+            circle.setAttribute('cx', '0');
+            circle.setAttribute('cy', '0');
+            circle.setAttribute('r', '0.15');
+            circle.setAttribute('fill', this.params.color);
+            return circle;
+        };
+        return Dot;
+    }(SVGFieldDrawHandler));
+
+    function generateId(prefix) {
+        return prefix + "-" + Math.floor(Math.random() * 1000000000).toString(36);
+    }
+
+    var SVGStoneDrawHandler = /** @class */ (function (_super) {
+        __extends(SVGStoneDrawHandler, _super);
+        function SVGStoneDrawHandler() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        SVGStoneDrawHandler.prototype.createElement = function (config, addDef) {
+            /*if (!this.shadowFilterElement) {
+              this.shadowFilterElement = document.createElementNS(NS, 'filter');
+              this.shadowFilterElement.setAttribute('id', generateId('filter'));
+              this.shadowFilterElement.innerHTML = `
+                <feGaussianBlur in="SourceAlpha" stdDeviation="0.05" />
+                <feOffset dx="0.03" dy="0.03" result="offsetblur" />
+                <feComponentTransfer>
+                  <feFuncA type="linear" slope="0.5" />
+                </feComponentTransfer>
+                <feMerge>
+                  <feMergeNode />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              `;
+        
+              addDef(this.shadowFilterElement);
+            }*/
+            return null;
+        };
+        SVGStoneDrawHandler.prototype.createShadow = function (config, addDef) {
+            var stoneRadius = config.theme.stoneSize;
+            if (!this.shadowFilterElement) {
+                var shadowFilterElement = document.createElementNS(SVG_NS, 'radialGradient');
+                var blur_1 = config.theme.shadowBlur;
+                var startRadius = Math.max(stoneRadius - stoneRadius * blur_1, 0.00001);
+                var stopRadius = stoneRadius + (1 / 7 * stoneRadius) * blur_1;
+                shadowFilterElement.setAttribute('id', generateId('shadowFilter'));
+                shadowFilterElement.setAttribute('fr', String(startRadius));
+                shadowFilterElement.setAttribute('r', String(stopRadius));
+                shadowFilterElement.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"" + config.theme.shadowColor + "\" />\n        <stop offset=\"100%\" stop-color=\"" + config.theme.shadowTransparentColor + "\" />\n      ";
+                addDef(shadowFilterElement);
+                this.shadowFilterElement = shadowFilterElement;
+            }
+            var shadow = document.createElementNS(SVG_NS, 'circle');
+            shadow.setAttribute('cx', String(config.theme.shadowOffsetX));
+            shadow.setAttribute('cy', String(config.theme.shadowOffsetY));
+            shadow.setAttribute('r', String(stoneRadius));
+            shadow.setAttribute('fill', "url(#" + this.shadowFilterElement.id + ")");
+            return shadow;
+        };
+        return SVGStoneDrawHandler;
+    }(SVGFieldDrawHandler));
+
+    var GlassStoneBlack$1 = /** @class */ (function (_super) {
+        __extends(GlassStoneBlack, _super);
+        function GlassStoneBlack() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneBlack.prototype.createElement = function (config, addDef) {
+            var _a;
+            _super.prototype.createElement.call(this, config, addDef);
+            if (!this.filterElement) {
+                var filter = document.createElementNS(SVG_NS, 'filter');
+                filter.setAttribute('id', generateId('filter'));
+                filter.setAttribute('x', '-300%');
+                filter.setAttribute('y', '-300%');
+                filter.setAttribute('width', '600%');
+                filter.setAttribute('height', '600%');
+                var blur_1 = document.createElementNS(SVG_NS, 'feGaussianBlur');
+                blur_1.setAttribute('in', 'SourceGraphic');
+                blur_1.setAttribute('stdDeviation', 0.3 * config.theme.stoneSize);
+                filter.appendChild(blur_1);
+                this.filterElement = filter;
+                addDef(filter);
+            }
+            var stoneGroup = document.createElementNS(SVG_NS, 'g');
+            var stone = document.createElementNS(SVG_NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', '#000');
+            stone.setAttribute('r', config.theme.stoneSize);
+            stoneGroup.appendChild(stone);
+            var glow1 = document.createElementNS(SVG_NS, 'circle');
+            glow1.setAttribute('cx', -0.4 * config.theme.stoneSize);
+            glow1.setAttribute('cy', -0.4 * config.theme.stoneSize);
+            glow1.setAttribute('r', 0.25 * config.theme.stoneSize);
+            glow1.setAttribute('fill', '#fff');
+            glow1.setAttribute('filter', "url(#" + this.filterElement.id + ")");
+            stoneGroup.appendChild(glow1);
+            var glow2 = document.createElementNS(SVG_NS, 'circle');
+            glow2.setAttribute('cx', 0.4 * config.theme.stoneSize);
+            glow2.setAttribute('cy', 0.4 * config.theme.stoneSize);
+            glow2.setAttribute('r', 0.15 * config.theme.stoneSize);
+            glow2.setAttribute('fill', '#fff');
+            glow2.setAttribute('filter', "url(#" + this.filterElement.id + ")");
+            stoneGroup.appendChild(glow2);
+            return _a = {},
+                _a[SVG_OBJECTS] = stoneGroup,
+                _a[SVG_SHADOWS] = this.createShadow(config, addDef),
+                _a;
+        };
+        return GlassStoneBlack;
+    }(SVGStoneDrawHandler));
+
+    var GlassStoneWhite$1 = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.createElement = function (config, addDef) {
+            var _a;
+            _super.prototype.createElement.call(this, config, addDef);
+            if (!this.filterElement1) {
+                var filter1 = document.createElementNS(SVG_NS, 'radialGradient');
+                filter1.setAttribute('id', generateId('filter'));
+                filter1.setAttribute('fx', '30%');
+                filter1.setAttribute('fy', '30%');
+                filter1.innerHTML = "\n        <stop offset=\"10%\" stop-color=\"rgba(255,255,255,0.9)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(255,255,255,0)\" />\n      ";
+                addDef(filter1);
+                this.filterElement1 = filter1;
+                var filter2 = document.createElementNS(SVG_NS, 'radialGradient');
+                filter2.setAttribute('id', generateId('filter'));
+                filter2.setAttribute('fx', '70%');
+                filter2.setAttribute('fy', '70%');
+                filter2.innerHTML = "\n        <stop offset=\"10%\" stop-color=\"rgba(255,255,255,0.7)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(255,255,255,0)\" />\n      ";
+                addDef(filter2);
+                this.filterElement2 = filter2;
+            }
+            var stoneGroup = document.createElementNS(SVG_NS, 'g');
+            var stone = document.createElementNS(SVG_NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', '#ccc');
+            stone.setAttribute('r', config.theme.stoneSize);
+            stoneGroup.appendChild(stone);
+            var glow1 = document.createElementNS(SVG_NS, 'circle');
+            glow1.setAttribute('cx', '0');
+            glow1.setAttribute('cy', '0');
+            glow1.setAttribute('r', config.theme.stoneSize);
+            glow1.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
+            stoneGroup.appendChild(glow1);
+            var glow2 = document.createElementNS(SVG_NS, 'circle');
+            glow2.setAttribute('cx', '0');
+            glow2.setAttribute('cy', '0');
+            glow2.setAttribute('r', config.theme.stoneSize);
+            glow2.setAttribute('fill', "url(#" + this.filterElement2.id + ")");
+            stoneGroup.appendChild(glow2);
+            return _a = {},
+                _a[SVG_OBJECTS] = stoneGroup,
+                _a[SVG_SHADOWS] = this.createShadow(config, addDef),
+                _a;
+        };
+        return GlassStoneWhite;
+    }(SVGStoneDrawHandler));
+
     var Label$1 = /** @class */ (function (_super) {
         __extends(Label, _super);
         function Label(params) {
@@ -4039,19 +3869,19 @@
         }
         Label.prototype.createElement = function (config) {
             var _a;
-            var text = document.createElementNS(NS, 'text');
+            var text = document.createElementNS(SVG_NS, 'text');
             text.setAttribute('text-anchor', 'middle');
             text.setAttribute('dominant-baseline', 'middle');
             text.setAttribute('lengthAdjust', 'spacingAndGlyphs');
-            var mask = document.createElementNS(NS, 'text');
+            var mask = document.createElementNS(SVG_NS, 'text');
             mask.setAttribute('text-anchor', 'middle');
             mask.setAttribute('dominant-baseline', 'middle');
             mask.setAttribute('stroke-width', '0.2');
             mask.setAttribute('stroke', "rgba(0,0,0," + config.theme.markupGridMask + ")");
             mask.setAttribute('lengthAdjust', 'spacingAndGlyphs');
             return _a = {},
-                _a[OBJECTS] = text,
-                _a[GRID_MASK] = mask,
+                _a[SVG_OBJECTS] = text,
+                _a[SVG_GRID_MASK] = mask,
                 _a;
         };
         Label.prototype.updateElement = function (elem, boardObject, config) {
@@ -4064,57 +3894,140 @@
                 fontSize = 0.6;
             }
             if (this.params.color) {
-                elem[OBJECTS].setAttribute('fill', this.params.color);
+                elem[SVG_OBJECTS].setAttribute('fill', this.params.color);
             }
             else {
                 if (boardObject.variation === exports.Color.B) {
-                    elem[OBJECTS].setAttribute('fill', config.theme.markupBlackColor);
+                    elem[SVG_OBJECTS].setAttribute('fill', config.theme.markupBlackColor);
                 }
                 else if (boardObject.variation === exports.Color.W) {
-                    elem[OBJECTS].setAttribute('fill', config.theme.markupWhiteColor);
+                    elem[SVG_OBJECTS].setAttribute('fill', config.theme.markupWhiteColor);
                 }
                 else {
-                    elem[OBJECTS].setAttribute('fill', config.theme.markupNoneColor);
+                    elem[SVG_OBJECTS].setAttribute('fill', config.theme.markupNoneColor);
                 }
             }
-            elem[OBJECTS].removeAttribute('stroke');
-            elem[OBJECTS].setAttribute('font-family', this.params.font || config.theme.font);
-            elem[OBJECTS].setAttribute('stroke-width', '0');
-            elem[OBJECTS].setAttribute('font-size', fontSize);
-            elem[OBJECTS].textContent = boardObject.text;
-            elem[GRID_MASK].setAttribute('font-size', fontSize);
-            elem[GRID_MASK].textContent = boardObject.text;
+            elem[SVG_OBJECTS].removeAttribute('stroke');
+            elem[SVG_OBJECTS].setAttribute('font-family', this.params.font || config.theme.font);
+            elem[SVG_OBJECTS].setAttribute('stroke-width', '0');
+            elem[SVG_OBJECTS].setAttribute('font-size', fontSize);
+            elem[SVG_OBJECTS].textContent = boardObject.text;
+            elem[SVG_GRID_MASK].setAttribute('font-size', fontSize);
+            elem[SVG_GRID_MASK].textContent = boardObject.text;
             if (this.params.maxWidth > 0) {
-                if (elem[OBJECTS].getComputedTextLength() > this.params.maxWidth) {
-                    elem[OBJECTS].setAttribute('textLength', "" + this.params.maxWidth);
-                    elem[GRID_MASK].setAttribute('textLength', "" + this.params.maxWidth);
+                if (elem[SVG_OBJECTS].getComputedTextLength() > this.params.maxWidth) {
+                    elem[SVG_OBJECTS].setAttribute('textLength', "" + this.params.maxWidth);
+                    elem[SVG_GRID_MASK].setAttribute('textLength', "" + this.params.maxWidth);
                 }
                 else {
-                    elem[OBJECTS].removeAttribute('textLength');
-                    elem[GRID_MASK].removeAttribute('textLength');
+                    elem[SVG_OBJECTS].removeAttribute('textLength');
+                    elem[SVG_GRID_MASK].removeAttribute('textLength');
                 }
             }
         };
         return Label;
     }(SVGMarkupDrawHandler));
 
-    var SimpleStone$1 = /** @class */ (function (_super) {
-        __extends(SimpleStone, _super);
-        function SimpleStone(color) {
-            var _this = _super.call(this) || this;
-            _this.color = color;
-            return _this;
+    var Line$1 = /** @class */ (function () {
+        function Line(params) {
+            if (params === void 0) { params = {}; }
+            this.params = params;
         }
-        SimpleStone.prototype.createElement = function (config) {
-            var stone = document.createElementNS(NS, 'circle');
+        Line.prototype.createElement = function () {
+            var _a;
+            var line = document.createElementNS(SVG_NS, 'line');
+            var mask = document.createElementNS(SVG_NS, 'line');
+            return _a = {},
+                _a[SVG_OBJECTS] = line,
+                _a[SVG_GRID_MASK] = mask,
+                _a;
+        };
+        Line.prototype.updateElement = function (elem, boardObject, config) {
+            elem[SVG_OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
+            elem[SVG_OBJECTS].setAttribute('stroke-width', this.params.lineWidth || config.theme.markupLineWidth);
+            elem[SVG_OBJECTS].setAttribute('x1', boardObject.start.x);
+            elem[SVG_OBJECTS].setAttribute('y1', boardObject.start.y);
+            elem[SVG_OBJECTS].setAttribute('x2', boardObject.end.x);
+            elem[SVG_OBJECTS].setAttribute('y2', boardObject.end.y);
+            elem[SVG_GRID_MASK].setAttribute('stroke', "rgba(0,0,0," + config.theme.markupGridMask + ")");
+            elem[SVG_GRID_MASK].setAttribute('stroke-width', (this.params.lineWidth || config.theme.markupLineWidth) * 2);
+            elem[SVG_GRID_MASK].setAttribute('x1', boardObject.start.x);
+            elem[SVG_GRID_MASK].setAttribute('y1', boardObject.start.y);
+            elem[SVG_GRID_MASK].setAttribute('x2', boardObject.end.x);
+            elem[SVG_GRID_MASK].setAttribute('y2', boardObject.end.y);
+        };
+        return Line;
+    }());
+
+    var GlassStoneWhite$2 = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.createElement = function (config, addDef) {
+            var _a;
+            _super.prototype.createElement.call(this, config, addDef);
+            if (!this.filterElement1) {
+                var filter1 = document.createElementNS(SVG_NS, 'radialGradient');
+                filter1.setAttribute('id', generateId('filter'));
+                filter1.setAttribute('cx', '45%');
+                filter1.setAttribute('cy', '45%');
+                filter1.setAttribute('fx', '20%');
+                filter1.setAttribute('fy', '20%');
+                filter1.setAttribute('r', '60%');
+                filter1.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"rgba(48,48,48,1)\" />\n        <stop offset=\"80%\" stop-color=\"rgba(16,16,16,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(0,0,0,1)\" />\n      ";
+                addDef(filter1);
+                this.filterElement1 = filter1;
+            }
+            var stoneGroup = document.createElementNS(SVG_NS, 'g');
+            var stone = document.createElementNS(SVG_NS, 'circle');
             stone.setAttribute('cx', '0');
             stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
             stone.setAttribute('r', config.theme.stoneSize);
-            stone.setAttribute('fill', this.color);
-            return stone;
+            stoneGroup.appendChild(stone);
+            return _a = {},
+                _a[SVG_OBJECTS] = stoneGroup,
+                _a[SVG_SHADOWS] = this.createShadow(config, addDef),
+                _a;
         };
-        return SimpleStone;
-    }(SVGFieldDrawHandler));
+        return GlassStoneWhite;
+    }(SVGStoneDrawHandler));
+
+    var GlassStoneWhite$3 = /** @class */ (function (_super) {
+        __extends(GlassStoneWhite, _super);
+        function GlassStoneWhite() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        GlassStoneWhite.prototype.createElement = function (config, addDef) {
+            var _a;
+            _super.prototype.createElement.call(this, config, addDef);
+            if (!this.filterElement1) {
+                var filter1 = document.createElementNS(SVG_NS, 'radialGradient');
+                filter1.setAttribute('id', generateId('filter'));
+                filter1.setAttribute('cx', '45%');
+                filter1.setAttribute('cy', '45%');
+                filter1.setAttribute('fx', '20%');
+                filter1.setAttribute('fy', '20%');
+                filter1.setAttribute('r', '60%');
+                filter1.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"rgba(255,255,255,1)\" />\n        <stop offset=\"80%\" stop-color=\"rgba(215,215,215,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(170,170,170,1)\" />\n      ";
+                addDef(filter1);
+                this.filterElement1 = filter1;
+            }
+            var stoneGroup = document.createElementNS(SVG_NS, 'g');
+            var stone = document.createElementNS(SVG_NS, 'circle');
+            stone.setAttribute('cx', '0');
+            stone.setAttribute('cy', '0');
+            stone.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
+            stone.setAttribute('r', config.theme.stoneSize);
+            stoneGroup.appendChild(stone);
+            return _a = {},
+                _a[SVG_OBJECTS] = stoneGroup,
+                _a[SVG_SHADOWS] = this.createShadow(config, addDef),
+                _a;
+        };
+        return GlassStoneWhite;
+    }(SVGStoneDrawHandler));
 
     var RealisticStone$1 = /** @class */ (function (_super) {
         __extends(RealisticStone, _super);
@@ -4130,16 +4043,16 @@
             var _this = this;
             _super.prototype.createElement.call(this, config, addDef);
             var id = Math.floor(Math.random() * this.paths.length);
-            var group = document.createElementNS(NS, 'g');
+            var group = document.createElementNS(SVG_NS, 'g');
             var fallbackElement;
             if (!this.loadedPaths[id]) {
                 fallbackElement = this.fallback.createElement(config, addDef);
                 if (!(fallbackElement instanceof SVGElement)) {
-                    fallbackElement = fallbackElement[OBJECTS];
+                    fallbackElement = fallbackElement[SVG_OBJECTS];
                 }
                 group.appendChild(fallbackElement);
             }
-            var image = document.createElementNS(NS, 'image');
+            var image = document.createElementNS(SVG_NS, 'image');
             image.setAttribute('href', this.paths[id]);
             image.setAttribute('width', config.theme.stoneSize * 2);
             image.setAttribute('height', config.theme.stoneSize * 2);
@@ -4161,75 +4074,181 @@
         return RealisticStone;
     }(SVGStoneDrawHandler));
 
-    var GlassStoneWhite$2 = /** @class */ (function (_super) {
-        __extends(GlassStoneWhite, _super);
-        function GlassStoneWhite() {
-            return _super !== null && _super.apply(this, arguments) || this;
+    var SimpleStone$1 = /** @class */ (function (_super) {
+        __extends(SimpleStone, _super);
+        function SimpleStone(color) {
+            var _this = _super.call(this) || this;
+            _this.color = color;
+            return _this;
         }
-        GlassStoneWhite.prototype.createElement = function (config, addDef) {
-            var _a;
-            _super.prototype.createElement.call(this, config, addDef);
-            if (!this.filterElement1) {
-                var filter1 = document.createElementNS(NS, 'radialGradient');
-                filter1.setAttribute('id', generateId('filter'));
-                filter1.setAttribute('cx', '45%');
-                filter1.setAttribute('cy', '45%');
-                filter1.setAttribute('fx', '20%');
-                filter1.setAttribute('fy', '20%');
-                filter1.setAttribute('r', '60%');
-                filter1.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"rgba(255,255,255,1)\" />\n        <stop offset=\"80%\" stop-color=\"rgba(215,215,215,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(170,170,170,1)\" />\n      ";
-                addDef(filter1);
-                this.filterElement1 = filter1;
-            }
-            var stoneGroup = document.createElementNS(NS, 'g');
-            var stone = document.createElementNS(NS, 'circle');
+        SimpleStone.prototype.createElement = function (config) {
+            var stone = document.createElementNS(SVG_NS, 'circle');
             stone.setAttribute('cx', '0');
             stone.setAttribute('cy', '0');
-            stone.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
             stone.setAttribute('r', config.theme.stoneSize);
-            stoneGroup.appendChild(stone);
-            return _a = {},
-                _a[OBJECTS] = stoneGroup,
-                _a[SHADOWS] = this.createShadow(config, addDef),
-                _a;
+            stone.setAttribute('fill', this.color);
+            return stone;
         };
-        return GlassStoneWhite;
-    }(SVGStoneDrawHandler));
+        return SimpleStone;
+    }(SVGFieldDrawHandler));
 
-    var GlassStoneWhite$3 = /** @class */ (function (_super) {
-        __extends(GlassStoneWhite, _super);
-        function GlassStoneWhite() {
+    var Square$1 = /** @class */ (function (_super) {
+        __extends(Square, _super);
+        function Square() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
-        GlassStoneWhite.prototype.createElement = function (config, addDef) {
+        Square.prototype.createElement = function (config) {
             var _a;
-            _super.prototype.createElement.call(this, config, addDef);
-            if (!this.filterElement1) {
-                var filter1 = document.createElementNS(NS, 'radialGradient');
-                filter1.setAttribute('id', generateId('filter'));
-                filter1.setAttribute('cx', '45%');
-                filter1.setAttribute('cy', '45%');
-                filter1.setAttribute('fx', '20%');
-                filter1.setAttribute('fy', '20%');
-                filter1.setAttribute('r', '60%');
-                filter1.innerHTML = "\n        <stop offset=\"0%\" stop-color=\"rgba(48,48,48,1)\" />\n        <stop offset=\"80%\" stop-color=\"rgba(16,16,16,1)\" />\n        <stop offset=\"100%\" stop-color=\"rgba(0,0,0,1)\" />\n      ";
-                addDef(filter1);
-                this.filterElement1 = filter1;
-            }
-            var stoneGroup = document.createElementNS(NS, 'g');
-            var stone = document.createElementNS(NS, 'circle');
-            stone.setAttribute('cx', '0');
-            stone.setAttribute('cy', '0');
-            stone.setAttribute('fill', "url(#" + this.filterElement1.id + ")");
-            stone.setAttribute('r', config.theme.stoneSize);
-            stoneGroup.appendChild(stone);
+            var square = document.createElementNS(SVG_NS, 'rect');
+            square.setAttribute('x', '-0.25');
+            square.setAttribute('y', '-0.25');
+            square.setAttribute('width', '0.50');
+            square.setAttribute('height', '0.50');
+            var mask = document.createElementNS(SVG_NS, 'rect');
+            mask.setAttribute('x', '-0.35');
+            mask.setAttribute('y', '-0.35');
+            mask.setAttribute('width', '0.70');
+            mask.setAttribute('height', '0.70');
+            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
             return _a = {},
-                _a[OBJECTS] = stoneGroup,
-                _a[SHADOWS] = this.createShadow(config, addDef),
+                _a[SVG_OBJECTS] = square,
+                _a[SVG_GRID_MASK] = mask,
                 _a;
         };
-        return GlassStoneWhite;
-    }(SVGStoneDrawHandler));
+        return Square;
+    }(SVGMarkupDrawHandler));
+
+    var Triangle$1 = /** @class */ (function (_super) {
+        __extends(Triangle, _super);
+        function Triangle() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        Triangle.prototype.createElement = function (config) {
+            var _a;
+            var triangle = document.createElementNS(SVG_NS, 'polygon');
+            triangle.setAttribute('points', '0,-0.25 -0.25,0.166666 0.25,0.166666');
+            var mask = document.createElementNS(SVG_NS, 'polygon');
+            mask.setAttribute('points', '0,-0.35 -0.35,0.2333333 0.35,0.2333333');
+            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
+            return _a = {},
+                _a[SVG_OBJECTS] = triangle,
+                _a[SVG_GRID_MASK] = mask,
+                _a;
+        };
+        return Triangle;
+    }(SVGMarkupDrawHandler));
+
+    var XMark$1 = /** @class */ (function (_super) {
+        __extends(XMark, _super);
+        function XMark() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        XMark.prototype.createElement = function (config) {
+            var _a;
+            var path = document.createElementNS(SVG_NS, 'path');
+            path.setAttribute('d', 'M -0.20,-0.20 L 0.20,0.20 M 0.20,-0.20 L -0.20,0.20');
+            var mask = document.createElementNS(SVG_NS, 'circle');
+            mask.setAttribute('cx', '0');
+            mask.setAttribute('cy', '0');
+            mask.setAttribute('r', '0.15');
+            mask.setAttribute('fill', "rgba(0,0,0," + config.theme.markupGridMask + ")");
+            return _a = {},
+                _a[SVG_OBJECTS] = path,
+                _a[SVG_GRID_MASK] = mask,
+                _a;
+        };
+        return XMark;
+    }(SVGMarkupDrawHandler));
+
+    var index$2 = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        Arrow: Arrow$1,
+        Circle: Circle$1,
+        Dim: Dim$1,
+        Dot: Dot$1,
+        GlassStoneBlack: GlassStoneBlack$1,
+        GlassStoneWhite: GlassStoneWhite$1,
+        Label: Label$1,
+        Line: Line$1,
+        ModernStoneBlack: GlassStoneWhite$2,
+        ModernStoneWhite: GlassStoneWhite$3,
+        RealisticStone: RealisticStone$1,
+        SimpleStone: SimpleStone$1,
+        Square: Square$1,
+        Triangle: Triangle$1,
+        XMark: XMark$1
+    });
+
+    function line(fromX, fromY, toX, toY) {
+        var line = document.createElementNS(SVG_NS, 'line');
+        line.setAttribute('x1', fromX);
+        line.setAttribute('y1', fromY);
+        line.setAttribute('x2', toX);
+        line.setAttribute('y2', toY);
+        return line;
+    }
+    function star(x, y, starSize) {
+        var star = document.createElementNS(SVG_NS, 'circle');
+        star.setAttribute('cx', x);
+        star.setAttribute('cy', y);
+        star.setAttribute('r', starSize);
+        star.setAttribute('fill', '#553310');
+        star.setAttribute('stroke-width', '0');
+        return star;
+    }
+    function createGrid$1(config) {
+        var linesWidth = config.theme.grid.linesWidth;
+        var grid = document.createElementNS(SVG_NS, 'g');
+        grid.setAttribute('stroke', config.theme.grid.linesColor);
+        grid.setAttribute('stroke-width', linesWidth.toString());
+        grid.setAttribute('fill', config.theme.grid.starColor);
+        for (var i = 0; i < config.size; i++) {
+            grid.appendChild(line(i, 0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2));
+            grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
+        }
+        var starPoints = config.starPoints[config.size];
+        if (starPoints) {
+            starPoints.forEach(function (starPoint) {
+                grid.appendChild(star(starPoint.x, starPoint.y, config.theme.grid.starSize));
+            });
+        }
+        return grid;
+    }
+
+    function letter(x, y, str) {
+        var text = document.createElementNS(SVG_NS, 'text');
+        text.setAttribute('x', x);
+        text.setAttribute('y', y);
+        text.textContent = str;
+        return text;
+    }
+    function createCoordinates(config) {
+        var coordinates = document.createElementNS(SVG_NS, 'g');
+        coordinates.style.userSelect = 'none';
+        coordinates.setAttribute('font-family', config.theme.font);
+        coordinates.setAttribute('font-size', config.theme.coordinates.fontSize);
+        coordinates.setAttribute('text-anchor', 'middle');
+        coordinates.setAttribute('dominant-baseline', 'middle');
+        if (config.theme.coordinates.bold) {
+            coordinates.setAttribute('font-weight', 'bold');
+        }
+        coordinates.setAttribute('fill', config.theme.coordinates.color);
+        for (var i = 0; i < config.size; i++) {
+            if (config.theme.coordinatesTop) {
+                coordinates.appendChild(letter(i, -0.75, config.coordinateLabelsX[i]));
+            }
+            if (config.theme.coordinatesBottom) {
+                coordinates.appendChild(letter(i, config.size - 0.25, config.coordinateLabelsX[i]));
+            }
+            if (config.theme.coordinatesLeft) {
+                coordinates.appendChild(letter(-0.75, config.size - i - 1, config.coordinateLabelsY[i]));
+            }
+            if (config.theme.coordinatesRight) {
+                coordinates.appendChild(letter(config.size - 0.25, config.size - i - 1, config.coordinateLabelsY[i]));
+            }
+        }
+        return coordinates;
+    }
 
     var defaultSVGTheme = __assign(__assign({}, defaultBoardBaseTheme), { 
         // backgroundImage: 'images/wood1.jpg',
@@ -4245,8 +4264,8 @@
             DD: new Dim$1({ color: 'rgba(0, 0, 0, 0.5)' }),
             // B: new drawHandlers.GlassStoneBlack(),
             // W: new drawHandlers.GlassStoneWhite(),
-            W: new GlassStoneWhite$2(),
-            B: new GlassStoneWhite$3(),
+            W: new GlassStoneWhite$3(),
+            B: new GlassStoneWhite$2(),
         } });
 
     var svgBoardDefaultConfig = __assign(__assign({}, defaultBoardBaseConfig), { theme: defaultSVGTheme });
@@ -4276,10 +4295,10 @@
             _this.touchArea.style.borderLeft = '#CCB467 solid 1px';
             _this.touchArea.style.borderBottom = '#665926 solid 1px';
             _this.boardElement.appendChild(_this.touchArea);
-            _this.svgElement = document.createElementNS(NS, 'svg');
+            _this.svgElement = document.createElementNS(SVG_NS, 'svg');
             _this.svgElement.style.display = 'block';
             _this.boardElement.appendChild(_this.svgElement);
-            _this.defsElement = document.createElementNS(NS, 'defs');
+            _this.defsElement = document.createElementNS(SVG_NS, 'defs');
             _this.svgElement.appendChild(_this.defsElement);
             _this.setViewport();
             _this.resize();
@@ -4321,21 +4340,21 @@
             this.drawObjects();
         };
         SVGBoard.prototype.drawGrid = function () {
-            if (this.contexts[GRID_MASK]) {
-                this.svgElement.removeChild(this.contexts[GRID_MASK]);
+            if (this.contexts[SVG_GRID_MASK]) {
+                this.svgElement.removeChild(this.contexts[SVG_GRID_MASK]);
             }
             if (this.contexts.gridElement) {
                 this.svgElement.removeChild(this.contexts.gridElement);
             }
             // create grid mask
             var size = this.config.size;
-            this.contexts[GRID_MASK] = document.createElementNS(NS, 'mask');
-            this.contexts[GRID_MASK].id = generateId('mask');
-            this.contexts[GRID_MASK].innerHTML = "<rect x=\"-0.5\" y=\"-0.5\" width=\"" + size + "\" height=\"" + size + "\" fill=\"white\" />";
-            this.svgElement.appendChild(this.contexts[GRID_MASK]);
+            this.contexts[SVG_GRID_MASK] = document.createElementNS(SVG_NS, 'mask');
+            this.contexts[SVG_GRID_MASK].id = generateId('mask');
+            this.contexts[SVG_GRID_MASK].innerHTML = "<rect x=\"-0.5\" y=\"-0.5\" width=\"" + size + "\" height=\"" + size + "\" fill=\"white\" />";
+            this.svgElement.appendChild(this.contexts[SVG_GRID_MASK]);
             // create grid
             this.contexts.gridElement = createGrid$1(this.config);
-            this.contexts.gridElement.setAttribute('mask', "url(#" + this.contexts[GRID_MASK].id + ")");
+            this.contexts.gridElement.setAttribute('mask', "url(#" + this.contexts[SVG_GRID_MASK].id + ")");
             this.svgElement.appendChild(this.contexts.gridElement);
         };
         SVGBoard.prototype.drawCoordinates = function () {
@@ -4349,19 +4368,19 @@
         SVGBoard.prototype.drawObjects = function () {
             var _this = this;
             // remove old shadows layer
-            if (this.contexts[SHADOWS]) {
-                this.svgElement.removeChild(this.contexts[SHADOWS]);
+            if (this.contexts[SVG_SHADOWS]) {
+                this.svgElement.removeChild(this.contexts[SVG_SHADOWS]);
             }
             // remove old objects layer
-            if (this.contexts[OBJECTS]) {
-                this.svgElement.removeChild(this.contexts[OBJECTS]);
+            if (this.contexts[SVG_OBJECTS]) {
+                this.svgElement.removeChild(this.contexts[SVG_OBJECTS]);
             }
             // append new shadows layer
-            this.contexts[SHADOWS] = document.createElementNS(NS, 'g');
-            this.svgElement.appendChild(this.contexts[SHADOWS]);
+            this.contexts[SVG_SHADOWS] = document.createElementNS(SVG_NS, 'g');
+            this.svgElement.appendChild(this.contexts[SVG_SHADOWS]);
             // append new object layer
-            this.contexts[OBJECTS] = document.createElementNS(NS, 'g');
-            this.svgElement.appendChild(this.contexts[OBJECTS]);
+            this.contexts[SVG_OBJECTS] = document.createElementNS(SVG_NS, 'g');
+            this.svgElement.appendChild(this.contexts[SVG_OBJECTS]);
             // prepare map for objects and add all objects
             this.objectsElementMap = new Map();
             this.objects.forEach(function (boardObject) { return _this.createObjectElements(boardObject); });
@@ -4385,7 +4404,7 @@
             var elem = handler.createElement(this.config, function (def) { return _this.defsElement.appendChild(def); });
             var elements;
             if (elem instanceof SVGElement) {
-                elements = (_a = {}, _a[OBJECTS] = elem, _a);
+                elements = (_a = {}, _a[SVG_OBJECTS] = elem, _a);
             }
             else {
                 elements = elem;
@@ -5604,10 +5623,18 @@
     exports.SGFSyntaxError = SGFSyntaxError;
     exports.SVGBoard = SVGBoard;
     exports.SVGBoardComponent = SVGBoardComponent;
+    exports.SVGFieldDrawHandler = SVGFieldDrawHandler;
+    exports.SVGMarkupDrawHandler = SVGMarkupDrawHandler;
+    exports.SVGStoneDrawHandler = SVGStoneDrawHandler;
+    exports.SVG_GRID_MASK = SVG_GRID_MASK;
+    exports.SVG_NS = SVG_NS;
+    exports.SVG_OBJECTS = SVG_OBJECTS;
+    exports.SVG_SHADOWS = SVG_SHADOWS;
     exports.SimplePlayer = SimplePlayer;
     exports.drawHandlers = index;
     exports.goRules = goRules;
     exports.propertyValueTypes = propertyValueTypes;
+    exports.svgDrawHandlers = index$2;
     exports.themes = index$1;
 
     Object.defineProperty(exports, '__esModule', { value: true });

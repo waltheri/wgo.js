@@ -9,7 +9,7 @@ import CommentsBox, { CommentBoxConfig, commentBoxDefaultConfig } from '../Playe
 import GameInfoBox, { GameInfoBoxConfig, gameInfoBoxDefaultConfig } from '../PlayerDOM/components/GameInfoBox';
 import { EditMode } from '../PlayerBase/plugins';
 import { Container, ControlPanel, PlayerTag, ResponsiveComponent } from '../PlayerDOM/components';
-import { KifuNode } from '..';
+import KifuNode from '../kifu/KifuNode';
 
 interface SimplePlayerConfig extends PlayerDOMConfig {
   board: SVGBoardComponentConfig;

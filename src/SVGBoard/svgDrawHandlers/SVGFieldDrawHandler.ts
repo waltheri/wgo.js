@@ -1,5 +1,5 @@
 
-import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements, OBJECTS } from '../types';
+import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements, SVG_OBJECTS } from '../types';
 import { FieldObject } from '../../BoardBase';
 
 export default abstract class SVGFieldDrawHandler implements SVGDrawHandler {

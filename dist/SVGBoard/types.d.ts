@@ -1,9 +1,9 @@
 import { BoardBaseConfig, BoardBaseTheme } from '../BoardBase/types';
 import { BoardObject } from '../BoardBase';
-export declare const NS = "http://www.w3.org/2000/svg";
-export declare const OBJECTS = "objects";
-export declare const GRID_MASK = "gridMask";
-export declare const SHADOWS = "shadows";
+export declare const SVG_NS = "http://www.w3.org/2000/svg";
+export declare const SVG_OBJECTS = "objects";
+export declare const SVG_GRID_MASK = "gridMask";
+export declare const SVG_SHADOWS = "shadows";
 export interface BoardObjectSVGElements {
     [key: string]: SVGElement;
 }

@@ -1,7 +1,7 @@
-import { NS, SVGBoardConfig } from './types';
+import { SVG_NS, SVGBoardConfig } from './types';
 
 function letter(x: number, y: number, str: string) {
-  const text = document.createElementNS(NS, 'text');
+  const text = document.createElementNS(SVG_NS, 'text');
   text.setAttribute('x', x as any);
   text.setAttribute('y', y as any);
   text.textContent = str;
@@ -10,7 +10,7 @@ function letter(x: number, y: number, str: string) {
 }
 
 export default function createCoordinates(config: SVGBoardConfig) {
-  const coordinates = document.createElementNS(NS, 'g');
+  const coordinates = document.createElementNS(SVG_NS, 'g');
   coordinates.style.userSelect = 'none';
 
   coordinates.setAttribute('font-family', config.theme.font);

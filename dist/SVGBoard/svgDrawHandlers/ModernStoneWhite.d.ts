@@ -1,4 +1,4 @@
-import { SVGBoardConfig, OBJECTS, SHADOWS } from '../types';
+import { SVGBoardConfig, SVG_OBJECTS, SVG_SHADOWS } from '../types';
 import SVGStoneDrawHandler from './SVGStoneDrawHandler';
 export default class GlassStoneWhite extends SVGStoneDrawHandler {
     filterElement1: SVGElement;

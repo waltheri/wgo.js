@@ -1,4 +1,4 @@
-import { NS } from '../types';
+import { SVG_NS } from '../types';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
 
 export default class Dot extends SVGFieldDrawHandler {
@@ -10,7 +10,7 @@ export default class Dot extends SVGFieldDrawHandler {
   }
 
   createElement() {
-    const circle = document.createElementNS(NS, 'circle');
+    const circle = document.createElementNS(SVG_NS, 'circle');
     circle.setAttribute('cx', '0');
     circle.setAttribute('cy', '0');
     circle.setAttribute('r', '0.15');

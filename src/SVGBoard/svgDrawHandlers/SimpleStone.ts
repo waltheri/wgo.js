@@ -1,4 +1,4 @@
-import { NS, SVGBoardConfig } from '../types';
+import { SVG_NS, SVGBoardConfig } from '../types';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
 
 export default class SimpleStone extends SVGFieldDrawHandler {
@@ -10,7 +10,7 @@ export default class SimpleStone extends SVGFieldDrawHandler {
   }
 
   createElement(config: SVGBoardConfig) {
-    const stone = document.createElementNS(NS, 'circle');
+    const stone = document.createElementNS(SVG_NS, 'circle');
 
     stone.setAttribute('cx', '0');
     stone.setAttribute('cy', '0');

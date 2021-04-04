@@ -5,11 +5,11 @@ import createCoordinates from './createCoordinates';
 import {
   SVGDrawHandler,
   SVGBoardConfig,
-  NS,
-  OBJECTS,
+  SVG_NS,
+  SVG_OBJECTS,
   BoardObjectSVGElements,
-  GRID_MASK,
-  SHADOWS,
+  SVG_GRID_MASK,
+  SVG_SHADOWS,
   SVGBoardObject,
 } from './types';
 import { defaultBoardBaseConfig } from '../BoardBase/defaultConfig';
@@ -63,11 +63,11 @@ export default class SVGBoard extends BoardBase {
     this.touchArea.style.borderBottom = '#665926 solid 1px';
     this.boardElement.appendChild(this.touchArea);
 
-    this.svgElement = document.createElementNS(NS, 'svg');
+    this.svgElement = document.createElementNS(SVG_NS, 'svg');
     this.svgElement.style.display = 'block';
     this.boardElement.appendChild(this.svgElement);
 
-    this.defsElement = document.createElementNS(NS, 'defs');
+    this.defsElement = document.createElementNS(SVG_NS, 'defs');
     this.svgElement.appendChild(this.defsElement);
 
     this.setViewport();
@@ -110,8 +110,8 @@ export default class SVGBoard extends BoardBase {
   }
 
   drawGrid() {
-    if (this.contexts[GRID_MASK]) {
-      this.svgElement.removeChild(this.contexts[GRID_MASK]);
+    if (this.contexts[SVG_GRID_MASK]) {
+      this.svgElement.removeChild(this.contexts[SVG_GRID_MASK]);
     }
 
     if (this.contexts.gridElement) {
@@ -120,14 +120,14 @@ export default class SVGBoard extends BoardBase {
 
     // create grid mask
     const { size } = this.config;
-    this.contexts[GRID_MASK] = document.createElementNS(NS, 'mask');
-    this.contexts[GRID_MASK].id = generateId('mask');
-    this.contexts[GRID_MASK].innerHTML = `<rect x="-0.5" y="-0.5" width="${size}" height="${size}" fill="white" />`;
-    this.svgElement.appendChild(this.contexts[GRID_MASK]);
+    this.contexts[SVG_GRID_MASK] = document.createElementNS(SVG_NS, 'mask');
+    this.contexts[SVG_GRID_MASK].id = generateId('mask');
+    this.contexts[SVG_GRID_MASK].innerHTML = `<rect x="-0.5" y="-0.5" width="${size}" height="${size}" fill="white" />`;
+    this.svgElement.appendChild(this.contexts[SVG_GRID_MASK]);
 
     // create grid
     this.contexts.gridElement = createGrid(this.config);
-    this.contexts.gridElement.setAttribute('mask', `url(#${this.contexts[GRID_MASK].id})`);
+    this.contexts.gridElement.setAttribute('mask', `url(#${this.contexts[SVG_GRID_MASK].id})`);
     this.svgElement.appendChild(this.contexts.gridElement);
   }
 
@@ -143,22 +143,22 @@ export default class SVGBoard extends BoardBase {
 
   drawObjects() {
     // remove old shadows layer
-    if (this.contexts[SHADOWS]) {
-      this.svgElement.removeChild(this.contexts[SHADOWS]);
+    if (this.contexts[SVG_SHADOWS]) {
+      this.svgElement.removeChild(this.contexts[SVG_SHADOWS]);
     }
 
     // remove old objects layer
-    if (this.contexts[OBJECTS]) {
-      this.svgElement.removeChild(this.contexts[OBJECTS]);
+    if (this.contexts[SVG_OBJECTS]) {
+      this.svgElement.removeChild(this.contexts[SVG_OBJECTS]);
     }
 
     // append new shadows layer
-    this.contexts[SHADOWS] = document.createElementNS(NS, 'g');
-    this.svgElement.appendChild(this.contexts[SHADOWS]);
+    this.contexts[SVG_SHADOWS] = document.createElementNS(SVG_NS, 'g');
+    this.svgElement.appendChild(this.contexts[SVG_SHADOWS]);
 
     // append new object layer
-    this.contexts[OBJECTS] = document.createElementNS(NS, 'g');
-    this.svgElement.appendChild(this.contexts[OBJECTS]);
+    this.contexts[SVG_OBJECTS] = document.createElementNS(SVG_NS, 'g');
+    this.svgElement.appendChild(this.contexts[SVG_OBJECTS]);
 
     // prepare map for objects and add all objects
     this.objectsElementMap = new Map();
@@ -187,7 +187,7 @@ export default class SVGBoard extends BoardBase {
     let elements: BoardObjectSVGElements;
 
     if (elem instanceof SVGElement) {
-      elements = { [OBJECTS]: elem };
+      elements = { [SVG_OBJECTS]: elem };
     } else {
       elements = elem;
     }

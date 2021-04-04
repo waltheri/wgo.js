@@ -1,4 +1,4 @@
-import { SVGBoardConfig, SVGDrawHandler, BoardObjectSVGElements, OBJECTS, GRID_MASK } from '../types';
+import { SVGBoardConfig, SVGDrawHandler, BoardObjectSVGElements, SVG_OBJECTS, SVG_GRID_MASK } from '../types';
 import { BoardLineObject } from '../../BoardBase';
 interface LineParams {
     color?: string;

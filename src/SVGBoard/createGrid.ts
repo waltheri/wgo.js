@@ -1,7 +1,7 @@
-import { NS, SVGBoardConfig } from './types';
+import { SVG_NS, SVGBoardConfig } from './types';
 
 function line(fromX: number, fromY: number, toX: number, toY: number) {
-  const line = document.createElementNS(NS, 'line');
+  const line = document.createElementNS(SVG_NS, 'line');
   line.setAttribute('x1', fromX as any);
   line.setAttribute('y1', fromY as any);
   line.setAttribute('x2', toX as any);
@@ -11,7 +11,7 @@ function line(fromX: number, fromY: number, toX: number, toY: number) {
 }
 
 function star(x: number, y: number, starSize: number) {
-  const star = document.createElementNS(NS, 'circle');
+  const star = document.createElementNS(SVG_NS, 'circle');
   star.setAttribute('cx', x as any);
   star.setAttribute('cy', y as any);
   star.setAttribute('r', starSize as any);
@@ -24,7 +24,7 @@ function star(x: number, y: number, starSize: number) {
 export default function createGrid(config: SVGBoardConfig) {
   const { linesWidth } = config.theme.grid;
 
-  const grid = document.createElementNS(NS, 'g');
+  const grid = document.createElementNS(SVG_NS, 'g');
   grid.setAttribute('stroke', config.theme.grid.linesColor);
   grid.setAttribute('stroke-width', linesWidth.toString());
   grid.setAttribute('fill', config.theme.grid.starColor);

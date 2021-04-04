@@ -1,4 +1,4 @@
-import { NS } from '../types';
+import { SVG_NS } from '../types';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
 
 export default class Dim extends SVGFieldDrawHandler {
@@ -10,7 +10,7 @@ export default class Dim extends SVGFieldDrawHandler {
   }
 
   createElement() {
-    const rect = document.createElementNS(NS, 'rect');
+    const rect = document.createElementNS(SVG_NS, 'rect');
     rect.setAttribute('x', '-0.5');
     rect.setAttribute('y', '-0.5');
     rect.setAttribute('width', '1');

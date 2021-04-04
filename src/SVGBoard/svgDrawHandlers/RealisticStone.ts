@@ -1,6 +1,6 @@
 import SVGStoneDrawHandler from './SVGStoneDrawHandler';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
-import { SVGBoardConfig, NS, OBJECTS } from '../types';
+import { SVGBoardConfig, SVG_NS, SVG_OBJECTS } from '../types';
 
 export default class RealisticStone extends SVGStoneDrawHandler {
   paths: string[];
@@ -20,20 +20,20 @@ export default class RealisticStone extends SVGStoneDrawHandler {
     super.createElement(config, addDef);
 
     const id = Math.floor(Math.random() * this.paths.length);
-    const group = document.createElementNS(NS, 'g');
+    const group = document.createElementNS(SVG_NS, 'g');
     let fallbackElement: any;
 
     if (!this.loadedPaths[id]) {
       fallbackElement = this.fallback.createElement(config, addDef);
 
       if (!(fallbackElement instanceof SVGElement)) {
-        fallbackElement = fallbackElement[OBJECTS];
+        fallbackElement = fallbackElement[SVG_OBJECTS];
       }
 
       group.appendChild(fallbackElement);
     }
 
-    const image = document.createElementNS(NS, 'image');
+    const image = document.createElementNS(SVG_NS, 'image');
     image.setAttribute('href', this.paths[id]);
     image.setAttribute('width', config.theme.stoneSize * 2 as any);
     image.setAttribute('height', config.theme.stoneSize * 2 as any);
