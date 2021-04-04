@@ -3,6 +3,7 @@ import SVGMarkupDrawHandler, { SVGMarkupDrawHandlerParams } from './SVGMarkupDra
 import { BoardLabelObject } from '../../BoardBase';
 interface LabelParams extends SVGMarkupDrawHandlerParams {
     font?: string;
+    maxWidth?: number;
 }
 export default class Label extends SVGMarkupDrawHandler {
     params: LabelParams;
