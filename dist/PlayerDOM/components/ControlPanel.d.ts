@@ -55,6 +55,10 @@ export default class ControlPanel implements PlayerDOMComponent {
             handleClick(): boolean;
             defaultChecked: () => boolean;
         };
+        gameInfo: (player: PlayerDOM, callback: (modalWrapper: HTMLElement) => void) => {
+            name: string;
+            handleClick(): void;
+        };
     };
 }
 export {};

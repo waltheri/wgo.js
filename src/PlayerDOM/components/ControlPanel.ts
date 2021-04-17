@@ -4,6 +4,7 @@ import { EditMode } from '../../PlayerBase/plugins';
 import { PropIdent } from '../../SGFParser/sgfTypes';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
+import GameInfoBox from './GameInfoBox';
 import PlayerDOMComponent from './PlayerDOMComponent';
 
 interface MenuItem {
@@ -221,6 +222,44 @@ export default class ControlPanel implements PlayerDOMComponent {
         return editMode.config.enabled;
       },
       defaultChecked: () => editMode.config.enabled,
+    }),
+
+    gameInfo: (player: PlayerDOM, callback: (modalWrapper: HTMLElement) => void) => ({
+      name: 'Game info',
+      handleClick() {
+        const overlay = document.createElement('div');
+        overlay.className = 'wgo-player__overlay';
+
+        const overlayClose = document.createElement('div');
+        overlayClose.className = 'wgo-player__overlay__close';
+        overlayClose.addEventListener('click', () => {
+          overlay.parentElement.removeChild(overlay);
+          gameInfo.destroy();
+        });
+        overlay.appendChild(overlayClose);
+
+        const modal = document.createElement('div');
+        modal.className = 'wgo-player__modal';
+        overlay.appendChild(modal);
+
+        const modalContent = document.createElement('div');
+        modalContent.className = 'wgo-player__modal__content';
+        modal.appendChild(modalContent);
+
+        const gameInfo = new GameInfoBox({
+          hideResult: false,
+        });
+        gameInfo.create(player);
+        modalContent.appendChild(gameInfo.element);
+
+        const wgoInfo = document.createElement('div');
+        wgoInfo.className = 'wgo-player__wgo-info';
+        // tslint:disable-next-line:max-line-length
+        wgoInfo.innerHTML = 'Game viewed in open source JS player <a href="https://github.com/waltheri/wgo.js" target="_blank">WGo</a>.';
+        modalContent.appendChild(wgoInfo);
+
+        callback(overlay);
+      },
     }),
   };
 }

@@ -26,7 +26,7 @@ export default class CommentsBox implements PlayerDOMComponent {
 
     // create HTML
     this.element = document.createElement('div');
-    this.element.className = 'wgo-player__box wgo-player__box--content wgo-player__box--stretch';
+    this.element.className = 'wgo-player__box wgo-player__box--content';
 
     const title = document.createElement('div');
     title.innerHTML = 'Comments';

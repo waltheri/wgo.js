@@ -1,10 +1,11 @@
+import { PropIdent } from '../../SGFParser/sgfTypes';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
 
 export interface GameInfoBoxConfig {
   gameInfoProperties: { [key: string]: string };
-  stretch: boolean;
+  hideResult: boolean;
 }
 
 export const gameInfoBoxDefaultConfig = {
@@ -27,7 +28,7 @@ export const gameInfoBoxDefaultConfig = {
     EV: 'Event',
     SO: 'Source',
   },
-  stretch: false,
+  hideResult: true,
 };
 
 export default class GameInfoBox implements PlayerDOMComponent {
@@ -43,18 +44,18 @@ export default class GameInfoBox implements PlayerDOMComponent {
     this.element = document.createElement('div');
     this.element.className = 'wgo-player__box wgo-player__box--content';
 
-    if (this.config.stretch) {
-      this.element.className = `${this.element.className} wgo-player__box--stretch`;
-    }
-
     const title = document.createElement('div');
     title.innerHTML = 'Game information';
     title.className = 'wgo-player__box__title';
     this.element.appendChild(title);
 
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = 'wgo-player__box__content';
+    this.element.appendChild(tableWrapper);
+
     this.infoTable = document.createElement('table');
     this.infoTable.className = 'wgo-player__box__game-info';
-    this.element.appendChild(this.infoTable);
+    tableWrapper.appendChild(this.infoTable);
   }
 
   create(player: PlayerDOM) {
@@ -68,7 +69,7 @@ export default class GameInfoBox implements PlayerDOMComponent {
     this.player = null;
   }
 
-  addInfo(propIdent: string, value: string) {
+  addInfo(propIdent: string, value: string, hide: boolean) {
     const row = document.createElement('tr');
     row.dataset.propIdent = propIdent;
     this.infoTable.appendChild(row);
@@ -78,7 +79,18 @@ export default class GameInfoBox implements PlayerDOMComponent {
     row.appendChild(label);
 
     const valueElement = document.createElement('td');
-    valueElement.textContent = value;
+    if (hide) {
+      const link = document.createElement('a');
+      link.href = '#';
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        valueElement.textContent = value;
+      });
+      link.textContent = 'show';
+      valueElement.appendChild(link);
+    } else {
+      valueElement.textContent = value;
+    }
     row.appendChild(valueElement);
   }
 
@@ -92,7 +104,7 @@ export default class GameInfoBox implements PlayerDOMComponent {
     if (this.player.rootNode) {
       this.player.rootNode.forEachProperty((propIdent, value) => {
         if (this.config.gameInfoProperties[propIdent]) {
-          this.addInfo(propIdent, value);
+          this.addInfo(propIdent, value, this.config.hideResult && propIdent === PropIdent.RESULT);
         }
       });
     }

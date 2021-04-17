@@ -10,6 +10,7 @@ import GameInfoBox, { GameInfoBoxConfig, gameInfoBoxDefaultConfig } from '../Pla
 import { EditMode } from '../PlayerBase/plugins';
 import { Container, ControlPanel, PlayerTag, ResponsiveComponent } from '../PlayerDOM/components';
 import KifuNode from '../kifu/KifuNode';
+import PlayerDOMComponent from '../PlayerDOM/components/PlayerDOMComponent';
 
 interface SimplePlayerConfig extends PlayerDOMConfig {
   board: SVGBoardComponentConfig;
@@ -63,8 +64,21 @@ export default class SimplePlayer extends PlayerDOM {
         ControlPanel.menuItems.editMode(editMode),
         ControlPanel.menuItems.displayCoordinates(svgBoardComponent),
         ControlPanel.menuItems.download(this),
+        ControlPanel.menuItems.gameInfo(this, elem => this.element.firstChild.appendChild(elem)),
       ],
     };
+
+    const rightColumn: PlayerDOMComponent[] = [];
+    const bottom: PlayerDOMComponent[] = [];
+
+    if (this.config.gameInfo.enabled) {
+      rightColumn.push(new GameInfoBox(this.config.gameInfo));
+    }
+
+    if (this.config.comments.enabled) {
+      rightColumn.push(new CommentsBox(this.config.comments));
+      bottom.push(new ResponsiveComponent({ maxWidth: 649 }, new CommentsBox(this.config.comments)));
+    }
 
     const component = new Container('column', [
       new ResponsiveComponent({ maxWidth: 749 }, new Container('row', [
@@ -77,12 +91,11 @@ export default class SimplePlayer extends PlayerDOM {
           new ResponsiveComponent({ minWidth: 250 }, new PlayerTag(Color.B)),
           new ResponsiveComponent({ minWidth: 250 }, new PlayerTag(Color.W)),
           new ResponsiveComponent({ minWidth: 250 }, new ControlPanel(controlPanelConfig)),
-          new GameInfoBox(this.config.gameInfo),
-          new CommentsBox(this.config.comments),
+          ...rightColumn,
         ])),
       ]),
       new ResponsiveComponent({ maxWidth: 749 }, new ControlPanel(controlPanelConfig)),
-      new ResponsiveComponent({ maxWidth: 649 }, new CommentsBox(this.config.comments)),
+      ...bottom,
     ]);
 
     this.render(component, this.element);

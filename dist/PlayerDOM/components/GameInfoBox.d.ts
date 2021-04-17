@@ -5,7 +5,7 @@ export interface GameInfoBoxConfig {
     gameInfoProperties: {
         [key: string]: string;
     };
-    stretch: boolean;
+    hideResult: boolean;
 }
 export declare const gameInfoBoxDefaultConfig: {
     gameInfoProperties: {
@@ -27,7 +27,7 @@ export declare const gameInfoBoxDefaultConfig: {
         EV: string;
         SO: string;
     };
-    stretch: boolean;
+    hideResult: boolean;
 };
 export default class GameInfoBox implements PlayerDOMComponent {
     element: HTMLElement;
@@ -37,7 +37,7 @@ export default class GameInfoBox implements PlayerDOMComponent {
     constructor(config?: PartialRecursive<GameInfoBoxConfig>);
     create(player: PlayerDOM): void;
     destroy(): void;
-    addInfo(propIdent: string, value: string): void;
+    addInfo(propIdent: string, value: string, hide: boolean): void;
     removeInfo(propIdent: string): void;
     printInfo(): void;
 }

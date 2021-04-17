@@ -7,11 +7,13 @@
 
 .wgo-player {
   all: unset;
+  display: block;
   font-family: calibri;
   font-size: 15px;
+  position: relative;
 
   --box-content-background: rgba(255, 255, 255, 0.5);
-  --box-border-color: rgba(0, 0, 0, 0.5);
+  --box-background: rgba(121, 85, 72, 0.05);
 }
 
 .wgo-player__container {
@@ -27,6 +29,10 @@
   flex-direction: column;
 }
 
+.wgo-player__container--column .wgo-player__box:last-child {
+  flex: 1;
+}
+
 .wgo-player__container--row > :nth-child(1) {
   flex: 2;
 }
@@ -36,7 +42,7 @@
 }
 
 .wgo-player__box {
-  background: rgba(121, 85, 72, 0.05);
+  background: var(--box-background);
   padding: 10px 15px;
   overflow: hidden;
 }
@@ -47,10 +53,6 @@
 
 .wgo-player__container--row > * + * {
   margin-left: 1px;
-}
-
-.wgo-player__box--stretch {
-  flex: 1;
 }
 
 .wgo-player__box--content {
@@ -142,12 +144,10 @@
 .wgo-player__box__game-info > tr > th {
   text-align: left;
   font-weight: bold;
-  background: var(--box-content-background);
   padding: 5px 7px;
 }
 
 .wgo-player__box__game-info > tr >  td {
-  background: var(--box-content-background);
   padding: 5px 7px;
 }
 
@@ -340,6 +340,50 @@
 
 .wgo-player__icon--reverse:before {
   transform: scaleX(-1);
+}
+
+.wgo-player__overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(1px);
+  background: rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.wgo-player__overlay__close {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+
+.wgo-player__modal {
+  max-width: 90%;
+  max-height: 90%;
+  width: 500px;
+  background: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+}
+
+.wgo-player__modal__content {
+  width: 100%;
+  height: 100%;
+  background: white;
+}
+
+.wgo-player__wgo-info {
+  padding: 0 15px 10px;
+  font-size: 0.933em;
+  background: var(--box-background);
 }
 
 /* TEMP */
