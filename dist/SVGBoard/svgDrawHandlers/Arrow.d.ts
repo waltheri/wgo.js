@@ -1,5 +1,5 @@
 import { SVGBoardConfig, SVGDrawHandler, SVG_OBJECTS, BoardObjectSVGElements, SVG_GRID_MASK } from '../types';
-import { BoardLineObject } from '../../BoardBase';
+import { LineBoardObject } from '../../BoardBase';
 interface LineParams {
     color?: string;
     lineWidth?: number;
@@ -12,7 +12,7 @@ export default class Arrow implements SVGDrawHandler {
         gridMask: SVGGElement;
     };
     protected createSVGElements(): SVGGElement;
-    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig): void;
-    protected updateSVGElements(elem: SVGElement, boardObject: BoardLineObject): void;
+    updateElement(elem: BoardObjectSVGElements, boardObject: LineBoardObject, config: SVGBoardConfig): void;
+    protected updateSVGElements(elem: SVGElement, boardObject: LineBoardObject): void;
 }
 export {};

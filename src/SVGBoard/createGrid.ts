@@ -34,7 +34,7 @@ export default function createGrid(config: SVGBoardConfig) {
     grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
   }
 
-  const starPoints = config.starPoints[config.size];
+  const starPoints = config.theme.starPoints[config.size];
 
   if (starPoints) {
     starPoints.forEach((starPoint) => {

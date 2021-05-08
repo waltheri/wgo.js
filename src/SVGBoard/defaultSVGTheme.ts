@@ -13,12 +13,11 @@ const defaultSVGTheme: SVGBoardTheme = {
   coordinates: {
     ...defaultBoardBaseTheme.coordinates,
     fontSize: 0.5,
+    top: true,
+    right: true,
+    bottom: true,
+    left: true,
   },
-
-  coordinatesTop: true,
-  coordinatesRight: true,
-  coordinatesBottom: true,
-  coordinatesLeft: true,
 
   grid: {
     ...defaultBoardBaseTheme.grid,

@@ -1,17 +1,17 @@
 import { SVGBoard } from '../../SVGBoard';
 import {
-  FieldObject,
-  BoardLabelObject,
-  BoardMarkupObject,
+  FieldBoardObject,
+  LabelBoardObject,
+  MarkupBoardObject,
   BoardObject,
-  BoardLineObject,
+  LineBoardObject,
   BoardViewport,
 } from '../../BoardBase';
 import { Color, Point, Label, Vector } from '../../types';
 import { LifeCycleEvent } from '../../PlayerBase/types';
 import { SVGBoardObject, SVGDrawHandler, SVGBoardTheme } from '../../SVGBoard/types';
-import SVGCustomFieldObject from '../../SVGBoard/SVGCustomFieldObject';
-import SVGCustomLabelObject from '../../SVGBoard/SVGCustomLabelObject';
+import SVGCustomFieldBoardObject from '../../SVGBoard/SVGCustomFieldBoardObject';
+import SVGCustomLabelBoardObject from '../../SVGBoard/SVGCustomLabelBoardObject';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import { Circle, Label as SVGLabel } from '../../SVGBoard/svgDrawHandlers';
 import PlayerDOMComponent from './PlayerDOMComponent';
@@ -28,11 +28,6 @@ export interface SVGBoardComponentConfig {
   currentMoveBlackMark: SVGDrawHandler;
   currentMoveWhiteMark: SVGDrawHandler;
   variationDrawHandler: SVGDrawHandler;
-  starPoints?: {
-    [size: number]: Point[];
-  };
-  coordinateLabelsX?: string | (string | number)[];
-  coordinateLabelsY?: string | (string | number)[];
   highlightCurrentMove: boolean;
   showVariations: boolean;
   showCurrentVariations: boolean;
@@ -57,7 +52,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   player: PlayerDOM;
 
   // Current board objects for stones - should match the position object of the game
-  stoneBoardsObjects: FieldObject[];
+  stoneBoardsObjects: FieldBoardObject[];
 
   // Temporary board object, will be removed after each node update
   temporaryBoardObjects: SVGBoardObject[];
@@ -97,9 +92,6 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
 
     this.board = new SVGBoard(this.element, {
       coordinates: this.config.coordinates,
-      starPoints: this.config.starPoints,
-      coordinateLabelsX: this.config.coordinateLabelsX,
-      coordinateLabelsY: this.config.coordinateLabelsY,
       theme: this.config.theme,
     });
 
@@ -216,7 +208,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
         if (c && !this.stoneBoardsObjects.some(
           boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
         )) {
-          const boardObject = new FieldObject(c === Color.B ? 'B' : 'W', x, y);
+          const boardObject = new FieldBoardObject(c === Color.B ? 'B' : 'W', x, y);
           this.board.addObject(boardObject);
           this.stoneBoardsObjects.push(boardObject);
         }
@@ -230,7 +222,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     if (moves.length > 1) {
       moves.forEach((move, i) => {
         if (move) {
-          const obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
+          const obj = new SVGCustomLabelBoardObject(String.fromCodePoint(65 + i), move.x, move.y);
           obj.handler = this.config.variationDrawHandler;
           this.addTemporaryBoardObject(obj);
         }
@@ -308,7 +300,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   private applyMarkupProperty(event: LifeCycleEvent<Point[]>) {
     event.value.forEach((value) => {
       // add markup
-      const boardMarkup = new BoardMarkupObject(
+      const boardMarkup = new MarkupBoardObject(
         event.propIdent,
         value.x,
         value.y,
@@ -322,7 +314,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   private applyLabelMarkupProperty(event: LifeCycleEvent<Label[]>) {
     event.value.forEach((value) => {
       // add markup
-      const boardMarkup = new BoardLabelObject(
+      const boardMarkup = new LabelBoardObject(
         value.text,
         value.x,
         value.y,
@@ -336,7 +328,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   private applyLineMarkupProperty(event: LifeCycleEvent<Vector[]>) {
     event.value.forEach((value) => {
       // add markup
-      const boardMarkup = new BoardLineObject(event.propIdent, value[0], value[1]);
+      const boardMarkup = new LineBoardObject(event.propIdent, value[0], value[1]);
       boardMarkup.zIndex = 10;
       this.addTemporaryBoardObject(boardMarkup);
     });
@@ -392,7 +384,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
       }
 
       // add current move mark
-      const boardMarkup = new SVGCustomFieldObject(
+      const boardMarkup = new SVGCustomFieldBoardObject(
         event.propIdent === 'B' ? this.config.currentMoveBlackMark : this.config.currentMoveWhiteMark,
         event.value.x,
         event.value.y,
@@ -407,12 +399,12 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     this.board.addObject(obj);
   }
 
-  removeTemporaryBoardObject(obj: FieldObject) {
+  removeTemporaryBoardObject(obj: FieldBoardObject) {
     this.temporaryBoardObjects = this.temporaryBoardObjects.filter(o => o !== obj);
     this.board.removeObject(obj);
   }
 
-  updateTemporaryBoardObject(obj: FieldObject) {
+  updateTemporaryBoardObject(obj: FieldBoardObject) {
     this.board.updateObject(obj);
   }
 

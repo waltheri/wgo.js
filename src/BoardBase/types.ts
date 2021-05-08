@@ -64,6 +64,13 @@ export interface BoardBaseTheme {
   coordinates: {
     color: string;
     bold: boolean;
+    labelsX: string | (string | number)[];
+    labelsY: string | (string | number)[];
+  };
+
+  // star point positions per board size
+  starPoints: {
+    [size: number]: Point[];
   };
 }
 
@@ -71,12 +78,7 @@ export interface BoardBaseConfig {
   size: number;
   width: number;
   height: number;
-  starPoints: {
-    [size: number]: Point[];
-  };
   viewport: BoardViewport;
   coordinates: boolean;
-  coordinateLabelsX: string | (string | number)[];
-  coordinateLabelsY: string | (string | number)[];
   theme: BoardBaseTheme;
 }

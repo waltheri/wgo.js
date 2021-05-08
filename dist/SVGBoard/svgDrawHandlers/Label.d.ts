@@ -1,6 +1,6 @@
 import { SVGBoardConfig, SVG_OBJECTS, BoardObjectSVGElements, SVG_GRID_MASK } from '../types';
 import SVGMarkupDrawHandler, { SVGMarkupDrawHandlerParams } from './SVGMarkupDrawHandler';
-import { BoardLabelObject } from '../../BoardBase';
+import { LabelBoardObject } from '../../BoardBase';
 interface LabelParams extends SVGMarkupDrawHandlerParams {
     font?: string;
     maxWidth?: number;
@@ -12,6 +12,6 @@ export default class Label extends SVGMarkupDrawHandler {
         objects: SVGTextElement;
         gridMask: SVGTextElement;
     };
-    updateElement(elem: BoardObjectSVGElements, boardObject: BoardLabelObject, config: SVGBoardConfig): void;
+    updateElement(elem: BoardObjectSVGElements, boardObject: LabelBoardObject, config: SVGBoardConfig): void;
 }
 export {};

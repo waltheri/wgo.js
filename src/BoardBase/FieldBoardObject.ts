@@ -4,7 +4,7 @@ import BoardObject from './BoardObject';
  * Represents board object specified by type, which can be painted on the specific field of the board.
  * It can be also transformed.
  */
-export default class FieldObject extends BoardObject {
+export default class FieldBoardObject extends BoardObject {
   x: number;
   y: number;
   scaleX: number = 1;

@@ -1,5 +1,5 @@
 import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements, SVG_OBJECTS } from '../types';
-import { BoardMarkupObject } from '../../BoardBase';
+import { MarkupBoardObject } from '../../BoardBase';
 import { Color } from '../../types';
 import SVGFieldDrawHandler from './SVGFieldDrawHandler';
 
@@ -17,7 +17,7 @@ export default abstract class SVGMarkupDrawHandler extends SVGFieldDrawHandler {
     this.params = params;
   }
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardMarkupObject, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: MarkupBoardObject, config: SVGBoardConfig) {
     super.updateElement(elem, boardObject, config);
 
     if (boardObject.variation === Color.B) {

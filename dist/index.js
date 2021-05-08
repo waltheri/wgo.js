@@ -1663,9 +1663,9 @@
    * Represents board object specified by type, which can be painted on the specific field of the board.
    * It can be also transformed.
    */
-  var FieldObject = /** @class */ (function (_super) {
-      __extends(FieldObject, _super);
-      function FieldObject(type, x, y) {
+  var FieldBoardObject = /** @class */ (function (_super) {
+      __extends(FieldBoardObject, _super);
+      function FieldBoardObject(type, x, y) {
           if (x === void 0) { x = 0; }
           if (y === void 0) { y = 0; }
           var _this = _super.call(this, type) || this;
@@ -1676,24 +1676,24 @@
           _this.y = y;
           return _this;
       }
-      FieldObject.prototype.setPosition = function (x, y) {
+      FieldBoardObject.prototype.setPosition = function (x, y) {
           this.x = x;
           this.y = y;
       };
-      FieldObject.prototype.setScale = function (factor) {
+      FieldBoardObject.prototype.setScale = function (factor) {
           this.scaleX = factor;
           this.scaleY = factor;
       };
-      return FieldObject;
+      return FieldBoardObject;
   }(BoardObject));
 
   /**
    * Board markup object is special type of field object, which can have 3 variations - for empty field
    * and for black and white stone.
    */
-  var BoardMarkupObject = /** @class */ (function (_super) {
-      __extends(BoardMarkupObject, _super);
-      function BoardMarkupObject(type, x, y, variation) {
+  var MarkupBoardObject = /** @class */ (function (_super) {
+      __extends(MarkupBoardObject, _super);
+      function MarkupBoardObject(type, x, y, variation) {
           if (x === void 0) { x = 0; }
           if (y === void 0) { y = 0; }
           if (variation === void 0) { variation = exports.Color.E; }
@@ -1701,36 +1701,36 @@
           _this.variation = variation;
           return _this;
       }
-      return BoardMarkupObject;
-  }(FieldObject));
+      return MarkupBoardObject;
+  }(FieldBoardObject));
 
   /**
    * Board label object is special type of markup object, which renders text on the field.
    */
-  var BoardLabelObject = /** @class */ (function (_super) {
-      __extends(BoardLabelObject, _super);
-      function BoardLabelObject(text, x, y, variation) {
+  var LabelBoardObject = /** @class */ (function (_super) {
+      __extends(LabelBoardObject, _super);
+      function LabelBoardObject(text, x, y, variation) {
           if (x === void 0) { x = 0; }
           if (y === void 0) { y = 0; }
           var _this = _super.call(this, 'LB', x, y, variation) || this;
           _this.text = text;
           return _this;
       }
-      return BoardLabelObject;
-  }(BoardMarkupObject));
+      return LabelBoardObject;
+  }(MarkupBoardObject));
 
   /**
    * Board line object is special type of object, which consist from start and end point.
    */
-  var BoardLineObject = /** @class */ (function (_super) {
-      __extends(BoardLineObject, _super);
-      function BoardLineObject(type, start, end) {
+  var LineBoardObject = /** @class */ (function (_super) {
+      __extends(LineBoardObject, _super);
+      function LineBoardObject(type, start, end) {
           var _this = _super.call(this, type) || this;
           _this.start = start;
           _this.end = end;
           return _this;
       }
-      return BoardLineObject;
+      return LineBoardObject;
   }(BoardObject));
 
   /**
@@ -1825,12 +1825,9 @@
       coordinates: {
           color: '#531',
           bold: false,
+          labelsX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+          labelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
       },
-  };
-  var defaultBoardBaseConfig = {
-      size: 19,
-      width: 0,
-      height: 0,
       starPoints: {
           5: [{ x: 2, y: 2 }],
           7: [{ x: 3, y: 3 }],
@@ -1852,6 +1849,11 @@
           21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 },
               { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }],
       },
+  };
+  var defaultBoardBaseConfig = {
+      size: 19,
+      width: 0,
+      height: 0,
       viewport: {
           top: 0,
           right: 0,
@@ -1859,8 +1861,6 @@
           left: 0,
       },
       coordinates: false,
-      coordinateLabelsX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-      coordinateLabelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
       theme: defaultBoardBaseTheme,
   };
 
@@ -1944,7 +1944,7 @@
       BoardBase.prototype.removeObjectsAt = function (x, y) {
           var _this = this;
           this.objects.forEach(function (obj) {
-              if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
+              if (obj instanceof FieldBoardObject && obj.x === x && obj.y === y) {
                   _this.removeObject(obj);
               }
           });
@@ -2717,7 +2717,7 @@
           grid.appendChild(line(i, 0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2));
           grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
       }
-      var starPoints = config.starPoints[config.size];
+      var starPoints = config.theme.starPoints[config.size];
       if (starPoints) {
           starPoints.forEach(function (starPoint) {
               grid.appendChild(star(starPoint.x, starPoint.y, config.theme.grid.starSize));
@@ -2736,26 +2736,28 @@
   function createCoordinates(config) {
       var coordinates = document.createElementNS(SVG_NS, 'g');
       coordinates.style.userSelect = 'none';
+      var size = config.size;
+      var _a = config.theme.coordinates, fontSize = _a.fontSize, color = _a.color, labelsX = _a.labelsX, labelsY = _a.labelsY, top = _a.top, bottom = _a.bottom, right = _a.right, left = _a.left;
       coordinates.setAttribute('font-family', config.theme.font);
-      coordinates.setAttribute('font-size', config.theme.coordinates.fontSize);
+      coordinates.setAttribute('font-size', fontSize);
       coordinates.setAttribute('text-anchor', 'middle');
       coordinates.setAttribute('dominant-baseline', 'middle');
       if (config.theme.coordinates.bold) {
           coordinates.setAttribute('font-weight', 'bold');
       }
-      coordinates.setAttribute('fill', config.theme.coordinates.color);
-      for (var i = 0; i < config.size; i++) {
-          if (config.theme.coordinatesTop) {
-              coordinates.appendChild(letter(i, -0.75, config.coordinateLabelsX[i]));
+      coordinates.setAttribute('fill', color);
+      for (var i = 0; i < size; i++) {
+          if (top) {
+              coordinates.appendChild(letter(i, -0.75, labelsX[i]));
           }
-          if (config.theme.coordinatesBottom) {
-              coordinates.appendChild(letter(i, config.size - 0.25, config.coordinateLabelsX[i]));
+          if (bottom) {
+              coordinates.appendChild(letter(i, size - 0.25, labelsX[i]));
           }
-          if (config.theme.coordinatesLeft) {
-              coordinates.appendChild(letter(-0.75, config.size - i - 1, config.coordinateLabelsY[i]));
+          if (left) {
+              coordinates.appendChild(letter(-0.75, size - i - 1, labelsY[i]));
           }
-          if (config.theme.coordinatesRight) {
-              coordinates.appendChild(letter(config.size - 0.25, config.size - i - 1, config.coordinateLabelsY[i]));
+          if (right) {
+              coordinates.appendChild(letter(size - 0.25, size - i - 1, labelsY[i]));
           }
       }
       return coordinates;
@@ -2763,7 +2765,7 @@
 
   var defaultSVGTheme = __assign(__assign({}, defaultBoardBaseTheme), { 
       // backgroundImage: 'images/wood1.jpg',
-      markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign(__assign({}, defaultBoardBaseTheme.coordinates), { fontSize: 0.5 }), coordinatesTop: true, coordinatesRight: true, coordinatesBottom: true, coordinatesLeft: true, grid: __assign(__assign({}, defaultBoardBaseTheme.grid), { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
+      markupGridMask: 0.8, stoneSize: 0.48, coordinates: __assign(__assign({}, defaultBoardBaseTheme.coordinates), { fontSize: 0.5, top: true, right: true, bottom: true, left: true }), grid: __assign(__assign({}, defaultBoardBaseTheme.grid), { linesWidth: 0.03, starSize: 0.09 }), drawHandlers: {
           CR: new Circle(),
           SQ: new Square(),
           LB: new Label(),
@@ -2958,8 +2960,7 @@
           if (viewport === void 0) { viewport = this.config.viewport; }
           _super.prototype.setViewport.call(this, viewport);
           var _a = this.config, coordinates = _a.coordinates, theme = _a.theme, size = _a.size;
-          var marginSize = theme.marginSize, coordinatesTop = theme.coordinatesTop, coordinatesLeft = theme.coordinatesLeft, coordinatesBottom = theme.coordinatesBottom, coordinatesRight = theme.coordinatesRight;
-          var fontSize = theme.coordinates.fontSize;
+          var marginSize = theme.marginSize, _b = theme.coordinates, fontSize = _b.fontSize, coordinatesTop = _b.top, coordinatesLeft = _b.left, coordinatesBottom = _b.bottom, coordinatesRight = _b.right;
           this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
           this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;
           // tslint:disable-next-line:max-line-length
@@ -3469,9 +3470,9 @@
           this.config.enabled = true;
           var lastX = -1;
           var lastY = -1;
-          var blackStone = new FieldObject('B');
+          var blackStone = new FieldBoardObject('B');
           blackStone.opacity = 0.35;
-          var whiteStone = new FieldObject('W');
+          var whiteStone = new FieldBoardObject('W');
           whiteStone.opacity = 0.35;
           var addedStone = null;
           this._boardMouseMoveEvent = function (p) {
@@ -3987,25 +3988,25 @@
       return ControlPanel;
   }());
 
-  var SVGCustomFieldObject = /** @class */ (function (_super) {
-      __extends(SVGCustomFieldObject, _super);
-      function SVGCustomFieldObject(handler, x, y) {
+  var SVGCustomFieldBoardObject = /** @class */ (function (_super) {
+      __extends(SVGCustomFieldBoardObject, _super);
+      function SVGCustomFieldBoardObject(handler, x, y) {
           if (x === void 0) { x = 0; }
           if (y === void 0) { y = 0; }
           var _this = _super.call(this, 'custom', x, y) || this;
           _this.handler = handler;
           return _this;
       }
-      return SVGCustomFieldObject;
-  }(FieldObject));
+      return SVGCustomFieldBoardObject;
+  }(FieldBoardObject));
 
-  var SVGCustomLabelObject = /** @class */ (function (_super) {
-      __extends(SVGCustomLabelObject, _super);
-      function SVGCustomLabelObject() {
+  var SVGCustomLabelBoardObject = /** @class */ (function (_super) {
+      __extends(SVGCustomLabelBoardObject, _super);
+      function SVGCustomLabelBoardObject() {
           return _super !== null && _super.apply(this, arguments) || this;
       }
-      return SVGCustomLabelObject;
-  }(BoardLabelObject));
+      return SVGCustomLabelBoardObject;
+  }(LabelBoardObject));
 
   var colorsMap = {
       B: exports.Color.BLACK,
@@ -4047,9 +4048,6 @@
           this.temporaryBoardObjects = [];
           this.board = new SVGBoard(this.element, {
               coordinates: this.config.coordinates,
-              starPoints: this.config.starPoints,
-              coordinateLabelsX: this.config.coordinateLabelsX,
-              coordinateLabelsY: this.config.coordinateLabelsY,
               theme: this.config.theme,
           });
           this.board.on('click', function (event, point) {
@@ -4145,7 +4143,7 @@
               var _loop_2 = function (y) {
                   var c = position.get(x, y);
                   if (c && !this_1.stoneBoardsObjects.some(function (boardObject) { return boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type]; })) {
-                      var boardObject = new FieldObject(c === exports.Color.B ? 'B' : 'W', x, y);
+                      var boardObject = new FieldBoardObject(c === exports.Color.B ? 'B' : 'W', x, y);
                       this_1.board.addObject(boardObject);
                       this_1.stoneBoardsObjects.push(boardObject);
                   }
@@ -4165,7 +4163,7 @@
           if (moves.length > 1) {
               moves.forEach(function (move, i) {
                   if (move) {
-                      var obj = new SVGCustomLabelObject(String.fromCodePoint(65 + i), move.x, move.y);
+                      var obj = new SVGCustomLabelBoardObject(String.fromCodePoint(65 + i), move.x, move.y);
                       obj.handler = _this.config.variationDrawHandler;
                       _this.addTemporaryBoardObject(obj);
                   }
@@ -4232,7 +4230,7 @@
           var _this = this;
           event.value.forEach(function (value) {
               // add markup
-              var boardMarkup = new BoardMarkupObject(event.propIdent, value.x, value.y, _this.player.game.getStone(value.x, value.y));
+              var boardMarkup = new MarkupBoardObject(event.propIdent, value.x, value.y, _this.player.game.getStone(value.x, value.y));
               boardMarkup.zIndex = 10;
               _this.addTemporaryBoardObject(boardMarkup);
           });
@@ -4241,7 +4239,7 @@
           var _this = this;
           event.value.forEach(function (value) {
               // add markup
-              var boardMarkup = new BoardLabelObject(value.text, value.x, value.y, _this.player.game.getStone(value.x, value.y));
+              var boardMarkup = new LabelBoardObject(value.text, value.x, value.y, _this.player.game.getStone(value.x, value.y));
               boardMarkup.zIndex = 10;
               _this.addTemporaryBoardObject(boardMarkup);
           });
@@ -4250,7 +4248,7 @@
           var _this = this;
           event.value.forEach(function (value) {
               // add markup
-              var boardMarkup = new BoardLineObject(event.propIdent, value[0], value[1]);
+              var boardMarkup = new LineBoardObject(event.propIdent, value[0], value[1]);
               boardMarkup.zIndex = 10;
               _this.addTemporaryBoardObject(boardMarkup);
           });
@@ -4300,7 +4298,7 @@
                   return;
               }
               // add current move mark
-              var boardMarkup = new SVGCustomFieldObject(event.propIdent === 'B' ? this.config.currentMoveBlackMark : this.config.currentMoveWhiteMark, event.value.x, event.value.y);
+              var boardMarkup = new SVGCustomFieldBoardObject(event.propIdent === 'B' ? this.config.currentMoveBlackMark : this.config.currentMoveWhiteMark, event.value.x, event.value.y);
               boardMarkup.zIndex = 10;
               this.addTemporaryBoardObject(boardMarkup);
           }
@@ -4489,7 +4487,7 @@
           if (this.config.formatMoves) {
               [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), function (link) {
                   var point = coordinatesToPoint(link.textContent, _this.player.game.size);
-                  var boardObject = new BoardMarkupObject('MA', point.x, point.y, _this.player.game.getStone(point.x, point.y));
+                  var boardObject = new MarkupBoardObject('MA', point.x, point.y, _this.player.game.getStone(point.x, point.y));
                   boardObject.zIndex = 20;
                   link.addEventListener('mouseenter', function () {
                       _this.player.emit('board.addTemporaryObject', boardObject);
@@ -4656,21 +4654,21 @@
   }(PlayerDOM));
 
   exports.BoardBase = BoardBase;
-  exports.BoardLabelObject = BoardLabelObject;
-  exports.BoardLineObject = BoardLineObject;
-  exports.BoardMarkupObject = BoardMarkupObject;
   exports.BoardObject = BoardObject;
   exports.CHINESE_RULES = CHINESE_RULES;
   exports.CommentsBox = CommentsBox;
   exports.Container = Container;
   exports.ControlPanel = ControlPanel;
   exports.EditMode = EditMode;
-  exports.FieldObject = FieldObject;
+  exports.FieldBoardObject = FieldBoardObject;
   exports.Game = Game;
   exports.GameInfoBox = GameInfoBox;
   exports.ING_RULES = ING_RULES;
   exports.JAPANESE_RULES = JAPANESE_RULES;
   exports.KifuNode = KifuNode;
+  exports.LabelBoardObject = LabelBoardObject;
+  exports.LineBoardObject = LineBoardObject;
+  exports.MarkupBoardObject = MarkupBoardObject;
   exports.NO_RULES = NO_RULES;
   exports.PlayerBase = PlayerBase;
   exports.PlayerDOM = PlayerDOM;

@@ -1,7 +1,7 @@
-import { FieldObject } from '../BoardBase';
+import { FieldBoardObject } from '../BoardBase';
 import { SVGDrawHandler, SVGCustomObject } from './types';
 
-export default class SVGCustomFieldObject extends FieldObject implements SVGCustomObject {
+export default class SVGCustomFieldBoardObject extends FieldBoardObject implements SVGCustomObject {
   handler: SVGDrawHandler;
 
   constructor(handler: SVGDrawHandler, x = 0, y = 0) {

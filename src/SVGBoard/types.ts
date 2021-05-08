@@ -23,12 +23,11 @@ export interface SVGBoardTheme extends BoardBaseTheme {
 
   coordinates: BoardBaseTheme['coordinates'] & {
     fontSize: number,
+    top: boolean,
+    right: boolean,
+    bottom: boolean,
+    left: boolean,
   };
-
-  coordinatesTop: boolean;
-  coordinatesRight: boolean;
-  coordinatesBottom: boolean;
-  coordinatesLeft: boolean;
 
   drawHandlers: {
     [key: string]: SVGDrawHandler;

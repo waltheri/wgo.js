@@ -31,13 +31,10 @@ export const defaultBoardBaseTheme = {
   coordinates: {
     color: '#531',
     bold: false,
+    labelsX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
+    labelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
   },
-};
 
-export const defaultBoardBaseConfig = {
-  size: 19,
-  width: 0,
-  height: 0,
   starPoints: {
     5: [{ x: 2, y: 2 }],
     7: [{ x: 3, y: 3 }],
@@ -59,6 +56,12 @@ export const defaultBoardBaseConfig = {
     21: [{ x: 3, y: 3 }, { x: 10, y: 3 }, { x: 17, y: 3 }, { x: 3, y: 10 }, { x: 10, y: 10 },
     { x: 17, y: 10 }, { x: 3, y: 17 }, { x: 10, y: 17 }, { x: 17, y: 17 }],
   },
+};
+
+export const defaultBoardBaseConfig = {
+  size: 19,
+  width: 0,
+  height: 0,
   viewport: {
     top: 0,
     right: 0,
@@ -66,7 +69,5 @@ export const defaultBoardBaseConfig = {
     left: 0,
   },
   coordinates: false,
-  coordinateLabelsX: 'ABCDEFGHJKLMNOPQRSTUVWXYZ',
-  coordinateLabelsY: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
   theme: defaultBoardBaseTheme,
 };

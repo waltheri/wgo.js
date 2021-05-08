@@ -1,5 +1,5 @@
 import { SVGBoardConfig, SVG_NS, SVGDrawHandler, SVG_OBJECTS, BoardObjectSVGElements, SVG_GRID_MASK } from '../types';
-import { BoardLineObject } from '../../BoardBase';
+import { LineBoardObject } from '../../BoardBase';
 
 interface LineParams {
   color?: string;
@@ -32,7 +32,7 @@ export default class Arrow implements SVGDrawHandler {
     return group;
   }
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLineObject, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: LineBoardObject, config: SVGBoardConfig) {
     // basic UI definitions
     elem[SVG_OBJECTS].setAttribute('stroke', this.params.color || config.theme.markupNoneColor);
     elem[SVG_OBJECTS].setAttribute('fill', this.params.color || config.theme.markupNoneColor);
@@ -41,11 +41,14 @@ export default class Arrow implements SVGDrawHandler {
 
     elem[SVG_GRID_MASK].setAttribute('stroke', `rgba(0,0,0,${config.theme.markupGridMask})`);
     elem[SVG_GRID_MASK].setAttribute('fill', `rgba(0,0,0,${config.theme.markupGridMask})`);
-    elem[SVG_GRID_MASK].setAttribute('stroke-width', (this.params.lineWidth || config.theme.markupLineWidth) * 3 as any);
+    elem[SVG_GRID_MASK].setAttribute(
+      'stroke-width',
+      (this.params.lineWidth || config.theme.markupLineWidth) * 3 as any,
+    );
     this.updateSVGElements(elem[SVG_GRID_MASK], boardObject);
   }
 
-  protected updateSVGElements(elem: SVGElement, boardObject: BoardLineObject) {
+  protected updateSVGElements(elem: SVGElement, boardObject: LineBoardObject) {
     // SVG elements of arrow
     const startCircle = elem.children[0];
     const line = elem.children[1];

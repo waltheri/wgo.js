@@ -1,6 +1,6 @@
 import { SVGBoardConfig, SVG_NS, SVG_OBJECTS, BoardObjectSVGElements, SVG_GRID_MASK } from '../types';
 import SVGMarkupDrawHandler, { SVGMarkupDrawHandlerParams } from './SVGMarkupDrawHandler';
-import { BoardLabelObject } from '../../BoardBase';
+import { LabelBoardObject } from '../../BoardBase';
 import { Color } from '../../types';
 
 interface LabelParams extends SVGMarkupDrawHandlerParams {
@@ -38,7 +38,7 @@ export default class Label extends SVGMarkupDrawHandler {
     };
   }
 
-  updateElement(elem: BoardObjectSVGElements, boardObject: BoardLabelObject, config: SVGBoardConfig) {
+  updateElement(elem: BoardObjectSVGElements, boardObject: LabelBoardObject, config: SVGBoardConfig) {
     super.updateElement(elem, boardObject, config);
 
     let fontSize = 0.5;

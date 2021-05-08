@@ -1,5 +1,5 @@
 import { SVGBoard } from '../../SVGBoard';
-import { FieldObject, BoardObject, BoardViewport } from '../../BoardBase';
+import { FieldBoardObject, BoardObject, BoardViewport } from '../../BoardBase';
 import { Point } from '../../types';
 import { SVGBoardObject, SVGDrawHandler, SVGBoardTheme } from '../../SVGBoard/types';
 import { PartialRecursive } from '../../utils/makeConfig';
@@ -10,11 +10,6 @@ export interface SVGBoardComponentConfig {
     currentMoveBlackMark: SVGDrawHandler;
     currentMoveWhiteMark: SVGDrawHandler;
     variationDrawHandler: SVGDrawHandler;
-    starPoints?: {
-        [size: number]: Point[];
-    };
-    coordinateLabelsX?: string | (string | number)[];
-    coordinateLabelsY?: string | (string | number)[];
     highlightCurrentMove: boolean;
     showVariations: boolean;
     showCurrentVariations: boolean;
@@ -26,7 +21,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     config: SVGBoardComponentConfig;
     element: HTMLElement;
     player: PlayerDOM;
-    stoneBoardsObjects: FieldObject[];
+    stoneBoardsObjects: FieldBoardObject[];
     temporaryBoardObjects: SVGBoardObject[];
     viewportStack: BoardViewport[];
     boardMouseX: number;
@@ -52,8 +47,8 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     private clearViewportProperty;
     private applyMoveProperty;
     addTemporaryBoardObject(obj: BoardObject): void;
-    removeTemporaryBoardObject(obj: FieldObject): void;
-    updateTemporaryBoardObject(obj: FieldObject): void;
+    removeTemporaryBoardObject(obj: FieldBoardObject): void;
+    updateTemporaryBoardObject(obj: FieldBoardObject): void;
     setCoordinates(b: boolean): void;
     getVariations(): Point[];
     shouldShowVariations(): boolean;

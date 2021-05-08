@@ -2,7 +2,7 @@ import EventEmitter from '../utils/EventEmitter';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { Board, BoardBaseConfig, BoardViewport } from './types';
 import { BoardObject } from '.';
-import FieldObject from './FieldObject';
+import FieldBoardObject from './FieldBoardObject';
 import { defaultBoardBaseConfig } from './defaultConfig';
 
 /**
@@ -96,7 +96,7 @@ export default class BoardBase extends EventEmitter implements Board {
    */
   removeObjectsAt(x: number, y: number) {
     this.objects.forEach((obj) => {
-      if (obj instanceof FieldObject && obj.x === x && obj.y === y) {
+      if (obj instanceof FieldBoardObject && obj.x === x && obj.y === y) {
         this.removeObject(obj);
       }
     });

@@ -1,7 +1,7 @@
 export { default as BoardObject } from './BoardObject';
-export { default as FieldObject } from './FieldObject';
-export { default as BoardLabelObject } from './BoardLabelObject';
-export { default as BoardMarkupObject } from './BoardMarkupObject';
-export { default as BoardLineObject } from './BoardLineObject';
+export { default as FieldBoardObject } from './FieldBoardObject';
+export { default as LabelBoardObject } from './LabelBoardObject';
+export { default as MarkupBoardObject } from './MarkupBoardObject';
+export { default as LineBoardObject } from './LineBoardObject';
 export { default as BoardBase } from './BoardBase';
 export { Board, BoardViewport } from './types';

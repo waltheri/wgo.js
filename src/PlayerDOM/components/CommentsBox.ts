@@ -1,4 +1,4 @@
-import { BoardMarkupObject } from '../../BoardBase';
+import { MarkupBoardObject } from '../../BoardBase';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';
@@ -64,7 +64,7 @@ export default class CommentsBox implements PlayerDOMComponent {
     if (this.config.formatMoves) {
       [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), (link: HTMLElement) => {
         const point = coordinatesToPoint(link.textContent, this.player.game.size);
-        const boardObject = new BoardMarkupObject('MA', point.x, point.y, this.player.game.getStone(point.x, point.y));
+        const boardObject = new MarkupBoardObject('MA', point.x, point.y, this.player.game.getStone(point.x, point.y));
         boardObject.zIndex = 20;
 
         link.addEventListener('mouseenter', () => {

@@ -237,8 +237,16 @@ export default class SVGBoard extends BoardBase {
     super.setViewport(viewport);
 
     const { coordinates, theme, size } = this.config;
-    const { marginSize, coordinatesTop, coordinatesLeft, coordinatesBottom, coordinatesRight } = theme;
-    const { fontSize } = theme.coordinates;
+    const {
+      marginSize,
+      coordinates: {
+        fontSize,
+        top: coordinatesTop,
+        left: coordinatesLeft,
+        bottom: coordinatesBottom,
+        right: coordinatesRight,
+      },
+    } = theme;
 
     this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
     this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;

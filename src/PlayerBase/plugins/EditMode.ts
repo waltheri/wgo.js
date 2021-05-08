@@ -1,4 +1,4 @@
-import { FieldObject } from '../../BoardBase';
+import { FieldBoardObject } from '../../BoardBase';
 import KifuNode, { Path } from '../../kifu/KifuNode';
 import { PropIdent } from '../../SGFParser/sgfTypes';
 import { Color, Point } from '../../types';
@@ -130,13 +130,13 @@ export default class EditMode implements PlayerPlugin {
     let lastX = -1;
     let lastY = -1;
 
-    const blackStone = new FieldObject('B');
+    const blackStone = new FieldBoardObject('B');
     blackStone.opacity = 0.35;
 
-    const whiteStone = new FieldObject('W');
+    const whiteStone = new FieldBoardObject('W');
     whiteStone.opacity = 0.35;
 
-    let addedStone: FieldObject = null;
+    let addedStone: FieldBoardObject = null;
 
     this._boardMouseMoveEvent = (p: Point) => {
       if (lastX !== p.x || lastY !== p.y) {
