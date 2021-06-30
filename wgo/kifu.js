@@ -307,10 +307,14 @@ Kifu.infoFormatters = {
 	TM: function(time) {
 		if(time == 0) return WGo.t("none");
 		
-		var res, t = Math.floor(time/60);
+		var res, t = Math.floor(time/3600);
+
+		if(t == 1) res = "1 "+WGo.t("hour");
+		else if(t > 1) res = t+" "+WGo.t("hours");
 		
-		if(t == 1) res = "1 "+WGo.t("minute");
-		else if(t > 1) res = t+" "+WGo.t("minutes");
+		t = Math.floor((time - t*3600)/60);
+		if(t == 1) res += " 1 "+WGo.t("minute");
+		else if(t > 1) res += " "+t+" "+WGo.t("minutes");
 		
 		t = time%60;
 		if(t == 1) res += " 1 "+WGo.t("second");
