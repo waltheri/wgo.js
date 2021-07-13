@@ -1,10 +1,10 @@
 // Chinese Translation - Simplified Chinese
 
-WGo.lang = "zh";
+WGo.lang = "zh-CN";
 
 WGo.i18n[WGo.lang] = {
 	"about-text": "<h1>WGo.js Player 2.0</h1>"
-				+ "<p>WGo.js Player 扩展自 WGo.js, 是为围棋编写的 HTML5 库。 它可以让你浏览棋谱，以及包含很多其他功能，例如点目。并且你可以很容易地扩展它。</p>"
+				+ "<p>WGo.js Player 扩展自 WGo.js, 是为围棋编写的 HTML5 库。 它可以让你浏览棋谱，以及包含很多其他功能，例如:点目。并且你可以很容易地扩展它。</p>"
 				+ "<p>WGo.js 的开源许可 <a href='http://en.wikipedia.org/wiki/MIT_License' target='_blank'>MIT license</a>。你可以使用和修改该项目。</p>"
 				+ "<p>你可以从以下网站获得更多信息 <a href='http://wgo.waltheri.net/player' target='_blank'>wgo.waltheri.net/player</a></p>"
 				+ "<p>版权 &copy; 2013 Jan Prokop</p>",
