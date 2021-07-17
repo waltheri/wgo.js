@@ -20,3 +20,11 @@ Object for storing of game's position and controling game's flow. With method "p
 ## WGo.js Player ##
 
 It is web viewer of Go games (SGF) built on top of the WGo.js library. You can easily put it into your website.
+
+## How to use it
+
+You can reference it in html directly or import it.
+
+```
+import * as WGo from 'wgo.js'
+```

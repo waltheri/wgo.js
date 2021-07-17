@@ -1,0 +1,43 @@
+{
+  "name": "wgo.js-1",
+  "version": "1.0.0",
+  "description": "WGo.js is javascript library for purposes of go game. The basic idea of this library is to help to create go web application easily without laborious programming of game's logic or board graphic interface. It is descendant of WGoApi and we can say WGo.js is second version of this library. I decided to remove word 'Api' from the name and add suffix '.js' as is common for javascript libraries. But in texts I use shortly WGo.",
+  "main": "wgo/wgo.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "test/.*.spec.ts",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
+  },
+  "scripts": {
+    "test": "sudo node node_modules/.bin/jest --runInBand  --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qcgm1978/wgo.js-1.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/qcgm1978/wgo.js-1/issues"
+  },
+  "homepage": "https://github.com/qcgm1978/wgo.js-1#readme",
+  "devDependencies": {
+    "jest": "^22.4.3",
+    "source-map-support": "^0.5.5",
+    "ts-jest": "^22.4.4",
+    "typescript": "^2.8.3"
+  }
+}
