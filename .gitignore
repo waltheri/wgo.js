@@ -220,3 +220,4 @@ pip-log.txt
 compiler/
 node_modules/
 gh-pages/
+.idea
