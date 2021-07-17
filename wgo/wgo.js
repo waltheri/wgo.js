@@ -114,13 +114,14 @@ WGo.filterHTML = function(text) {
  * @param elem DOM element to put in
  * @param config configuration object. It is object with "key: value" structure. Possible configurations are:
  *
- * - size: number - size of the board (default: 19)
- * - width: number - width of the board (default: 0)
- * - height: number - height of the board (default: 0)
+ * - size: number or length-two-array - size of the board (default: 19), for array specify size as [x,y]
+ * - width: number - pixel width of the board (default: 0)
+ * - height: number - pixel height of the board (default: 0)
  * - font: string - font of board writings (!deprecated)
  * - lineWidth: number - line width of board drawings (!deprecated)
  * - autoLineWidth: boolean - if set true, line width will be automatically computed accordingly to board size - this option rewrites 'lineWidth' /and it will keep markups sharp/ (!deprecated)
  * - starPoints: Object - star points coordinates, defined for various board sizes. Look at Board.default for more info.
+ * - rectStarPoints: Object - star points coordinates, defined for various board sizes, for rectangle boards. Look at Board.default for more info.
  * - stoneHandler: Board.DrawHandler - stone drawing handler (default: Board.drawHandlers.SHELL)
  * - starSize: number - size of star points (default: 1). Radius of stars is dynamic, however you can modify it by given constant. (!deprecated)
  * - stoneSize: number - size of stone (default: 1). Radius of stone is dynamic, however you can modify it by given constant. (!deprecated)
@@ -136,7 +137,7 @@ WGo.filterHTML = function(text) {
  *   Numbers can be negative, in that case there will be more empty space. In default all values are zeros.
  * - theme: Object - theme object, which defines all graphical attributes of the board. Default theme object is "WGo.Board.themes.default". For old look you may use "WGo.Board.themes.old".
  *
- * Note: properties lineWidth, autoLineWidth, starPoints, starSize, stoneSize and shadowSize will be considered only if you set property 'theme' to 'WGo.Board.themes.old'.
+ * Note: properties lineWidth, autoLineWidth, starPoints, starSize, rectStarPoints, stoneSize and shadowSize will be considered only if you set property 'theme' to 'WGo.Board.themes.old'.
  */
 
 var Board = function(elem, config) {
@@ -151,11 +152,18 @@ var Board = function(elem, config) {
 	// add default theme variables
 	for(var key in Board.themes.default) if(this.theme[key] === undefined) this.theme[key] = Board.themes.default[key];
 
-	// set section if set
-	this.tx = this.section.left;
-	this.ty = this.section.top;
-	this.bx = this.size-1-this.section.right;
-	this.by = this.size-1-this.section.bottom;
+	// process size -> sizex, sizey
+	if(Array.isArray(this.size) && this.size.length == 2) {
+		this.sizex = this.size[0];
+		this.sizey = this.size[1];
+	}
+	else {
+		this.sizex = this.size;
+		this.sizey = this.size;
+	}
+
+	// update offsets for drawing
+	recompute_tx_ty_bx_by(this);
 
 	// init board
 	this.init();
@@ -326,8 +334,8 @@ var redraw_layer = function(board, layer) {
 	board[layer].clear();
 	board[layer].draw(board);
 
-	for(var x = 0; x < board.size; x++) {
-		for(var y = 0; y < board.size; y++) {
+	for(var x = 0; x < board.sizex; x++) {
+		for(var y = 0; y < board.sizey; y++) {
 			for(var z = 0; z < board.obj_arr[x][y].length; z++) {
 				var obj = board.obj_arr[x][y][z];
 				if(!obj.type) handler = board.stoneHandler;
@@ -346,6 +354,19 @@ var redraw_layer = function(board, layer) {
 		if(handler[layer]) handler[layer].draw.call(board[layer].getContext(obj.args), obj.args, board);
 	}
 }
+
+var recompute_tx_ty_bx_by = function(board) {
+	// buffers to draw things square by default
+	var rectXBuffer = (board.sizey > board.sizex ? (board.sizex - board.sizey)*0.5 : 0);
+	var rectYBuffer = (board.sizex > board.sizey ? (board.sizey - board.sizex)*0.5 : 0);
+
+	// set section if set
+	board.tx = board.section.left + rectXBuffer;
+	board.ty = board.section.top + rectYBuffer;
+	board.bx = board.sizex-1-board.section.right - rectXBuffer;
+	board.by = board.sizey-1-board.section.bottom - rectYBuffer;
+}
+
 
 // shell stone helping functions
 
@@ -614,8 +635,8 @@ Board.drawHandlers = {
 				// do shell magic here
 				if(args.c == WGo.W) {
 					// do shell magic here
-					var type = shell_seed%(3+args.x*board.size+args.y)%3;
-					var z = board.size*board.size+args.x*board.size+args.y;
+					var type = shell_seed%(3+args.x*board.sizey+args.y)%3;
+					var z = board.sizex*board.sizey+args.x*board.sizey+args.y;
 					var angle = (2/z)*(shell_seed%z);
 
 					if(type == 0) {
@@ -760,7 +781,7 @@ Board.drawHandlers = {
 				}
 			},
 			clear: function(args, board) {
-				if(!is_here_stone(board, args.x, args.y))  {
+				if(!is_here_stone(board, args.x, args.y)) {
 					args._nodraw = true;
 					redraw_layer(board, "grid");
 					delete args._nodraw;
@@ -898,17 +919,19 @@ Board.coordinates = {
 			this.font = board.stoneRadius+"px "+(board.font || "");
 
 			xright = board.getX(-0.75);
-			xleft = board.getX(board.size-0.25);
+			xleft = board.getX(board.sizex-0.25);
 			ytop = board.getY(-0.75);
-			ybottom = board.getY(board.size-0.25);
+			ybottom = board.getY(board.sizey-0.25);
 
-			for(var i = 0; i < board.size; i++) {
+			for(var i = 0; i < board.sizey; i++) {
+				t = board.getY(i);
+				this.fillText(board.sizey-i, xright, t);
+				this.fillText(board.sizey-i, xleft, t);
+			}
+
+			for(var i = 0; i < board.sizex; i++) {
 				ch = i+"A".charCodeAt(0);
 				if(ch >= "I".charCodeAt(0)) ch++;
-
-				t = board.getY(i);
-				this.fillText(board.size-i, xright, t);
-				this.fillText(board.size-i, xleft, t);
 
 				t = board.getX(i);
 				this.fillText(String.fromCharCode(ch), t, ytop);
@@ -976,16 +999,18 @@ Board.GridLayer.prototype.draw = function(board) {
 
 	var tx = Math.round(board.left),
 		ty = Math.round(board.top),
-		bw = Math.round(board.fieldWidth*(board.size-1)),
-		bh = Math.round(board.fieldHeight*(board.size-1));
+		bw = Math.round(board.fieldWidth*(board.sizex-1)),
+		bh = Math.round(board.fieldHeight*(board.sizey-1));
 
 	this.context.strokeRect(tx-board.ls, ty-board.ls, bw, bh);
 
-	for(var i = 1; i < board.size-1; i++) {
+	for(var i = 1; i < board.sizex-1; i++) {
 		tmp = Math.round(board.getX(i))-board.ls;
 		this.context.moveTo(tmp, ty);
 		this.context.lineTo(tmp, ty+bh);
+	}
 
+	for(var i = 1; i < board.sizey-1; i++) {
 		tmp = Math.round(board.getY(i))-board.ls;
 		this.context.moveTo(tx, tmp);
 		this.context.lineTo(tx+bw, tmp);
@@ -996,11 +1021,28 @@ Board.GridLayer.prototype.draw = function(board) {
 	// draw stars
 	this.context.fillStyle = theme_variable("starColor", board);
 
-	if(board.starPoints[board.size]) {
-		for(var key in board.starPoints[board.size]) {
-			this.context.beginPath();
-			this.context.arc(board.getX(board.starPoints[board.size][key].x)-board.ls, board.getY(board.starPoints[board.size][key].y)-board.ls, theme_variable("starSize", board), 0, 2*Math.PI,true);
-			this.context.fill();
+	if(board.sizex != board.sizey) {
+		if(board.rectStarPoints[board.sizex] && board.rectStarPoints[board.sizey]) {
+			for(var yi = 0; yi < board.rectStarPoints[board.sizey].length; yi++) {
+				for(var xi = 0; xi < board.rectStarPoints[board.sizex].length; xi++) {
+					var ycoord = board.rectStarPoints[board.sizey][yi];
+					var xcoord = board.rectStarPoints[board.sizex][xi];
+					this.context.beginPath();
+					this.context.arc(board.getX(xcoord)-board.ls, board.getY(ycoord)-board.ls, theme_variable("starSize", board), 0, 2*Math.PI,true);
+					this.context.fill();
+				}
+			}
+		}
+	}
+	else {
+		if(board.starPoints[board.sizex]) {
+			for(var key in board.starPoints[board.sizex]) {
+				var ycoord = board.starPoints[board.sizey][key].y;
+				var xcoord = board.starPoints[board.sizex][key].x;
+				this.context.beginPath();
+				this.context.arc(board.getX(xcoord)-board.ls, board.getY(ycoord)-board.ls, theme_variable("starSize", board), 0, 2*Math.PI,true);
+				this.context.fill();
+			}
 		}
 	}
 }
@@ -1164,8 +1206,8 @@ var getMousePos = function(e) {
 	y = Math.round(y);
 
 	return {
-		x: x >= this.size ? -1 : x,
-		y: y >= this.size ? -1 : y
+		x: x >= this.sizex ? -1 : x,
+		y: y >= this.sizey ? -1 : y
 	};
 }
 
@@ -1195,9 +1237,9 @@ Board.prototype = {
 
 		// placement of objects (in 3D array)
 		this.obj_arr = [];
-		for(var i = 0; i < this.size; i++) {
+		for(var i = 0; i < this.sizex; i++) {
 			this.obj_arr[i] = [];
-			for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+			for(var j = 0; j < this.sizey; j++) this.obj_arr[i][j] = [];
 		}
 
 		// other objects, stored in list
@@ -1320,11 +1362,7 @@ Board.prototype = {
 			}
 		}
 
-		this.tx = this.section.left;
-		this.ty = this.section.top;
-		this.bx = this.size-1-this.section.right;
-		this.by = this.size-1-this.section.bottom;
-
+		recompute_tx_ty_bx_by(this);
 		this.setDimensions();
 	},
 
@@ -1333,19 +1371,35 @@ Board.prototype = {
 	 */
 
 	setSize: function(size) {
-		var size = size || 19;
+		var sizex;
+		var sizey;
+		if(size) {
+			if(Array.isArray(size) && size.length == 2) {
+				sizex = size[0];
+				sizey = size[1];
+			}
+			else {
+				sizex = size;
+				sizey = size;
+			}
+		}
+		else {
+			sizex = 19;
+			sizey = 19;
+		}
 
-		if(size != this.size) {
+		if(sizex != this.sizex || sizey != this.sizey) {
 			this.size = size;
+			this.sizex = sizex;
+			this.sizey = sizey;
 
 			this.obj_arr = [];
-			for(var i = 0; i < this.size; i++) {
+			for(var i = 0; i < this.sizex; i++) {
 				this.obj_arr[i] = [];
-				for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+				for(var j = 0; j < this.sizey; j++) this.obj_arr[i][j] = [];
 			}
 
-			this.bx = this.size-1-this.section.right;
-			this.by = this.size-1-this.section.bottom;
+			recompute_tx_ty_bx_by(this);
 			this.setDimensions();
 		}
 	},
@@ -1363,8 +1417,8 @@ Board.prototype = {
 			}
 
 			// redraw field objects
-			for(var i = 0; i < this.size; i++) {
-				for(var j = 0; j < this.size; j++) {
+			for(var i = 0; i < this.sizex; i++) {
+				for(var j = 0; j < this.sizey; j++) {
 					drawField.call(this, i, j);
 				}
 			}
@@ -1517,9 +1571,9 @@ Board.prototype = {
 
 	removeAllObjects: function() {
 		this.obj_arr = [];
-		for(var i = 0; i < this.size; i++) {
+		for(var i = 0; i < this.sizex; i++) {
 			this.obj_arr[i] = [];
-			for(var j = 0; j < this.size; j++) this.obj_arr[i][j] = [];
+			for(var j = 0; j < this.sizey; j++) this.obj_arr[i][j] = [];
 		}
 		this.redraw();
 	},
@@ -1611,6 +1665,24 @@ Board.default = {
     21:[{x: 3, y: 3}, {x:10, y: 3}, {x:17, y: 3}, {x: 3, y:10}, {x:10, y:10},
         {x:17, y:10}, {x: 3, y:17}, {x:10, y:17}, {x:17, y:17}],
   },
+  rectStarPoints: {
+    5 :[2],
+    7 :[3],
+    8 :[2,5],
+    9 :[2,6],
+    10:[2,7],
+    11:[2,5,8],
+    12:[3,8],
+    13:[3,6,9],
+    14:[3,10],
+    15:[3,7,11],
+    16:[3,12],
+    17:[3,8,13],
+    18:[3,14],
+    19:[3,9,15],
+    20:[3,16],
+    21:[3,10,17],
+  },
 	//stoneHandler: Board.drawHandlers.SHELL,
 	stoneHandler: Board.drawHandlers.REALISTIC, // New photograph based stones
 	starSize: 1, // deprecated
@@ -1663,15 +1735,22 @@ WGo.Board = Board;
  * Creates instance of position object.
  *
  * @class
- * <p>WGo.Position is simple object storing position of go game. It is implemented as matrix <em>size</em> x <em>size</em> with values WGo.BLACK, WGo.WHITE or 0. It can be used by any extension.</p>
+ * <p>WGo.Position is simple object storing position of go game. It is implemented as matrix <em>sizex</em> x <em>sizey</em> with values WGo.BLACK, WGo.WHITE or 0. It can be used by any extension.</p>
  *
- * @param {number} size of the board
+ * @param {number} sizex of the board
+ * @param {number} sizey of the board (or equal to sizex if not provided)
  */
 
-var Position = function(size) {
-	this.size = size || 19;
+var Position = function(sizex, sizey) {
+	this.sizex = sizex || 19;
+	if(sizey) {
+		this.sizey = sizey;
+	}
+	else {
+		this.sizey = this.sizex;
+	}
 	this.schema = [];
-	for(var i = 0; i < this.size*this.size; i++) {
+	for(var i = 0; i < this.sizex*this.sizey; i++) {
 		this.schema[i] = 0;
 	}
 }
@@ -1688,8 +1767,8 @@ Position.prototype = {
 	 */
 
 	get: function(x,y) {
-		if(x < 0 || y < 0 || x >= this.size || y >= this.size) return undefined;
-		return this.schema[x*this.size+y];
+		if(x < 0 || y < 0 || x >= this.sizex || y >= this.sizey) return undefined;
+		return this.schema[x*this.sizey+y];
 	},
 
 	/**
@@ -1701,7 +1780,7 @@ Position.prototype = {
 	 */
 
 	set: function(x,y,c) {
-		this.schema[x*this.size+y] = c;
+		this.schema[x*this.sizey+y] = c;
 		return this;
 	},
 
@@ -1710,7 +1789,7 @@ Position.prototype = {
 	 */
 
 	clear: function() {
-		for(var i = 0; i < this.size*this.size; i++) this.schema[i] = 0;
+		for(var i = 0; i < this.sizex*this.sizey; i++) this.schema[i] = 0;
 		return this;
 	},
 
@@ -1721,7 +1800,7 @@ Position.prototype = {
 	 */
 
 	clone: function() {
-		var clone = new Position(this.size);
+		var clone = new Position(this.sizex, this.sizey);
 		clone.schema = this.schema.slice(0);
 		return clone;
 	},
@@ -1736,14 +1815,14 @@ Position.prototype = {
 	compare: function(position) {
 		var add = [], remove = [];
 
-		for(var i = 0; i < this.size*this.size; i++) {
+		for(var i = 0; i < this.sizex*this.sizey; i++) {
 			if(this.schema[i] && !position.schema[i]) remove.push({
-				x: Math.floor(i/this.size),
-				y: i%this.size
+				x: Math.floor(i/this.sizey),
+				y: i%this.sizey
 			});
 			else if(this.schema[i] != position.schema[i]) add.push({
-				x: Math.floor(i/this.size),
-				y: i%this.size,
+				x: Math.floor(i/this.sizey),
+				y: i%this.sizey,
 				c: position.schema[i]
 			});
 		}
@@ -1765,7 +1844,7 @@ WGo.Position = Position;
  * WGo.Game also stores every position from beginning, so it has ability to check repeating positions
  * and it can effectively restore old positions.</p>
  *
- * @param {number} size of the board
+ * @param {number or array of [sizex,sizey]} size of the board
  * @param {"KO"|"ALL"|"NONE"} checkRepeat (optional, default is "KO") - how to handle repeated position:
  * KO - ko is properly handled - position cannot be same like previous position
  * ALL - position cannot be same like any previous position - e.g. it forbids triple ko
@@ -1776,13 +1855,22 @@ WGo.Position = Position;
  */
 
 var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
-	this.size = size || 19;
+	if(Array.isArray(size) && size.length == 2) {
+		this.sizex = size[0];
+		this.sizey = size[1];
+		this.size = size;
+	}
+	else {
+		this.size = size || 19;
+		this.sizex = size || 19;
+		this.sizey = size || 19;
+	}
 	this.repeating = checkRepeat === undefined ? "KO" : checkRepeat; // possible values: KO, ALL or nothing
 	this.allow_rewrite = allowRewrite || false;
 	this.allow_suicide = allowSuicide || false;
 
 	this.stack = [];
-	this.stack[0] = new Position(this.size);
+	this.stack[0] = new Position(this.sizex, this.sizey);
 	this.stack[0].capCount = {black:0, white:0};
 	this.turn = WGo.B;
 
@@ -1794,7 +1882,7 @@ var Game = function(size, checkRepeat, allowRewrite, allowSuicide) {
 
 // function for stone capturing
 var do_capture = function(position, captured, x, y, c) {
-	if(x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x,y) == c) {
+	if(x >= 0 && x < position.sizex && y >= 0 && y < position.sizey && position.get(x,y) == c) {
 		position.set(x,y,0);
 		captured.push({x:x, y:y});
 
@@ -1808,7 +1896,7 @@ var do_capture = function(position, captured, x, y, c) {
 // looking at liberties
 var check_liberties = function(position, testing, x, y, c) {
 	// out of the board there aren't liberties
-	if(x < 0 || x >= position.size || y < 0 || y >= position.size) return true;
+	if(x < 0 || x >= position.sizex || y < 0 || y >= position.sizey) return true;
 	// however empty field means liberty
 	if(position.get(x,y) == 0) return false;
 	// already tested field or stone of enemy isn't giving us a liberty.
@@ -1828,9 +1916,9 @@ var check_liberties = function(position, testing, x, y, c) {
 var check_capturing = function(position, x, y, c) {
 	var captured = [];
 	// is there a stone possible to capture?
-	if(x >= 0 && x < position.size && y >= 0 && y < position.size && position.get(x,y) == c) {
+	if(x >= 0 && x < position.sizex && y >= 0 && y < position.sizey && position.get(x,y) == c) {
 		// create testing map
-		var testing = new Position(position.size);
+		var testing = new Position(position.sizex, position.sizey);
 		// if it has zero liberties capture it
 		if(check_liberties(position, testing, x, y, c)) {
 			// capture stones from game
@@ -1851,7 +1939,7 @@ var checkHistory = function(position, x, y) {
 	for(var i = this.stack.length-2; i >= stop; i--) {
 		if(this.stack[i].get(x,y) == position.get(x,y)) {
 			flag = true;
-			for(var j = 0; j < this.size*this.size; j++) {
+			for(var j = 0; j < this.sizex*this.sizey; j++) {
 				if(this.stack[i].schema[j] != position.schema[j]) {
 					flag = false;
 					break;
@@ -1911,7 +1999,7 @@ Game.prototype = {
 
 		// check suicide
 		if(!captured.length) {
-			var testing = new Position(this.size);
+			var testing = new Position(this.sizex, this.sizey);
 			if(check_liberties(new_pos, testing, x, y, c)) {
 				if(this.allow_suicide) {
 					cap_color = -c;
@@ -1987,7 +2075,7 @@ Game.prototype = {
 	 */
 
 	isOnBoard: function(x,y) {
-		return x >= 0 && y >= 0 && x < this.size && y < this.size;
+		return x >= 0 && y >= 0 && x < this.sizex && y < this.sizey;
 	},
 
 	/**
@@ -2098,7 +2186,7 @@ Game.prototype = {
 
 	firstPosition: function() {
 		this.stack = [];
-		this.stack[0] = new Position(this.size);
+		this.stack[0] = new Position(this.sizex, this.sizey);
 		this.stack[0].capCount = {black:0, white:0};
 		this.turn = WGo.B;
 		return this;
@@ -2116,7 +2204,7 @@ Game.prototype = {
 	},
 
 	/**
-	 * Validate postion. Position is tested from 0:0 to size:size, if there are some moves, that should be captured, they will be removed.
+	 * Validate postion. Position is tested from 0:0 to sizex:sizey, if there are some moves, that should be captured, they will be removed.
 	 * You can use this, after insertion of more stones.
 	 *
 	 * @return array removed stones
@@ -2129,8 +2217,8 @@ Game.prototype = {
 		    captured = [],
 		    new_pos = this.position.clone();
 
-		for(var x = 0; x < this.size; x++) {
-			for(var y = 0; y < this.size; y++) {
+		for(var x = 0; x < this.sizex; x++) {
+			for(var y = 0; y < this.sizey; y++) {
 				c = this.position.get(x,y);
 				if(c) {
 					p = captured.length;

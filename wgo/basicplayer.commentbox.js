@@ -27,7 +27,7 @@ var prepare_dom = function() {
 	this.comments.appendChild(this.notification);
 	
 	this.comment_text = document.createElement("div");
-	this.comment_text.className = "wgo-comment-text"; 
+	this.comment_text.className = "wgo-comment-text";
 	this.comments.appendChild(this.comment_text);
 }
 
@@ -39,7 +39,7 @@ var mark = function(move) {
 	if(x > 7) x--;
 	y = (move.charCodeAt(1)-'0'.charCodeAt(0));
 	if(move.length > 2) y = y*10+(move.charCodeAt(2)-'0'.charCodeAt(0));
-	y = this.kifuReader.game.size-y;
+	y = this.kifuReader.game.sizey-y;
 
 	this._tmp_mark = {type:'MA', x:x, y:y};
 	this.board.addObject(this._tmp_mark);

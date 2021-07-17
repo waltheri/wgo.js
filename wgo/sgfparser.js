@@ -18,10 +18,15 @@ var properties = WGo.SGF.properties = {}
 
 // Move properties
 properties["B"] = properties["W"] = function(kifu, node, value, ident) {
-	if(!value[0] || (kifu.size <= 19 && value[0] == "tt")) node.move = {
-		pass: true,
-		c: ident == "B" ? WGo.B : WGo.W
-	};
+	if(!value[0] || (
+			value[0] == "tt" && (
+				(Array.isArray(kifu.size) && kifu.size[0] <= 19 && kifu.size[1] <= 19) ||
+				(kifu.size <= 19)))) {
+		node.move = {
+			pass: true,
+			c: ident == "B" ? WGo.B : WGo.W
+		};
+	}
 	else node.move = {
 		x: to_num(value[0], 0), 
 		y: to_num(value[0], 1), 
@@ -79,7 +84,13 @@ properties["CR"] = properties["SQ"] = properties["TR"] = properties["SL"] = prop
 
 // Root properties
 properties["SZ"] = function(kifu, node, value) {
-	kifu.size = parseInt(value[0]);
+	pieces = value[0].split(":");
+	if(pieces.length == 2) {
+		kifu.size = [parseInt(pieces[0]), parseInt(pieces[1])];
+	}
+	else {
+		kifu.size = parseInt(value[0]);
+	}
 }
 	
 // Game info properties

@@ -95,8 +95,8 @@ ScoreMode.prototype.displayScore = function() {
 		white_captured: [],
 	}
 	
-	for(var i = 0; i < this.position.size; i++) {
-		for(var j = 0; j < this.position.size; j++) {
+	for(var i = 0; i < this.position.sizex; i++) {
+		for(var j = 0; j < this.position.sizey; j++) {
 			s = this.position.get(i,j);
 			t = this.originalPosition.get(i,j);
 			
@@ -148,9 +148,9 @@ ScoreMode.prototype.calculate = function() {
 		change = false;
 		
 		// go through the whole position
-		for(var i = 0; i < p.size; i++) {
+		for(var i = 0; i < p.sizey; i++) {
 			//var str = "";
-			for(var j = 0; j < p.size; j++) {
+			for(var j = 0; j < p.sizex; j++) {
 				s = p.get(j,i);
 				
 				if(s == state.UNKNOWN || s == state.BLACK_CANDIDATE || s == state.WHITE_CANDIDATE) {

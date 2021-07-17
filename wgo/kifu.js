@@ -4,7 +4,7 @@
  * This extension handles go game records(kifu). In WGo kifu is stored in JSON. Kifu structure example:
  *
  * JGO proposal = {
- *	 size: 19,
+ *	 size: 19,  //Use an [x,y] array like [11,17] for non-square boards.
  *	 info: {
  *	 	black: {name:"Lee Chang-Ho", rank:"9p"},
  *	 	white: {name:"Lee Sedol", rank:"9p"},
@@ -247,8 +247,15 @@ Kifu.prototype.toSgf = function() {
 	}
 	
 	// board size
-	if(this.size) root_props.SZ = this.size;
-	
+	if(this.size) {
+		if(Array.isArray(this.size)) {
+			root_props.SZ = this.size[0] + ":" + this.size[1];
+		}
+		else {
+			root_props.SZ = this.size;
+		}
+	}
+
 	// add missing info
 	if(!root_props.AP) root_props.AP = "WGo.js:2";
 	if(!root_props.FF) root_props.FF = "4";
@@ -487,11 +494,11 @@ KNode.prototype = {
 WGo.KNode = KNode;
 
 var pos_diff = function(old_p, new_p) {
-	var size = old_p.size, add = [], remove = [];
-	
-	for(var i = 0; i < size*size; i++) {
-		if(old_p.schema[i] && !new_p.schema[i]) remove.push({x:Math.floor(i/size),y:i%size});
-		else if(old_p.schema[i] != new_p.schema[i]) add.push({x:Math.floor(i/size),y:i%size,c:new_p.schema[i]});
+	var sizex = old_p.sizex, sizey = old_p.sizey, add = [], remove = [];
+
+	for(var i = 0; i < sizex*sizey; i++) {
+		if(old_p.schema[i] && !new_p.schema[i]) remove.push({x:Math.floor(i/sizey),y:i%sizey});
+		else if(old_p.schema[i] != new_p.schema[i]) add.push({x:Math.floor(i/sizey),y:i%sizey,c:new_p.schema[i]});
 	}
 	
 	return {
