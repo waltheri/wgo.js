@@ -84,11 +84,14 @@ export default class BoardBase extends EventEmitter implements Board {
     /**
      * Helper to get board size.
      */
-    getSize(): number;
+    getSize(): {
+        x: number;
+        y: number;
+    };
     /**
      * Helper to set board size.
      */
-    setSize(size?: number): void;
+    setSize(sizeX?: number, sizeY?: number): void;
     /**
      * Returns true, if coordinates around board are visible.
      */

@@ -11,8 +11,12 @@ export interface Board extends EventEmitter {
     setDimensions(width: number, height: number): void;
     getViewport(): BoardViewport;
     setViewport(viewport: BoardViewport): void;
-    getSize(): number;
+    getSize(): {
+        x: number;
+        y: number;
+    };
     setSize(size: number): void;
+    setSize(sizeX: number, sizeY: number): void;
     getCoordinates(): boolean;
     setCoordinates(coordinates: boolean): void;
     redraw(): void;
@@ -57,11 +61,13 @@ export interface BoardBaseTheme {
         labelsY: string | (string | number)[];
     };
     starPoints: {
-        [size: number]: Point[];
+        [size: number | string]: Point[];
     };
 }
 export interface BoardBaseConfig {
     size: number;
+    sizeX?: number;
+    sizeY?: number;
     width: number;
     height: number;
     viewport: BoardViewport;

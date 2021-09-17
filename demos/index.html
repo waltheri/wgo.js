@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<div id="board"></div>
+<script src="../dist/index.js"></script>
+<script>
+
+var board = new WGo.CanvasBoard(document.getElementById('board'), {
+  width: 800,
+  //height: 700,
+  coordinates: true,
+  theme: WGo.themes.realisticTheme /*{
+    //stoneSize: 0.48,
+    coordinates: {
+      params: { color: '#663300' },
+    },
+  },*/
+});
+
+board.addObjectAt(5, 10, new WGo.BoardMarkupObject('CR'));
+board.addObjectAt(10, 5, new WGo.BoardMarkupObject('B'));
+board.addObjectAt(10, 5, new WGo.BoardMarkupObject('CR', WGo.Color.BLACK));
+board.addObjectAt(10, 10, new WGo.FieldObject('B'));
+board.addObjectAt(11, 11, new WGo.FieldObject('B'));
+board.addObjectAt(10, 11, new WGo.FieldObject('W'));
+const opaque = new WGo.FieldObject('W');
+opaque.opacity = 1;
+board.addObjectAt(11, 10, opaque);
+
+board.addObjectAt(5, 4, new WGo.BoardMarkupObject('SQ'));
+board.addObjectAt(6, 4, new WGo.BoardLabelObject('225'));
+
+var o2 = new WGo.BoardLabelObject('A', WGo.Color.BLACK);
+o2.zIndex = 10;
+board.addObjectAt(7, 4, o2);
+var o1 = new WGo.FieldObject('B');
+board.addObjectAt(7, 4, o1);
+
+board.addObjectAt(8, 1, new WGo.FieldObject('B'));
+var sad = new WGo.BoardLabelObject('😢');
+sad.opacity = 0.5;
+board.addObjectAt(8, 1, sad);
+
+board.addObjectAt(2, 3, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(3, 3, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(3, 2, new WGo.BoardMarkupObject('SL'));
+board.addObjectAt(2, 2, new WGo.FieldObject('B'));
+board.addObjectAt(2, 2, new WGo.BoardMarkupObject('SL'));
+
+board.addObjectAt(7, 15, new WGo.BoardMarkupObject('TR'));
+board.addObjectAt(9, 15, new WGo.BoardMarkupObject('MA'));
+
+const rotated = new WGo.BoardMarkupObject('TR');
+rotated.rotate = Math.PI;
+board.addObjectAt(7, 16, rotated);
+
+board.addObjectAt(8, 7, new WGo.FieldObject(new WGo.drawHandlers.Circle({ color: '#030', fillColor: 'rgba(0, 64, 0, 0.5)', lineWidth: 0.02 })));
+
+const reduced = new WGo.FieldObject('B');
+reduced.setScale(0.5);
+board.addObjectAt(17, 10, reduced);
+
+const reduced2 = new WGo.FieldObject('W');
+reduced2.setScale(0.5);
+board.addObjectAt(17, 11, reduced2);
+
+board.addObjectAt(3, 12, new WGo.BoardMarkupObject('W'));
+board.addObject(new WGo.BoardLineObject('AR', {x: 1, y: 5}, {x: 3, y: 12}));
+
+board.addObject(new WGo.BoardLineObject('AR', {x: 3, y: 16}, {x: 2, y: 15}));
+
+board.addObjectAt(17, 2, new WGo.FieldObject('DD'));
+board.addObjectAt(17, 3, new WGo.FieldObject('DD'));
+board.addObjectAt(16, 2, new WGo.FieldObject('DD'));
+board.addObjectAt(16, 3, new WGo.FieldObject('B'));
+board.addObjectAt(16, 3, new WGo.FieldObject('DD'));
+
+// board.addObjectAt(6, 10, new WGo.boardObjects.Circle());
+// board.addObjectAt(7, 10, new WGo.boardObjects.Circle());
+
+/*board.addObject({ x: 3, y: 3, c: 1 });
+board.addObject({ x: 15, y: 3, c: -1 });
+board.addObject({ x: 3, y: 15, type: 'CR' });
+board.addObject({ x: 4, y: 15, type: 'LB', text: '😋' });
+board.addObject({ x: 5, y: 15, type: 'LB', text: '12' });
+board.addObject({ x: 6, y: 15, type: 'LB', text: '123' });
+board.addObject({ x: 7, y: 15, type: 'SQ' });
+board.addObject({ x: 8, y: 15, type: 'TR' });
+board.addObject({ x: 9, y: 15, type: 'MA' });
+board.addObject({ x: 10, y: 15, type: 'SL' });
+board.addObject({ x: 11, y: 15, type: 'SM' });
+
+board.addObject({ x: 3, y: 13, c: 1 });
+board.addObject({ x: 4, y: 13, c: 1 });
+board.addObject({ x: 5, y: 13, c: 1 });
+board.addObject({ x: 6, y: 13, c: 1 });
+board.addObject({ x: 7, y: 13, c: 1 });
+board.addObject({ x: 8, y: 13, c: 1 });
+board.addObject({ x: 9, y: 13, c: 1 });
+board.addObject({ x: 10, y: 13, c: 1 });
+board.addObject({ x: 11, y: 13, c: 1 });
+
+board.addObject({ x: 3, y: 13, type: 'CR' });
+board.addObject({ x: 4, y: 13, type: 'LB', text: '😋' });
+board.addObject({ x: 5, y: 13, type: 'LB', text: '12' });
+board.addObject({ x: 6, y: 13, type: 'LB', text: '123' });
+board.addObject({ x: 7, y: 13, type: 'SQ' });
+board.addObject({ x: 8, y: 13, type: 'TR' });
+board.addObject({ x: 9, y: 13, type: 'MA' });
+board.addObject({ x: 10, y: 13, type: 'SL' });
+board.addObject({ x: 11, y: 13, type: 'SM' });
+
+board.addObject({ x: 3, y: 11, c: -1 });
+board.addObject({ x: 4, y: 11, c: -1 });
+board.addObject({ x: 5, y: 11, c: -1 });
+board.addObject({ x: 6, y: 11, c: -1 });
+board.addObject({ x: 7, y: 11, c: -1 });
+board.addObject({ x: 8, y: 11, c: -1 });
+board.addObject({ x: 9, y: 11, c: -1 });
+board.addObject({ x: 10, y: 11, c: -1 });
+board.addObject({ x: 11, y: 11, c: -1 });
+
+board.addObject({ x: 3, y: 11, type: 'CR' });
+board.addObject({ x: 4, y: 11, type: 'LB', text: '😋' });
+board.addObject({ x: 5, y: 11, type: 'LB', text: '12' });
+board.addObject({ x: 6, y: 11, type: 'LB', text: '123' });
+board.addObject({ x: 7, y: 11, type: 'SQ' });
+board.addObject({ x: 8, y: 11, type: 'TR' });
+board.addObject({ x: 9, y: 11, type: 'MA' });
+board.addObject({ x: 10, y: 11, type: 'SL' });
+board.addObject({ x: 11, y: 11, type: 'SM' });*/
+
+/*const custom = {
+  drawField: {
+    stone(canvasCtx, args, board) {
+      //canvasCtx.beginPath();
+      //canvasCtx.rect(0, 0, 10, 10);
+      //canvasCtx.beginPath();
+
+      canvasCtx.fillRect(-0.5, -0.5, 1, 1);
+      //canvasCtx.fill();
+
+      //canvasCtx.beginPath();
+      //canvasCtx.clearRect(-board.fieldWidth / 2, -board.fieldWidth / 2, board.fieldWidth, board.fieldHeight);
+      //canvasCtx.fill();
+    },
+  },
+};
+
+const candidate = {
+  drawField: {
+    stone(canvasCtx, args, board) {
+      const stoneSize = board.config.theme.stoneSize;
+      const lw = board.config.theme.markupLinesWidth;
+      const params = args.params;
+
+      if (params.value > 55) {
+        canvasCtx.fillStyle = 'rgba(0, 128, 0, 0.25)';
+      } else if (params.value < 45) {
+        canvasCtx.fillStyle = 'rgba(128, 0, 0, 0.25)';
+      } else {
+        canvasCtx.fillStyle = 'rgba(256, 256, 0, 0.25)';
+      }
+      
+      //canvasCtx.strokeStyle = 'rgba(0, 128, 0, 0.75)';
+      canvasCtx.beginPath();
+      canvasCtx.arc(0, 0, 0.5, 0, 2 * Math.PI, true);
+      canvasCtx.fill();
+      //canvasCtx.lineWidth = lw/2;
+      //canvasCtx.stroke();
+      
+      const font = params.font || board.config.theme.font || '';
+
+      canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+
+      canvasCtx.beginPath();
+      canvasCtx.textBaseline = 'middle';
+      canvasCtx.textAlign = 'center';
+      canvasCtx.font = `0.45px ${font}`;
+
+      canvasCtx.fillText(params.value+'%', 0, -0.1, 0.9);
+
+      canvasCtx.font = `0.3px ${font}`;
+
+      canvasCtx.fillText(params.playouts, 0, 0.25 , 0.9);
+    },
+    grid: WGo.drawHandlers.gridFieldClear.drawField.grid,
+  },
+};
+
+board.addObject({ handler: candidate, field: { x: 3, y: 3 }, params: { value: 57.2, playouts: '1.82k' } });
+board.addObject({ handler: candidate, field: { x: 4, y: 4 }, params: { value: 48.7, playouts: '187' } });
+board.addObject({ handler: candidate, field: { x: 3, y: 4 }, params: { value: 44.4, playouts: '572' } });
+
+board.addObject({ type: 'B', field: { x: 9, y: 9 } });
+board.addObject({ type: 'W', field: { x: 10, y: 9 } });
+board.addObject({ type: 'B', field: { x: 10, y: 10 } });
+board.addObject({ type: 'W', field: { x: 9, y: 10 } });
+
+board.addObject({ type: 'CR', field: { x: 9, y: 9 }, params: { color: 'white' } });
+
+board.addObject({ type: 'TR', field: { x: 5, y: 5 } });
+board.addObject({ type: 'gridFieldClear', field: { x: 5, y: 5 } });
+
+board.addObject({ type: 'gridFieldClear', field: { x: 13, y: 13 } });
+board.addFieldObject(13, 13, 'LB', { text: '76.2%', color: 'green', font: 'calibri' });
+
+board.addFieldObject(5, 7, custom);
+board.addFieldObject(6, 7, custom);
+board.addFieldObject(7, 7, custom);
+board.addFieldObject(6, 8, custom);
+board.addFieldObject(6, 6, custom);
+board.addFieldObject(6, 7, 'LB', { text: '123', color: 'white' });
+
+/*for (let i = 0; i < 1000; i++) {
+  const x = Math.floor(Math.random() * 19);
+  const y = Math.floor(Math.random() * 19);
+
+  const obj = { handler: WGo.drawHandlers.transparent(WGo.drawHandlers.shellStoneWhite), field: { x, y }, params: { alpha: 0.2 } };
+  board.addObject(obj);
+}*/
+
+/*board.addObject({ x: 9, y: 9, type: custom });
+board.addObject({ x: 1, y: 0, type: custom });
+board.addObject({ x: 2, y: 0, type: custom });
+
+board.addObject({ x: 0, y: 2, type: custom });
+board.addObject({ x: 0, y: 3, type: custom });
+
+board.addObject({ x: 5, y: 5, type: 'CR' });
+board.addObject({ x: 5, y: 5, type: 'gridFieldClear' });
+board.addObject({ x: 7, y: 5, type: 'gridFieldClear' });
+board.addObject({ x: 8, y: 5, type: 'gridFieldClear' });
+board.addObject({ x: 7, y: 4, type: 'gridFieldClear' });
+board.addObject({ x: 8, y: 4, type: 'gridFieldClear' });
+board.addObject({ x: 5, y: 7, type: 'SL' });
+board.addObject({ x: 5, y: 8, type: 'SL' });
+board.addObject({ x: 6, y: 7, type: 'SL' });
+board.addObject({ x: 6, y: 8, type: 'SL' });
+
+
+board.addObject({ x: 6, y: 8, type: 'LB', text: '1', color: 'white' });
+
+board.addObject({ x: 11, y: 11, type: 'SM' });
+board.addObject({ x: 11, y: 10, type: 'SQ', color: 'green', fillColor: 'rgba(0,128,0,0.2)'  });
+board.addObject({ x: 13, y: 12, type: 'TR', lineWidth: 0.025 });
+board.addObject({ x: 12, y: 12, type: 'TR', lineWidth: 0.05, fillColor: 'rgba(0,0,0,0.2)' });
+board.addObject({ x: 11, y: 12, type: 'TR', lineWidth: 0.1 });
+board.addObject({ x: 10, y: 12, type: 'TR', lineWidth: 0.15 });
+board.addObject({ x: 12, y: 10, type: 'MA' });
+
+board.addObject({ x: 13, y: 13, type: 'B' });
+board.addObject({ x: 13, y: 14, type: 'B' });
+board.addObject({ x: 13, y: 14, type: 'CR', lineWidth: 0.05, color: 'red', fillColor: 'rgba(128,0,0,0.8)' });
+board.addObject({ x: 14, y: 14, type: 'W' });
+board.addObject({ x: 14, y: 13, type: 'W' });
+board.addObject({ x: 14, y: 13, type: 'MA' });*/
+
+let lastX;
+let lastY;
+let obj = new WGo.FieldObject('W');
+
+obj.opacity = 0.5;
+
+board.on('mousemove', (evt, pos) => {
+  if (pos && (pos.x !== lastX || pos.y !== lastY)) {
+    obj.x = pos.x;
+    obj.y = pos.y;
+    if (!board.hasObject(obj)) {
+      board.addObject(obj);
+    } else {
+      board.redraw();
+    }
+  } else if (!pos && obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('mouseout', (evt, pos) => {
+  if (obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('click', (evt, pos) => {
+  board.addObjectAt(pos.x, pos.y, new WGo.FieldObject('W'));
+});
+
+</script>
+</body>
+</html>

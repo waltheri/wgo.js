@@ -1,2 +1,2 @@
-import { SVGBoardConfig } from './types';
-export default function createCoordinates(config: SVGBoardConfig): SVGGElement;
+import SVGBoard from './SVGBoard';
+export default function createCoordinates(board: SVGBoard): SVGGElement;

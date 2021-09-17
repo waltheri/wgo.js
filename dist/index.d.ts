@@ -7,6 +7,7 @@ export * from './BoardBase';
 export * from './SVGBoard';
 export { PlayerBase } from './PlayerBase';
 export * from './PlayerBase/plugins';
+export * from './PlayerBase/types';
 export { default as PlayerDOM } from './PlayerDOM/PlayerDOM';
 export * from './PlayerDOM/components';
 export { default as SimplePlayer } from './SimplePlayer';

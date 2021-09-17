@@ -1,4 +1,5 @@
-import { SVG_NS, SVGBoardConfig } from './types';
+import SVGBoard from './SVGBoard';
+import { SVG_NS } from './types';
 
 function line(fromX: number, fromY: number, toX: number, toY: number) {
   const line = document.createElementNS(SVG_NS, 'line');
@@ -21,24 +22,30 @@ function star(x: number, y: number, starSize: number) {
   return star;
 }
 
-export default function createGrid(config: SVGBoardConfig) {
-  const { linesWidth } = config.theme.grid;
+export default function createGrid(board: SVGBoard) {
+  const { theme } = board.config;
+  const { linesWidth } = theme.grid;
+  const size = board.getSize();
 
   const grid = document.createElementNS(SVG_NS, 'g');
-  grid.setAttribute('stroke', config.theme.grid.linesColor);
+  grid.setAttribute('stroke', theme.grid.linesColor);
   grid.setAttribute('stroke-width', linesWidth.toString());
-  grid.setAttribute('fill', config.theme.grid.starColor);
+  grid.setAttribute('fill', theme.grid.starColor);
 
-  for (let i = 0; i < config.size; i++) {
-    grid.appendChild(line(i, 0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2));
-    grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
+  for (let i = 0; i < size.y; i++) {
+    grid.appendChild(line(0 - linesWidth / 2, i, size.x - 1 + linesWidth / 2, i));
   }
 
-  const starPoints = config.theme.starPoints[config.size];
+  for (let i = 0; i < size.x; i++) {
+    grid.appendChild(line(i, 0 - linesWidth / 2, i, size.y - 1 + linesWidth / 2));
+  }
+
+  const starPointsKey = size.x === size.y ? size.x : `${size.x}x${size.y}`;
+  const starPoints = (theme.starPoints as any)[starPointsKey];
 
   if (starPoints) {
-    starPoints.forEach((starPoint) => {
-      grid.appendChild(star(starPoint.x, starPoint.y, config.theme.grid.starSize));
+    starPoints.forEach((starPoint: any) => {
+      grid.appendChild(star(starPoint.x, starPoint.y, theme.grid.starSize));
     });
   }
   return grid;

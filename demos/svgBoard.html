@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<div id="board"></div>
+<script src="../dist/index.js"></script>
+<script>
+
+var board = new WGo.SVGBoard(document.getElementById('board'), {
+  //width: 800,
+  coordinates: true,
+});
+
+board.addObject(new WGo.FieldBoardObject('CR', 5, 7));
+board.addObject(new WGo.FieldBoardObject('B', 6, 5));
+board.addObject(new WGo.FieldBoardObject('B', 6, 6));
+board.addObject(new WGo.FieldBoardObject('B', 5, 6));
+board.addObject(new WGo.FieldBoardObject('B', 5, 5));
+board.addObject(new WGo.FieldBoardObject('B', 2, 8));
+board.addObject(new WGo.FieldBoardObject('B', 7, 13));
+
+board.addObject(new WGo.FieldBoardObject('W', 3, 5));
+board.addObject(new WGo.FieldBoardObject('W', 12, 15));
+
+const sq = new WGo.FieldBoardObject('SQ', 15, 15);
+sq.rotate = 45;
+
+board.addObject(sq);
+board.addObject(new WGo.FieldBoardObject('SQ', 14, 15));
+board.addObject(new WGo.MarkupBoardObject('SQ', 12, 15, -1));
+board.addObject(new WGo.FieldBoardObject('B', 11, 15));
+board.addObject(new WGo.MarkupBoardObject('SQ', 11, 15, 1));
+
+board.addObject(new WGo.MarkupBoardObject('TR', 3, 12));
+
+board.addObject(new WGo.MarkupBoardObject('MA', 5, 12));
+
+board.addObject(new WGo.MarkupBoardObject('SL', 4, 14));
+
+board.addObject(new WGo.MarkupBoardObject('DD', 17, 7));
+board.addObject(new WGo.MarkupBoardObject('DD', 17, 8));
+board.addObject(new WGo.MarkupBoardObject('DD', 16, 7));
+board.addObject(new WGo.MarkupBoardObject('DD', 16, 8));
+
+board.addObject(new WGo.LineBoardObject('LN', {x: 10, y: 5}, {x: 13, y: 12}));
+
+board.addObject(new WGo.LineBoardObject('AR', {x: 7, y: 1}, {x: 11, y: 3}));
+
+board.addObject(new WGo.LabelBoardObject('123', 16, 2));
+
+let lastX;
+let lastY;
+let obj = new WGo.FieldBoardObject('W');
+
+obj.opacity = 0.5;
+
+board.on('mousemove', (evt, pos) => {
+  if (pos && (pos.x !== lastX || pos.y !== lastY)) {
+    obj.x = pos.x;
+    obj.y = pos.y;
+    if (!board.hasObject(obj)) {
+      board.addObject(obj);
+    } else {
+      board.updateObject(obj);
+    }
+    lastX = pos.x;
+    lastY = pos.y;
+  } else if (!pos && obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('mouseout', (evt, pos) => {
+  if (obj) {
+    board.removeObject(obj);
+    lastX = null;
+    lastY = null;
+  }
+});
+
+board.on('click', (evt, pos) => {
+  if (pos) {
+    board.addObject(new WGo.FieldBoardObject('W', pos.x, pos.y));
+  }
+});
+
+</script>
+</body>
+</html>

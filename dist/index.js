@@ -6,13 +6,20 @@
 
   /**
    * Enumeration representing stone color, can be used for representing board position.
+   * Colors are implemented as numbers 1 an -1, so you can easily switch colors with `color * -1`.
    */
   (function (Color) {
+      /** Black stone */
       Color[Color["BLACK"] = 1] = "BLACK";
+      /** @alias Color.BLACK */
       Color[Color["B"] = 1] = "B";
+      /** White stone */
       Color[Color["WHITE"] = -1] = "WHITE";
+      /** @alias Color.WHITE */
       Color[Color["W"] = -1] = "W";
+      /** Represents empty field */
       Color[Color["EMPTY"] = 0] = "EMPTY";
+      /** @alias Color.E */
       Color[Color["E"] = 0] = "E";
   })(exports.Color || (exports.Color = {}));
 
@@ -2010,14 +2017,19 @@
        * Helper to get board size.
        */
       BoardBase.prototype.getSize = function () {
-          return this.config.size;
+          return {
+              x: this.config.sizeX != null ? this.config.sizeX : this.config.size,
+              y: this.config.sizeY != null ? this.config.sizeY : this.config.size,
+          };
       };
       /**
        * Helper to set board size.
        */
-      BoardBase.prototype.setSize = function (size) {
-          if (size === void 0) { size = 19; }
-          this.config.size = size;
+      BoardBase.prototype.setSize = function (sizeX, sizeY) {
+          if (sizeX === void 0) { sizeX = 19; }
+          if (sizeY === void 0) { sizeY = sizeX; }
+          this.config.sizeX = sizeX;
+          this.config.sizeY = sizeY;
       };
       /**
        * Returns true, if coordinates around board are visible.
@@ -2707,20 +2719,25 @@
       star.setAttribute('stroke-width', '0');
       return star;
   }
-  function createGrid$1(config) {
-      var linesWidth = config.theme.grid.linesWidth;
+  function createGrid$1(board) {
+      var theme = board.config.theme;
+      var linesWidth = theme.grid.linesWidth;
+      var size = board.getSize();
       var grid = document.createElementNS(SVG_NS, 'g');
-      grid.setAttribute('stroke', config.theme.grid.linesColor);
+      grid.setAttribute('stroke', theme.grid.linesColor);
       grid.setAttribute('stroke-width', linesWidth.toString());
-      grid.setAttribute('fill', config.theme.grid.starColor);
-      for (var i = 0; i < config.size; i++) {
-          grid.appendChild(line(i, 0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2));
-          grid.appendChild(line(0 - linesWidth / 2, i, config.size - 1 + linesWidth / 2, i));
+      grid.setAttribute('fill', theme.grid.starColor);
+      for (var i = 0; i < size.y; i++) {
+          grid.appendChild(line(0 - linesWidth / 2, i, size.x - 1 + linesWidth / 2, i));
       }
-      var starPoints = config.theme.starPoints[config.size];
+      for (var i = 0; i < size.x; i++) {
+          grid.appendChild(line(i, 0 - linesWidth / 2, i, size.y - 1 + linesWidth / 2));
+      }
+      var starPointsKey = size.x === size.y ? size.x : size.x + "x" + size.y;
+      var starPoints = theme.starPoints[starPointsKey];
       if (starPoints) {
           starPoints.forEach(function (starPoint) {
-              grid.appendChild(star(starPoint.x, starPoint.y, config.theme.grid.starSize));
+              grid.appendChild(star(starPoint.x, starPoint.y, theme.grid.starSize));
           });
       }
       return grid;
@@ -2733,31 +2750,34 @@
       text.textContent = str;
       return text;
   }
-  function createCoordinates(config) {
+  function createCoordinates(board) {
       var coordinates = document.createElementNS(SVG_NS, 'g');
       coordinates.style.userSelect = 'none';
-      var size = config.size;
-      var _a = config.theme.coordinates, fontSize = _a.fontSize, color = _a.color, labelsX = _a.labelsX, labelsY = _a.labelsY, top = _a.top, bottom = _a.bottom, right = _a.right, left = _a.left;
-      coordinates.setAttribute('font-family', config.theme.font);
+      var theme = board.config.theme;
+      var size = board.getSize();
+      var _a = theme.coordinates, fontSize = _a.fontSize, color = _a.color, labelsX = _a.labelsX, labelsY = _a.labelsY, top = _a.top, bottom = _a.bottom, right = _a.right, left = _a.left;
+      coordinates.setAttribute('font-family', theme.font);
       coordinates.setAttribute('font-size', fontSize);
       coordinates.setAttribute('text-anchor', 'middle');
       coordinates.setAttribute('dominant-baseline', 'middle');
-      if (config.theme.coordinates.bold) {
+      if (theme.coordinates.bold) {
           coordinates.setAttribute('font-weight', 'bold');
       }
       coordinates.setAttribute('fill', color);
-      for (var i = 0; i < size; i++) {
+      for (var i = 0; i < size.y; i++) {
+          if (left) {
+              coordinates.appendChild(letter(-0.75, size.y - i - 1, labelsY[i]));
+          }
+          if (right) {
+              coordinates.appendChild(letter(size.x - 0.25, size.y - i - 1, labelsY[i]));
+          }
+      }
+      for (var i = 0; i < size.x; i++) {
           if (top) {
               coordinates.appendChild(letter(i, -0.75, labelsX[i]));
           }
           if (bottom) {
-              coordinates.appendChild(letter(i, size - 0.25, labelsX[i]));
-          }
-          if (left) {
-              coordinates.appendChild(letter(-0.75, size - i - 1, labelsY[i]));
-          }
-          if (right) {
-              coordinates.appendChild(letter(size - 0.25, size - i - 1, labelsY[i]));
+              coordinates.appendChild(letter(i, size.y - 0.25, labelsX[i]));
           }
       }
       return coordinates;
@@ -2860,13 +2880,13 @@
               this.svgElement.removeChild(this.contexts.gridElement);
           }
           // create grid mask
-          var size = this.config.size;
+          var size = this.getSize();
           this.contexts[SVG_GRID_MASK] = document.createElementNS(SVG_NS, 'mask');
           this.contexts[SVG_GRID_MASK].id = generateId('mask');
-          this.contexts[SVG_GRID_MASK].innerHTML = "<rect x=\"-0.5\" y=\"-0.5\" width=\"" + size + "\" height=\"" + size + "\" fill=\"white\" />";
+          this.contexts[SVG_GRID_MASK].innerHTML = "<rect x=\"-0.5\" y=\"-0.5\" width=\"" + size.x + "\" height=\"" + size.y + "\" fill=\"white\" />";
           this.svgElement.appendChild(this.contexts[SVG_GRID_MASK]);
           // create grid
-          this.contexts.gridElement = createGrid$1(this.config);
+          this.contexts.gridElement = createGrid$1(this);
           this.contexts.gridElement.setAttribute('mask', "url(#" + this.contexts[SVG_GRID_MASK].id + ")");
           this.svgElement.appendChild(this.contexts.gridElement);
       };
@@ -2874,7 +2894,7 @@
           if (this.contexts.coordinatesElement) {
               this.svgElement.removeChild(this.contexts.coordinatesElement);
           }
-          this.contexts.coordinatesElement = createCoordinates(this.config);
+          this.contexts.coordinatesElement = createCoordinates(this);
           this.contexts.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
           this.svgElement.appendChild(this.contexts.coordinatesElement);
       };
@@ -2959,19 +2979,21 @@
       SVGBoard.prototype.setViewport = function (viewport) {
           if (viewport === void 0) { viewport = this.config.viewport; }
           _super.prototype.setViewport.call(this, viewport);
-          var _a = this.config, coordinates = _a.coordinates, theme = _a.theme, size = _a.size;
+          var _a = this.config, coordinates = _a.coordinates, theme = _a.theme;
+          var size = this.getSize();
           var marginSize = theme.marginSize, _b = theme.coordinates, fontSize = _b.fontSize, coordinatesTop = _b.top, coordinatesLeft = _b.left, coordinatesBottom = _b.bottom, coordinatesRight = _b.right;
           this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
           this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;
           // tslint:disable-next-line:max-line-length
-          this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
+          this.bottom = size.y - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
           // tslint:disable-next-line:max-line-length
-          this.right = size - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
+          this.right = size.x - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
           this.svgElement.setAttribute('viewBox', this.left + " " + this.top + " " + this.right + " " + this.bottom);
       };
-      SVGBoard.prototype.setSize = function (size) {
-          if (size === void 0) { size = 19; }
-          _super.prototype.setSize.call(this, size);
+      SVGBoard.prototype.setSize = function (sizeX, sizeY) {
+          if (sizeX === void 0) { sizeX = 19; }
+          if (sizeY === void 0) { sizeY = sizeX; }
+          _super.prototype.setSize.call(this, sizeX, sizeY);
           this.drawGrid();
           this.drawCoordinates();
           this.setViewport();
@@ -3003,7 +3025,8 @@
           var fieldHeight = this.touchArea.offsetHeight / (this.bottom);
           var x = Math.round((absoluteX / fieldWidth + this.left));
           var y = Math.round((absoluteY / fieldHeight + this.top));
-          if (x < 0 || x >= this.config.size || y < 0 || y >= this.config.size) {
+          var size = this.getSize();
+          if (x < 0 || x >= size.x || y < 0 || y >= size.y) {
               return null;
           }
           return { x: x, y: y };
@@ -4261,11 +4284,12 @@
               var minY = Math.min(event.value[0].y, event.value[1].y);
               var maxX = Math.max(event.value[0].x, event.value[1].x);
               var maxY = Math.max(event.value[0].y, event.value[1].y);
+              var size = this.board.getSize();
               this.board.setViewport({
                   left: minX,
                   top: minY,
-                  right: this.board.getSize() - maxX - 1,
-                  bottom: this.board.getSize() - maxY - 1,
+                  right: size.x - maxX - 1,
+                  bottom: size.y - maxY - 1,
               });
           }
           else {

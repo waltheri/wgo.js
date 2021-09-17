@@ -171,14 +171,18 @@ export default class BoardBase extends EventEmitter implements Board {
    * Helper to get board size.
    */
   getSize() {
-    return this.config.size;
+    return {
+      x: this.config.sizeX != null ? this.config.sizeX : this.config.size,
+      y: this.config.sizeY != null ? this.config.sizeY : this.config.size,
+    };
   }
 
   /**
    * Helper to set board size.
    */
-  setSize(size: number = 19) {
-    this.config.size = size;
+  setSize(sizeX: number = 19, sizeY: number = sizeX) {
+    this.config.sizeX = sizeX;
+    this.config.sizeY = sizeY;
   }
 
   /**

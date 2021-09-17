@@ -1,3 +1,5 @@
+import { BoardBaseConfig } from './types';
+
 export const defaultBoardBaseTheme = {
   // basic
   stoneSize: 0.47,
@@ -58,7 +60,7 @@ export const defaultBoardBaseTheme = {
   },
 };
 
-export const defaultBoardBaseConfig = {
+export const defaultBoardBaseConfig: BoardBaseConfig = {
   size: 19,
   width: 0,
   height: 0,

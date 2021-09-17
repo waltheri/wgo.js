@@ -1,6 +1,6 @@
 import { BoardBase, BoardViewport } from '../BoardBase';
 import { PartialRecursive } from '../utils/makeConfig';
-import { SVGDrawHandler, SVGBoardConfig, BoardObjectSVGElements, SVGBoardObject } from './types';
+import { SVGBoardConfig, BoardObjectSVGElements, SVGBoardObject } from './types';
 import { Point } from '../types';
 export default class SVGBoard extends BoardBase {
     config: SVGBoardConfig;
@@ -26,11 +26,11 @@ export default class SVGBoard extends BoardBase {
     drawObjects(): void;
     addObject(boardObject: SVGBoardObject | SVGBoardObject[]): void;
     protected createObjectElements(boardObject: SVGBoardObject): void;
-    getObjectHandler(boardObject: SVGBoardObject): SVGDrawHandler;
+    getObjectHandler(boardObject: SVGBoardObject): import("./types").SVGDrawHandler;
     removeObject(boardObject: SVGBoardObject | SVGBoardObject[]): void;
     updateObject(boardObject: SVGBoardObject | SVGBoardObject[]): void;
     setViewport(viewport?: BoardViewport): void;
-    setSize(size?: number): void;
+    setSize(sizeX?: number, sizeY?: number): void;
     setCoordinates(coordinates: boolean): void;
     on(type: string, callback: (event: UIEvent, point: Point) => void): void;
     registerBoardListener(type: string): void;

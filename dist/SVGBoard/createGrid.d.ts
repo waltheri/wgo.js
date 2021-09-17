@@ -1,2 +1,2 @@
-import { SVGBoardConfig } from './types';
-export default function createGrid(config: SVGBoardConfig): SVGGElement;
+import SVGBoard from './SVGBoard';
+export default function createGrid(board: SVGBoard): SVGGElement;

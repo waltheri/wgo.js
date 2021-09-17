@@ -120,11 +120,13 @@ export default class EditMode implements PlayerPlugin {
 
   private enable() {
     this.saveGameState();
+
     if (this.config.showVariations) {
       this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
     } else {
       this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
     }
+
     this.config.enabled = true;
 
     let lastX = -1;

@@ -3,7 +3,6 @@ import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import createGrid from './createGrid';
 import createCoordinates from './createCoordinates';
 import {
-  SVGDrawHandler,
   SVGBoardConfig,
   SVG_NS,
   SVG_OBJECTS,
@@ -119,14 +118,14 @@ export default class SVGBoard extends BoardBase {
     }
 
     // create grid mask
-    const { size } = this.config;
+    const size = this.getSize();
     this.contexts[SVG_GRID_MASK] = document.createElementNS(SVG_NS, 'mask');
     this.contexts[SVG_GRID_MASK].id = generateId('mask');
-    this.contexts[SVG_GRID_MASK].innerHTML = `<rect x="-0.5" y="-0.5" width="${size}" height="${size}" fill="white" />`;
+    this.contexts[SVG_GRID_MASK].innerHTML = `<rect x="-0.5" y="-0.5" width="${size.x}" height="${size.y}" fill="white" />`;
     this.svgElement.appendChild(this.contexts[SVG_GRID_MASK]);
 
     // create grid
-    this.contexts.gridElement = createGrid(this.config);
+    this.contexts.gridElement = createGrid(this);
     this.contexts.gridElement.setAttribute('mask', `url(#${this.contexts[SVG_GRID_MASK].id})`);
     this.svgElement.appendChild(this.contexts.gridElement);
   }
@@ -136,7 +135,7 @@ export default class SVGBoard extends BoardBase {
       this.svgElement.removeChild(this.contexts.coordinatesElement);
     }
 
-    this.contexts.coordinatesElement = createCoordinates(this.config);
+    this.contexts.coordinatesElement = createCoordinates(this);
     this.contexts.coordinatesElement.style.opacity = this.config.coordinates ? '' : '0';
     this.svgElement.appendChild(this.contexts.coordinatesElement);
   }
@@ -236,7 +235,8 @@ export default class SVGBoard extends BoardBase {
   setViewport(viewport: BoardViewport = this.config.viewport) {
     super.setViewport(viewport);
 
-    const { coordinates, theme, size } = this.config;
+    const { coordinates, theme } = this.config;
+    const size = this.getSize();
     const {
       marginSize,
       coordinates: {
@@ -251,14 +251,14 @@ export default class SVGBoard extends BoardBase {
     this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
     this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;
     // tslint:disable-next-line:max-line-length
-    this.bottom = size - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
+    this.bottom = size.y - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
     // tslint:disable-next-line:max-line-length
-    this.right = size - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
+    this.right = size.x - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
     this.svgElement.setAttribute('viewBox', `${this.left} ${this.top} ${this.right} ${this.bottom}`);
   }
 
-  setSize(size: number = 19) {
-    super.setSize(size);
+  setSize(sizeX: number = 19, sizeY = sizeX) {
+    super.setSize(sizeX, sizeY);
     this.drawGrid();
     this.drawCoordinates();
     this.setViewport();
@@ -294,8 +294,9 @@ export default class SVGBoard extends BoardBase {
 
     const x = Math.round((absoluteX / fieldWidth + this.left));
     const y = Math.round((absoluteY / fieldHeight + this.top));
+    const size = this.getSize();
 
-    if (x < 0 || x >= this.config.size || y < 0 || y >= this.config.size) {
+    if (x < 0 || x >= size.x || y < 0 || y >= size.y) {
       return null;
     }
 

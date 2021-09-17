@@ -343,12 +343,13 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
       const minY = Math.min(event.value[0].y, event.value[1].y);
       const maxX = Math.max(event.value[0].x, event.value[1].x);
       const maxY = Math.max(event.value[0].y, event.value[1].y);
+      const size = this.board.getSize();
 
       this.board.setViewport({
         left: minX,
         top: minY,
-        right: this.board.getSize() - maxX - 1,
-        bottom: this.board.getSize() - maxY - 1,
+        right: size.x - maxX - 1,
+        bottom: size.y - maxY - 1,
       });
     } else {
       this.board.setViewport({
