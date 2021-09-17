@@ -98,7 +98,7 @@ export default class EditMode implements PlayerPlugin {
     for (let i = 0; i < this.player.currentNode.children.length; i++) {
       const childNode = this.player.currentNode.children[i];
       const move = childNode.getProperty('B') || childNode.getProperty('W');
-      if (move.x === point.x && move.y === point.y) {
+      if (move && move.x === point.x && move.y === point.y) {
         this.player.next(i);
         return;
       }
