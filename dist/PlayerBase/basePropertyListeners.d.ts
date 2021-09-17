@@ -1,6 +1,6 @@
 import { LifeCycleEvent } from './types';
 import { Color, Point } from '../types';
-export declare function beforeInitSZ(event: LifeCycleEvent<number>): void;
+export declare function beforeInitSZ(event: LifeCycleEvent<number[]>): void;
 export declare function beforeInitRU(event: LifeCycleEvent<string>): void;
 export declare function applyGameChangesHA(event: LifeCycleEvent<number>): void;
 export declare function applyGameChangesMove(event: LifeCycleEvent<Point>): void;

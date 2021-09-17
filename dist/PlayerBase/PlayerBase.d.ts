@@ -19,7 +19,10 @@ export default class PlayerBase extends EventEmitter {
     /**
      * Create new game (kifu) and init player with it.
      */
-    newGame(size?: number, rules?: GoRules): void;
+    newGame(size?: number | {
+        x: number;
+        y: number;
+    }, rules?: GoRules): void;
     /**
      * Executes root properties during initialization. If some properties change, call this to re-init player.
      */

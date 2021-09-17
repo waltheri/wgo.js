@@ -67,6 +67,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     this.config = makeConfig(defaultSVGBoardComponentConfig, config);
     this.viewportStack = [];
 
+    this.beforeInitSZ = this.beforeInitSZ.bind(this);
     this.applyNodeChanges = this.applyNodeChanges.bind(this);
     this.clearNodeChanges = this.clearNodeChanges.bind(this);
     this.applyMarkupProperty = this.applyMarkupProperty.bind(this);
@@ -128,6 +129,9 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   create(player: PlayerDOM) {
     this.player = player;
 
+    // set size during kifu load
+    this.player.on('beforeInit.SZ', this.beforeInitSZ); 
+
     // add general node listeners - for setting stones on board based on position
     this.player.on('applyNodeChanges', this.applyNodeChanges);
     this.player.on('clearNodeChanges', this.clearNodeChanges);
@@ -158,6 +162,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   }
 
   destroy() {
+    this.player.off('beforeInit.SZ', this.beforeInitSZ);
     this.player.off('applyNodeChanges', this.applyNodeChanges);
     this.player.off('clearNodeChanges', this.clearNodeChanges);
 
@@ -202,8 +207,8 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     // Add new stones from current position
     const position = this.player.game.position;
 
-    for (let x = 0; x < position.size; x++) {
-      for (let y = 0; y < position.size; y++) {
+    for (let x = 0; x < position.sizeX; x++) {
+      for (let y = 0; y < position.sizeY; y++) {
         const c = position.get(x, y);
         if (c && !this.stoneBoardsObjects.some(
           boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
@@ -285,6 +290,12 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     if (this.element.style.cursor) {
       this.element.style.cursor = '';
     }
+  }
+
+  private beforeInitSZ(event: LifeCycleEvent<number[]>) {
+    const [x, y] = event.value;
+
+    this.board.setSize(x, y);
   }
 
   private applyNodeChanges() {

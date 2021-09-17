@@ -3,7 +3,7 @@ import { PropIdent } from '../SGFParser/sgfTypes';
 import { Color, Point } from '../types';
 import { goRules } from '../Game';
 
-export function beforeInitSZ(event: LifeCycleEvent<number>) {
+export function beforeInitSZ(event: LifeCycleEvent<number[]>) {
   event.target.params.size = event.value;
 }
 

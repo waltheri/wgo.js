@@ -2,7 +2,7 @@ import { GoRules } from '../Game';
 import PlayerBase from './PlayerBase';
 import { PropIdent } from '../SGFParser/sgfTypes';
 export interface PlayerInitParams {
-    size: number;
+    size: number[];
     rules: GoRules;
     [key: string]: any;
 }

@@ -3,7 +3,8 @@ import Position from './Position';
 import { Color } from '../types';
 
 export default class Game {
-  size: number;
+  sizeX: number;
+  sizeY: number;
   rules: GoRules;
   komi: number;
   positionStack: Position[];
@@ -27,12 +28,18 @@ export default class Game {
    * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
    * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
    */
+  constructor(size: number | { x: number, y: number } = 19, rules: GoRules = JAPANESE_RULES) {
+    if (typeof size === 'number') {
+      this.sizeX = size;
+      this.sizeY = size;
+    } else {
+      this.sizeX = size.x;
+      this.sizeY = size.y;
+    }
 
-  constructor(size: number = 19, rules: GoRules = JAPANESE_RULES) {
-    this.size = size;
     this.rules = rules;
     this.komi = rules.komi;
-    this.positionStack = [new Position(size)];
+    this.positionStack = [new Position(this.sizeX, this.sizeY)];
   }
 
   get position() {

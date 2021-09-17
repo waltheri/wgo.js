@@ -38,6 +38,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     protected handleBoardMouseOut(): void;
     private handleVariationCursor;
     private removeVariationCursor;
+    private beforeInitSZ;
     private applyNodeChanges;
     private clearNodeChanges;
     private applyMarkupProperty;

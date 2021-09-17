@@ -2,7 +2,8 @@ import { GoRules } from './rules';
 import Position from './Position';
 import { Color } from '../types';
 export default class Game {
-    size: number;
+    sizeX: number;
+    sizeY: number;
     rules: GoRules;
     komi: number;
     positionStack: Position[];
@@ -25,7 +26,10 @@ export default class Game {
      * @param {boolean} [allowRewrite = false] Allow to play moves, which were already played
      * @param {boolean} [allowSuicide = false] Allow to play suicides, stones are immediately captured
      */
-    constructor(size?: number, rules?: GoRules);
+    constructor(size?: number | {
+        x: number;
+        y: number;
+    }, rules?: GoRules);
     get position(): Position;
     set position(pos: Position);
     get turn(): Color.WHITE | Color.BLACK;

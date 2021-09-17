@@ -259,9 +259,8 @@ export default class SVGBoard extends BoardBase {
 
   setSize(sizeX: number = 19, sizeY = sizeX) {
     super.setSize(sizeX, sizeY);
-    this.drawGrid();
-    this.drawCoordinates();
     this.setViewport();
+    this.redraw();
   }
 
   setCoordinates(coordinates: boolean) {

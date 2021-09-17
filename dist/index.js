@@ -388,6 +388,10 @@
       // tslint:disable-next-line:max-line-length
       value ? String.fromCharCode(value[0].x + 97) + String.fromCharCode(value[0].y + 97) + ":" + (String.fromCharCode(value[1].x + 97) + String.fromCharCode(value[1].y + 97)) : ''); },
   };
+  var COMPOSED_NUMBER = {
+      read: function (str) { return str.split(':').map(function (num) { return parseFloat(num); }); },
+      write: function (value) { return value.join(':'); },
+  };
   var propertyValueTypes = {
       _default: {
           transformer: TEXT,
@@ -473,9 +477,13 @@
       multiple: false,
       notEmpty: true,
   };
-  // note: rectangular board is not implemented (in SZ property)
-  propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = propertyValueTypes.SZ = {
+  propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = {
       transformer: NUMBER,
+      multiple: false,
+      notEmpty: true,
+  };
+  propertyValueTypes.SZ = {
+      transformer: COMPOSED_NUMBER,
       multiple: false,
       notEmpty: true,
   };
@@ -882,9 +890,9 @@
    * @module Position
    */
   // creates 2-dim array
-  function createGrid(size) {
+  function createGrid(sizeX, sizeY) {
       var grid = [];
-      for (var i = 0; i < size; i++) {
+      for (var i = 0; i < sizeX; i++) {
           grid.push([]);
       }
       return grid;
@@ -902,8 +910,9 @@
        *
        * @param {number} [size = 19] - Size of the board.
        */
-      function Position(size) {
-          if (size === void 0) { size = 19; }
+      function Position(sizeX, sizeY) {
+          if (sizeX === void 0) { sizeX = 19; }
+          if (sizeY === void 0) { sizeY = sizeX; }
           /**
            * One dimensional array containing stones of the position.
            */
@@ -922,12 +931,13 @@
            * Who plays next move.
            */
           this.turn = exports.Color.BLACK;
-          this.size = size;
+          this.sizeX = sizeX;
+          this.sizeY = sizeY;
           // init grid
           this.clear();
       }
       Position.prototype.isOnPosition = function (x, y) {
-          return x >= 0 && y >= 0 && x < this.size && y < this.size;
+          return x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY;
       };
       /**
        * Returns stone on the given field.
@@ -940,7 +950,7 @@
           if (!this.isOnPosition(x, y)) {
               return undefined;
           }
-          return this.grid[x * this.size + y];
+          return this.grid[x * this.sizeY + y];
       };
       /**
        * Sets stone on the given field.
@@ -953,14 +963,14 @@
           if (!this.isOnPosition(x, y)) {
               throw new TypeError('Attempt to set field outside of position.');
           }
-          this.grid[x * this.size + y] = c;
+          this.grid[x * this.sizeY + y] = c;
           return this;
       };
       /**
        * Clears the whole position (every value is set to EMPTY).
        */
       Position.prototype.clear = function () {
-          for (var i = 0; i < this.size * this.size; i++) {
+          for (var i = 0; i < this.sizeX * this.sizeY; i++) {
               this.grid[i] = exports.Color.EMPTY;
           }
           return this;
@@ -972,7 +982,7 @@
        * @todo Clone turn as well.
        */
       Position.prototype.clone = function () {
-          var clone = new Position(this.size);
+          var clone = new Position(this.sizeX, this.sizeY);
           clone.grid = this.grid.slice(0);
           clone.capCount.black = this.capCount.black;
           clone.capCount.white = this.capCount.white;
@@ -986,15 +996,15 @@
        * @return {Field[]} Array of different fields
        */
       Position.prototype.compare = function (position) {
-          if (position.size !== this.size) {
+          if (position.sizeX !== this.sizeX && position.sizeY !== this.sizeY) {
               throw new TypeError('Positions of different sizes cannot be compared.');
           }
           var diff = [];
-          for (var i = 0; i < this.size * this.size; i++) {
+          for (var i = 0; i < this.sizeX * this.sizeY; i++) {
               if (this.grid[i] !== position.grid[i]) {
                   diff.push({
-                      x: Math.floor(i / this.size),
-                      y: i % this.size,
+                      x: Math.floor(i / this.sizeY),
+                      y: i % this.sizeY,
                       c: position.grid[i],
                   });
               }
@@ -1044,8 +1054,8 @@
        * This position isn't modified.
        */
       Position.prototype.validatePosition = function () {
-          for (var x = 0; x < this.size; x++) {
-              for (var y = 0; y < this.size; y++) {
+          for (var x = 0; x < this.sizeX; x++) {
+              for (var y = 0; y < this.sizeY; y++) {
                   this.captureIfNoLiberties(x - 1, y);
               }
           }
@@ -1055,7 +1065,7 @@
        * Returns true if stone or group on the given coordinates has at least one liberty.
        */
       Position.prototype.hasLiberties = function (x, y, alreadyTested, c) {
-          if (alreadyTested === void 0) { alreadyTested = createGrid(this.size); }
+          if (alreadyTested === void 0) { alreadyTested = createGrid(this.sizeX, this.sizeY); }
           if (c === void 0) { c = this.get(x, y); }
           // out of the board there aren't liberties
           if (!this.isOnPosition(x, y)) {
@@ -1125,13 +1135,13 @@
           var WS = '○';
           var HF = '─'; // horizontal fill
           var output = '   ';
-          for (var i = 0; i < this.size; i++) {
+          for (var i = 0; i < this.sizeX; i++) {
               output += i < 9 ? i + " " : i;
           }
           output += '\n';
-          for (var y = 0; y < this.size; y++) {
-              for (var x = 0; x < this.size; x++) {
-                  var color = this.grid[x * this.size + y];
+          for (var y = 0; y < this.sizeY; y++) {
+              for (var x = 0; x < this.sizeX; x++) {
+                  var color = this.grid[x * this.sizeY + y];
                   if (x === 0) {
                       output += (y < 10 ? " " + y : y) + " ";
                   }
@@ -1145,19 +1155,19 @@
                           if (x === 0) {
                               char = TL;
                           }
-                          else if (x < this.size - 1) {
+                          else if (x < this.sizeX - 1) {
                               char = TM;
                           }
                           else {
                               char = TR;
                           }
                       }
-                      else if (y < this.size - 1) {
+                      else if (y < this.sizeY - 1) {
                           // middle line
                           if (x === 0) {
                               char = ML;
                           }
-                          else if (x < this.size - 1) {
+                          else if (x < this.sizeX - 1) {
                               char = MM;
                           }
                           else {
@@ -1169,7 +1179,7 @@
                           if (x === 0) {
                               char = BL;
                           }
-                          else if (x < this.size - 1) {
+                          else if (x < this.sizeX - 1) {
                               char = BM;
                           }
                           else {
@@ -1178,8 +1188,8 @@
                       }
                       output += char;
                   }
-                  if (x === this.size - 1) {
-                      if (y !== this.size - 1) {
+                  if (x === this.sizeX - 1) {
+                      if (y !== this.sizeY - 1) {
                           output += '\n';
                       }
                   }
@@ -1195,253 +1205,16 @@
        */
       Position.prototype.toTwoDimensionalArray = function () {
           var arr = [];
-          for (var x = 0; x < this.size; x++) {
+          for (var x = 0; x < this.sizeX; x++) {
               arr[x] = [];
-              for (var y = 0; y < this.size; y++) {
-                  arr[x][y] = this.grid[x * this.size + y];
+              for (var y = 0; y < this.sizeY; y++) {
+                  arr[x][y] = this.grid[x * this.sizeY + y];
               }
           }
           return arr;
       };
       return Position;
   }());
-  // import { Color, Field, Move } from '../types';
-  // /**
-  //  * Position of the board (grid) is represented as 2 dimensional array of colors.
-  //  */
-  // export type Position = Color[][];
-  // /**
-  //  * Creates empty position (filled with Color.EMPTY) of specified size.
-  //  * @param size
-  //  */
-  // export function createPosition(size: number) {
-  //   const position: Color[][] = [];
-  //   for (let i = 0; i < size; i++) {
-  //     const row: Color[] = [];
-  //     for (let j = 0; j < size; j++) {
-  //       row.push(Color.EMPTY);
-  //     }
-  //     position.push(row);
-  //   }
-  //   return position;
-  // }
-  // /**
-  //  * Deep clones a position.
-  //  * @param position
-  //  */
-  // export function clonePosition(position: Position) {
-  //   return position.map(row => row.slice(0));
-  // }
-  // /**
-  //  * Compares position `pos1` with position `pos2` and returns all differences on `pos2`.
-  //  * @param pos1
-  //  * @param pos2
-  //  */
-  // export function comparePositions(pos1: Position, pos2: Position): Field[] {
-  //   if (pos1.length !== pos2.length) {
-  //     throw new TypeError('Positions of different sizes cannot be compared.');
-  //   }
-  //   const diff: Field[] = [];
-  //   for (let x = 0; x < pos1.length; x++) {
-  //     for (let y = 0; y < pos2.length; y++) {
-  //       if (pos1[x][y] !== pos2[x][y]) {
-  //         diff.push({ x, y, c: pos2[x][y] });
-  //       }
-  //     }
-  //   }
-  //   return diff;
-  // }
-  // function isOnBoard(position: Position, x: number, y: number) {
-  //   return x >= 0 && x < position.length && y >= 0 && y < position.length;
-  // }
-  // /**
-  //  * Creates new position with specified move (with rules applied - position won't contain captured stones).
-  //  * If move is invalid, null is returned.
-  //  */
-  // export function applyMove(position: Position, x: number, y: number, c: Color.B | Color.W, allowSuicide = false) {
-  //   // check if move is on empty field of the board
-  //   if (!isOnBoard(position, x, y) || position[x][y] !== Color.EMPTY) {
-  //     return null;
-  //   }
-  //   // clone position and add a stone
-  //   const newPosition = clonePosition(position);
-  //   newPosition[x][y] = c;
-  //   // check capturing of all surrounding stones
-  //   const capturesAbove = captureIfNoLiberties(newPosition, x, y - 1, -c);
-  //   const capturesRight = captureIfNoLiberties(newPosition, x + 1, y, -c);
-  //   const capturesBelow = captureIfNoLiberties(newPosition, x, y + 1, -c);
-  //   const capturesLeft = captureIfNoLiberties(newPosition, x - 1, y, -c);
-  //   const hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
-  //   // check suicide
-  //   if (!hasCaptured) {
-  //     if (!hasLiberties(newPosition, x, y)) {
-  //       if (allowSuicide) {
-  //         capture(newPosition, x, y, c);
-  //       } else {
-  //         return null;
-  //       }
-  //     }
-  //   }
-  //   return newPosition;
-  // }
-  // /**
-  //  * Validate position. Position is tested from 0:0 to size:size, if there are some moves,
-  //  * that should be captured, they will be removed. Returns a new Position object.
-  //  */
-  // export function getValidatedPosition(position: Position) {
-  //   const newPosition = clonePosition(position);
-  //   for (let x = 0; x < position.length; x++) {
-  //     for (let y = 0; y < position.length; y++) {
-  //       captureIfNoLiberties(newPosition, x, y);
-  //     }
-  //   }
-  //   return newPosition;
-  // }
-  // /**
-  //  * Capture stone or group of stones if they are zero liberties. Mutates the given position.
-  //  *
-  //  * @param position
-  //  * @param x
-  //  * @param y
-  //  * @param c
-  //  */
-  // function captureIfNoLiberties(position: Position, x: number, y: number, c: Color = position[x][y]) {
-  //   let hasCaptured = false;
-  //   // is there a stone possible to capture?
-  //   if (isOnBoard(position, x, y) && c !== Color.EMPTY && position[x][y] === c) {
-  //     // if it has zero liberties capture it
-  //     if (!hasLiberties(position, x, y)) {
-  //       // capture stones from game
-  //       capture(position, x, y, c);
-  //       hasCaptured = true;
-  //     }
-  //   }
-  //   return hasCaptured;
-  // }
-  // function createTestGrid(size: number) {
-  //   const grid: boolean[][] = [];
-  //   for (let i = 0; i < size; i++) {
-  //     grid.push([]);
-  //   }
-  //   return grid;
-  // }
-  // /**
-  //  * Returns true if stone or group on the given position has at least one liberty.
-  //  */
-  // function hasLiberties(
-  //   position: Position,
-  //   x: number,
-  //   y: number,
-  //   alreadyTested = createTestGrid(position.length),
-  //   c = position[x][y],
-  // ): boolean {
-  //   // out of the board there aren't liberties
-  //   if (!isOnBoard(position, x, y)) {
-  //     return false;
-  //   }
-  //   // however empty field means liberty
-  //   if (position[x][y] === Color.EMPTY) {
-  //     return true;
-  //   }
-  //   // already tested field or stone of enemy isn't a liberty.
-  //   if (alreadyTested[x][y] || position[x][y] === -c) {
-  //     return false;
-  //   }
-  //   // set this field as tested
-  //   alreadyTested[x][y] = true;
-  //   // in this case we are checking our stone, if we get 4 false, it has no liberty
-  //   return (
-  //     hasLiberties(position, x, y - 1, alreadyTested, c) ||
-  //     hasLiberties(position, x, y + 1, alreadyTested, c) ||
-  //     hasLiberties(position, x - 1, y, alreadyTested, c) ||
-  //     hasLiberties(position, x + 1, y, alreadyTested, c)
-  //   );
-  // }
-  // /**
-  //  * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-  //  * Mutates the given position.
-  //  */
-  // function capture(position: Position, x: number, y: number, c: Color = position[x][y]) {
-  //   if (isOnBoard(position, x, y) && position[x][y] !== Color.EMPTY && position[x][y] === c) {
-  //     position[x][y] = Color.EMPTY;
-  //     capture(position, x, y - 1, c);
-  //     capture(position, x, y + 1, c);
-  //     capture(position, x - 1, y, c);
-  //     capture(position, x + 1, y, c);
-  //   }
-  // }
-  // /**
-  //  * For debug purposes.
-  //  */
-  // export function stringifyPosition(position: Position) {
-  //   const TL = '┌';
-  //   const TM = '┬';
-  //   const TR = '┐';
-  //   const ML = '├';
-  //   const MM = '┼';
-  //   const MR = '┤';
-  //   const BL = '└';
-  //   const BM = '┴';
-  //   const BR = '┘';
-  //   const BS = '●';
-  //   const WS = '○';
-  //   const HF = '─'; // horizontal fill
-  //   let output = '   ';
-  //   for (let i = 0; i < position.length; i++) {
-  //     output += i < 9 ? `${i} ` : i;
-  //   }
-  //   output += '\n';
-  //   for (let y = 0; y < position.length; y++) {
-  //     for (let x = 0; x < position.length; x++) {
-  //       const color = position[x][y];
-  //       if (x === 0) {
-  //         output += `${(y < 10 ? ` ${y}` : y)} `;
-  //       }
-  //       if (color !== Color.EMPTY) {
-  //         output += color === Color.BLACK ? BS : WS;
-  //       } else {
-  //         let char;
-  //         if (y === 0) {
-  //           // top line
-  //           if (x === 0) {
-  //             char = TL;
-  //           } else if (x < position.length - 1) {
-  //             char = TM;
-  //           } else {
-  //             char = TR;
-  //           }
-  //         } else if (y < position.length - 1) {
-  //           // middle line
-  //           if (x === 0) {
-  //             char = ML;
-  //           } else if (x < position.length - 1) {
-  //             char = MM;
-  //           } else {
-  //             char = MR;
-  //           }
-  //         } else {
-  //           // bottom line
-  //           if (x === 0) {
-  //             char = BL;
-  //           } else if (x < position.length - 1) {
-  //             char = BM;
-  //           } else {
-  //             char = BR;
-  //           }
-  //         }
-  //         output += char;
-  //       }
-  //       if (x === position.length - 1) {
-  //         if (y !== position.length - 1) {
-  //           output += '\n';
-  //         }
-  //       } else {
-  //         output += HF;
-  //       }
-  //     }
-  //   }
-  //   return output;
-  // }
 
   var Game = /** @class */ (function () {
       /**
@@ -1466,10 +1239,17 @@
       function Game(size, rules) {
           if (size === void 0) { size = 19; }
           if (rules === void 0) { rules = JAPANESE_RULES; }
-          this.size = size;
+          if (typeof size === 'number') {
+              this.sizeX = size;
+              this.sizeY = size;
+          }
+          else {
+              this.sizeX = size.x;
+              this.sizeY = size.y;
+          }
           this.rules = rules;
           this.komi = rules.komi;
-          this.positionStack = [new Position(size)];
+          this.positionStack = [new Position(this.sizeX, this.sizeY)];
       }
       Object.defineProperty(Game.prototype, "position", {
           get: function () {
@@ -2994,9 +2774,8 @@
           if (sizeX === void 0) { sizeX = 19; }
           if (sizeY === void 0) { sizeY = sizeX; }
           _super.prototype.setSize.call(this, sizeX, sizeY);
-          this.drawGrid();
-          this.drawCoordinates();
           this.setViewport();
+          this.redraw();
       };
       SVGBoard.prototype.setCoordinates = function (coordinates) {
           _super.prototype.setCoordinates.call(this, coordinates);
@@ -3196,7 +2975,12 @@
       PlayerBase.prototype.newGame = function (size, rules) {
           var rootNode = new KifuNode();
           if (size) {
-              rootNode.setProperty('SZ', size);
+              if (typeof size === 'number') {
+                  rootNode.setProperty('SZ', [size]);
+              }
+              else {
+                  rootNode.setProperty('SZ', [size.x, size.y]);
+              }
           }
           if (rules) {
               // TODO: handle rules more correctly
@@ -3212,11 +2996,15 @@
        */
       PlayerBase.prototype.executeRoot = function () {
           this.params = {
-              size: 19,
+              size: [19],
               rules: JAPANESE_RULES,
           };
           this.emitNodeLifeCycleEvent('beforeInit');
-          this.game = new Game(this.params.size, this.params.rules);
+          var _a = __read(this.params.size, 2), x = _a[0], y = _a[1];
+          if (y == null) {
+              y = x;
+          }
+          this.game = new Game({ x: x, y: y }, this.params.rules);
           this.executeNode();
       };
       PlayerBase.prototype.executeNode = function () {
@@ -4049,6 +3837,7 @@
           if (config === void 0) { config = {}; }
           this.config = makeConfig(defaultSVGBoardComponentConfig, config);
           this.viewportStack = [];
+          this.beforeInitSZ = this.beforeInitSZ.bind(this);
           this.applyNodeChanges = this.applyNodeChanges.bind(this);
           this.clearNodeChanges = this.clearNodeChanges.bind(this);
           this.applyMarkupProperty = this.applyMarkupProperty.bind(this);
@@ -4102,6 +3891,8 @@
       };
       SVGBoardComponent.prototype.create = function (player) {
           this.player = player;
+          // set size during kifu load
+          this.player.on('beforeInit.SZ', this.beforeInitSZ);
           // add general node listeners - for setting stones on board based on position
           this.player.on('applyNodeChanges', this.applyNodeChanges);
           this.player.on('clearNodeChanges', this.clearNodeChanges);
@@ -4127,6 +3918,7 @@
           this.player.on('board.setCoordinates', this.setCoordinates);
       };
       SVGBoardComponent.prototype.destroy = function () {
+          this.player.off('beforeInit.SZ', this.beforeInitSZ);
           this.player.off('applyNodeChanges', this.applyNodeChanges);
           this.player.off('clearNodeChanges', this.clearNodeChanges);
           this.player.off('applyNodeChanges', this.applyNodeChanges);
@@ -4171,12 +3963,12 @@
                       this_1.stoneBoardsObjects.push(boardObject);
                   }
               };
-              for (var y = 0; y < position.size; y++) {
+              for (var y = 0; y < position.sizeY; y++) {
                   _loop_2(y);
               }
           };
           var this_1 = this;
-          for (var x = 0; x < position.size; x++) {
+          for (var x = 0; x < position.sizeX; x++) {
               _loop_1(x);
           }
       };
@@ -4240,6 +4032,10 @@
           if (this.element.style.cursor) {
               this.element.style.cursor = '';
           }
+      };
+      SVGBoardComponent.prototype.beforeInitSZ = function (event) {
+          var _a = __read(event.value, 2), x = _a[0], y = _a[1];
+          this.board.setSize(x, y);
       };
       SVGBoardComponent.prototype.applyNodeChanges = function () {
           this.updateStones();
@@ -4510,7 +4306,7 @@
           this.commentsElement.innerHTML = this.formatComment(event.value);
           if (this.config.formatMoves) {
               [].forEach.call(this.commentsElement.querySelectorAll('.wgo-player__move-link'), function (link) {
-                  var point = coordinatesToPoint(link.textContent, _this.player.game.size);
+                  var point = coordinatesToPoint(link.textContent, _this.player.game.sizeX, _this.player.game.sizeY);
                   var boardObject = new MarkupBoardObject('MA', point.x, point.y, _this.player.game.getStone(point.x, point.y));
                   boardObject.zIndex = 20;
                   link.addEventListener('mouseenter', function () {
@@ -4541,10 +4337,10 @@
       };
       return CommentsBox;
   }());
-  function coordinatesToPoint(coordinates, boardSize) {
+  function coordinatesToPoint(coordinates, boardSizeX, boardSizeY) {
       var x = coordinates.toLowerCase().charCodeAt(0) - 97; // char code of "a"
       var y = parseInt(coordinates.substr(1), 10) - 1;
-      return { x: x, y: boardSize - 1 - y };
+      return { x: x, y: boardSizeY - 1 - y };
   }
 
   var PlayerTag = /** @class */ (function () {

@@ -58,6 +58,10 @@ export declare const VECTOR: {
     read: (str: string) => Vector;
     write: (value?: Vector) => string;
 };
+export declare const COMPOSED_NUMBER: {
+    read: (str: string) => number[];
+    write: (value: number[]) => string;
+};
 interface PropertyValueDefinition<T> {
     transformer: PropertyValueTransformer<T>;
     multiple: boolean;

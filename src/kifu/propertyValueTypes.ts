@@ -89,6 +89,11 @@ export const VECTOR = {
   ),
 };
 
+export const COMPOSED_NUMBER = {
+  read: (str: string): number[] => str.split(':').map(num => parseFloat(num)),
+  write: (value: number[]) => value.join(':'),
+};
+
 /// Property definitions --------------------------------------------------------------------------
 
 interface PropertyValueDefinition<T> {
@@ -203,9 +208,14 @@ propertyValueTypes.AP = propertyValueTypes.CA = {
   notEmpty: true,
 };
 
-// note: rectangular board is not implemented (in SZ property)
-propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = propertyValueTypes.SZ = {
+propertyValueTypes.FF = propertyValueTypes.GM = propertyValueTypes.ST = {
   transformer: NUMBER,
+  multiple: false,
+  notEmpty: true,
+};
+
+propertyValueTypes.SZ = {
+  transformer: COMPOSED_NUMBER,
   multiple: false,
   notEmpty: true,
 };

@@ -9,10 +9,15 @@ import { Color, Field } from '../types';
  */
 export default class Position {
     /**
-       * Size of the board.
+       * Size (width/x axis) of the board.
        * @constant
        */
-    size: number;
+    sizeX: number;
+    /**
+       * Size (height/y axis) of the board.
+       * @constant
+       */
+    sizeY: number;
     /**
      * One dimensional array containing stones of the position.
      */
@@ -39,7 +44,7 @@ export default class Position {
      *
      * @param {number} [size = 19] - Size of the board.
      */
-    constructor(size?: number);
+    constructor(sizeX?: number, sizeY?: number);
     isOnPosition(x: number, y: number): boolean;
     /**
      * Returns stone on the given field.

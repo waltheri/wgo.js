@@ -6,9 +6,9 @@
 import { Color, Field } from '../types';
 
 // creates 2-dim array
-function createGrid<T>(size: number) {
+function createGrid<T>(sizeX: number, sizeY: number) {
   const grid: T[][] = [];
-  for (let i = 0; i < size; i++) {
+  for (let i = 0; i < sizeX; i++) {
     grid.push([]);
   }
   return grid;
@@ -20,11 +20,16 @@ function createGrid<T>(size: number) {
  */
 export default class Position {
   /**
-	 * Size of the board.
+	 * Size (width/x axis) of the board.
 	 * @constant
 	 */
+  sizeX: number;
 
-  size: number;
+  /**
+	 * Size (height/y axis) of the board.
+	 * @constant
+	 */
+  sizeY: number;
 
   /**
    * One dimensional array containing stones of the position.
@@ -57,15 +62,16 @@ export default class Position {
    *
    * @param {number} [size = 19] - Size of the board.
    */
-  constructor(size: number = 19) {
-    this.size = size;
+  constructor(sizeX: number = 19, sizeY: number = sizeX) {
+    this.sizeX = sizeX;
+    this.sizeY = sizeY;
 
     // init grid
     this.clear();
   }
 
   isOnPosition(x: number, y: number) {
-    return x >= 0 && y >= 0 && x < this.size && y < this.size;
+    return x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY;
   }
 
   /**
@@ -80,7 +86,7 @@ export default class Position {
       return undefined;
     }
 
-    return this.grid[x * this.size + y];
+    return this.grid[x * this.sizeY + y];
   }
 
   /**
@@ -95,7 +101,7 @@ export default class Position {
       throw new TypeError('Attempt to set field outside of position.');
     }
 
-    this.grid[x * this.size + y] = c;
+    this.grid[x * this.sizeY + y] = c;
     return this;
   }
 
@@ -103,7 +109,7 @@ export default class Position {
    * Clears the whole position (every value is set to EMPTY).
    */
   clear() {
-    for (let i = 0; i < this.size * this.size; i++) {
+    for (let i = 0; i < this.sizeX * this.sizeY; i++) {
       this.grid[i] = Color.EMPTY;
     }
     return this;
@@ -117,7 +123,7 @@ export default class Position {
    */
 
   clone(): Position {
-    const clone = new Position(this.size);
+    const clone = new Position(this.sizeX, this.sizeY);
     clone.grid = this.grid.slice(0);
     clone.capCount.black = this.capCount.black;
     clone.capCount.white = this.capCount.white;
@@ -133,17 +139,17 @@ export default class Position {
    */
 
   compare(position: Position): Field[] {
-    if (position.size !== this.size) {
+    if (position.sizeX !== this.sizeX && position.sizeY !== this.sizeY) {
       throw new TypeError('Positions of different sizes cannot be compared.');
     }
 
     const diff: Field[] = [];
 
-    for (let i = 0; i < this.size * this.size; i++) {
+    for (let i = 0; i < this.sizeX * this.sizeY; i++) {
       if (this.grid[i] !== position.grid[i]) {
         diff.push({
-          x: Math.floor(i / this.size),
-          y: i % this.size,
+          x: Math.floor(i / this.sizeY),
+          y: i % this.sizeY,
           c: position.grid[i],
         });
       }
@@ -197,8 +203,8 @@ export default class Position {
    */
 
   validatePosition() {
-    for (let x = 0; x < this.size; x++) {
-      for (let y = 0; y < this.size; y++) {
+    for (let x = 0; x < this.sizeX; x++) {
+      for (let y = 0; y < this.sizeY; y++) {
         this.captureIfNoLiberties(x - 1, y);
       }
     }
@@ -208,7 +214,7 @@ export default class Position {
   /**
    * Returns true if stone or group on the given coordinates has at least one liberty.
    */
-  hasLiberties(x: number, y: number, alreadyTested = createGrid(this.size), c = this.get(x, y)): boolean {
+  hasLiberties(x: number, y: number, alreadyTested = createGrid(this.sizeX, this.sizeY), c = this.get(x, y)): boolean {
     // out of the board there aren't liberties
     if (!this.isOnPosition(x, y)) {
       return false;
@@ -289,15 +295,15 @@ export default class Position {
 
     let output = '   ';
 
-    for (let i = 0; i < this.size; i++) {
+    for (let i = 0; i < this.sizeX; i++) {
       output += i < 9 ? `${i} ` : i;
     }
 
     output += '\n';
 
-    for (let y = 0; y < this.size; y++) {
-      for (let x = 0; x < this.size; x++) {
-        const color = this.grid[x * this.size + y];
+    for (let y = 0; y < this.sizeY; y++) {
+      for (let x = 0; x < this.sizeX; x++) {
+        const color = this.grid[x * this.sizeY + y];
 
         if (x === 0) {
           output += `${(y < 10 ? ` ${y}` : y)} `;
@@ -312,16 +318,16 @@ export default class Position {
             // top line
             if (x === 0) {
               char = TL;
-            } else if (x < this.size - 1) {
+            } else if (x < this.sizeX - 1) {
               char = TM;
             } else {
               char = TR;
             }
-          } else if (y < this.size - 1) {
+          } else if (y < this.sizeY - 1) {
             // middle line
             if (x === 0) {
               char = ML;
-            } else if (x < this.size - 1) {
+            } else if (x < this.sizeX - 1) {
               char = MM;
             } else {
               char = MR;
@@ -330,7 +336,7 @@ export default class Position {
             // bottom line
             if (x === 0) {
               char = BL;
-            } else if (x < this.size - 1) {
+            } else if (x < this.sizeX - 1) {
               char = BM;
             } else {
               char = BR;
@@ -340,8 +346,8 @@ export default class Position {
           output += char;
         }
 
-        if (x === this.size - 1) {
-          if (y !== this.size - 1) {
+        if (x === this.sizeX - 1) {
+          if (y !== this.sizeY - 1) {
             output += '\n';
           }
         } else {
@@ -359,290 +365,13 @@ export default class Position {
   toTwoDimensionalArray() {
     const arr: Color[][] = [];
 
-    for (let x = 0; x < this.size; x++) {
+    for (let x = 0; x < this.sizeX; x++) {
       arr[x] = [];
-      for (let y = 0; y < this.size; y++) {
-        arr[x][y] = this.grid[x * this.size + y];
+      for (let y = 0; y < this.sizeY; y++) {
+        arr[x][y] = this.grid[x * this.sizeY + y];
       }
     }
 
     return arr;
   }
 }
-
-// import { Color, Field, Move } from '../types';
-
-// /**
-//  * Position of the board (grid) is represented as 2 dimensional array of colors.
-//  */
-// export type Position = Color[][];
-
-// /**
-//  * Creates empty position (filled with Color.EMPTY) of specified size.
-//  * @param size
-//  */
-// export function createPosition(size: number) {
-//   const position: Color[][] = [];
-//   for (let i = 0; i < size; i++) {
-//     const row: Color[] = [];
-//     for (let j = 0; j < size; j++) {
-//       row.push(Color.EMPTY);
-//     }
-//     position.push(row);
-//   }
-//   return position;
-// }
-
-// /**
-//  * Deep clones a position.
-//  * @param position
-//  */
-// export function clonePosition(position: Position) {
-//   return position.map(row => row.slice(0));
-// }
-
-// /**
-//  * Compares position `pos1` with position `pos2` and returns all differences on `pos2`.
-//  * @param pos1
-//  * @param pos2
-//  */
-// export function comparePositions(pos1: Position, pos2: Position): Field[] {
-//   if (pos1.length !== pos2.length) {
-//     throw new TypeError('Positions of different sizes cannot be compared.');
-//   }
-
-//   const diff: Field[] = [];
-
-//   for (let x = 0; x < pos1.length; x++) {
-//     for (let y = 0; y < pos2.length; y++) {
-//       if (pos1[x][y] !== pos2[x][y]) {
-//         diff.push({ x, y, c: pos2[x][y] });
-//       }
-//     }
-//   }
-
-//   return diff;
-// }
-
-// function isOnBoard(position: Position, x: number, y: number) {
-//   return x >= 0 && x < position.length && y >= 0 && y < position.length;
-// }
-
-// /**
-//  * Creates new position with specified move (with rules applied - position won't contain captured stones).
-//  * If move is invalid, null is returned.
-//  */
-// export function applyMove(position: Position, x: number, y: number, c: Color.B | Color.W, allowSuicide = false) {
-//   // check if move is on empty field of the board
-//   if (!isOnBoard(position, x, y) || position[x][y] !== Color.EMPTY) {
-//     return null;
-//   }
-
-//   // clone position and add a stone
-//   const newPosition = clonePosition(position);
-//   newPosition[x][y] = c;
-
-//   // check capturing of all surrounding stones
-//   const capturesAbove = captureIfNoLiberties(newPosition, x, y - 1, -c);
-//   const capturesRight = captureIfNoLiberties(newPosition, x + 1, y, -c);
-//   const capturesBelow = captureIfNoLiberties(newPosition, x, y + 1, -c);
-//   const capturesLeft = captureIfNoLiberties(newPosition, x - 1, y, -c);
-//   const hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
-
-//   // check suicide
-//   if (!hasCaptured) {
-//     if (!hasLiberties(newPosition, x, y)) {
-//       if (allowSuicide) {
-//         capture(newPosition, x, y, c);
-//       } else {
-//         return null;
-//       }
-//     }
-//   }
-
-//   return newPosition;
-// }
-
-// /**
-//  * Validate position. Position is tested from 0:0 to size:size, if there are some moves,
-//  * that should be captured, they will be removed. Returns a new Position object.
-//  */
-
-// export function getValidatedPosition(position: Position) {
-//   const newPosition = clonePosition(position);
-
-//   for (let x = 0; x < position.length; x++) {
-//     for (let y = 0; y < position.length; y++) {
-//       captureIfNoLiberties(newPosition, x, y);
-//     }
-//   }
-
-//   return newPosition;
-// }
-
-// /**
-//  * Capture stone or group of stones if they are zero liberties. Mutates the given position.
-//  *
-//  * @param position
-//  * @param x
-//  * @param y
-//  * @param c
-//  */
-// function captureIfNoLiberties(position: Position, x: number, y: number, c: Color = position[x][y]) {
-//   let hasCaptured = false;
-
-//   // is there a stone possible to capture?
-//   if (isOnBoard(position, x, y) && c !== Color.EMPTY && position[x][y] === c) {
-//     // if it has zero liberties capture it
-//     if (!hasLiberties(position, x, y)) {
-//       // capture stones from game
-//       capture(position, x, y, c);
-//       hasCaptured = true;
-//     }
-//   }
-
-//   return hasCaptured;
-// }
-
-// function createTestGrid(size: number) {
-//   const grid: boolean[][] = [];
-//   for (let i = 0; i < size; i++) {
-//     grid.push([]);
-//   }
-//   return grid;
-// }
-
-// /**
-//  * Returns true if stone or group on the given position has at least one liberty.
-//  */
-// function hasLiberties(
-//   position: Position,
-//   x: number,
-//   y: number,
-//   alreadyTested = createTestGrid(position.length),
-//   c = position[x][y],
-// ): boolean {
-//   // out of the board there aren't liberties
-//   if (!isOnBoard(position, x, y)) {
-//     return false;
-//   }
-
-//   // however empty field means liberty
-//   if (position[x][y] === Color.EMPTY) {
-//     return true;
-//   }
-
-//   // already tested field or stone of enemy isn't a liberty.
-//   if (alreadyTested[x][y] || position[x][y] === -c) {
-//     return false;
-//   }
-
-//   // set this field as tested
-//   alreadyTested[x][y] = true;
-
-//   // in this case we are checking our stone, if we get 4 false, it has no liberty
-//   return (
-//     hasLiberties(position, x, y - 1, alreadyTested, c) ||
-//     hasLiberties(position, x, y + 1, alreadyTested, c) ||
-//     hasLiberties(position, x - 1, y, alreadyTested, c) ||
-//     hasLiberties(position, x + 1, y, alreadyTested, c)
-//   );
-// }
-
-// /**
-//  * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-//  * Mutates the given position.
-//  */
-// function capture(position: Position, x: number, y: number, c: Color = position[x][y]) {
-//   if (isOnBoard(position, x, y) && position[x][y] !== Color.EMPTY && position[x][y] === c) {
-//     position[x][y] = Color.EMPTY;
-
-//     capture(position, x, y - 1, c);
-//     capture(position, x, y + 1, c);
-//     capture(position, x - 1, y, c);
-//     capture(position, x + 1, y, c);
-//   }
-// }
-
-// /**
-//  * For debug purposes.
-//  */
-// export function stringifyPosition(position: Position) {
-//   const TL = '┌';
-//   const TM = '┬';
-//   const TR = '┐';
-//   const ML = '├';
-//   const MM = '┼';
-//   const MR = '┤';
-//   const BL = '└';
-//   const BM = '┴';
-//   const BR = '┘';
-//   const BS = '●';
-//   const WS = '○';
-//   const HF = '─'; // horizontal fill
-
-//   let output = '   ';
-
-//   for (let i = 0; i < position.length; i++) {
-//     output += i < 9 ? `${i} ` : i;
-//   }
-
-//   output += '\n';
-
-//   for (let y = 0; y < position.length; y++) {
-//     for (let x = 0; x < position.length; x++) {
-//       const color = position[x][y];
-
-//       if (x === 0) {
-//         output += `${(y < 10 ? ` ${y}` : y)} `;
-//       }
-
-//       if (color !== Color.EMPTY) {
-//         output += color === Color.BLACK ? BS : WS;
-//       } else {
-//         let char;
-
-//         if (y === 0) {
-//           // top line
-//           if (x === 0) {
-//             char = TL;
-//           } else if (x < position.length - 1) {
-//             char = TM;
-//           } else {
-//             char = TR;
-//           }
-//         } else if (y < position.length - 1) {
-//           // middle line
-//           if (x === 0) {
-//             char = ML;
-//           } else if (x < position.length - 1) {
-//             char = MM;
-//           } else {
-//             char = MR;
-//           }
-//         } else {
-//           // bottom line
-//           if (x === 0) {
-//             char = BL;
-//           } else if (x < position.length - 1) {
-//             char = BM;
-//           } else {
-//             char = BR;
-//           }
-//         }
-
-//         output += char;
-//       }
-
-//       if (x === position.length - 1) {
-//         if (y !== position.length - 1) {
-//           output += '\n';
-//         }
-//       } else {
-//         output += HF;
-//       }
-//     }
-//   }
-
-//   return output;
-// }

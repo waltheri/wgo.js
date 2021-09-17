@@ -50,11 +50,15 @@ export default class PlayerBase extends EventEmitter {
   /**
    * Create new game (kifu) and init player with it.
    */
-  newGame(size?: number, rules?: GoRules) {
+  newGame(size?: number | { x: number, y: number }, rules?: GoRules) {
     const rootNode = new KifuNode();
 
     if (size) {
-      rootNode.setProperty('SZ', size);
+      if (typeof size === 'number') {
+        rootNode.setProperty('SZ', [size]);
+      } else {
+        rootNode.setProperty('SZ', [size.x, size.y]);
+      }
     }
 
     if (rules) {
@@ -73,12 +77,18 @@ export default class PlayerBase extends EventEmitter {
    */
   protected executeRoot() {
     this.params = {
-      size: 19,
+      size: [19],
       rules: JAPANESE_RULES,
     };
 
     this.emitNodeLifeCycleEvent('beforeInit');
-    this.game = new Game(this.params.size, this.params.rules);
+
+    let [x, y] = this.params.size;
+    if (y == null) {
+      y = x;
+    }
+
+    this.game = new Game({ x, y }, this.params.rules);
 
     this.executeNode();
   }
