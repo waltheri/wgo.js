@@ -93,6 +93,9 @@ export default class PlayerBase extends EventEmitter {
     this.executeNode();
   }
 
+  /**
+   * Trigger events related to new node. 
+   */
   protected executeNode() {
     this.emitNodeLifeCycleEvent('applyGameChanges');
     this.emitNodeLifeCycleEvent('applyNodeChanges');
@@ -140,10 +143,6 @@ export default class PlayerBase extends EventEmitter {
         value,
       });
     });
-  }
-
-  protected getPropertyHandler(propIdent: string) {
-    return (this.constructor as any).propertyHandlers[propIdent] as PropertyHandler<any, any>;
   }
 
   /**

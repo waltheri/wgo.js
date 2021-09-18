@@ -9,9 +9,10 @@ import { defaultBoardBaseConfig } from './defaultConfig';
  * Board class with basic functionality which can be used for creating custom boards.
  */
 export default class BoardBase extends EventEmitter implements Board {
-  config: BoardBaseConfig;
-  element: HTMLElement;
-  objects: BoardObject[] = [];
+  readonly config: BoardBaseConfig;
+  readonly element: HTMLElement;
+
+  protected objects: BoardObject[] = [];
 
   constructor(element: HTMLElement, config: PartialRecursive<BoardBaseConfig> = {}) {
     super();

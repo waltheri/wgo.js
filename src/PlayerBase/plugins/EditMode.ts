@@ -42,15 +42,15 @@ const defaultEditModeConfig = {
  * - board.click
  */
 export default class EditMode implements PlayerPlugin {
-  config: EditModeConfig;
-  player: PlayerBase;
+  readonly config: EditModeConfig;
 
-  private gameStateStack: GameState[] = [];
-
+  private _gameStateStack: GameState[] = [];
   private _boardMouseMoveEvent: Function;
   private _boardMouseOutEvent: Function;
   private _boardClickEvent: Function;
   private _nodeChange: Function;
+
+  player: PlayerBase;
 
   constructor(config: PartialRecursive<EditModeConfig> = {}) {
     this.config = makeConfig(defaultEditModeConfig, config);
@@ -62,10 +62,10 @@ export default class EditMode implements PlayerPlugin {
     }
 
     this.player = player;
-    this.player.on('editMode.change', this.handleChange);
+    this.player.on('editMode.change', this._handleChange);
 
     if (this.config.enabled) {
-      this.enable();
+      this._enable();
     }
   }
 
@@ -110,16 +110,16 @@ export default class EditMode implements PlayerPlugin {
     }
   }
 
-  private handleChange = (value: boolean) => {
+  private _handleChange = (value: boolean) => {
     if (value && !this.config.enabled) {
-      this.enable();
+      this._enable();
     } else if (!value && this.config.enabled) {
-      this.disable();
+      this._disable();
     }
   }
 
-  private enable() {
-    this.saveGameState();
+  private _enable() {
+    this._saveGameState();
 
     if (this.config.showVariations) {
       this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
@@ -193,7 +193,7 @@ export default class EditMode implements PlayerPlugin {
     this.player.on('applyNodeChanges', this._nodeChange);
   }
 
-  private disable() {
+  private _disable() {
     this.player.off('board.mouseMove', this._boardMouseMoveEvent);
     this.player.off('board.mouseOut', this._boardMouseOutEvent);
     this.player.off('board.click', this._boardClickEvent);
@@ -201,14 +201,14 @@ export default class EditMode implements PlayerPlugin {
     this.player.off('applyNodeChanges', this._nodeChange);
 
     this.config.enabled = false;
-    this.restoreGameState();
+    this._restoreGameState();
   }
 
   /**
    * Saves current player game state - Kifu and path object.
    */
-  private saveGameState() {
-    this.gameStateStack.push({
+  private _saveGameState() {
+    this._gameStateStack.push({
       rootNode: this.player.rootNode.cloneNode(),
       path: this.player.getCurrentPath(),
     });
@@ -217,8 +217,8 @@ export default class EditMode implements PlayerPlugin {
   /**
    * Restores player from previously saved state.
    */
-  private restoreGameState() {
-    const lastState = this.gameStateStack.pop();
+  private _restoreGameState() {
+    const lastState = this._gameStateStack.pop();
     if (lastState) {
       // revert all node changes
       this.player.first();

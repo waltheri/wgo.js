@@ -3,11 +3,12 @@ import Position from './Position';
 import { Color } from '../types';
 
 export default class Game {
-  sizeX: number;
-  sizeY: number;
-  rules: GoRules;
-  komi: number;
-  positionStack: Position[];
+  readonly sizeX: number;
+  readonly sizeY: number;
+  readonly rules: GoRules;
+  readonly komi: number;
+
+  private _positionStack: Position[];
 
   /**
    * Creates instance of game class.
@@ -39,17 +40,23 @@ export default class Game {
 
     this.rules = rules;
     this.komi = rules.komi;
-    this.positionStack = [new Position(this.sizeX, this.sizeY)];
+    this._positionStack = [new Position(this.sizeX, this.sizeY)];
   }
 
+  /**
+   * Current position of the game.
+   */
   get position() {
-    return this.positionStack[this.positionStack.length - 1];
+    return this._positionStack[this._positionStack.length - 1];
   }
 
   set position(pos) {
-    this.positionStack[this.positionStack.length - 1] = pos;
+    this._positionStack[this._positionStack.length - 1] = pos;
   }
 
+  /**
+   * Color of the player whose turn currently is. 
+   */
   get turn() {
     return this.position.turn;
   }
@@ -58,6 +65,9 @@ export default class Game {
     this.position.turn = color;
   }
 
+  /**
+   * Object with current counts of captured stones.
+   */
   get capCount() {
     return this.position.capCount;
   }
@@ -66,7 +76,7 @@ export default class Game {
    * Play move. You can specify color.
    */
   play(x: number, y: number) {
-    const nextPosition = this.tryToPlay(x, y);
+    const nextPosition = this._executePlay(x, y);
 
     if (nextPosition) {
       this.pushPosition(nextPosition);
@@ -78,7 +88,7 @@ export default class Game {
   /**
    * Tries to play on given coordinates, returns new position after the play, or error code.
    */
-  protected tryToPlay(x: number, y: number) {
+  _executePlay(x: number, y: number) {
     const nextPosition = this.position.clone();
     const success = nextPosition.applyMove(x, y, nextPosition.turn, this.rules.allowSuicide, this.rules.allowRewrite);
 
@@ -96,16 +106,16 @@ export default class Game {
   hasPositionRepeated(position: Position): boolean {
     let depth: number;
 
-    if (this.rules.repeating === Repeating.KO && this.positionStack.length - 2 >= 0) {
-      depth = this.positionStack.length - 2;
+    if (this.rules.repeating === Repeating.KO && this._positionStack.length - 2 >= 0) {
+      depth = this._positionStack.length - 2;
     } else if (this.rules.repeating === Repeating.NONE) {
       depth = 0;
     } else {
       return false;
     }
 
-    for (let i = this.positionStack.length - 1; i >= depth; i--) {
-      if (this.positionStack[i].compare(position).length === 0) {
+    for (let i = this._positionStack.length - 1; i >= depth; i--) {
+      if (this._positionStack[i].compare(position).length === 0) {
         return true;
       }
     }
@@ -118,7 +128,6 @@ export default class Game {
    *
    * @param {(BLACK|WHITE)} c color
    */
-
   pass(c: Color.BLACK | Color.WHITE = this.turn) {
     const nextPosition = this.position.clone();
     nextPosition.turn = -(c || this.turn);
@@ -132,9 +141,8 @@ export default class Game {
    * @param {number} y coordinate
    * @return {boolean} true if move can be played.
    */
-
   isValid(x: number, y: number): boolean {
-    return !!this.tryToPlay(x, y);
+    return !!this._executePlay(x, y);
   }
 
   /**
@@ -144,9 +152,8 @@ export default class Game {
    * @param {number} y coordinate
    * @return {boolean} true if move is on board.
    */
-
   isOnBoard(x: number, y: number): boolean {
-    return this.position.isOnPosition(x, y);
+    return this.position.has(x, y);
   }
 
   /**
@@ -157,7 +164,6 @@ export default class Game {
    * @param {Color} c color
    * @return {boolean} true if operation is successful.
    */
-
   addStone(x: number, y: number, c: Color.BLACK | Color.WHITE): boolean {
     if (this.isOnBoard(x, y) && this.position.get(x, y) === Color.EMPTY) {
       this.position.set(x, y, c);
@@ -173,7 +179,6 @@ export default class Game {
    * @param {number} y coordinate
    * @return {boolean} true if operation is successful.
    */
-
   removeStone(x: number, y: number): boolean {
     if (this.isOnBoard(x, y) && this.position.get(x, y) !== Color.EMPTY) {
       this.position.set(x, y, Color.EMPTY);
@@ -190,7 +195,6 @@ export default class Game {
    * @param {(BLACK|WHITE)} [c] color
    * @return {boolean} true if operation is successful.
    */
-
   setStone(x: number, y: number, c: Color): boolean {
     if (this.isOnBoard(x, y)) {
       this.position.set(x, y, c);
@@ -206,7 +210,6 @@ export default class Game {
    * @param {number} y coordinate
    * @return {(Color|null)} color
    */
-
   getStone(x: any, y: any): (Color | null) {
     return this.position.get(x, y);
   }
@@ -217,18 +220,16 @@ export default class Game {
    *
    * @param {WGo.Position} tmp position (optional)
    */
-
   pushPosition(pos: Position) {
-    return this.positionStack.push(pos);
+    return this._positionStack.push(pos);
   }
 
   /**
    * Remove current position from stack. Pointer of actual position is moved to the previous position.
    */
-
   popPosition() {
-    if (this.positionStack.length > 1) {
-      return this.positionStack.pop();
+    if (this._positionStack.length > 1) {
+      return this._positionStack.pop();
     }
 
     return null;
@@ -237,8 +238,7 @@ export default class Game {
   /**
    * Removes all positions except the initial.
    */
-
   clear() {
-    this.positionStack = [this.positionStack[0]];
+    this._positionStack = [this._positionStack[0]];
   }
 }

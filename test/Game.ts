@@ -11,7 +11,8 @@ describe('Game object', () => {
   describe('Constructor', () => {
     it('Default game is correctly created.', () => {
       const game = new Game();
-      equal(game.size, 19);
+      equal(game.sizeX, 19);
+      equal(game.sizeY, 19);
       deepEqual(game.rules, rules.Japanese);
       equal(game.position.turn, Color.BLACK);
       equal(game.komi, 6.5);
@@ -21,12 +22,20 @@ describe('Game object', () => {
 
     it('Custom board size and rules', () => {
       const game = new Game(9, rules.Chinese);
-      equal(game.size, 9);
+      equal(game.sizeX, 9);
+      equal(game.sizeY, 9);
       deepEqual(game.rules, rules.Chinese);
       equal(game.position.turn, Color.BLACK);
       equal(game.komi, 7.5);
       deepEqual(game.position.capCount, { black: 0, white: 0 });
       deepEqual(game.position, new Position(9));
+    });
+
+    it('Rectangular board size', () => {
+      const game = new Game({ x: 13, y: 17 });
+      equal(game.sizeX, 13);
+      equal(game.sizeY, 17);
+      deepEqual(game.position, new Position(13, 17));
     });
   });
 

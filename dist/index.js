@@ -936,7 +936,15 @@
           // init grid
           this.clear();
       }
-      Position.prototype.isOnPosition = function (x, y) {
+      /**
+       * Returns true, if specified coordinates are valid within the position.
+       * Returns false, if coordinates are negative or bigger than size.
+       *
+       * @param x
+       * @param y
+       * @returns
+       */
+      Position.prototype.has = function (x, y) {
           return x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY;
       };
       /**
@@ -947,7 +955,7 @@
        * @return {Color} Color
        */
       Position.prototype.get = function (x, y) {
-          if (!this.isOnPosition(x, y)) {
+          if (!this.has(x, y)) {
               return undefined;
           }
           return this.grid[x * this.sizeY + y];
@@ -960,7 +968,7 @@
        * @param {Color} c - Color
        */
       Position.prototype.set = function (x, y, c) {
-          if (!this.isOnPosition(x, y)) {
+          if (!this.has(x, y)) {
               throw new TypeError('Attempt to set field outside of position.');
           }
           this.grid[x * this.sizeY + y] = c;
@@ -1027,16 +1035,16 @@
           var prevColor = this.get(x, y);
           this.set(x, y, c);
           // check capturing of all surrounding stones
-          var capturesAbove = this.get(x, y - 1) === -c && this.captureIfNoLiberties(x, y - 1);
-          var capturesRight = this.get(x + 1, y) === -c && this.captureIfNoLiberties(x + 1, y);
-          var capturesBelow = this.get(x, y + 1) === -c && this.captureIfNoLiberties(x, y + 1);
-          var capturesLeft = this.get(x - 1, y) === -c && this.captureIfNoLiberties(x - 1, y);
+          var capturesAbove = this.get(x, y - 1) === -c && this._captureIfNoLiberties(x, y - 1);
+          var capturesRight = this.get(x + 1, y) === -c && this._captureIfNoLiberties(x + 1, y);
+          var capturesBelow = this.get(x, y + 1) === -c && this._captureIfNoLiberties(x, y + 1);
+          var capturesLeft = this.get(x - 1, y) === -c && this._captureIfNoLiberties(x - 1, y);
           var hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
           // check suicide
           if (!hasCaptured) {
               if (!this.hasLiberties(x, y)) {
                   if (allowSuicide) {
-                      this.capture(x, y, c);
+                      this._capture(x, y, c);
                   }
                   else {
                       // revert position
@@ -1056,7 +1064,7 @@
       Position.prototype.validatePosition = function () {
           for (var x = 0; x < this.sizeX; x++) {
               for (var y = 0; y < this.sizeY; y++) {
-                  this.captureIfNoLiberties(x - 1, y);
+                  this._captureIfNoLiberties(x - 1, y);
               }
           }
           return this;
@@ -1068,7 +1076,7 @@
           if (alreadyTested === void 0) { alreadyTested = createGrid(this.sizeX, this.sizeY); }
           if (c === void 0) { c = this.get(x, y); }
           // out of the board there aren't liberties
-          if (!this.isOnPosition(x, y)) {
+          if (!this.has(x, y)) {
               return false;
           }
           // however empty field means liberty
@@ -1086,37 +1094,6 @@
               this.hasLiberties(x, y + 1, alreadyTested, c) ||
               this.hasLiberties(x - 1, y, alreadyTested, c) ||
               this.hasLiberties(x + 1, y, alreadyTested, c));
-      };
-      /**
-       * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
-       */
-      Position.prototype.captureIfNoLiberties = function (x, y) {
-          // if it has zero liberties capture it
-          if (!this.hasLiberties(x, y)) {
-              // capture stones from game
-              this.capture(x, y);
-              return true;
-          }
-          return false;
-      };
-      /**
-       * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-       */
-      Position.prototype.capture = function (x, y, c) {
-          if (c === void 0) { c = this.get(x, y); }
-          if (this.isOnPosition(x, y) && c !== exports.Color.EMPTY && this.get(x, y) === c) {
-              this.set(x, y, exports.Color.EMPTY);
-              if (c === exports.Color.BLACK) {
-                  this.capCount.white = this.capCount.white + 1;
-              }
-              else {
-                  this.capCount.black = this.capCount.black + 1;
-              }
-              this.capture(x, y - 1, c);
-              this.capture(x, y + 1, c);
-              this.capture(x - 1, y, c);
-              this.capture(x + 1, y, c);
-          }
       };
       /**
        * For debug purposes.
@@ -1212,6 +1189,37 @@
               }
           }
           return arr;
+      };
+      /**
+       * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
+       */
+      Position.prototype._captureIfNoLiberties = function (x, y) {
+          // if it has zero liberties capture it
+          if (!this.hasLiberties(x, y)) {
+              // capture stones from game
+              this._capture(x, y);
+              return true;
+          }
+          return false;
+      };
+      /**
+       * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
+       */
+      Position.prototype._capture = function (x, y, c) {
+          if (c === void 0) { c = this.get(x, y); }
+          if (this.has(x, y) && c !== exports.Color.EMPTY && this.get(x, y) === c) {
+              this.set(x, y, exports.Color.EMPTY);
+              if (c === exports.Color.BLACK) {
+                  this.capCount.white = this.capCount.white + 1;
+              }
+              else {
+                  this.capCount.black = this.capCount.black + 1;
+              }
+              this._capture(x, y - 1, c);
+              this._capture(x, y + 1, c);
+              this._capture(x - 1, y, c);
+              this._capture(x + 1, y, c);
+          }
       };
       return Position;
   }());
@@ -1350,7 +1358,7 @@
        * @return {boolean} true if move is on board.
        */
       Game.prototype.isOnBoard = function (x, y) {
-          return this.position.isOnPosition(x, y);
+          return this.position.has(x, y);
       };
       /**
        * Inserts move into current position. Use for setting position, for example in handicap game. Field must be empty.

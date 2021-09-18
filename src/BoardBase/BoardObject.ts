@@ -3,7 +3,8 @@
  * It contains z-index and opacity.
  */
 export default class BoardObject {
-  type: string;
+  readonly type: string;
+
   zIndex: number = 0;
   opacity: number = 1;
 

@@ -1,9 +1,7 @@
-import { strictEqual, deepEqual, throws, equal, ok as assert } from 'assert';
+import { deepEqual, equal, ok as assert } from 'assert';
 import { Color } from '../src/types';
 import KifuNode from '../src/kifu/KifuNode';
 import { PlayerBase } from '../src/PlayerBase';
-import { SGFSyntaxError } from '../src/SGFParser';
-import propertyValueTypes from '../src/kifu/propertyValueTypes';
 import { JAPANESE_RULES, CHINESE_RULES } from '../src/Game/rules';
 import { PropIdent } from '../src/SGFParser/sgfTypes';
 
@@ -13,7 +11,8 @@ describe('PlayerBase object', () => {
       const playerBase = new PlayerBase();
       playerBase.newGame();
 
-      equal(playerBase.game.size, 19);
+      equal(playerBase.game.sizeX, 19);
+      equal(playerBase.game.sizeY, 19);
       equal(playerBase.game.rules, JAPANESE_RULES);
       equal(playerBase.game.turn, Color.BLACK);
       equal(playerBase.currentNode, playerBase.rootNode);
@@ -21,11 +20,12 @@ describe('PlayerBase object', () => {
     });
 
     it('Create reader with specified kifu (node)', () => {
-      const node = KifuNode.fromSGF('(;RU[Chinese]SZ[9];B[aa])');
+      const node = KifuNode.fromSGF('(;RU[Chinese]SZ[9:13];B[aa])');
       const playerBase = new PlayerBase();
       playerBase.loadKifu(node);
 
-      equal(playerBase.game.size, 9);
+      equal(playerBase.game.sizeX, 9);
+      equal(playerBase.game.sizeY, 13);
       equal(playerBase.game.rules, CHINESE_RULES);
       equal(playerBase.game.turn, Color.BLACK);
       equal(playerBase.rootNode, node);
@@ -47,15 +47,15 @@ describe('PlayerBase object', () => {
       playerBase.loadKifu(KifuNode.fromSGF('(;RU[Chinese]SZ[9];B[aa])'));
 
       equal(playerBase.getRootProperty(PropIdent.RULES), 'Chinese');
-      equal(playerBase.getRootProperty(PropIdent.BOARD_SIZE), 9);
+      deepEqual(playerBase.getRootProperty(PropIdent.BOARD_SIZE), [9]);
     });
 
     it('PlayerBase#getProperty()', () => {
       const playerBase = new PlayerBase();
-      playerBase.loadKifu(KifuNode.fromSGF('(;RU[Chinese]SZ[9];B[aa])'));
+      playerBase.loadKifu(KifuNode.fromSGF('(;RU[Chinese]SZ[9:13];B[aa])'));
 
       equal(playerBase.getProperty(PropIdent.RULES), 'Chinese');
-      equal(playerBase.getProperty(PropIdent.BOARD_SIZE), 9);
+      deepEqual(playerBase.getProperty(PropIdent.BOARD_SIZE), [9, 13]);
     });
 
     it('PlayerBase#getNextNodes()', () => {

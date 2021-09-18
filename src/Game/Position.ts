@@ -20,21 +20,21 @@ function createGrid<T>(sizeX: number, sizeY: number) {
  */
 export default class Position {
   /**
-	 * Size (width/x axis) of the board.
-	 * @constant
-	 */
-  sizeX: number;
+   * Size (width/x axis) of the board.
+   * @constant
+   */
+  readonly sizeX: number;
 
   /**
-	 * Size (height/y axis) of the board.
-	 * @constant
-	 */
-  sizeY: number;
+   * Size (height/y axis) of the board.
+   * @constant
+   */
+  readonly sizeY: number;
 
   /**
    * One dimensional array containing stones of the position.
    */
-  grid: Color[] = [];
+  private _grid: Color[] = [];
 
   /**
    * Contains numbers of stones that both players captured.
@@ -70,7 +70,15 @@ export default class Position {
     this.clear();
   }
 
-  isOnPosition(x: number, y: number) {
+  /**
+   * Returns true, if specified coordinates are valid within the position.
+   * Returns false, if coordinates are negative or bigger than size.
+   *
+   * @param x
+   * @param y
+   * @returns
+   */
+  has(x: number, y: number) {
     return x >= 0 && y >= 0 && x < this.sizeX && y < this.sizeY;
   }
 
@@ -82,11 +90,11 @@ export default class Position {
    * @return {Color} Color
    */
   get(x: number, y: number): Color {
-    if (!this.isOnPosition(x, y)) {
+    if (!this.has(x, y)) {
       return undefined;
     }
 
-    return this.grid[x * this.sizeY + y];
+    return this._grid[x * this.sizeY + y];
   }
 
   /**
@@ -97,11 +105,11 @@ export default class Position {
    * @param {Color} c - Color
    */
   set(x: number, y: number, c: Color) {
-    if (!this.isOnPosition(x, y)) {
+    if (!this.has(x, y)) {
       throw new TypeError('Attempt to set field outside of position.');
     }
 
-    this.grid[x * this.sizeY + y] = c;
+    this._grid[x * this.sizeY + y] = c;
     return this;
   }
 
@@ -110,7 +118,7 @@ export default class Position {
    */
   clear() {
     for (let i = 0; i < this.sizeX * this.sizeY; i++) {
-      this.grid[i] = Color.EMPTY;
+      this._grid[i] = Color.EMPTY;
     }
     return this;
   }
@@ -124,7 +132,7 @@ export default class Position {
 
   clone(): Position {
     const clone = new Position(this.sizeX, this.sizeY);
-    clone.grid = this.grid.slice(0);
+    clone._grid = this._grid.slice(0);
     clone.capCount.black = this.capCount.black;
     clone.capCount.white = this.capCount.white;
     clone.turn = this.turn;
@@ -137,7 +145,6 @@ export default class Position {
    * @param {WGo.Position} position - Position to compare to.
    * @return {Field[]} Array of different fields
    */
-
   compare(position: Position): Field[] {
     if (position.sizeX !== this.sizeX && position.sizeY !== this.sizeY) {
       throw new TypeError('Positions of different sizes cannot be compared.');
@@ -146,11 +153,11 @@ export default class Position {
     const diff: Field[] = [];
 
     for (let i = 0; i < this.sizeX * this.sizeY; i++) {
-      if (this.grid[i] !== position.grid[i]) {
+      if (this._grid[i] !== position._grid[i]) {
         diff.push({
           x: Math.floor(i / this.sizeY),
           y: i % this.sizeY,
-          c: position.grid[i],
+          c: position._grid[i],
         });
       }
     }
@@ -173,17 +180,17 @@ export default class Position {
     this.set(x, y, c);
 
     // check capturing of all surrounding stones
-    const capturesAbove = this.get(x, y - 1) === -c && this.captureIfNoLiberties(x, y - 1);
-    const capturesRight = this.get(x + 1, y) === -c && this.captureIfNoLiberties(x + 1, y);
-    const capturesBelow = this.get(x, y + 1) === -c && this.captureIfNoLiberties(x, y + 1);
-    const capturesLeft = this.get(x - 1, y) === -c && this.captureIfNoLiberties(x - 1, y);
+    const capturesAbove = this.get(x, y - 1) === -c && this._captureIfNoLiberties(x, y - 1);
+    const capturesRight = this.get(x + 1, y) === -c && this._captureIfNoLiberties(x + 1, y);
+    const capturesBelow = this.get(x, y + 1) === -c && this._captureIfNoLiberties(x, y + 1);
+    const capturesLeft = this.get(x - 1, y) === -c && this._captureIfNoLiberties(x - 1, y);
     const hasCaptured = capturesAbove || capturesRight || capturesBelow || capturesLeft;
 
     // check suicide
     if (!hasCaptured) {
       if (!this.hasLiberties(x, y)) {
         if (allowSuicide) {
-          this.capture(x, y, c);
+          this._capture(x, y, c);
         } else {
           // revert position
           this.set(x, y, prevColor);
@@ -201,11 +208,10 @@ export default class Position {
    * that should be captured, they will be removed. Returns a new Position object.
    * This position isn't modified.
    */
-
   validatePosition() {
     for (let x = 0; x < this.sizeX; x++) {
       for (let y = 0; y < this.sizeY; y++) {
-        this.captureIfNoLiberties(x - 1, y);
+        this._captureIfNoLiberties(x - 1, y);
       }
     }
     return this;
@@ -216,7 +222,7 @@ export default class Position {
    */
   hasLiberties(x: number, y: number, alreadyTested = createGrid(this.sizeX, this.sizeY), c = this.get(x, y)): boolean {
     // out of the board there aren't liberties
-    if (!this.isOnPosition(x, y)) {
+    if (!this.has(x, y)) {
       return false;
     }
 
@@ -240,40 +246,6 @@ export default class Position {
       this.hasLiberties(x - 1, y, alreadyTested, c) ||
       this.hasLiberties(x + 1, y, alreadyTested, c)
     );
-  }
-
-  /**
-   * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
-   */
-  protected captureIfNoLiberties(x: number, y: number) {
-    // if it has zero liberties capture it
-    if (!this.hasLiberties(x, y)) {
-      // capture stones from game
-      this.capture(x, y);
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-   */
-  capture(x: number, y: number, c: Color = this.get(x, y)) {
-    if (this.isOnPosition(x, y) && c !== Color.EMPTY && this.get(x, y) === c) {
-      this.set(x, y, Color.EMPTY);
-
-      if (c === Color.BLACK) {
-        this.capCount.white = this.capCount.white + 1;
-      } else {
-        this.capCount.black = this.capCount.black + 1;
-      }
-
-      this.capture(x, y - 1, c);
-      this.capture(x, y + 1, c);
-      this.capture(x - 1, y, c);
-      this.capture(x + 1, y, c);
-    }
   }
 
   /**
@@ -303,7 +275,7 @@ export default class Position {
 
     for (let y = 0; y < this.sizeY; y++) {
       for (let x = 0; x < this.sizeX; x++) {
-        const color = this.grid[x * this.sizeY + y];
+        const color = this._grid[x * this.sizeY + y];
 
         if (x === 0) {
           output += `${(y < 10 ? ` ${y}` : y)} `;
@@ -368,10 +340,44 @@ export default class Position {
     for (let x = 0; x < this.sizeX; x++) {
       arr[x] = [];
       for (let y = 0; y < this.sizeY; y++) {
-        arr[x][y] = this.grid[x * this.sizeY + y];
+        arr[x][y] = this._grid[x * this.sizeY + y];
       }
     }
 
     return arr;
+  }
+
+  /**
+   * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
+   */
+  private _captureIfNoLiberties(x: number, y: number) {
+    // if it has zero liberties capture it
+    if (!this.hasLiberties(x, y)) {
+      // capture stones from game
+      this._capture(x, y);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
+   */
+  private _capture(x: number, y: number, c: Color = this.get(x, y)) {
+    if (this.has(x, y) && c !== Color.EMPTY && this.get(x, y) === c) {
+      this.set(x, y, Color.EMPTY);
+
+      if (c === Color.BLACK) {
+        this.capCount.white = this.capCount.white + 1;
+      } else {
+        this.capCount.black = this.capCount.black + 1;
+      }
+
+      this._capture(x, y - 1, c);
+      this._capture(x, y + 1, c);
+      this._capture(x - 1, y, c);
+      this._capture(x + 1, y, c);
+    }
   }
 }

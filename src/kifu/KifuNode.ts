@@ -63,23 +63,6 @@ export default class KifuNode {
     return node;
   }
 
-  set innerSGF(sgf: string) {
-    // clean up
-    this.clean();
-
-    let transformedSgf = sgf;
-
-    // create regular SGF from sgf-like string
-    if (transformedSgf[0] !== '(') {
-      if (transformedSgf[0] !== ';') {
-        transformedSgf = `;${transformedSgf}`;
-      }
-      transformedSgf = `(${transformedSgf})`;
-    }
-
-    KifuNode.fromSGF(transformedSgf, 0, this);
-  }
-
   /**
    * Kifu node representation as sgf-like string - will contain `;`, all properties and all children.
    */
@@ -102,6 +85,26 @@ export default class KifuNode {
     return output;
   }
 
+  set innerSGF(sgf: string) {
+    // clean up
+    this.clean();
+
+    let transformedSgf = sgf;
+
+    // create regular SGF from sgf-like string
+    if (transformedSgf[0] !== '(') {
+      if (transformedSgf[0] !== ';') {
+        transformedSgf = `;${transformedSgf}`;
+      }
+      transformedSgf = `(${transformedSgf})`;
+    }
+
+    KifuNode.fromSGF(transformedSgf, 0, this);
+  }
+
+  /**
+   * Returns path object leading to this kifu node.
+   */
   getPath() {
     const path: Path = { depth: 0, forks: [] };
     // tslint:disable-next-line:no-this-assignment
@@ -127,7 +130,6 @@ export default class KifuNode {
    * @param   {KifuNode} node to append.
    * @returns {number} position(index) of appended node.
    */
-
   appendChild(node: KifuNode): number {
     if (node == null || !(node instanceof KifuNode) || node === this) {
       throw new Error('Invalid argument passed to `appendChild` method, KNode was expected.');
@@ -148,7 +150,6 @@ export default class KifuNode {
    * @param   {KifuNode}   node to be tested
    * @returns {boolean} true, if this node contains given node.
    */
-
   contains(node: KifuNode): boolean {
     if (this.children.indexOf(node) >= 0) {
       return true;
@@ -165,7 +166,6 @@ export default class KifuNode {
    * @param   {(KifuNode)} referenceNode reference node, if omitted, new node will be inserted at the end.
    * @returns {KifuNode}   this node
    */
-
   insertBefore(newNode: KifuNode, referenceNode?: KifuNode): KifuNode {
     if (newNode == null || !(newNode instanceof KifuNode) || newNode === this) {
       throw new Error('Invalid argument passed to `insertBefore` method, KNode was expected.');
@@ -191,7 +191,6 @@ export default class KifuNode {
    * @param   {KifuNode} child node to be removed
    * @returns {KifuNode}  this node
    */
-
   removeChild(child: KifuNode): KifuNode {
     this.children.splice(this.children.indexOf(child), 1);
 
@@ -208,7 +207,6 @@ export default class KifuNode {
    * @param   {KifuNode} oldChild node to be replaced
    * @returns {KifuNode} this node
    */
-
   replaceChild(newChild: KifuNode, oldChild: KifuNode): KifuNode {
     if (newChild == null || !(newChild instanceof KifuNode) || newChild === this) {
       throw new Error('Invalid argument passed to `replaceChild` method, KNode was expected.');
@@ -233,23 +231,21 @@ export default class KifuNode {
   /// BASIC PROPERTY GETTER and SETTER
 
   /**
-   * Gets property by SGF property identificator. Returns property value (type depends on property type)
+   * Gets property by SGF property identifier. Returns property value (type depends on property type)
    *
-   * @param   {string}   propIdent - SGF property idetificator
+   * @param   {string}   propIdent - SGF property identifier
    * @returns {any}    property value or values or undefined, if property is missing.
    */
-
   getProperty(propIdent: string): any {
     return this.properties[propIdent];
   }
 
   /**
-   * Sets property by SGF property identificator.
+   * Sets property by SGF property identifier.
    *
-   * @param   {string}  propIdent - SGF property idetificator
+   * @param   {string}  propIdent - SGF property identifier
    * @param   {any}     value - property value or values
    */
-
   setProperty(propIdent: string, value?: any) {
     if (value === undefined) {
       delete this.properties[propIdent];
@@ -278,12 +274,11 @@ export default class KifuNode {
   /// SGF RAW METHODS
 
   /**
-   * Gets one SGF property value as string (with brackets `[` and `]`).
+   * Gets one SGF property values (as array of strings).
    *
-   * @param   {string} propIdent SGF property identificator.
+   * @param   {string} propIdent SGF property identifier.
    * @returns {string[]} Array of SGF property values or null if there is not such property.
    */
-
   getSGFProperty(propIdent: string): string[] {
     if (this.properties[propIdent] !== undefined) {
       const propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
@@ -301,13 +296,12 @@ export default class KifuNode {
   }
 
   /**
-   * Sets one SGF property.
+   * Sets one SGF property from array of values as strings.
    *
-   * @param   {string}   propIdent SGF property identificator
+   * @param   {string}   propIdent SGF property identifier
    * @param   {string[]} propValues SGF property values
    * @returns {KifuNode}    this KNode for chaining
    */
-
   setSGFProperty(propIdent: string, propValues?: string[]): KifuNode {
     const propertyValueType = propertyValueTypes[propIdent] || propertyValueTypes._default;
 
@@ -331,7 +325,6 @@ export default class KifuNode {
    * @param   {Object}   properties - map with signature propIdent -> propValues.
    * @returns {KifuNode}    this KNode for chaining
    */
-
   setSGFProperties(properties: SGFProperties): KifuNode {
     for (const ident in properties) {
       if (properties.hasOwnProperty(ident)) {

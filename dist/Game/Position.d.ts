@@ -9,15 +9,15 @@ import { Color, Field } from '../types';
  */
 export default class Position {
     /**
-       * Size (width/x axis) of the board.
-       * @constant
-       */
-    sizeX: number;
+     * Size (width/x axis) of the board.
+     * @constant
+     */
+    readonly sizeX: number;
     /**
-       * Size (height/y axis) of the board.
-       * @constant
-       */
-    sizeY: number;
+     * Size (height/y axis) of the board.
+     * @constant
+     */
+    readonly sizeY: number;
     /**
      * One dimensional array containing stones of the position.
      */
@@ -45,7 +45,15 @@ export default class Position {
      * @param {number} [size = 19] - Size of the board.
      */
     constructor(sizeX?: number, sizeY?: number);
-    isOnPosition(x: number, y: number): boolean;
+    /**
+     * Returns true, if specified coordinates are valid within the position.
+     * Returns false, if coordinates are negative or bigger than size.
+     *
+     * @param x
+     * @param y
+     * @returns
+     */
+    has(x: number, y: number): boolean;
     /**
      * Returns stone on the given field.
      *
@@ -96,14 +104,6 @@ export default class Position {
      */
     hasLiberties(x: number, y: number, alreadyTested?: unknown[][], c?: Color): boolean;
     /**
-     * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
-     */
-    protected captureIfNoLiberties(x: number, y: number): boolean;
-    /**
-     * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
-     */
-    capture(x: number, y: number, c?: Color): void;
-    /**
      * For debug purposes.
      */
     toString(): string;
@@ -111,4 +111,12 @@ export default class Position {
      * Returns position grid as two dimensional array.
      */
     toTwoDimensionalArray(): Color[][];
+    /**
+     * Checks if specified stone/group has zero liberties and if so it captures/removes stones from the position.
+     */
+    private _captureIfNoLiberties;
+    /**
+     * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
+     */
+    private _capture;
 }

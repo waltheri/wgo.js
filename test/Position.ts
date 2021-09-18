@@ -7,24 +7,25 @@ describe('Position object', () => {
     it('Creates empty position', () => {
       const position = new Position(9);
 
-      assert(position.size === 9);
+      assert(position.sizeX === 9);
+      assert(position.sizeY === 9);
       assert(position.capCount.black === 0);
       assert(position.capCount.white === 0);
       assert(position.turn === Color.BLACK);
     });
   });
 
-  describe('Position#isOnPosition()', () => {
+  describe('Position#has()', () => {
     it('Checking works', () => {
       const position = new Position(9);
-      assert(position.isOnPosition(0, 0));
-      assert(position.isOnPosition(0, 8));
-      assert(position.isOnPosition(8, 0));
-      assert(position.isOnPosition(8, 8));
-      assert(!position.isOnPosition(0, -1));
-      assert(!position.isOnPosition(-1, 0));
-      assert(!position.isOnPosition(0, 9));
-      assert(!position.isOnPosition(9, 0));
+      assert(position.has(0, 0));
+      assert(position.has(0, 8));
+      assert(position.has(8, 0));
+      assert(position.has(8, 8));
+      assert(!position.has(0, -1));
+      assert(!position.has(-1, 0));
+      assert(!position.has(0, 9));
+      assert(!position.has(9, 0));
     });
   });
 
@@ -186,7 +187,7 @@ describe('Position object', () => {
     });
   });
 
-  describe('Position#play()', () => {
+  describe('Position#applyMove()', () => {
     it('Moves are correctly added, if they are valid', () => {
       const position = new Position(9);
 
@@ -405,320 +406,19 @@ describe('Position object', () => {
       ]);
     });
   });
+
+  describe('Rectangular position', () => {
+    it('Position is correctly created and methods work as expected.', () => {
+      const position = new Position(13, 17);
+
+      assert(position.sizeX === 13);
+      assert(position.sizeY === 17);
+      assert(position.has(12, 16));
+      assert(!position.has(13, 16));
+      assert(!position.has(12, 17));
+
+      position.set(12, 16, Color.B);
+      equal(position.get(12, 16), Color.B);
+    });
+  });
 });
-
-/*import { deepEqual, strict as assert, notEqual, equal } from 'assert';
-import {
-  createPosition,
-  clonePosition,
-  comparePositions,
-  applyMove,
-  getValidatedPosition,
-} from '../src/Game/position';
-import { Color } from '../src/types';
-
-describe('Position manipulation and utility functions', () => {
-  describe('createPosition()', () => {
-    it('Creates empty position', () => {
-      const position = createPosition(9);
-      deepEqual(position, [
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
-      ]);
-    });
-  });
-
-  describe('clonePosition()', () => {
-    it('Clones empty position', () => {
-      const position = createPosition(19);
-      deepEqual(clonePosition(position), createPosition(19));
-    });
-    it('Clones position with all moves', () => {
-      const position = createPosition(3);
-      position[0][0] = Color.BLACK;
-      position[0][1] = Color.WHITE;
-      position[1][1] = Color.BLACK;
-      position[1][2] = Color.WHITE;
-      position[2][0] = Color.WHITE;
-      position[2][2] = Color.BLACK;
-      const cloned = clonePosition(position);
-      notEqual(position, cloned);
-      deepEqual(position, cloned);
-      deepEqual(cloned, [
-        [Color.B, Color.W, Color.E],
-        [Color.E, Color.B, Color.W],
-        [Color.W, Color.E, Color.B],
-      ]);
-    });
-  });
-
-  describe('comparePositions()', () => {
-    it('Cloned positions are the same', () => {
-      const position = createPosition(19);
-      position[10][10] = Color.BLACK;
-      const changes = comparePositions(clonePosition(position), position);
-      assert(Array.isArray(changes));
-      deepEqual(changes, []);
-    });
-    it('Cloned positions are the same', () => {
-      const position = createPosition(19);
-      position[10][10] = Color.BLACK;
-      const changes = comparePositions(clonePosition(position), position);
-      assert(Array.isArray(changes));
-      deepEqual(changes, []);
-    });
-    it('Returns correct array of changes', () => {
-      const position = createPosition(3);
-      position[0][0] = Color.BLACK;
-      position[0][1] = Color.WHITE;
-
-      position[1][1] = Color.BLACK;
-      position[1][2] = Color.WHITE;
-      position[2][0] = Color.WHITE;
-      position[2][2] = Color.BLACK;
-
-      const cloned = clonePosition(position);
-      cloned[1][0] = Color.BLACK;
-      cloned[1][1] = Color.EMPTY;
-      cloned[1][2] = Color.EMPTY;
-      cloned[2][0] = Color.BLACK;
-      cloned[2][1] = Color.WHITE;
-      cloned[2][2] = Color.WHITE;
-
-      deepEqual(comparePositions(position, cloned), [
-        { x: 1, y: 0, c: Color.B },
-        { x: 1, y: 1, c: Color.E },
-        { x: 1, y: 2, c: Color.E },
-        { x: 2, y: 0, c: Color.B },
-        { x: 2, y: 1, c: Color.W },
-        { x: 2, y: 2, c: Color.W },
-      ]);
-
-      deepEqual(comparePositions(cloned, position), [
-        { x: 1, y: 0, c: Color.E },
-        { x: 1, y: 1, c: Color.B },
-        { x: 1, y: 2, c: Color.W },
-        { x: 2, y: 0, c: Color.W },
-        { x: 2, y: 1, c: Color.E },
-        { x: 2, y: 2, c: Color.B },
-      ]);
-    });
-  });
-
-  describe('applyMove()', () => {
-    it('Moves are correctly added, if they are valid', () => {
-      const position = createPosition(9);
-      const position2 = applyMove(position, 0, 0, Color.BLACK);
-      const position3 = applyMove(position2, 0, 1, Color.WHITE);
-      position[0][0] = Color.BLACK;
-      position[0][1] = Color.WHITE;
-
-      deepEqual(position, position3);
-      notEqual(position, position3);
-    });
-
-    it('Null is returned when moves are invalid', () => {
-      const position = createPosition(9);
-      position[0][0] = Color.BLACK;
-      position[0][1] = Color.WHITE;
-
-      assert(applyMove(position, 0, 0, Color.WHITE) == null);
-      assert(applyMove(position, 0, 0, Color.BLACK) == null);
-      assert(applyMove(position, 0, 1, Color.WHITE) == null);
-      assert(applyMove(position, 0, 1, Color.BLACK) == null);
-      assert(applyMove(position, -1, 0, Color.WHITE) == null);
-      assert(applyMove(position, 0, -1, Color.BLACK) == null);
-      assert(applyMove(position, 9, 0, Color.WHITE) == null);
-      assert(applyMove(position, 0, 9, Color.BLACK) == null);
-    });
-
-    it('Stone in the middle is correctly captured', () => {
-      const position = createPosition(9);
-      position[4][4] = Color.BLACK;
-      position[4][3] = Color.WHITE;
-      position[4][5] = Color.WHITE;
-      position[3][4] = Color.WHITE;
-
-      const newPosition = applyMove(position, 5, 4, Color.WHITE);
-      assert(newPosition[5][4] === Color.WHITE);
-      assert(newPosition[4][4] === Color.EMPTY);
-    });
-
-    it('Stone on the sides/corners is correctly captured', () => {
-      const position = createPosition(9);
-      position[0][0] = Color.BLACK;
-      position[0][1] = Color.WHITE;
-      position[8][8] = Color.WHITE;
-      position[8][7] = Color.BLACK;
-
-      const newPosition = applyMove(position, 1, 0, Color.WHITE);
-      assert(newPosition[0][0] === Color.EMPTY);
-
-      const newPosition2 = applyMove(position, 7, 8, Color.BLACK);
-      assert(newPosition2[8][8] === Color.EMPTY);
-    });
-
-    it('Group of stones is correctly captured', () => {
-      const position = createPosition(5);
-      position[0][0] = Color.WHITE;
-      position[0][1] = Color.WHITE;
-      position[1][0] = Color.WHITE;
-      position[1][1] = Color.WHITE;
-      position[1][2] = Color.WHITE;
-      position[2][1] = Color.WHITE;
-      position[2][2] = Color.WHITE;
-
-      position[0][2] = Color.BLACK;
-      position[2][0] = Color.BLACK;
-      position[3][1] = Color.BLACK;
-      position[1][3] = Color.BLACK;
-      position[3][2] = Color.BLACK;
-
-      const newPosition = applyMove(position, 2, 3, Color.BLACK);
-
-      deepEqual(newPosition, [
-        [Color.E, Color.E, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.B, Color.E],
-        [Color.B, Color.E, Color.E, Color.B, Color.E],
-        [Color.E, Color.B, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E],
-      ]);
-    });
-
-    it('Suicide of one stone is invalid.', () => {
-      const position = createPosition(3);
-      position[0][1] = Color.WHITE;
-      position[1][0] = Color.WHITE;
-      position[1][2] = Color.WHITE;
-      position[2][1] = Color.WHITE;
-
-      equal(applyMove(position, 0, 0, Color.BLACK), null);
-      equal(applyMove(position, 1, 1, Color.BLACK), null);
-      equal(applyMove(position, 2, 2, Color.BLACK), null);
-      equal(applyMove(position, 0, 2, Color.BLACK), null);
-      equal(applyMove(position, 2, 0, Color.BLACK), null);
-    });
-
-    it('Suicide of multiple stones is invalid.', () => {
-      const position = createPosition(5);
-      position[0][0] = Color.WHITE;
-      position[0][1] = Color.WHITE;
-      position[1][0] = Color.WHITE;
-      position[1][1] = Color.WHITE;
-      position[1][2] = Color.WHITE;
-      position[2][1] = Color.WHITE;
-
-      position[0][2] = Color.BLACK;
-      position[2][0] = Color.BLACK;
-      position[3][1] = Color.BLACK;
-      position[1][3] = Color.BLACK;
-      position[3][2] = Color.BLACK;
-      position[2][3] = Color.BLACK;
-
-      equal(applyMove(position, 2, 2, Color.WHITE), null);
-    });
-
-    it('Ko is allowed.', () => {
-      const position = createPosition(9);
-      position[2][2] = Color.WHITE;
-      position[1][3] = Color.WHITE;
-      position[3][3] = Color.WHITE;
-      position[2][4] = Color.WHITE;
-
-      position[2][5] = Color.BLACK;
-      position[1][4] = Color.BLACK;
-      position[3][4] = Color.BLACK;
-
-      const newPosition = applyMove(position, 2, 3, Color.BLACK);
-
-      equal(newPosition[2][3], Color.BLACK);
-      equal(newPosition[2][4], Color.EMPTY);
-
-      const newPosition2 = applyMove(newPosition, 2, 4, Color.WHITE);
-
-      deepEqual(position, newPosition2);
-    });
-
-    it('When suicide is allowed capture the stones.', () => {
-      const position = createPosition(5);
-      position[0][0] = Color.WHITE;
-      position[0][1] = Color.WHITE;
-      position[1][0] = Color.WHITE;
-      position[1][1] = Color.WHITE;
-      position[1][2] = Color.WHITE;
-      position[2][1] = Color.WHITE;
-
-      position[0][2] = Color.BLACK;
-      position[2][0] = Color.BLACK;
-      position[3][1] = Color.BLACK;
-      position[1][3] = Color.BLACK;
-      position[3][2] = Color.BLACK;
-      position[2][3] = Color.BLACK;
-
-      const newPosition = applyMove(position, 2, 2, Color.WHITE, true);
-      deepEqual(newPosition, [
-        [Color.E, Color.E, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.B, Color.E],
-        [Color.B, Color.E, Color.E, Color.B, Color.E],
-        [Color.E, Color.B, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E],
-      ]);
-    });
-  });
-
-  describe('getValidatedPosition()', () => {
-    it('Stones without liberties will be captured.', () => {
-      const position = createPosition(5);
-      position[0][0] = Color.WHITE;
-      position[0][1] = Color.WHITE;
-      position[1][0] = Color.WHITE;
-      position[1][1] = Color.WHITE;
-      position[1][2] = Color.WHITE;
-      position[2][1] = Color.WHITE;
-      position[2][2] = Color.WHITE;
-
-      position[0][2] = Color.BLACK;
-      position[2][0] = Color.BLACK;
-      position[3][1] = Color.BLACK;
-      position[1][3] = Color.BLACK;
-      position[3][2] = Color.BLACK;
-      position[2][3] = Color.BLACK;
-
-      const newPosition = getValidatedPosition(position);
-      deepEqual(newPosition, [
-        [Color.E, Color.E, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.B, Color.E],
-        [Color.B, Color.E, Color.E, Color.B, Color.E],
-        [Color.E, Color.B, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E],
-      ]);
-    });
-
-    it('Only first stones without liberties will be captured.', () => {
-      const position = createPosition(5);
-      position[0][0] = Color.WHITE;
-      position[0][1] = Color.BLACK;
-      position[0][2] = Color.WHITE;
-      position[1][0] = Color.BLACK;
-      position[1][1] = Color.WHITE;
-      position[1][2] = Color.BLACK;
-
-      const newPosition = getValidatedPosition(position);
-
-      deepEqual(newPosition, [
-        [Color.E, Color.B, Color.W, Color.E, Color.E],
-        [Color.B, Color.W, Color.B, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E],
-        [Color.E, Color.E, Color.E, Color.E, Color.E],
-      ]);
-    });
-  });
-});*/

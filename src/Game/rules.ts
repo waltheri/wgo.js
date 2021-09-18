@@ -10,16 +10,48 @@
  * SGF `RU` property.
  */
 
+
+/**
+ * Specifies how/if position can be repeated during the game.
+ */
 export enum Repeating {
+  /** Position may not be same as the previous one (basic ko rule used in Japanese rules). */
   KO = 'KO',
+
+  /** Position may never occur again - disallows super ko (used in Chinese rules).  */
   ALL = 'ALL',
+
+  /**
+   * No restrictions - position can repeat arbitrarily (not in any rules, but can be useful
+   * in some situations).
+   */
   NONE = 'NONE',
 }
 
+/**
+ * Specification of go rules. Currently this is not complete set of rules to compute
+ * game result, however it is enough to decide valid/invalid move. 
+ */
 export interface GoRules {
+  /**
+   * What kind of repeating of position is forbidden (ko rule).
+   */
   repeating: Repeating;
+
+  /**
+   * If set true a move can rewrite existing move (for special applications).
+   */
   allowRewrite: boolean;
+
+  /**
+   * If set true a suicide will be allowed (and stone will be immediately captured), used in ING rules.
+   */
   allowSuicide: boolean;
+
+  /**
+   * Size of a komi (white's extra points). Can be used to count result. However it may not be enough.
+   * TODO: add some other rule/s needed to count result exactly. 
+   */
   komi: number;
 }
 
