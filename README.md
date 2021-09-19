@@ -3,7 +3,7 @@
 
 # WGo.js
 
-WGo.js is JavaScript library for purposes of go game. The basic idea of this library is to help to create go web applications easily without laborious programming of game's logic or board graphic interface. It also contains SGF viewer, which can be embedded into a website. The player can be used without any configuration by users with only basic knowledge of HTML, however more advanced users can highly customize it for their needs and even extended it by custom plugins.
+WGo.js is JavaScript library for purposes of go game. The basic idea of this library is to help to create go web applications easily without laborious programming of game's logic or board graphic interface. It also contains SGF viewer, which can be embedded into a website. The player can be used without any configuration by users with only basic knowledge of HTML, however more advanced users can highly customize it for their needs and even extend it by custom plugins.
 
 The library aims to be as lightweight as possible, so there are no dependencies. It is written in TypeScript, so there are nice type definitions by default. Finally some components like SGF parser are DOM independent so, you can use them in Node.JS environment as well.
 
@@ -11,25 +11,35 @@ The library aims to be as lightweight as possible, so there are no dependencies.
 
 If you are not experienced web developer, and you just want to simply insert a SGF player into your website with as little work as possible, you can download `dist/wgo.min.js` and `dist/wgo.min.css` files from this repo (*TODO: add links*) and include them preferably into `<head>` tag of your HTML. Then tags with attribute `data-wgo` will be automatically replaced by SGF player with a specified game. Simple example:
 
+<!-- demo:start -->
+<!-- panels:start -->
+<!-- div:left-panel-alt -->
+
 ```html
 <!DOCTYPE HTML>
 <html>
   <head>
     <title>My page</title>
-    <script type="text/javascript" src="dist/wgo.min.js"></script>
-    <link type="text/css" href="dist/wgo.min.css" rel="stylesheet">
+    <script src="dist/wgo.min.js"></script>
+    <link href="dist/wgo.min.css" rel="stylesheet">
   </head>
   <body>
     <div data-wgo="game.sgf" style="width: 700px">
-      Sorry, your browser doesn't support WGo.js. Download SGF <a href="game.sgf">directly</a>.
+      Sorry, your browser doesn't support WGo.js.
+      Download SGF <a href="game.sgf">directly</a>.
     </div>
   </body>
 </html>
 ```
 
+<!-- div:right-panel-alt -->
+<!-- demo:demo(height=500px) -->
+<!-- panels:end -->
+<!-- demo:end -->
+
 You will find more basic usage [here](basic-usage.md).
 
-If a SGF viewer isn't enough and you would like to use WGo components (like a board) in your web application, or you just want to create your own player, NPM will be best choice. This will install WGo library into your project:
+If a SGF viewer isn't enough and you would like to use WGo components (like a board) in your web application, or you just want to create your own player, NPM will be the best choice. This will install WGo library into your project:
 
 ```
 npm i wgo

@@ -7,26 +7,65 @@
   <meta name="description" content="Description">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <style>
+    .docsify-example-panel.left-panel-alt {
+      float: left;
+      max-width: 40%;
+      max-width: var(--docsify-example-panels-right-panel-width);
+      width: 40%;
+      width: var(--docsify-example-panels-right-panel-width);
+      padding: 8px 16px;
+      padding: var(--docsify-example-panels-padding-inner);
+      padding-left: 0;
+      padding-left: var(--docsify-example-panels-padding-surroundings);
+      background: transparent;
+      background: var(--docsify-example-panels-right-panel-background);
+    }
+
+    .docsify-example-panel.right-panel-alt {
+      float: right;
+      max-width: 60%;
+      max-width: var(--docsify-example-panels-left-panel-width);
+      width: 60%;
+      width: var(--docsify-example-panels-left-panel-width);
+      padding: 8px 16px;
+      padding: var(--docsify-example-panels-padding-inner);
+      padding-right: 0;
+      padding-right: var(--docsify-example-panels-padding-surroundings);
+      background: transparent;
+      background: var(--docsify-example-panels-left-panel-background);
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
   
+  <script src="//cdn.jsdelivr.net/npm/docsify-edit-on-github"></script>
+  <script src="//unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="docsify-demo.js"></script>
+
   <script>
     window.$docsify = {
       name: 'WGo.js',
       repo: 'https://github.com/waltheri/wgo.js',
       loadSidebar: true,
       subMaxLevel: 2,
+      plugins: [
+        EditOnGithubPlugin.create('https://github.com/waltheri/wgo.js/blob/gh-pages/'),
+        DemoPlugin(),
+      ],
+      tabs: {
+        sync: false,
+        persist: false,
+      },
     }
   </script>
   
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-example-panels"></script>
   <script src="//cdn.jsdelivr.net/npm/docsify-copy-code"></script>
-  <script src="//cdn.jsdelivr.net/npm/docsify-edit-on-github"></script>
-
-  <script>
-    window.$docsify.plugins = window.$docsify.plugins || [];
-    window.$docsify.plugins.push(EditOnGithubPlugin.create('https://github.com/waltheri/wgo.js/blob/gh-pages/'));
-  </script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-tabs"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1.23.0/components/prism-typescript.min.js"></script>
+  <script src="//unpkg.com/@stackblitz/sdk/bundles/sdk.umd.js"></script>
 </body>
 </html>
