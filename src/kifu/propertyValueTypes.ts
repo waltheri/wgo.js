@@ -28,7 +28,7 @@
 
 import { Color, Point, Label, Vector } from '../types';
 
-interface PropertyValueTransformer<T = any> {
+export interface PropertyValueTransformer<T = any> {
   read(str: string): T;
   write(value: T): string;
 }
@@ -96,7 +96,7 @@ export const COMPOSED_NUMBER = {
 
 /// Property definitions --------------------------------------------------------------------------
 
-interface PropertyValueDefinition<T> {
+export interface PropertyValueDefinition<T> {
   transformer: PropertyValueTransformer<T>;
   multiple: boolean;
   notEmpty: boolean;

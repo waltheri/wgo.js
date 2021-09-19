@@ -8,6 +8,7 @@
     "declaration": true,
     "strict": true,
     "strictNullChecks": false,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "resolveJsonModule": true
   }
 }

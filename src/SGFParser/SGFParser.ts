@@ -22,7 +22,6 @@ function isCharUCLetter(char: string) {
 /**
  * Class for parsing of sgf files. Can be used for parsing of SGF fragments as well.
  */
-
 export default class SGFParser {
   /** SGF string to be parsed */
   sgfString: string;
