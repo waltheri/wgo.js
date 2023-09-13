@@ -283,9 +283,9 @@ export default class PlayerBase extends EventEmitter {
     const node = new KifuNode();
 
     if (this.game.turn === Color.W) {
-      node.setProperty(PropIdent.WHITE_MOVE, { x, y });
+      node.setProperty(PropIdent.WhiteMove, { x, y });
     } else {
-      node.setProperty(PropIdent.BLACK_MOVE, { x, y });
+      node.setProperty(PropIdent.BlackMove, { x, y });
     }
 
     const i = this.currentNode.appendChild(node);

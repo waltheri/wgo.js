@@ -5,7 +5,7 @@ export { Color } from './types';
 export { version } from '../package.json';
 
 // SGF parser
-export { default as SGFParser, SGFSyntaxError } from './SGFParser';
+export * from './SGFParser';
 
 // KifuNode related
 export { default as KifuNode } from './kifu/KifuNode';

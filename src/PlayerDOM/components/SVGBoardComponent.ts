@@ -440,7 +440,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
 
   shouldShowVariations() {
     // look in kifu, whether to show variation markup
-    const st = this.player.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+    const st = this.player.rootNode.getProperty(PropIdent.VariationsStyle);
     if (st != null) {
       return !(st & 2);
     }
@@ -456,7 +456,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     // }
 
     // look at variation style in kifu
-    const st = this.player.rootNode.getProperty(PropIdent.VARIATIONS_STYLE);
+    const st = this.player.rootNode.getProperty(PropIdent.VariationsStyle);
     if (st != null) {
       return !!(st & 1);
     }

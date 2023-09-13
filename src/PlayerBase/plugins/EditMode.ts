@@ -122,9 +122,9 @@ export default class EditMode implements PlayerPlugin {
     this._saveGameState();
 
     if (this.config.showVariations) {
-      this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 0);
+      this.player.rootNode.setProperty(PropIdent.VariationsStyle, 0);
     } else {
-      this.player.rootNode.setProperty(PropIdent.VARIATIONS_STYLE, 2);
+      this.player.rootNode.setProperty(PropIdent.VariationsStyle, 2);
     }
 
     this.config.enabled = true;

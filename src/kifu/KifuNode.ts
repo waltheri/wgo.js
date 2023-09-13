@@ -1,4 +1,4 @@
-import SGFParser, { SGFSyntaxError } from '../SGFParser';
+import { SGFParser, SGFSyntaxError } from '../SGFParser';
 import propertyValueTypes from './propertyValueTypes';
 import { SGFGameTree, SGFProperties } from '../SGFParser/sgfTypes';
 
@@ -377,7 +377,7 @@ export default class KifuNode {
    * @param gameNo
    */
   static fromSGF(sgf: string, gameNo: number = 0, kifuNode = new KifuNode()) {
-    const parser = new SGFParser(sgf);
-    return KifuNode.fromJS(parser.parseCollection()[gameNo], kifuNode);
+    const parser = new SGFParser();
+    return KifuNode.fromJS(parser.parseCollection(sgf)[gameNo], kifuNode);
   }
 }

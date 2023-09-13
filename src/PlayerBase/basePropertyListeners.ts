@@ -17,7 +17,7 @@ export function applyGameChangesHA(event: LifeCycleEvent<number>) {
   if (
     event.value > 1 &&
     event.target.currentNode === event.target.rootNode &&
-    !event.target.getProperty(PropIdent.SET_TURN)
+    !event.target.getProperty(PropIdent.SetTurn)
   ) {
     event.target.game.position.turn = Color.WHITE;
   }

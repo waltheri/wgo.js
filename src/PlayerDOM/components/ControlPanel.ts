@@ -186,7 +186,7 @@ export default class ControlPanel implements PlayerDOMComponent {
     download: (player: PlayerBase) => ({
       name: 'Download SGF',
       handleClick() {
-        const name = player.rootNode.getProperty(PropIdent.GAME_NAME) || 'game';
+        const name = player.rootNode.getProperty(PropIdent.GameName) || 'game';
         const sgf = player.rootNode.toSGF();
 
         const element = document.createElement('a');

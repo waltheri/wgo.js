@@ -1,5 +1,3 @@
-import SGFParser from './SGFParser';
-import SGFSyntaxError from './SGFSyntaxError';
-
-export default SGFParser;
-export { SGFSyntaxError };
+export { default as SGFParser } from './SGFParser';
+export { default as SGFSyntaxError } from './SGFSyntaxError';
+export * from './sgfTypes';

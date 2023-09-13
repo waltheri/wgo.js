@@ -104,7 +104,7 @@ export default class GameInfoBox implements PlayerDOMComponent {
     if (this.player.rootNode) {
       this.player.rootNode.forEachProperty((propIdent, value) => {
         if (this.config.gameInfoProperties[propIdent]) {
-          this.addInfo(propIdent, value, this.config.hideResult && propIdent === PropIdent.RESULT);
+          this.addInfo(propIdent, value, this.config.hideResult && propIdent === PropIdent.Result);
         }
       });
     }

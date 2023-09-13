@@ -46,16 +46,16 @@ describe('PlayerBase object', () => {
       const playerBase = new PlayerBase();
       playerBase.loadKifu(KifuNode.fromSGF('(;RU[Chinese]SZ[9];B[aa])'));
 
-      equal(playerBase.getRootProperty(PropIdent.RULES), 'Chinese');
-      deepEqual(playerBase.getRootProperty(PropIdent.BOARD_SIZE), [9]);
+      equal(playerBase.getRootProperty(PropIdent.Rules), 'Chinese');
+      deepEqual(playerBase.getRootProperty(PropIdent.BoardSize), [9]);
     });
 
     it('PlayerBase#getProperty()', () => {
       const playerBase = new PlayerBase();
       playerBase.loadKifu(KifuNode.fromSGF('(;RU[Chinese]SZ[9:13];B[aa])'));
 
-      equal(playerBase.getProperty(PropIdent.RULES), 'Chinese');
-      deepEqual(playerBase.getProperty(PropIdent.BOARD_SIZE), [9, 13]);
+      equal(playerBase.getProperty(PropIdent.Rules), 'Chinese');
+      deepEqual(playerBase.getProperty(PropIdent.BoardSize), [9, 13]);
     });
 
     it('PlayerBase#getNextNodes()', () => {
@@ -228,11 +228,11 @@ describe('PlayerBase object', () => {
       playerBase.loadKifu(node);
 
       playerBase.last();
-      deepEqual(playerBase.currentNode.getProperty(PropIdent.BLACK_MOVE), { x: 0, y: 0 });
+      deepEqual(playerBase.currentNode.getProperty(PropIdent.BlackMove), { x: 0, y: 0 });
       equal(playerBase.game.getStone(0, 0), Color.BLACK);
       equal(playerBase.game.getStone(3, 3), Color.WHITE);
       playerBase.previousFork();
-      deepEqual(playerBase.currentNode.getProperty(PropIdent.WHITE_MOVE), { x: 3, y: 3 });
+      deepEqual(playerBase.currentNode.getProperty(PropIdent.WhiteMove), { x: 3, y: 3 });
       equal(playerBase.game.getStone(0, 0), Color.EMPTY);
       equal(playerBase.game.getStone(3, 3), Color.WHITE);
       playerBase.previousFork();
@@ -249,13 +249,13 @@ describe('PlayerBase object', () => {
       playerBase.loadKifu(node);
 
       playerBase.goTo(2);
-      deepEqual(playerBase.currentNode.getProperty(PropIdent.BLACK_MOVE), { x: 0, y: 0 });
+      deepEqual(playerBase.currentNode.getProperty(PropIdent.BlackMove), { x: 0, y: 0 });
       equal(playerBase.game.getStone(0, 0), Color.BLACK);
       equal(playerBase.game.getStone(3, 3), Color.WHITE);
       equal(playerBase.game.turn, Color.WHITE);
 
       playerBase.goTo(1);
-      deepEqual(playerBase.currentNode.getProperty(PropIdent.WHITE_MOVE), { x: 3, y: 3 });
+      deepEqual(playerBase.currentNode.getProperty(PropIdent.WhiteMove), { x: 3, y: 3 });
       equal(playerBase.game.getStone(0, 0), Color.EMPTY);
       equal(playerBase.game.getStone(3, 3), Color.WHITE);
       equal(playerBase.game.turn, Color.BLACK);
@@ -267,11 +267,11 @@ describe('PlayerBase object', () => {
       playerBase.loadKifu(node);
 
       playerBase.goTo({ depth: 2, forks: [0, 1] });
-      deepEqual(playerBase.currentNode.getProperty(PropIdent.BLACK_MOVE), { x: 1, y: 1 });
+      deepEqual(playerBase.currentNode.getProperty(PropIdent.BlackMove), { x: 1, y: 1 });
       deepEqual(playerBase.currentNode.getPath(), { depth: 2, forks: [0, 1] });
 
       playerBase.goTo({ depth: 2, forks: [1, 0] });
-      deepEqual(playerBase.currentNode.getProperty(PropIdent.WHITE_MOVE), { x: 0, y: 0 });
+      deepEqual(playerBase.currentNode.getProperty(PropIdent.WhiteMove), { x: 0, y: 0 });
       deepEqual(playerBase.currentNode.getPath(), { depth: 2, forks: [1, 0] });
     });
   });

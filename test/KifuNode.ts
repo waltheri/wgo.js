@@ -453,12 +453,12 @@ describe('SGF & KifuNode', () => {
     it('KifuNode#fromSGF()', () => {
       const node = KifuNode.fromSGF('(;SZ[19];AB[dp]AW[pd];AE[dp][pd])');
 
-      equal(node.getProperty(PropIdent.BOARD_SIZE), 19);
+      equal(node.getProperty(PropIdent.BoardSize), 19);
       equal(node.children.length, 1);
-      deepEqual(node.children[0].getProperty(PropIdent.ADD_BLACK), [{ x: 3, y: 15 }]);
-      deepEqual(node.children[0].getProperty(PropIdent.ADD_WHITE), [{ x: 15, y: 3 }]);
+      deepEqual(node.children[0].getProperty(PropIdent.AddBlack), [{ x: 3, y: 15 }]);
+      deepEqual(node.children[0].getProperty(PropIdent.AddWhite), [{ x: 15, y: 3 }]);
       equal(node.children[0].children.length, 1);
-      deepEqual(node.children[0].children[0].getProperty(PropIdent.CLEAR_FIELD), [{ x: 3, y: 15 }, { x: 15, y: 3 }]);
+      deepEqual(node.children[0].children[0].getProperty(PropIdent.ClearField), [{ x: 3, y: 15 }, { x: 15, y: 3 }]);
       equal(node.children[0].children[0].children.length, 0);
     });
 
