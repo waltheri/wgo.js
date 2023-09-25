@@ -11,7 +11,7 @@ describe('Position object', () => {
       assert(position.sizeY === 9);
       assert(position.capCount.black === 0);
       assert(position.capCount.white === 0);
-      assert(position.turn === Color.BLACK);
+      assert(position.turn === Color.Black);
     });
   });
 
@@ -33,37 +33,37 @@ describe('Position object', () => {
     it('Basic getting and setting fields/stones', () => {
       const position = new Position(9);
 
-      equal(position.get(0, 0), Color.EMPTY);
-      equal(position.get(0, 1), Color.EMPTY);
-      equal(position.get(1, 0), Color.EMPTY);
-      equal(position.get(1, 1), Color.EMPTY);
+      equal(position.get(0, 0), Color.Empty);
+      equal(position.get(0, 1), Color.Empty);
+      equal(position.get(1, 0), Color.Empty);
+      equal(position.get(1, 1), Color.Empty);
 
-      position.set(0, 0, Color.BLACK);
-      position.set(0, 1, Color.BLACK);
-      position.set(1, 0, Color.WHITE);
-      position.set(1, 1, Color.WHITE);
+      position.set(0, 0, Color.Black);
+      position.set(0, 1, Color.Black);
+      position.set(1, 0, Color.White);
+      position.set(1, 1, Color.White);
 
-      equal(position.get(0, 0), Color.BLACK);
-      equal(position.get(0, 1), Color.BLACK);
-      equal(position.get(1, 0), Color.WHITE);
-      equal(position.get(1, 1), Color.WHITE);
+      equal(position.get(0, 0), Color.Black);
+      equal(position.get(0, 1), Color.Black);
+      equal(position.get(1, 0), Color.White);
+      equal(position.get(1, 1), Color.White);
 
-      position.set(0, 0, Color.EMPTY);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 0, Color.BLACK);
-      position.set(1, 1, Color.EMPTY);
+      position.set(0, 0, Color.Empty);
+      position.set(0, 1, Color.White);
+      position.set(1, 0, Color.Black);
+      position.set(1, 1, Color.Empty);
 
-      equal(position.get(0, 0), Color.EMPTY);
-      equal(position.get(0, 1), Color.WHITE);
-      equal(position.get(1, 0), Color.BLACK);
-      equal(position.get(1, 1), Color.EMPTY);
+      equal(position.get(0, 0), Color.Empty);
+      equal(position.get(0, 1), Color.White);
+      equal(position.get(1, 0), Color.Black);
+      equal(position.get(1, 1), Color.Empty);
     });
 
     it('Convert to two dimensional array', () => {
       const position = new Position(9);
 
-      position.set(0, 1, Color.BLACK);
-      position.set(1, 0, Color.WHITE);
+      position.set(0, 1, Color.Black);
+      position.set(1, 0, Color.White);
 
       deepEqual(position.toTwoDimensionalArray(), [
         [Color.E, Color.B, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E, Color.E],
@@ -91,16 +91,16 @@ describe('Position object', () => {
       const position = new Position(9);
 
       throws(() => {
-        position.set(0, -1, Color.WHITE);
+        position.set(0, -1, Color.White);
       });
       throws(() => {
-        position.set(-1, 0, Color.BLACK);
+        position.set(-1, 0, Color.Black);
       });
       throws(() => {
-        position.set(0, 9, Color.EMPTY);
+        position.set(0, 9, Color.Empty);
       });
       throws(() => {
-        position.set(9, 0, Color.WHITE);
+        position.set(9, 0, Color.White);
       });
     });
   });
@@ -115,15 +115,15 @@ describe('Position object', () => {
     it('Clones position with all moves', () => {
       const position = new Position(3);
 
-      position.set(0, 0, Color.BLACK);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 1, Color.BLACK);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 0, Color.WHITE);
-      position.set(2, 2, Color.BLACK);
+      position.set(0, 0, Color.Black);
+      position.set(0, 1, Color.White);
+      position.set(1, 1, Color.Black);
+      position.set(1, 2, Color.White);
+      position.set(2, 0, Color.White);
+      position.set(2, 2, Color.Black);
       position.capCount.black = 1;
       position.capCount.white = 2;
-      position.turn = Color.WHITE;
+      position.turn = Color.White;
 
       const cloned = position.clone();
 
@@ -134,27 +134,27 @@ describe('Position object', () => {
   describe('Position#compare()', () => {
     it('Cloned positions are the same', () => {
       const position = new Position(19);
-      position.set(10, 10, Color.BLACK);
+      position.set(10, 10, Color.Black);
       const changes = position.compare(position.clone());
       assert(Array.isArray(changes));
       deepEqual(changes, []);
     });
     it('Returns correct array of changes', () => {
       const position = new Position(3);
-      position.set(0, 0, Color.BLACK);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 1, Color.BLACK);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 0, Color.WHITE);
-      position.set(2, 2, Color.BLACK);
+      position.set(0, 0, Color.Black);
+      position.set(0, 1, Color.White);
+      position.set(1, 1, Color.Black);
+      position.set(1, 2, Color.White);
+      position.set(2, 0, Color.White);
+      position.set(2, 2, Color.Black);
 
       const cloned = position.clone();
-      cloned.set(1, 0, Color.BLACK);
-      cloned.set(1, 1, Color.EMPTY);
-      cloned.set(1, 2, Color.EMPTY);
-      cloned.set(2, 0, Color.BLACK);
-      cloned.set(2, 1, Color.WHITE);
-      cloned.set(2, 2, Color.WHITE);
+      cloned.set(1, 0, Color.Black);
+      cloned.set(1, 1, Color.Empty);
+      cloned.set(1, 2, Color.Empty);
+      cloned.set(2, 0, Color.Black);
+      cloned.set(2, 1, Color.White);
+      cloned.set(2, 2, Color.White);
 
       deepEqual(position.compare(cloned), [
         { x: 1, y: 0, c: Color.B },
@@ -192,77 +192,77 @@ describe('Position object', () => {
       const position = new Position(9);
 
       assert(position.applyMove(0, 0));
-      equal(position.get(0, 0), Color.BLACK);
-      equal(position.turn, Color.WHITE);
+      equal(position.get(0, 0), Color.Black);
+      equal(position.turn, Color.White);
 
       assert(position.applyMove(0, 1));
-      equal(position.get(0, 1), Color.WHITE);
-      equal(position.turn, Color.BLACK);
+      equal(position.get(0, 1), Color.White);
+      equal(position.turn, Color.Black);
     });
 
     it('False is returned when moves are invalid', () => {
       const position = new Position(9);
-      position.set(0, 0, Color.BLACK);
-      position.set(0, 1, Color.WHITE);
+      position.set(0, 0, Color.Black);
+      position.set(0, 1, Color.White);
 
-      assert(!position.applyMove(0, 0, Color.WHITE));
-      assert(!position.applyMove(0, 0, Color.BLACK));
-      assert(!position.applyMove(0, 1, Color.WHITE));
-      assert(!position.applyMove(0, 1, Color.BLACK));
-      assert(!position.applyMove(-1, 0, Color.WHITE));
-      assert(!position.applyMove(0, -1, Color.BLACK));
-      assert(!position.applyMove(9, 0, Color.WHITE));
-      assert(!position.applyMove(0, 9, Color.BLACK));
-      equal(position.turn, Color.BLACK);
+      assert(!position.applyMove(0, 0, Color.White));
+      assert(!position.applyMove(0, 0, Color.Black));
+      assert(!position.applyMove(0, 1, Color.White));
+      assert(!position.applyMove(0, 1, Color.Black));
+      assert(!position.applyMove(-1, 0, Color.White));
+      assert(!position.applyMove(0, -1, Color.Black));
+      assert(!position.applyMove(9, 0, Color.White));
+      assert(!position.applyMove(0, 9, Color.Black));
+      equal(position.turn, Color.Black);
     });
 
     it('Stone in the middle is correctly captured', () => {
       const position = new Position(9);
-      position.set(4, 4, Color.BLACK);
-      position.set(4, 3, Color.WHITE);
-      position.set(4, 5, Color.WHITE);
-      position.set(3, 4, Color.WHITE);
+      position.set(4, 4, Color.Black);
+      position.set(4, 3, Color.White);
+      position.set(4, 5, Color.White);
+      position.set(3, 4, Color.White);
 
-      assert(position.applyMove(5, 4, Color.WHITE));
-      equal(position.get(5, 4), Color.WHITE);
-      equal(position.get(4, 4), Color.EMPTY);
-      equal(position.turn, Color.BLACK);
+      assert(position.applyMove(5, 4, Color.White));
+      equal(position.get(5, 4), Color.White);
+      equal(position.get(4, 4), Color.Empty);
+      equal(position.turn, Color.Black);
       equal(position.capCount.white, 1);
       equal(position.capCount.black, 0);
     });
 
     it('Stone on the sides/corners is correctly captured', () => {
       const position = new Position(9);
-      position.set(0, 0, Color.BLACK);
-      position.set(0, 1, Color.WHITE);
-      position.set(8, 8, Color.WHITE);
-      position.set(8, 7, Color.BLACK);
+      position.set(0, 0, Color.Black);
+      position.set(0, 1, Color.White);
+      position.set(8, 8, Color.White);
+      position.set(8, 7, Color.Black);
 
-      assert(position.applyMove(1, 0, Color.WHITE));
-      equal(position.get(0, 0), Color.EMPTY);
+      assert(position.applyMove(1, 0, Color.White));
+      equal(position.get(0, 0), Color.Empty);
       equal(position.capCount.white, 1);
 
-      assert(position.applyMove(7, 8, Color.BLACK));
-      equal(position.get(8, 8), Color.EMPTY);
+      assert(position.applyMove(7, 8, Color.Black));
+      equal(position.get(8, 8), Color.Empty);
       equal(position.capCount.black, 1);
     });
 
     it('Group of stones is correctly captured', () => {
       const position = new Position(5);
-      position.set(0, 0, Color.WHITE);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 0, Color.WHITE);
-      position.set(1, 1, Color.WHITE);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 1, Color.WHITE);
-      position.set(2, 2, Color.WHITE);
-      position.set(0, 2, Color.BLACK);
-      position.set(2, 0, Color.BLACK);
-      position.set(3, 1, Color.BLACK);
-      position.set(1, 3, Color.BLACK);
-      position.set(3, 2, Color.BLACK);
+      position.set(0, 0, Color.White);
+      position.set(0, 1, Color.White);
+      position.set(1, 0, Color.White);
+      position.set(1, 1, Color.White);
+      position.set(1, 2, Color.White);
+      position.set(2, 1, Color.White);
+      position.set(2, 2, Color.White);
+      position.set(0, 2, Color.Black);
+      position.set(2, 0, Color.Black);
+      position.set(3, 1, Color.Black);
+      position.set(1, 3, Color.Black);
+      position.set(3, 2, Color.Black);
 
-      assert(position.applyMove(2, 3, Color.BLACK));
+      assert(position.applyMove(2, 3, Color.Black));
       equal(position.capCount.black, 7);
       deepEqual(position.toTwoDimensionalArray(), [
         [Color.E, Color.E, Color.B, Color.E, Color.E],
@@ -275,77 +275,77 @@ describe('Position object', () => {
 
     it('Suicide of one stone is invalid.', () => {
       const position = new Position(3);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 0, Color.WHITE);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 1, Color.WHITE);
+      position.set(0, 1, Color.White);
+      position.set(1, 0, Color.White);
+      position.set(1, 2, Color.White);
+      position.set(2, 1, Color.White);
 
-      assert(!position.applyMove(0, 0, Color.BLACK));
-      assert(!position.applyMove(1, 1, Color.BLACK));
-      assert(!position.applyMove(2, 2, Color.BLACK));
-      assert(!position.applyMove(0, 2, Color.BLACK));
-      assert(!position.applyMove(2, 0, Color.BLACK));
+      assert(!position.applyMove(0, 0, Color.Black));
+      assert(!position.applyMove(1, 1, Color.Black));
+      assert(!position.applyMove(2, 2, Color.Black));
+      assert(!position.applyMove(0, 2, Color.Black));
+      assert(!position.applyMove(2, 0, Color.Black));
     });
 
     it('Suicide of multiple stones is invalid.', () => {
       const position = new Position(5);
-      position.set(0, 0, Color.WHITE);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 0, Color.WHITE);
-      position.set(1, 1, Color.WHITE);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 1, Color.WHITE);
-      position.set(0, 2, Color.BLACK);
-      position.set(2, 0, Color.BLACK);
-      position.set(3, 1, Color.BLACK);
-      position.set(1, 3, Color.BLACK);
-      position.set(3, 2, Color.BLACK);
-      position.set(2, 3, Color.BLACK);
+      position.set(0, 0, Color.White);
+      position.set(0, 1, Color.White);
+      position.set(1, 0, Color.White);
+      position.set(1, 1, Color.White);
+      position.set(1, 2, Color.White);
+      position.set(2, 1, Color.White);
+      position.set(0, 2, Color.Black);
+      position.set(2, 0, Color.Black);
+      position.set(3, 1, Color.Black);
+      position.set(1, 3, Color.Black);
+      position.set(3, 2, Color.Black);
+      position.set(2, 3, Color.Black);
 
-      assert(!position.applyMove(2, 2, Color.WHITE));
+      assert(!position.applyMove(2, 2, Color.White));
     });
 
     it('Ko is allowed.', () => {
       const position = new Position(9);
-      position.set(2, 2, Color.WHITE);
-      position.set(1, 3, Color.WHITE);
-      position.set(3, 3, Color.WHITE);
-      position.set(2, 4, Color.WHITE);
-      position.set(2, 5, Color.BLACK);
-      position.set(1, 4, Color.BLACK);
-      position.set(3, 4, Color.BLACK);
+      position.set(2, 2, Color.White);
+      position.set(1, 3, Color.White);
+      position.set(3, 3, Color.White);
+      position.set(2, 4, Color.White);
+      position.set(2, 5, Color.Black);
+      position.set(1, 4, Color.Black);
+      position.set(3, 4, Color.Black);
 
-      assert(position.applyMove(2, 3, Color.BLACK));
-      equal(position.get(2, 3), Color.BLACK);
-      equal(position.get(2, 4), Color.EMPTY);
+      assert(position.applyMove(2, 3, Color.Black));
+      equal(position.get(2, 3), Color.Black);
+      equal(position.get(2, 4), Color.Empty);
       equal(position.capCount.black, 1);
       equal(position.capCount.white, 0);
 
-      assert(position.applyMove(2, 4, Color.WHITE));
-      equal(position.get(2, 3), Color.EMPTY);
-      equal(position.get(2, 4), Color.WHITE);
+      assert(position.applyMove(2, 4, Color.White));
+      equal(position.get(2, 3), Color.Empty);
+      equal(position.get(2, 4), Color.White);
       equal(position.capCount.black, 1);
       equal(position.capCount.white, 1);
     });
 
     it('When suicide is allowed capture the stones.', () => {
       const position = new Position(5);
-      position.set(0, 0, Color.WHITE);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 0, Color.WHITE);
-      position.set(1, 1, Color.WHITE);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 1, Color.WHITE);
-      position.set(0, 2, Color.BLACK);
-      position.set(2, 0, Color.BLACK);
-      position.set(3, 1, Color.BLACK);
-      position.set(1, 3, Color.BLACK);
-      position.set(3, 2, Color.BLACK);
-      position.set(2, 3, Color.BLACK);
+      position.set(0, 0, Color.White);
+      position.set(0, 1, Color.White);
+      position.set(1, 0, Color.White);
+      position.set(1, 1, Color.White);
+      position.set(1, 2, Color.White);
+      position.set(2, 1, Color.White);
+      position.set(0, 2, Color.Black);
+      position.set(2, 0, Color.Black);
+      position.set(3, 1, Color.Black);
+      position.set(1, 3, Color.Black);
+      position.set(3, 2, Color.Black);
+      position.set(2, 3, Color.Black);
 
-      assert(position.applyMove(2, 2, Color.WHITE, true));
+      assert(position.applyMove(2, 2, Color.White, true));
       equal(position.capCount.black, 7);
-      equal(position.turn, Color.BLACK);
+      equal(position.turn, Color.Black);
       deepEqual(position.toTwoDimensionalArray(), [
         [Color.E, Color.E, Color.B, Color.E, Color.E],
         [Color.E, Color.E, Color.E, Color.B, Color.E],
@@ -359,19 +359,19 @@ describe('Position object', () => {
   describe('getValidatedPosition()', () => {
     it('Stones without liberties will be captured.', () => {
       const position = new Position(5);
-      position.set(0, 0, Color.WHITE);
-      position.set(0, 1, Color.WHITE);
-      position.set(1, 0, Color.WHITE);
-      position.set(1, 1, Color.WHITE);
-      position.set(1, 2, Color.WHITE);
-      position.set(2, 1, Color.WHITE);
-      position.set(2, 2, Color.WHITE);
-      position.set(0, 2, Color.BLACK);
-      position.set(2, 0, Color.BLACK);
-      position.set(3, 1, Color.BLACK);
-      position.set(1, 3, Color.BLACK);
-      position.set(3, 2, Color.BLACK);
-      position.set(2, 3, Color.BLACK);
+      position.set(0, 0, Color.White);
+      position.set(0, 1, Color.White);
+      position.set(1, 0, Color.White);
+      position.set(1, 1, Color.White);
+      position.set(1, 2, Color.White);
+      position.set(2, 1, Color.White);
+      position.set(2, 2, Color.White);
+      position.set(0, 2, Color.Black);
+      position.set(2, 0, Color.Black);
+      position.set(3, 1, Color.Black);
+      position.set(1, 3, Color.Black);
+      position.set(3, 2, Color.Black);
+      position.set(2, 3, Color.Black);
 
       position.validatePosition();
 
@@ -387,12 +387,12 @@ describe('Position object', () => {
 
     it('Only first stones without liberties will be captured.', () => {
       const position = new Position(5);
-      position.set(0, 0, Color.WHITE);
-      position.set(0, 1, Color.BLACK);
-      position.set(0, 2, Color.WHITE);
-      position.set(1, 0, Color.BLACK);
-      position.set(1, 1, Color.WHITE);
-      position.set(1, 2, Color.BLACK);
+      position.set(0, 0, Color.White);
+      position.set(0, 1, Color.Black);
+      position.set(0, 2, Color.White);
+      position.set(1, 0, Color.Black);
+      position.set(1, 1, Color.White);
+      position.set(1, 2, Color.Black);
 
       position.validatePosition();
 

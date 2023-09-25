@@ -52,7 +52,7 @@ export default class Position {
    * Who plays next move.
    */
 
-  turn: Color.BLACK | Color.WHITE = Color.BLACK;
+  turn: Color.Black | Color.White = Color.Black;
 
   /**
    * Creates instance of position object.
@@ -118,7 +118,7 @@ export default class Position {
    */
   clear() {
     for (let i = 0; i < this.sizeX * this.sizeY; i++) {
-      this._grid[i] = Color.EMPTY;
+      this._grid[i] = Color.Empty;
     }
     return this;
   }
@@ -171,7 +171,7 @@ export default class Position {
    */
   applyMove(x: number, y: number, c: Color = this.turn, allowSuicide = false, allowRewrite = false) {
     // check if move is on empty field of the board
-    if (!(allowRewrite || this.get(x, y) === Color.EMPTY)) {
+    if (!(allowRewrite || this.get(x, y) === Color.Empty)) {
       return false;
     }
 
@@ -227,7 +227,7 @@ export default class Position {
     }
 
     // however empty field means liberty
-    if (this.get(x, y) === Color.EMPTY) {
+    if (this.get(x, y) === Color.Empty) {
       return true;
     }
 
@@ -281,8 +281,8 @@ export default class Position {
           output += `${(y < 10 ? ` ${y}` : y)} `;
         }
 
-        if (color !== Color.EMPTY) {
-          output += color === Color.BLACK ? BS : WS;
+        if (color !== Color.Empty) {
+          output += color === Color.Black ? BS : WS;
         } else {
           let char;
 
@@ -365,10 +365,10 @@ export default class Position {
    * Captures/removes stone on specified position and all adjacent and connected stones. This method ignores liberties.
    */
   private _capture(x: number, y: number, c: Color = this.get(x, y)) {
-    if (this.has(x, y) && c !== Color.EMPTY && this.get(x, y) === c) {
-      this.set(x, y, Color.EMPTY);
+    if (this.has(x, y) && c !== Color.Empty && this.get(x, y) === c) {
+      this.set(x, y, Color.Empty);
 
-      if (c === Color.BLACK) {
+      if (c === Color.Black) {
         this.capCount.white = this.capCount.white + 1;
       } else {
         this.capCount.black = this.capCount.black + 1;

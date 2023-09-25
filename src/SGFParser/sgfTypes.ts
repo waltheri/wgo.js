@@ -23,7 +23,7 @@ export enum PropIdent {
 
   // Move Annotation Properties
   BadMove = 'BM',
-  DoubtfulMove = 'DM',
+  DoubtfulMove = 'DO',
   InterestingMove = 'IT',
   GoodMove = 'TE',
 
@@ -41,7 +41,7 @@ export enum PropIdent {
   // Root Properties
   Application = 'AP',
   Charset = 'CA',
-  SgfVersion = 'FF',
+  SGFVersion = 'FF',
   GameType = 'GM',
   VariationsStyle = 'ST',
   BoardSize = 'SZ',
@@ -57,8 +57,8 @@ export enum PropIdent {
   GameComment = 'GC',
   OpeningInfo = 'ON',
   OverTime = 'OT',
-  BlackName = 'BN',
-  Plack = 'PC',
+  BlackName = 'PB',
+  Place = 'PC',
   WhiteName = 'PW',
   Result = 'RE',
   Round = 'RO',
@@ -99,3 +99,33 @@ export interface SGFGameTree {
 }
 
 export type SGFCollection = SGFGameTree[];
+
+/**
+ * TODO - move this comment somewhere else (if it has some use) or remove
+ *
+ * From SGF specification, there are these types of property values:
+ *
+ * CValueType = (ValueType | *Compose*)
+ * ValueType  = (*None* | *Number* | *Real* | *Double* | *Color* | *SimpleText* | *Text* | *Point*  | *Move* | *Stone*)
+ *
+ * WGo's kifu node (KNode object) implements similar types with few exceptions:
+ *
+ * - Types `Number`, `Real` and `Double` are implemented by javascript's `number`.
+ * - Types `SimpleText` and `Text` are considered as the same.
+ * - Types `Point`, `Move` and `Stone` are all the same, implemented as simple object with `x` and `y` coordinates.
+ * - Type `None` is implemented as `true`
+ *
+ * Each `Compose` type, which is used in SGF, has its own type.
+ *
+ * - `Point ':' Point` (used in AR property) has special type `Line` - object with two sets of coordinates.
+ * - `Point ':' Simpletext` (used in LB property) has special type `Label` - object with coordinates and text property
+ * - `Simpletext ":" Simpletext` (used in AP property) - not implemented
+ * - `Number ":" SimpleText` (used in FG property) - not implemented
+ *
+ * Moreover each property value has these settings:
+ *
+ * - *Single value* / *Array* (more values)
+ * - *Not empty* / *Empty* (value or array can be empty)
+ *
+ * {@link http://www.red-bean.com/sgf/sgf4.html}
+ */

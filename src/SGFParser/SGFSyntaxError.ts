@@ -6,7 +6,7 @@ export default class SGFSyntaxError extends Error {
   // tslint:disable-next-line:variable-name
   __proto__: Error;
 
-  constructor(message: string, sgfString?: string, state?: { lineNo: number, charNo: number }) {
+  constructor(message: string, sgfString?: string, state?: { lineNo: number; charNo: number }) {
     super(message);
     this.__proto__ = new.target.prototype;
 

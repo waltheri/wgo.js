@@ -9,7 +9,5 @@ export default {
     name: 'WGo',
     sourcemap: true,
   },
-  plugins: [
-    typescript(),
-  ],
-}
+  plugins: [typescript()],
+};

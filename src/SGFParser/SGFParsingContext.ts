@@ -3,9 +3,9 @@ import SGFSyntaxError from './SGFSyntaxError';
 const CODE_WHITE_CHAR = ' '.charCodeAt(0);
 
 /**
- * SGF string traverser. It is internal class for SGFParser.
+ * SGF parsing context. This is internal class for SGFParser.
  */
-export default class SGFTraverser {
+export default class SGFParsingContext {
   /** Current character position */
   position: number = 0;
 
@@ -49,7 +49,13 @@ export default class SGFTraverser {
    */
   assertCharAndMoveToNext(sgfString: string, char: string) {
     if (this.currentNonWhitespaceChar(sgfString) !== char) {
-      throw new SGFSyntaxError(`Unexpected character ${this.currentNonWhitespaceChar(sgfString)}. Character ${char} was expected.`, sgfString, this);
+      throw new SGFSyntaxError(
+        `Unexpected character ${this.currentNonWhitespaceChar(
+          sgfString,
+        )}. Character ${char} was expected.`,
+        sgfString,
+        this,
+      );
     }
 
     return this.moveToNextChar(sgfString);

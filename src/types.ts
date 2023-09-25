@@ -4,19 +4,19 @@
  */
 export enum Color {
   /** Black stone */
-  BLACK = 1,
+  Black = 1,
 
-  /** @alias Color.BLACK */
+  /** @alias Color.Black */
   B = 1,
 
   /** White stone */
-  WHITE = -1,
+  White = -1,
 
-  /** @alias Color.WHITE */
+  /** @alias Color.White */
   W = -1,
 
   /** Represents empty field */
-  EMPTY = 0,
+  Empty = 0,
 
   /** @alias Color.E */
   E = 0,
@@ -35,11 +35,11 @@ export interface Point {
   y: number;
 }
 
-/** 
+/**
  * Vector represented with starting and ending point. Can be used to reference arrow or
  * line segment on the board.
  */
- export type Vector = [Point, Point];
+export type Vector = [Point, Point];
 
 /**
  * Represents text label on specified field of the board.
@@ -57,8 +57,13 @@ export interface Field extends Point {
 }
 
 /**
- * Represents one move. Similar to field, but only black or white color is allowed.
+ * Represents one move. Similar to field, but only black or white color is allowed. Also if coordinates
+ * can be omitted to represent a pass.
  */
-export interface Move extends Point {
-  c: Color.BLACK | Color.WHITE;
-}
+export type Move =
+  | ({
+      c: Color.Black | Color.White;
+    } & Point)
+  | {
+      c: Color.Black | Color.White;
+    };

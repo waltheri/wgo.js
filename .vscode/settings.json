@@ -9,5 +9,6 @@
     ],
     "search.exclude": {
         "dist/**/*": true
-    }
+    },
+    "files.eol": "\n"
 }

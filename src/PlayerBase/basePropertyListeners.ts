@@ -19,7 +19,7 @@ export function applyGameChangesHA(event: LifeCycleEvent<number>) {
     event.target.currentNode === event.target.rootNode &&
     !event.target.getProperty(PropIdent.SetTurn)
   ) {
-    event.target.game.position.turn = Color.WHITE;
+    event.target.game.position.turn = Color.White;
   }
 }
 
@@ -34,7 +34,7 @@ export function applyGameChangesMove(event: LifeCycleEvent<Point>) {
   event.target.game.position.turn = -color;
 }
 
-export function applyGameChangesPL(event: LifeCycleEvent<Color.BLACK | Color.WHITE>) {
+export function applyGameChangesPL(event: LifeCycleEvent<Color.Black | Color.White>) {
   event.target.game.turn = event.value;
 }
 

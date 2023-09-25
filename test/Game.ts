@@ -1,7 +1,7 @@
 /* global describe, it, beforeEach */
 /* Test of WGo.Game class and (handling of go game) */
 
-import { strict as assert, equal, deepEqual, notEqual } from 'assert';
+import { strict as assert, equal, deepEqual } from 'assert';
 import { Color } from '../src/types';
 import Game from '../src/Game/Game';
 import Position from '../src/Game/Position';
@@ -14,7 +14,7 @@ describe('Game object', () => {
       equal(game.sizeX, 19);
       equal(game.sizeY, 19);
       deepEqual(game.rules, rules.Japanese);
-      equal(game.position.turn, Color.BLACK);
+      equal(game.position.turn, Color.Black);
       equal(game.komi, 6.5);
       deepEqual(game.position.capCount, { black: 0, white: 0 });
       deepEqual(game.position, new Position());
@@ -25,7 +25,7 @@ describe('Game object', () => {
       equal(game.sizeX, 9);
       equal(game.sizeY, 9);
       deepEqual(game.rules, rules.Chinese);
-      equal(game.position.turn, Color.BLACK);
+      equal(game.position.turn, Color.Black);
       equal(game.komi, 7.5);
       deepEqual(game.position.capCount, { black: 0, white: 0 });
       deepEqual(game.position, new Position(9));
@@ -43,11 +43,11 @@ describe('Game object', () => {
     it('Game#addStone() - stones are added if there is empty field', () => {
       const game = new Game(3);
 
-      assert(game.addStone(0, 1, Color.BLACK));
-      assert(game.addStone(1, 0, Color.WHITE));
+      assert(game.addStone(0, 1, Color.Black));
+      assert(game.addStone(1, 0, Color.White));
 
-      equal(game.getStone(0, 1), Color.BLACK);
-      equal(game.getStone(1, 0), Color.WHITE);
+      equal(game.getStone(0, 1), Color.Black);
+      equal(game.getStone(1, 0), Color.White);
       deepEqual(game.position.toTwoDimensionalArray(), [
         [Color.E, Color.B, Color.E],
         [Color.W, Color.E, Color.E],
@@ -55,20 +55,20 @@ describe('Game object', () => {
       ]);
     });
 
-    it('Game#addStone() - stones are not added if there isn\'t empty field or coordinates are not valid', () => {
+    it("Game#addStone() - stones are not added if there isn't empty field or coordinates are not valid", () => {
       const game = new Game(3);
 
-      game.addStone(0, 1, Color.BLACK);
-      game.addStone(1, 0, Color.WHITE);
+      game.addStone(0, 1, Color.Black);
+      game.addStone(1, 0, Color.White);
 
-      assert(!game.addStone(0, 1, Color.BLACK));
-      assert(!game.addStone(0, 1, Color.WHITE));
-      assert(!game.addStone(1, 0, Color.WHITE));
-      assert(!game.addStone(1, 0, Color.BLACK));
-      assert(!game.addStone(-1, 0, Color.BLACK));
-      assert(!game.addStone(0, -1, Color.WHITE));
-      assert(!game.addStone(0, 3, Color.WHITE));
-      assert(!game.addStone(3, 0, Color.BLACK));
+      assert(!game.addStone(0, 1, Color.Black));
+      assert(!game.addStone(0, 1, Color.White));
+      assert(!game.addStone(1, 0, Color.White));
+      assert(!game.addStone(1, 0, Color.Black));
+      assert(!game.addStone(-1, 0, Color.Black));
+      assert(!game.addStone(0, -1, Color.White));
+      assert(!game.addStone(0, 3, Color.White));
+      assert(!game.addStone(3, 0, Color.Black));
 
       deepEqual(game.position.toTwoDimensionalArray(), [
         [Color.E, Color.B, Color.E],
@@ -79,8 +79,8 @@ describe('Game object', () => {
 
     it('Game#removeStone() - stones are removed if there are stones', () => {
       const game = new Game(3);
-      game.addStone(0, 1, Color.BLACK);
-      game.addStone(1, 0, Color.WHITE);
+      game.addStone(0, 1, Color.Black);
+      game.addStone(1, 0, Color.White);
 
       assert(game.removeStone(0, 1));
       assert(game.removeStone(1, 0));
@@ -104,10 +104,10 @@ describe('Game object', () => {
     it('Game#setStone() - stones are correctly set', () => {
       const game = new Game(3);
 
-      assert(game.setStone(0, 1, Color.BLACK));
-      assert(game.setStone(1, 0, Color.WHITE));
-      assert(game.setStone(0, 1, Color.WHITE));
-      assert(game.setStone(1, 0, Color.BLACK));
+      assert(game.setStone(0, 1, Color.Black));
+      assert(game.setStone(1, 0, Color.White));
+      assert(game.setStone(0, 1, Color.White));
+      assert(game.setStone(1, 0, Color.Black));
 
       deepEqual(game.position.toTwoDimensionalArray(), [
         [Color.E, Color.W, Color.E],
@@ -119,10 +119,10 @@ describe('Game object', () => {
     it('Game#addStone() - stones are not set if coordinates are not valid', () => {
       const game = new Game(3);
 
-      assert(!game.setStone(-1, 0, Color.BLACK));
-      assert(!game.setStone(0, -1, Color.WHITE));
-      assert(!game.setStone(0, 3, Color.WHITE));
-      assert(!game.setStone(3, 0, Color.BLACK));
+      assert(!game.setStone(-1, 0, Color.Black));
+      assert(!game.setStone(0, -1, Color.White));
+      assert(!game.setStone(0, 3, Color.White));
+      assert(!game.setStone(3, 0, Color.Black));
 
       deepEqual(game.position.toTwoDimensionalArray(), [
         [Color.E, Color.E, Color.E],
@@ -233,7 +233,6 @@ describe('Game object', () => {
       game.pushPosition(position3);
       assert(game.hasPositionRepeated(position.clone()));
     });
-
   });
 
   describe('Play and pass', () => {
@@ -243,10 +242,10 @@ describe('Game object', () => {
 
       game.play(4, 4);
 
-      equal(game.getStone(4, 4), Color.BLACK);
-      equal(game.position.get(4, 4), Color.BLACK);
-      equal(initialPosition.get(4, 4), Color.EMPTY);
-      equal(game.turn, Color.WHITE);
+      equal(game.getStone(4, 4), Color.Black);
+      equal(game.position.get(4, 4), Color.Black);
+      equal(initialPosition.get(4, 4), Color.Empty);
+      equal(game.turn, Color.White);
       equal(game.position.capCount.black, 0);
       equal(game.position.capCount.white, 0);
     });
@@ -254,46 +253,46 @@ describe('Game object', () => {
     it('Play custom color', () => {
       const game = new Game(9);
 
-      game.turn = Color.WHITE;
+      game.turn = Color.White;
       game.play(4, 4);
 
-      equal(game.getStone(4, 4), Color.WHITE);
-      equal(game.position.get(4, 4), Color.WHITE);
-      equal(game.turn, Color.BLACK);
+      equal(game.getStone(4, 4), Color.White);
+      equal(game.position.get(4, 4), Color.White);
+      equal(game.turn, Color.Black);
 
       game.play(4, 5);
 
-      equal(game.getStone(4, 5), Color.BLACK);
-      equal(game.position.get(4, 5), Color.BLACK);
-      equal(game.turn, Color.WHITE);
+      equal(game.getStone(4, 5), Color.Black);
+      equal(game.position.get(4, 5), Color.Black);
+      equal(game.turn, Color.White);
 
-      game.turn = Color.BLACK;
+      game.turn = Color.Black;
       game.play(5, 4);
 
-      equal(game.getStone(5, 4), Color.BLACK);
-      equal(game.position.get(5, 4), Color.BLACK);
-      equal(game.turn, Color.WHITE);
+      equal(game.getStone(5, 4), Color.Black);
+      equal(game.position.get(5, 4), Color.Black);
+      equal(game.turn, Color.White);
     });
 
     it('Capturing stones', () => {
       const game = new Game(9);
 
-      game.setStone(0, 0, Color.BLACK);
-      game.setStone(0, 1, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(1, 1, Color.BLACK);
-      game.setStone(0, 2, Color.WHITE);
-      game.setStone(1, 2, Color.WHITE);
-      game.setStone(2, 0, Color.WHITE);
+      game.setStone(0, 0, Color.Black);
+      game.setStone(0, 1, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(1, 1, Color.Black);
+      game.setStone(0, 2, Color.White);
+      game.setStone(1, 2, Color.White);
+      game.setStone(2, 0, Color.White);
 
-      game.turn = Color.WHITE;
+      game.turn = Color.White;
       game.play(2, 1);
 
-      equal(game.getStone(0, 0), Color.EMPTY);
-      equal(game.getStone(0, 1), Color.EMPTY);
-      equal(game.getStone(1, 0), Color.EMPTY);
-      equal(game.getStone(1, 1), Color.EMPTY);
-      equal(game.getStone(2, 1), Color.WHITE);
+      equal(game.getStone(0, 0), Color.Empty);
+      equal(game.getStone(0, 1), Color.Empty);
+      equal(game.getStone(1, 0), Color.Empty);
+      equal(game.getStone(1, 1), Color.Empty);
+      equal(game.getStone(2, 1), Color.White);
       equal(game.position.capCount.black, 0);
       equal(game.position.capCount.white, 4);
     });
@@ -302,8 +301,8 @@ describe('Game object', () => {
       const game = new Game(9);
       const position = game.position;
 
-      game.setStone(0, 1, Color.BLACK);
-      game.setStone(1, 0, Color.WHITE);
+      game.setStone(0, 1, Color.Black);
+      game.setStone(1, 0, Color.White);
 
       assert(!game.play(0, 1));
       assert(!game.play(1, 0));
@@ -321,12 +320,12 @@ describe('Game object', () => {
       const game = new Game(9);
       const position = game.position;
 
-      game.setStone(0, 1, Color.WHITE);
-      game.setStone(0, 2, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(1, 1, Color.BLACK);
+      game.setStone(0, 1, Color.White);
+      game.setStone(0, 2, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(1, 1, Color.Black);
 
-      game.turn = Color.WHITE;
+      game.turn = Color.White;
       assert(!game.play(0, 0));
       equal(position, game.position);
     });
@@ -334,55 +333,55 @@ describe('Game object', () => {
     it('Allow suicide in ING rules', () => {
       const game = new Game(9, ING_RULES);
 
-      game.setStone(0, 1, Color.WHITE);
-      game.setStone(0, 2, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(1, 1, Color.BLACK);
+      game.setStone(0, 1, Color.White);
+      game.setStone(0, 2, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(1, 1, Color.Black);
 
-      game.turn = Color.WHITE;
+      game.turn = Color.White;
       assert(game.play(0, 0));
       equal(game.capCount.black, 2);
       equal(game.capCount.white, 0);
-      equal(game.getStone(0, 0), Color.EMPTY);
-      equal(game.getStone(0, 1), Color.EMPTY);
+      equal(game.getStone(0, 0), Color.Empty);
+      equal(game.getStone(0, 1), Color.Empty);
     });
 
     it('Allow rewrite in no rules', () => {
       const game = new Game(9, NO_RULES);
 
-      game.setStone(0, 0, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(0, 1, Color.WHITE);
+      game.setStone(0, 0, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(0, 1, Color.White);
 
-      game.turn = Color.WHITE;
+      game.turn = Color.White;
       assert(game.play(1, 0));
       equal(game.capCount.black, 0);
       equal(game.capCount.white, 1);
-      equal(game.getStone(1, 0), Color.WHITE);
+      equal(game.getStone(1, 0), Color.White);
 
-      game.turn = Color.BLACK;
+      game.turn = Color.Black;
       assert(game.play(0, 1));
       equal(game.capCount.black, 0);
       equal(game.capCount.white, 1);
-      equal(game.getStone(0, 1), Color.BLACK);
+      equal(game.getStone(0, 1), Color.Black);
     });
 
     it('Disallow Ko (repeating of previous position)', () => {
       const game = new Game(9);
 
-      game.setStone(0, 1, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(2, 1, Color.BLACK);
-      game.setStone(0, 2, Color.WHITE);
-      game.setStone(1, 3, Color.WHITE);
-      game.setStone(2, 2, Color.WHITE);
+      game.setStone(0, 1, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(2, 1, Color.Black);
+      game.setStone(0, 2, Color.White);
+      game.setStone(1, 3, Color.White);
+      game.setStone(2, 2, Color.White);
 
       assert(game.play(1, 2)); // creates KO
       assert(game.play(1, 1)); // white captures
       equal(game.capCount.white, 1);
       equal(game.capCount.black, 0);
-      equal(game.getStone(1, 2), Color.EMPTY);
-      equal(game.getStone(1, 1), Color.WHITE);
+      equal(game.getStone(1, 2), Color.Empty);
+      equal(game.getStone(1, 1), Color.White);
 
       assert(!game.play(1, 2)); // invalid capture
       assert(game.play(5, 5)); // ko threat
@@ -391,61 +390,61 @@ describe('Game object', () => {
 
       equal(game.capCount.white, 1);
       equal(game.capCount.black, 1);
-      equal(game.getStone(1, 2), Color.BLACK);
-      equal(game.getStone(1, 1), Color.EMPTY);
+      equal(game.getStone(1, 2), Color.Black);
+      equal(game.getStone(1, 1), Color.Empty);
     });
 
     it('Allow Ko in no rules', () => {
       const game = new Game(9, NO_RULES);
 
-      game.setStone(0, 1, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(2, 1, Color.BLACK);
-      game.setStone(0, 2, Color.WHITE);
-      game.setStone(1, 3, Color.WHITE);
-      game.setStone(2, 2, Color.WHITE);
+      game.setStone(0, 1, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(2, 1, Color.Black);
+      game.setStone(0, 2, Color.White);
+      game.setStone(1, 3, Color.White);
+      game.setStone(2, 2, Color.White);
 
       assert(game.play(1, 2)); // creates KO
       assert(game.play(1, 1)); // white captures
       equal(game.capCount.white, 1);
       equal(game.capCount.black, 0);
-      equal(game.getStone(1, 2), Color.EMPTY);
-      equal(game.getStone(1, 1), Color.WHITE);
+      equal(game.getStone(1, 2), Color.Empty);
+      equal(game.getStone(1, 1), Color.White);
 
       assert(game.play(1, 2)); // capture allowed
 
       equal(game.capCount.white, 1);
       equal(game.capCount.black, 1);
-      equal(game.getStone(1, 2), Color.BLACK);
-      equal(game.getStone(1, 1), Color.EMPTY);
+      equal(game.getStone(1, 2), Color.Black);
+      equal(game.getStone(1, 1), Color.Empty);
     });
 
     it('Disallow Triple Ko (repeating of any position) in Chinese rules', () => {
       const game = new Game(9, CHINESE_RULES);
 
-      game.setStone(0, 1, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(2, 1, Color.BLACK);
-      game.setStone(0, 2, Color.WHITE);
-      game.setStone(1, 3, Color.WHITE);
-      game.setStone(2, 2, Color.WHITE);
-      game.setStone(1, 2, Color.BLACK);
+      game.setStone(0, 1, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(2, 1, Color.Black);
+      game.setStone(0, 2, Color.White);
+      game.setStone(1, 3, Color.White);
+      game.setStone(2, 2, Color.White);
+      game.setStone(1, 2, Color.Black);
 
-      game.setStone(3, 1, Color.BLACK);
-      game.setStone(4, 0, Color.BLACK);
-      game.setStone(5, 1, Color.BLACK);
-      game.setStone(3, 2, Color.WHITE);
-      game.setStone(4, 3, Color.WHITE);
-      game.setStone(5, 2, Color.WHITE);
-      game.setStone(4, 1, Color.WHITE);
+      game.setStone(3, 1, Color.Black);
+      game.setStone(4, 0, Color.Black);
+      game.setStone(5, 1, Color.Black);
+      game.setStone(3, 2, Color.White);
+      game.setStone(4, 3, Color.White);
+      game.setStone(5, 2, Color.White);
+      game.setStone(4, 1, Color.White);
 
-      game.setStone(6, 1, Color.BLACK);
-      game.setStone(7, 0, Color.BLACK);
-      game.setStone(8, 1, Color.BLACK);
-      game.setStone(6, 2, Color.WHITE);
-      game.setStone(7, 3, Color.WHITE);
-      game.setStone(8, 2, Color.WHITE);
-      game.setStone(7, 1, Color.WHITE);
+      game.setStone(6, 1, Color.Black);
+      game.setStone(7, 0, Color.Black);
+      game.setStone(8, 1, Color.Black);
+      game.setStone(6, 2, Color.White);
+      game.setStone(7, 3, Color.White);
+      game.setStone(8, 2, Color.White);
+      game.setStone(7, 1, Color.White);
 
       assert(game.play(4, 2)); // black captures 2nd ko
       assert(game.play(1, 1)); // white captures 1st ko
@@ -462,29 +461,29 @@ describe('Game object', () => {
     it('Allow Triple Ko (repeating of any position) in Japanese rules', () => {
       const game = new Game(9);
 
-      game.setStone(0, 1, Color.BLACK);
-      game.setStone(1, 0, Color.BLACK);
-      game.setStone(2, 1, Color.BLACK);
-      game.setStone(0, 2, Color.WHITE);
-      game.setStone(1, 3, Color.WHITE);
-      game.setStone(2, 2, Color.WHITE);
-      game.setStone(1, 2, Color.BLACK);
+      game.setStone(0, 1, Color.Black);
+      game.setStone(1, 0, Color.Black);
+      game.setStone(2, 1, Color.Black);
+      game.setStone(0, 2, Color.White);
+      game.setStone(1, 3, Color.White);
+      game.setStone(2, 2, Color.White);
+      game.setStone(1, 2, Color.Black);
 
-      game.setStone(3, 1, Color.BLACK);
-      game.setStone(4, 0, Color.BLACK);
-      game.setStone(5, 1, Color.BLACK);
-      game.setStone(3, 2, Color.WHITE);
-      game.setStone(4, 3, Color.WHITE);
-      game.setStone(5, 2, Color.WHITE);
-      game.setStone(4, 1, Color.WHITE);
+      game.setStone(3, 1, Color.Black);
+      game.setStone(4, 0, Color.Black);
+      game.setStone(5, 1, Color.Black);
+      game.setStone(3, 2, Color.White);
+      game.setStone(4, 3, Color.White);
+      game.setStone(5, 2, Color.White);
+      game.setStone(4, 1, Color.White);
 
-      game.setStone(6, 1, Color.BLACK);
-      game.setStone(7, 0, Color.BLACK);
-      game.setStone(8, 1, Color.BLACK);
-      game.setStone(6, 2, Color.WHITE);
-      game.setStone(7, 3, Color.WHITE);
-      game.setStone(8, 2, Color.WHITE);
-      game.setStone(7, 1, Color.WHITE);
+      game.setStone(6, 1, Color.Black);
+      game.setStone(7, 0, Color.Black);
+      game.setStone(8, 1, Color.Black);
+      game.setStone(6, 2, Color.White);
+      game.setStone(7, 3, Color.White);
+      game.setStone(8, 2, Color.White);
+      game.setStone(7, 1, Color.White);
 
       assert(game.play(4, 2)); // black captures 2nd ko
       assert(game.play(1, 1)); // white captures 1st ko
@@ -501,18 +500,18 @@ describe('Game object', () => {
       game.pass();
 
       deepEqual(initialPosition.toTwoDimensionalArray(), game.position.toTwoDimensionalArray());
-      equal(game.turn, Color.WHITE);
+      equal(game.turn, Color.White);
       equal(game.position.capCount.black, 0);
       equal(game.position.capCount.white, 0);
 
-      game.pass(Color.BLACK);
-      equal(game.turn, Color.WHITE);
+      game.pass(Color.Black);
+      equal(game.turn, Color.White);
 
       game.pass();
-      equal(game.turn, Color.BLACK);
+      equal(game.turn, Color.Black);
 
-      game.pass(Color.WHITE);
-      equal(game.turn, Color.BLACK);
+      game.pass(Color.White);
+      equal(game.turn, Color.Black);
 
       deepEqual(initialPosition.toTwoDimensionalArray(), game.position.toTwoDimensionalArray());
     });

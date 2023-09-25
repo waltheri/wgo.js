@@ -25,7 +25,7 @@ var board = new WGo.CanvasBoard(document.getElementById('board'), {
 
 board.addObjectAt(5, 10, new WGo.BoardMarkupObject('CR'));
 board.addObjectAt(10, 5, new WGo.BoardMarkupObject('B'));
-board.addObjectAt(10, 5, new WGo.BoardMarkupObject('CR', WGo.Color.BLACK));
+board.addObjectAt(10, 5, new WGo.BoardMarkupObject('CR', WGo.Color.Black));
 board.addObjectAt(10, 10, new WGo.FieldObject('B'));
 board.addObjectAt(11, 11, new WGo.FieldObject('B'));
 board.addObjectAt(10, 11, new WGo.FieldObject('W'));
@@ -36,7 +36,7 @@ board.addObjectAt(11, 10, opaque);
 board.addObjectAt(5, 4, new WGo.BoardMarkupObject('SQ'));
 board.addObjectAt(6, 4, new WGo.BoardLabelObject('225'));
 
-var o2 = new WGo.BoardLabelObject('A', WGo.Color.BLACK);
+var o2 = new WGo.BoardLabelObject('A', WGo.Color.Black);
 o2.zIndex = 10;
 board.addObjectAt(7, 4, o2);
 var o1 = new WGo.FieldObject('B');

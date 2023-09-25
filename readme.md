@@ -6,7 +6,7 @@ WGo is a JavaScript library for purposes of game of Go. You can easily embed a b
 
 ### SGF Parser
 
-WGo contains low level `SGFParser` class, which can parse SGF string into JavaScript object. You probably won't need to use this class, if you are using other parts of the library. However this can be useful for example if you want to convert SGF file to other formats or your own data structure.
+WGo contains low level `SGFParser` class, which can parse SGF string into JavaScript object. You probably won't need to use this class, if you are using other parts of the library. However this can be useful for example if you want to convert SGF file to other formats or your own data structure. SGF property values in resulting object are stored as strings, so this is not best choice for further processing. For that reason, WGo also contains `Kifu` object, which is higher representation of go game record with methods for its easy manipulation.
 
 #### Basic usage
 
@@ -68,3 +68,5 @@ Parses sequence of property values - `PropValue { PropValue }`.
 ##### `parsePropertyValue(sgfString: `*`string`*`): `*`string`*
 
 Parse SGF property value - `"[" CValueType "]"`.
+
+### Kifu

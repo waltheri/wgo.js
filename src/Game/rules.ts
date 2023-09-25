@@ -10,7 +10,6 @@
  * SGF `RU` property.
  */
 
-
 /**
  * Specifies how/if position can be repeated during the game.
  */
@@ -30,7 +29,7 @@ export enum Repeating {
 
 /**
  * Specification of go rules. Currently this is not complete set of rules to compute
- * game result, however it is enough to decide valid/invalid move. 
+ * game result, however it is enough to decide valid/invalid move.
  */
 export interface GoRules {
   /**
@@ -50,7 +49,7 @@ export interface GoRules {
 
   /**
    * Size of a komi (white's extra points). Can be used to count result. However it may not be enough.
-   * TODO: add some other rule/s needed to count result exactly. 
+   * TODO: add some other rule/s needed to count result exactly.
    */
   komi: number;
 }

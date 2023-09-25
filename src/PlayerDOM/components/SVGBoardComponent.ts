@@ -19,8 +19,8 @@ import PlayerDOM from '../PlayerDOM';
 import { PropIdent } from '../../SGFParser/sgfTypes';
 
 const colorsMap: { [key: string]: Color } = {
-  B: Color.BLACK,
-  W: Color.WHITE,
+  B: Color.Black,
+  W: Color.White,
 };
 
 export interface SVGBoardComponentConfig {

@@ -1,5 +1,5 @@
 import SGFSyntaxError from './SGFSyntaxError';
-import SGFTraverser from './SGFTraverser';
+import SGFParsingContext from './SGFParsingContext';
 import { PropIdent, SGFProperties, SGFCollection, SGFGameTree, SGFNode } from './sgfTypes';
 
 /**
@@ -27,27 +27,31 @@ export default class SGFParser {
    * Parse SGF property value - `"[" CValueType "]"`.
    * @param optional
    */
-  parsePropertyValue(sgfString: string, optional = false, traverser = new SGFTraverser()): string {
-    if (optional && traverser.currentNonWhitespaceChar(sgfString) !== '[') {
+  parsePropertyValue(
+    sgfString: string,
+    optional = false,
+    context = new SGFParsingContext(),
+  ): string {
+    if (optional && context.currentNonWhitespaceChar(sgfString) !== '[') {
       return;
     }
 
     let value = '';
 
     // process "[" and read first char
-    let char = traverser.assertCharAndMoveToNext(sgfString, '[');
+    let char = context.assertCharAndMoveToNext(sgfString, '[');
 
     while (char !== ']') {
       if (!char) {
         // char mustn't be undefined
-        throw new SGFSyntaxError('End of SGF inside of property', sgfString, traverser);
+        throw new SGFSyntaxError('End of SGF inside of property', sgfString, context);
       } else if (char === '\\') {
         // if there is character '\' save next character
-        char = traverser.moveToNextChar(sgfString);
+        char = context.moveToNextChar(sgfString);
 
         if (!char) {
           // char have to exist of course
-          throw new SGFSyntaxError('End of SGF inside of property', sgfString, traverser);
+          throw new SGFSyntaxError('End of SGF inside of property', sgfString, context);
         } else if (char === '\n') {
           // ignore new line, otherwise save
           continue;
@@ -58,10 +62,10 @@ export default class SGFParser {
       value += char;
 
       // and move to next one
-      char = traverser.moveToNextChar(sgfString);
+      char = context.moveToNextChar(sgfString);
     }
 
-    traverser.assertCharAndMoveToNext(sgfString, ']');
+    context.assertCharAndMoveToNext(sgfString, ']');
 
     return value;
   }
@@ -69,19 +73,23 @@ export default class SGFParser {
   /**
    * Reads the property identifiers (One or more UC letters) - `UcLetter { UcLetter }`.
    */
-  parsePropertyIdent(sgfString: string, traverser = new SGFTraverser()): PropIdent {
+  parsePropertyIdent(sgfString: string, context = new SGFParsingContext()): PropIdent {
     let ident = '';
 
     // Read current significant character
-    let char = traverser.currentNonWhitespaceChar(sgfString);
+    let char = context.currentNonWhitespaceChar(sgfString);
 
     if (!isCharUCLetter(char)) {
-      throw new SGFSyntaxError('Property identifier must consists from upper case letters.', sgfString, traverser);
+      throw new SGFSyntaxError(
+        'Property identifier must consists from upper case letters.',
+        sgfString,
+        context,
+      );
     }
 
     ident += char;
 
-    while (char = traverser.moveToNextChar(sgfString)) {
+    while ((char = context.moveToNextChar(sgfString))) {
       if (!isCharUCLetter(char)) {
         break;
       }
@@ -95,15 +103,12 @@ export default class SGFParser {
   /**
    * Parses sequence of property values - `PropValue { PropValue }`.
    */
-  parsePropertyValues(sgfString: string, traverser = new SGFTraverser()) {
+  parsePropertyValues(sgfString: string, context = new SGFParsingContext()) {
     const values: string[] = [];
-    let value = this.parsePropertyValue(sgfString, false, traverser);
+    let value = this.parsePropertyValue(sgfString, false, context);
+    values.push(value);
 
-    if (value) {
-      values.push(value);
-    }
-
-    while (value = this.parsePropertyValue(sgfString, true, traverser)) {
+    while ((value = this.parsePropertyValue(sgfString, true, context))) {
       values.push(value);
     }
 
@@ -113,24 +118,27 @@ export default class SGFParser {
   /**
    * Parses a SGF property - `PropIdent PropValue { PropValue }`.
    */
-  parseProperty(sgfString: string, traverser = new SGFTraverser()): [PropIdent, string[]] {
-    if (!isCharUCLetter(traverser.currentNonWhitespaceChar(sgfString))) {
+  parseProperty(sgfString: string, context = new SGFParsingContext()): [PropIdent, string[]] {
+    if (!isCharUCLetter(context.currentNonWhitespaceChar(sgfString))) {
       return;
     }
 
-    return [this.parsePropertyIdent(sgfString, traverser), this.parsePropertyValues(sgfString, traverser)];
+    return [
+      this.parsePropertyIdent(sgfString, context),
+      this.parsePropertyValues(sgfString, context),
+    ];
   }
 
   /**
    * Parses a SGF node - `";" { Property }`.
    */
-  parseNode(sgfString: string, traverser = new SGFTraverser()): SGFNode {
-    traverser.assertCharAndMoveToNext(sgfString, ';');
+  parseNode(sgfString: string, context = new SGFParsingContext()): SGFNode {
+    context.assertCharAndMoveToNext(sgfString, ';');
 
     const properties: SGFProperties = {};
     let property: [PropIdent, string[]];
 
-    while (property = this.parseProperty(sgfString, traverser)) {
+    while ((property = this.parseProperty(sgfString, context))) {
       properties[property[0]] = property[1];
     }
 
@@ -140,13 +148,13 @@ export default class SGFParser {
   /**
    * Parses a SGF Sequence - `Node { Node }`.
    */
-  parseSequence(sgfString: string, traverser = new SGFTraverser()): SGFNode[] {
+  parseSequence(sgfString: string, context = new SGFParsingContext()): SGFNode[] {
     const sequence: SGFNode[] = [];
 
-    sequence.push(this.parseNode(sgfString, traverser));
+    sequence.push(this.parseNode(sgfString, context));
 
-    while (traverser.currentNonWhitespaceChar(sgfString) === ';') {
-      sequence.push(this.parseNode(sgfString, traverser));
+    while (context.currentNonWhitespaceChar(sgfString) === ';') {
+      sequence.push(this.parseNode(sgfString, context));
     }
 
     return sequence;
@@ -155,17 +163,17 @@ export default class SGFParser {
   /**
    * Parses a SGF *GameTree* - `"(" Sequence { GameTree } ")"`.
    */
-  parseGameTree(sgfString: string, traverser = new SGFTraverser()): SGFGameTree {
-    traverser.assertCharAndMoveToNext(sgfString, '(');
+  parseGameTree(sgfString: string, context = new SGFParsingContext()): SGFGameTree {
+    context.assertCharAndMoveToNext(sgfString, '(');
 
-    const sequence = this.parseSequence(sgfString, traverser);
+    const sequence = this.parseSequence(sgfString, context);
     let children: SGFGameTree[] = [];
 
-    if (traverser.currentNonWhitespaceChar(sgfString) === '(') {
-      children = this.parseCollection(sgfString, traverser);
+    if (context.currentNonWhitespaceChar(sgfString) === '(') {
+      children = this.parseCollection(sgfString, context);
     }
 
-    traverser.assertCharAndMoveToNext(sgfString, ')');
+    context.assertCharAndMoveToNext(sgfString, ')');
 
     return { sequence, children };
   }
@@ -173,12 +181,12 @@ export default class SGFParser {
   /**
    * Parses a SGF *Collection* - `Collection = GameTree { GameTree }`. This is the main method for parsing SGF file.
    */
-  parseCollection(sgfString: string, traverser = new SGFTraverser()): SGFCollection {
+  parseCollection(sgfString: string, context = new SGFParsingContext()): SGFCollection {
     const gameTrees: SGFCollection = [];
-    gameTrees.push(this.parseGameTree(sgfString, traverser));
+    gameTrees.push(this.parseGameTree(sgfString, context));
 
-    while (traverser.currentNonWhitespaceChar(sgfString) === '(') {
-      gameTrees.push(this.parseGameTree(sgfString, traverser));
+    while (context.currentNonWhitespaceChar(sgfString) === '(') {
+      gameTrees.push(this.parseGameTree(sgfString, context));
     }
 
     return gameTrees;

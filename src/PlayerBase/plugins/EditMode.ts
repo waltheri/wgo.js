@@ -143,7 +143,7 @@ export default class EditMode implements PlayerPlugin {
     this._boardMouseMoveEvent = (p: Point) => {
       if (lastX !== p.x || lastY !== p.y) {
         if (this.player.game.isValid(p.x, p.y)) {
-          const boardObject = this.player.game.turn === Color.BLACK ? blackStone : whiteStone;
+          const boardObject = this.player.game.turn === Color.Black ? blackStone : whiteStone;
           boardObject.setPosition(p.x, p.y);
 
           if (addedStone) {

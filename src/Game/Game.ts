@@ -61,7 +61,7 @@ export default class Game {
     return this.position.turn;
   }
 
-  set turn(color: Color.WHITE | Color.BLACK) {
+  set turn(color: Color.White | Color.Black) {
     this.position.turn = color;
   }
 
@@ -128,7 +128,7 @@ export default class Game {
    *
    * @param {(BLACK|WHITE)} c color
    */
-  pass(c: Color.BLACK | Color.WHITE = this.turn) {
+  pass(c: Color.Black | Color.White = this.turn) {
     const nextPosition = this.position.clone();
     nextPosition.turn = -(c || this.turn);
     this.pushPosition(nextPosition);
@@ -164,8 +164,8 @@ export default class Game {
    * @param {Color} c color
    * @return {boolean} true if operation is successful.
    */
-  addStone(x: number, y: number, c: Color.BLACK | Color.WHITE): boolean {
-    if (this.isOnBoard(x, y) && this.position.get(x, y) === Color.EMPTY) {
+  addStone(x: number, y: number, c: Color.Black | Color.White): boolean {
+    if (this.isOnBoard(x, y) && this.position.get(x, y) === Color.Empty) {
       this.position.set(x, y, c);
       return true;
     }
@@ -180,8 +180,8 @@ export default class Game {
    * @return {boolean} true if operation is successful.
    */
   removeStone(x: number, y: number): boolean {
-    if (this.isOnBoard(x, y) && this.position.get(x, y) !== Color.EMPTY) {
-      this.position.set(x, y, Color.EMPTY);
+    if (this.isOnBoard(x, y) && this.position.get(x, y) !== Color.Empty) {
+      this.position.set(x, y, Color.Empty);
       return true;
     }
     return false;
