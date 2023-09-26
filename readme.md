@@ -206,3 +206,42 @@ Removes existing markup (same type on same position).
 ##### `removeMarkupAt(point: Point)`
 
 Removes all markup on given position. Line markups won't be affected.
+
+### Basic example of Kifu
+
+This example contains most basic use cases - create kifu from SGF, edit something and then convert it back to SGF.
+
+```typescript
+import { Kifu } from 'wgo';
+
+const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
+
+console.log(kifu.info.boardSize); // 19
+console.log(kifu.info.properties.FF); // 4
+console.log(kifu.info.properties.AB); // undefined - AB is stored in kifu node
+console.log(kifu.root.setup); // [{ x: 0, y: 1, c: 1 }] - Color.Black equals to 1
+console.log(kifu.root.move); // undefined - no move here
+
+const move1 = kifu.root.children[0];
+console.log(move1.move); // { x: 2, y: 3, c: 1 }
+
+const move2 = move1.children[0];
+console.log(move2.move); // { x: 4, y: 5, c: -1 } - Color.White equals to -1
+
+// Add variation
+const altMove2 = new KifuNode();
+altMove2.move = { x: 6, y: 7, c: -1 };
+move1.children.push(altMove2);
+console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]))'
+
+// Set properties (markup) in SGF format
+altMove2.setSGFProperties({
+  TR: ['aa'],
+  SQ: ['bb'],
+});
+console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb]))'
+
+// Add additional markup
+altMove2.addMarkup({ type: MarkupType.Square, x: 2, y: 2});
+console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb][cc]))'
+```

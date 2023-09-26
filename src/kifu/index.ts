@@ -1,4 +1,5 @@
 export { default as Kifu } from './Kifu';
+export * from './Kifu';
 
 export { default as KifuInfo } from './KifuInfo';
 export { default as kifuInfoSGFPropertyDescriptors } from './kifuInfoSGFPropertyDescriptors';

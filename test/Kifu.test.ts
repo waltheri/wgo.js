@@ -51,4 +51,18 @@ describe('Kifu object', () => {
     kifu.root.children[1].children.push(KifuNode.fromJS({ move: { x: 6, y: 7, c: Color.W } }));
     strictEqual(kifu.toSGF(), '(;GC[Game comment]AB[ab](;B[cd])(;B[ef];W[gh]))');
   });
+
+  it('Method getNode with number argument', () => {
+    const kifu = Kifu.fromSGF('(;C[1](;C[2a];C[3a](;C[4aa])(;C[4ab]))(;C[2b];C[3b]))');
+    strictEqual(kifu.getNode(0)?.comment, '1');
+    strictEqual(kifu.getNode(3)?.comment, '4aa');
+    strictEqual(kifu.getNode(4), null);
+  });
+
+  it('Method getNode with path object argument', () => {
+    const kifu = Kifu.fromSGF('(;C[1](;C[2a];C[3a](;C[4aa])(;C[4ab]))(;C[2b];C[3b]))');
+    strictEqual(kifu.getNode({ moveNumber: 3, variations: [0, 1] })?.comment, '4ab');
+    strictEqual(kifu.getNode({ moveNumber: 2, variations: [1] })?.comment, '3b');
+    strictEqual(kifu.getNode({ moveNumber: 2, variations: [2] }), null);
+  });
 });

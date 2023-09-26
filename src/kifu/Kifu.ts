@@ -3,6 +3,21 @@ import KifuInfo from './KifuInfo';
 import KifuNode from './KifuNode';
 
 /**
+ * Object describing position of kifu node in kifu tree. When kifu changes, kifu paths must be
+ * updated too, if we want them to correspond to the same nodes.
+ */
+export interface KifuPath {
+  /** Depth of node (for root node it is 0) */
+  moveNumber: number;
+
+  /**
+   * Array of children array indexes of all predecessors which have siblings. These numbers
+   * are used, when there is fork in kifu tree and we have to decide witch child to use.
+   */
+  variations: number[];
+}
+
+/**
  * Represents one go game record. It is inspired by SGF format, but its properties have better names and
  * their values have better types, so it is easier to use. For example in SGF you have property `B` for black
  * move and its value like `de`, in `Kifu` (respectively `KifuNode`) you have property `move` and value
@@ -20,6 +35,41 @@ export default class Kifu {
     public info = new KifuInfo(),
     public root = new KifuNode(),
   ) {}
+
+  /**
+   * Get KifuNode located on specified path in the kifu. You can also pass number, in that case
+   * it will corresponds to move number.
+   */
+  getNode(path: KifuPath | number): KifuNode | null {
+    const moveNumber = typeof path === 'number' ? path : path.moveNumber;
+    const variations = typeof path === 'number' ? [] : path.variations;
+    let node = this.root;
+    let varCount = 0;
+
+    for (let i = 0; i < moveNumber; i++) {
+      if (!node.children.length) {
+        return null;
+      } else if (node.children.length > 1) {
+        node = node.children[variations[varCount] || 0];
+        varCount++;
+      } else {
+        node = node.children[0];
+      }
+
+      if (!node) {
+        return null;
+      }
+    }
+
+    return node;
+  }
+
+  /**
+   * Finds path of specified node. If kifu doesn't contain the node, null is returned.
+   */
+  /*getPath(node: KifuNode): KifuPath | null {
+    
+  }*/
 
   /**
    * Generates full SGF string from this kifu.
