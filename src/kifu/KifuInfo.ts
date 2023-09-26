@@ -1,5 +1,4 @@
-import { SGFProperties } from '../SGFParser';
-import { SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
+import { SGFProperties, SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
 import kifuInfoSGFPropertyDescriptors from './kifuInfoSGFPropertyDescriptors';
 import kifuNodeSGFPropertyDescriptors from './kifuNodeSGFPropertyDescriptors';
 
@@ -46,7 +45,7 @@ export default class KifuInfo extends SGFPropertiesBag {
    */
   variationsStyle?: {
     /**
-     * If true variations of current info should be shown (siblings variations). Otherwise successor info
+     * If true variations of current node should be shown (siblings variations). Otherwise successor info
      * variations are shown (children variations).
      */
     currentNode?: boolean;

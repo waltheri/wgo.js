@@ -5,7 +5,7 @@ export { Color } from './types';
 export { version } from '../package.json';
 
 // SGF parser
-export * from './SGFParser';
+export * from './sgf';
 
 // KifuNode related
 export * from './kifu';

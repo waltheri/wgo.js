@@ -1,10 +1,11 @@
 /* Test of WGo kifu classes and functionality */
 
-import { strictEqual, deepEqual } from 'assert';
-import { Color } from '../src/types';
+import { strictEqual, deepEqual, ok } from 'assert';
+// import { Color } from '../src/types';
 import KifuNode, { MarkupType } from '../src/kifu/KifuNode';
-import { PropIdent } from '../src/SGFParser';
+import { PropIdent } from '../src/sgf';
 import { kifuNodeSGFPropertyDescriptors } from '../src/kifu';
+import { Color } from '../src/types';
 
 describe('KifuNode', () => {
   describe('Correct transformation from SGF property values.', () => {
@@ -754,6 +755,28 @@ describe('KifuNode', () => {
       });
       strictEqual(node.comment, 'AB[hm][fk]\\');
       strictEqual(node.getSGFProperties(), 'C[AB[hm\\][fk\\]\\\\]');
+    });
+  });
+
+  describe('Configuring of Kifu node', () => {
+    it('Adding custom markup', () => {
+      KifuNode.defineProperties({
+        FOO: KifuNode.createPointMarkupDescriptor('FOO' as any),
+        BAR: KifuNode.createLineMarkupDescriptor('BAR' as any),
+      });
+      const node = KifuNode.fromSGF('B[ab]FOO[ab]BAR[cd:ef]TR[ef]');
+
+      deepEqual(node.move, { x: 0, y: 1, c: Color.B });
+      deepEqual(node.markup, [
+        { x: 0, y: 1, type: 'FOO' },
+        { x1: 2, y1: 3, x2: 4, y2: 5, type: 'BAR' },
+        { x: 4, y: 5, type: 'TR' },
+      ]);
+
+      ok(node.getSGFProperties().indexOf('B[ab]') !== -1);
+      ok(node.getSGFProperties().indexOf('FOO[ab]') !== -1);
+      ok(node.getSGFProperties().indexOf('BAR[cd:ef]') !== -1);
+      ok(node.getSGFProperties().indexOf('TR[ef]') !== -1);
     });
   });
 });

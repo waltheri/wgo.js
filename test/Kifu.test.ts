@@ -1,4 +1,4 @@
-import { strictEqual, deepEqual } from 'assert';
+import { strictEqual, deepEqual, notDeepEqual } from 'assert';
 import { Kifu, KifuInfo, KifuNode } from '../src/kifu';
 import { Color } from '../src/types';
 
@@ -20,5 +20,35 @@ describe('Kifu object', () => {
       kifu.root.children[0].children[0],
       KifuNode.fromJS({ move: { x: 4, y: 5, c: Color.W } }),
     );
+  });
+
+  it('Convert kifu into JSON and back', () => {
+    const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
+    const json = JSON.stringify(kifu.toJS());
+    const kifu2 = Kifu.fromJS(JSON.parse(json));
+    deepEqual(kifu, kifu2);
+  });
+
+  it('Cloning of kifu', () => {
+    const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
+    const kifu2 = kifu.clone();
+    deepEqual(kifu, kifu2);
+    kifu2.root.children[0].move!.c = Color.W;
+    notDeepEqual(kifu, kifu2);
+  });
+
+  it('Convert to SGF', () => {
+    const kifu = Kifu.fromSGF('(;SZ[19]AB[ab];B[cd];W[ef])');
+    strictEqual(kifu.toSGF(), '(;SZ[19]AB[ab];B[cd];W[ef])');
+  });
+
+  it('Convert to SGF with variations', () => {
+    const kifu = new Kifu();
+    kifu.info.gameComment = 'Game comment';
+    kifu.root.setSGFProperty('AB', ['ab']);
+    kifu.root.children.push(KifuNode.fromJS({ move: { x: 2, y: 3, c: Color.B } }));
+    kifu.root.children.push(KifuNode.fromJS({ move: { x: 4, y: 5, c: Color.B } }));
+    kifu.root.children[1].children.push(KifuNode.fromJS({ move: { x: 6, y: 7, c: Color.W } }));
+    strictEqual(kifu.toSGF(), '(;GC[Game comment]AB[ab](;B[cd])(;B[ef];W[gh]))');
   });
 });

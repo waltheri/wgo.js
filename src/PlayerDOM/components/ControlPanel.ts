@@ -1,7 +1,7 @@
 import { SVGBoardComponent } from '.';
 import { PlayerBase } from '../../PlayerBase';
 import { EditMode } from '../../PlayerBase/plugins';
-import { PropIdent } from '../../SGFParser/sgfTypes';
+import { PropIdent } from '../../sgf';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import GameInfoBox from './GameInfoBox';
@@ -61,14 +61,16 @@ export default class ControlPanel implements PlayerDOMComponent {
     this.first = document.createElement('button');
     this.first.type = 'button';
     this.first.className = 'wgo-player__button';
-    this.first.innerHTML = '<span class="wgo-player__icon-to-end wgo-player__icon--reverse"></span>';
+    this.first.innerHTML =
+      '<span class="wgo-player__icon-to-end wgo-player__icon--reverse"></span>';
     this.first.addEventListener('click', () => this.player.first());
     buttonGroup.appendChild(this.first);
 
     this.previous = document.createElement('button');
     this.previous.type = 'button';
     this.previous.className = 'wgo-player__button';
-    this.previous.innerHTML = '<span class="wgo-player__icon-play wgo-player__icon--reverse"></span>';
+    this.previous.innerHTML =
+      '<span class="wgo-player__icon-play wgo-player__icon--reverse"></span>';
     this.previous.addEventListener('click', () => this.player.previous());
     buttonGroup.appendChild(this.previous);
 
@@ -190,7 +192,10 @@ export default class ControlPanel implements PlayerDOMComponent {
         const sgf = player.rootNode.toSGF();
 
         const element = document.createElement('a');
-        element.setAttribute('href', `data:application/x-go-sgf;charset=utf-8,${encodeURIComponent(sgf)}`);
+        element.setAttribute(
+          'href',
+          `data:application/x-go-sgf;charset=utf-8,${encodeURIComponent(sgf)}`,
+        );
         element.setAttribute('download', `${name}.sgf`);
 
         element.style.display = 'none';
@@ -255,7 +260,8 @@ export default class ControlPanel implements PlayerDOMComponent {
         const wgoInfo = document.createElement('div');
         wgoInfo.className = 'wgo-player__wgo-info';
         // tslint:disable-next-line:max-line-length
-        wgoInfo.innerHTML = 'Game viewed in open source JS player <a href="https://github.com/waltheri/wgo.js" target="_blank">WGo</a>.';
+        wgoInfo.innerHTML =
+          'Game viewed in open source JS player <a href="https://github.com/waltheri/wgo.js" target="_blank">WGo</a>.';
         modalContent.appendChild(wgoInfo);
 
         callback(overlay);

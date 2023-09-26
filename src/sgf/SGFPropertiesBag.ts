@@ -1,9 +1,10 @@
-import { PropIdent, SGFParser, SGFProperties } from '../SGFParser';
 import { Point } from '../types';
+import SGFParser from './SGFParser';
+import { PropIdent, SGFProperties } from './sgfTypes';
 
 export interface SGFPropertyDescriptors<T> {
   [propIdent: string]: {
-    set(value: string[], entity: T): void;
+    set(entity: T, value: string[]): void;
     get(entity: T): string[] | undefined;
   };
 }
@@ -27,7 +28,7 @@ export default abstract class SGFPropertiesBag {
       return;
     }
 
-    descriptors[propIdent].set(propValues, this);
+    descriptors[propIdent].set(this, propValues);
   }
 
   /**

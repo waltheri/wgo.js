@@ -1,5 +1,5 @@
 import { LifeCycleEvent } from './types';
-import { PropIdent } from '../SGFParser/sgfTypes';
+import { PropIdent } from '../sgf';
 import { Color, Point } from '../types';
 import { goRules } from '../Game';
 
@@ -41,9 +41,15 @@ export function applyGameChangesPL(event: LifeCycleEvent<Color.Black | Color.Whi
 export function applyGameChangesSetup(event: LifeCycleEvent<Point[]>) {
   let color: Color;
   switch (event.propIdent) {
-    case 'AB': color = Color.B; break;
-    case 'AW': color = Color.W; break;
-    case 'AE': color = Color.E; break;
+    case 'AB':
+      color = Color.B;
+      break;
+    case 'AW':
+      color = Color.W;
+      break;
+    case 'AE':
+      color = Color.E;
+      break;
   }
 
   event.value.forEach((value) => {

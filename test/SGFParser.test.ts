@@ -1,5 +1,5 @@
 import { deepEqual, throws } from 'assert';
-import { SGFSyntaxError, SGFParser } from '../src/SGFParser';
+import { SGFSyntaxError, SGFParser } from '../src/sgf';
 
 describe('SGFParser', () => {
   const parser = new SGFParser();

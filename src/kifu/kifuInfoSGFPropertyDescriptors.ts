@@ -3,7 +3,7 @@ import KifuInfo from './KifuInfo';
 
 const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
   SZ: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.boardSize = undefined;
         return;
@@ -24,7 +24,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   HA: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.handicap = undefined;
         return;
@@ -38,7 +38,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   KM: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.komi = undefined;
         return;
@@ -52,7 +52,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   ST: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.variationsStyle = undefined;
         return;
@@ -75,7 +75,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   PB: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.blackName = undefined;
         return;
@@ -89,7 +89,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   BR: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.blackRank = undefined;
         return;
@@ -103,7 +103,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   BT: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.blackTeam = undefined;
         return;
@@ -117,7 +117,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   PW: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.whiteName = undefined;
         return;
@@ -131,7 +131,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   WR: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.whiteRank = undefined;
         return;
@@ -145,7 +145,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   WT: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.whiteTeam = undefined;
         return;
@@ -159,7 +159,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   GN: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.gameName = undefined;
         return;
@@ -173,7 +173,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   GC: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.gameComment = undefined;
         return;
@@ -187,7 +187,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   DT: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.date = undefined;
         return;
@@ -201,7 +201,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   EV: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.event = undefined;
         return;
@@ -215,7 +215,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   PC: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.place = undefined;
         return;
@@ -229,7 +229,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   RO: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.round = undefined;
         return;
@@ -243,7 +243,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   RE: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.result = undefined;
         return;
@@ -257,7 +257,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   TM: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.timeLimits = undefined;
         return;
@@ -271,7 +271,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   OT: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.overTime = undefined;
         return;
@@ -285,7 +285,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   RU: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.rules = undefined;
         return;
@@ -299,7 +299,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   SO: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.source = undefined;
         return;
@@ -313,7 +313,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   US: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.author = undefined;
         return;
@@ -327,7 +327,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   AN: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.annotator = undefined;
         return;
@@ -341,7 +341,7 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
   CP: {
-    set([value], info) {
+    set(info, [value]) {
       if (!value) {
         info.copyright = undefined;
         return;

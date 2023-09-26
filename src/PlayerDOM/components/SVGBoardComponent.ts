@@ -16,7 +16,7 @@ import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import { Circle, Label as SVGLabel } from '../../SVGBoard/svgDrawHandlers';
 import PlayerDOMComponent from './PlayerDOMComponent';
 import PlayerDOM from '../PlayerDOM';
-import { PropIdent } from '../../SGFParser/sgfTypes';
+import { PropIdent } from '../../sgf';
 
 const colorsMap: { [key: string]: Color } = {
   B: Color.Black,
@@ -36,8 +36,8 @@ export interface SVGBoardComponentConfig {
 
 export const defaultSVGBoardComponentConfig: SVGBoardComponentConfig = {
   coordinates: true,
-  currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)', fillColor:'rgba(0,0,0,0)' }),
-  currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)', fillColor:'rgba(0,0,0,0)' }),
+  currentMoveBlackMark: new Circle({ color: 'rgba(255,255,255,0.8)', fillColor: 'rgba(0,0,0,0)' }),
+  currentMoveWhiteMark: new Circle({ color: 'rgba(0,0,0,0.8)', fillColor: 'rgba(0,0,0,0)' }),
   variationDrawHandler: new SVGLabel({ color: '#33f' }),
   highlightCurrentMove: true,
   showVariations: true,
@@ -130,7 +130,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     this.player = player;
 
     // set size during kifu load
-    this.player.on('beforeInit.SZ', this.beforeInitSZ); 
+    this.player.on('beforeInit.SZ', this.beforeInitSZ);
 
     // add general node listeners - for setting stones on board based on position
     this.player.on('applyNodeChanges', this.applyNodeChanges);
@@ -197,7 +197,10 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   protected updateStones() {
     // Remove missing stones in current position
     this.stoneBoardsObjects = this.stoneBoardsObjects.filter((boardObject) => {
-      if (this.player.game.getStone(boardObject.x, boardObject.y) !== colorsMap[boardObject.type as string]) {
+      if (
+        this.player.game.getStone(boardObject.x, boardObject.y) !==
+        colorsMap[boardObject.type as string]
+      ) {
         this.board.removeObject(boardObject);
         return false;
       }
@@ -210,9 +213,15 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     for (let x = 0; x < position.sizeX; x++) {
       for (let y = 0; y < position.sizeY; y++) {
         const c = position.get(x, y);
-        if (c && !this.stoneBoardsObjects.some(
-          boardObject => boardObject.x === x && boardObject.y === y && c === colorsMap[boardObject.type as string],
-        )) {
+        if (
+          c &&
+          !this.stoneBoardsObjects.some(
+            (boardObject) =>
+              boardObject.x === x &&
+              boardObject.y === y &&
+              c === colorsMap[boardObject.type as string],
+          )
+        ) {
           const boardObject = new FieldBoardObject(c === Color.B ? 'B' : 'W', x, y);
           this.board.addObject(boardObject);
           this.stoneBoardsObjects.push(boardObject);
@@ -250,7 +259,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
 
     const moves = this.getVariations();
     if (moves.length > 1) {
-      const ind = moves.findIndex(move => move && move.x === point.x && move.y === point.y);
+      const ind = moves.findIndex((move) => move && move.x === point.x && move.y === point.y);
 
       if (ind >= 0) {
         if (this.shouldShowCurrentVariations()) {
@@ -275,7 +284,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
 
   private handleVariationCursor(x: number, y: number, moves: Point[]) {
     if (moves.length > 1) {
-      const ind = moves.findIndex(move => move && move.x === x && move.y === y);
+      const ind = moves.findIndex((move) => move && move.x === x && move.y === y);
 
       if (ind >= 0) {
         this.element.style.cursor = 'pointer';
@@ -397,7 +406,9 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
 
       // add current move mark
       const boardMarkup = new SVGCustomFieldBoardObject(
-        event.propIdent === 'B' ? this.config.currentMoveBlackMark : this.config.currentMoveWhiteMark,
+        event.propIdent === 'B'
+          ? this.config.currentMoveBlackMark
+          : this.config.currentMoveWhiteMark,
         event.value.x,
         event.value.y,
       );
@@ -412,7 +423,7 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
   }
 
   removeTemporaryBoardObject(obj: FieldBoardObject) {
-    this.temporaryBoardObjects = this.temporaryBoardObjects.filter(o => o !== obj);
+    this.temporaryBoardObjects = this.temporaryBoardObjects.filter((o) => o !== obj);
     this.board.removeObject(obj);
   }
 
@@ -429,10 +440,14 @@ export default class SVGBoardComponent implements PlayerDOMComponent {
     if (this.shouldShowVariations()) {
       if (this.shouldShowCurrentVariations()) {
         if (this.player.currentNode.parent) {
-          return this.player.currentNode.parent.children.map(node => node.getProperty('B') || node.getProperty('W'));
+          return this.player.currentNode.parent.children.map(
+            (node) => node.getProperty('B') || node.getProperty('W'),
+          );
         }
       } else {
-        return this.player.currentNode.children.map(node => node.getProperty('B') || node.getProperty('W'));
+        return this.player.currentNode.children.map(
+          (node) => node.getProperty('B') || node.getProperty('W'),
+        );
       }
     }
     return [];

@@ -1,6 +1,6 @@
 import { GoRules } from '../Game';
 import PlayerBase from './PlayerBase';
-import { PropIdent } from '../SGFParser/sgfTypes';
+import { PropIdent } from '../sgf';
 
 export interface PlayerInitParams {
   size: number[];

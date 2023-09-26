@@ -1,4 +1,4 @@
-import { PropIdent } from '../../SGFParser/sgfTypes';
+import { PropIdent } from '../../sgf/sgfTypes';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerDOM from '../PlayerDOM';
 import PlayerDOMComponent from './PlayerDOMComponent';

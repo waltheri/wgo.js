@@ -1,4 +1,4 @@
-import { SGFGameTree, SGFParser } from '../SGFParser';
+import { SGFGameTree, SGFParser } from '../sgf';
 import KifuInfo from './KifuInfo';
 import KifuNode from './KifuNode';
 

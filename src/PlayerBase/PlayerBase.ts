@@ -1,7 +1,7 @@
 import KifuNode, { Path } from '../kifu/KifuNode';
 import EventEmitter from '../utils/EventEmitter';
 import { Game, goRules, GoRules, JAPANESE_RULES } from '../Game';
-import { PropIdent } from '../SGFParser/sgfTypes';
+import { PropIdent } from '../sgf/sgfTypes';
 import PropertyHandler from './PropertyHandler';
 import { PlayerInitParams } from './types';
 import * as basePropertyListeners from './basePropertyListeners';
@@ -50,7 +50,7 @@ export default class PlayerBase extends EventEmitter {
   /**
    * Create new game (kifu) and init player with it.
    */
-  newGame(size?: number | { x: number, y: number }, rules?: GoRules) {
+  newGame(size?: number | { x: number; y: number }, rules?: GoRules) {
     const rootNode = new KifuNode();
 
     if (size) {
@@ -63,7 +63,7 @@ export default class PlayerBase extends EventEmitter {
 
     if (rules) {
       // TODO: handle rules more correctly
-      const rulesName = Object.keys(goRules).find(name => (goRules as any)[name] === rules);
+      const rulesName = Object.keys(goRules).find((name) => (goRules as any)[name] === rules);
       if (rulesName) {
         rootNode.setProperty('RU', rulesName);
       }
@@ -94,7 +94,7 @@ export default class PlayerBase extends EventEmitter {
   }
 
   /**
-   * Trigger events related to new node. 
+   * Trigger events related to new node.
    */
   protected executeNode() {
     this.emitNodeLifeCycleEvent('applyGameChanges');
@@ -230,7 +230,10 @@ export default class PlayerBase extends EventEmitter {
    */
   goTo(pathOrMoveNumber: Path | number) {
     // TODO: check if there is a better way to do this
-    const path = typeof pathOrMoveNumber === 'number' ? { depth: pathOrMoveNumber, forks: [] } : pathOrMoveNumber;
+    const path =
+      typeof pathOrMoveNumber === 'number'
+        ? { depth: pathOrMoveNumber, forks: [] }
+        : pathOrMoveNumber;
     this.first();
 
     for (let i = 0, j = 0; i < path.depth; i++) {
@@ -266,8 +269,8 @@ export default class PlayerBase extends EventEmitter {
   }
 
   /**
-	 * Go to previous fork (a node with more than one child).
-	 */
+   * Go to previous fork (a node with more than one child).
+   */
   previousFork() {
     while (this.previous()) {
       if (this.currentNode.children.length > 1) {

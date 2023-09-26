@@ -1,8 +1,8 @@
 /* Test of WGo kifu classes and functionality */
 
-import { strictEqual, deepEqual } from 'assert';
+import { strictEqual, deepEqual, ok } from 'assert';
 import KifuInfo from '../src/kifu/KifuInfo';
-import { PropIdent } from '../src/SGFParser';
+import { PropIdent } from '../src/sgf';
 import { kifuInfoSGFPropertyDescriptors } from '../src/kifu';
 
 describe('KifuInfo', () => {
@@ -511,6 +511,26 @@ describe('KifuInfo', () => {
 
     it('Test of all property types', () => {
       strictEqual(tests, Object.keys(kifuInfoSGFPropertyDescriptors).length);
+    });
+  });
+
+  describe('Configuring of Kifu info', () => {
+    it('Adding custom properties', () => {
+      KifuInfo.defineProperties({
+        FF: {
+          get(node: any) {
+            return node.sgfVersion ? [String(node.sgfVersion)] : undefined;
+          },
+          set(node: any, [value]) {
+            if (value) {
+              node.sgfVersion = value;
+            }
+          },
+        },
+      });
+      const info = KifuInfo.fromSGF('FF[4]GC[Game comment]');
+      ok(info.getSGFProperties().indexOf('FF[4]') !== -1);
+      strictEqual((info as any).sgfVersion, '4');
     });
   });
 });

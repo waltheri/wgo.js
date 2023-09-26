@@ -1,107 +1,15 @@
 import { SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
 import { Color } from '../types';
-import KifuNode, { MarkupType, PointMarkup, LineMarkup, LabelMarkup } from './KifuNode';
-
-export function createMoveDescriptor(color: Color.Black | Color.White) {
-  return {
-    set([value]: string[], node: KifuNode) {
-      if (value) {
-        node.move = {
-          ...SGFPropertiesBag.parsePoint(value),
-          c: color,
-        };
-      } else if (value === '') {
-        node.move = { c: color };
-      } else {
-        node.move = undefined;
-      }
-    },
-    get(node: KifuNode) {
-      if (node.move && node.move.c === color) {
-        return ['x' in node.move ? SGFPropertiesBag.pointToSGFValue(node.move) : ''];
-      }
-    },
-  };
-}
-
-export function createSetupDescriptor(color: Color) {
-  return {
-    set(values: string[], node: KifuNode) {
-      node.setup = node.setup.filter((s) => s.c !== color);
-      values.forEach((value) => {
-        node.addSetup(SGFPropertiesBag.parsePoint(value), color);
-      });
-    },
-    get(node: KifuNode) {
-      const blackStones = node.setup.filter((s) => s.c === color);
-      return blackStones.map((bs) => SGFPropertiesBag.pointToSGFValue(bs));
-    },
-  };
-}
-
-export function createPointMarkupDescriptor(type: PointMarkup['type']) {
-  return {
-    set(values: string[], node: KifuNode) {
-      node.markup = node.markup.filter((m) => m.type !== type);
-      values.forEach((value) => {
-        node.addMarkup({
-          type,
-          ...SGFPropertiesBag.parsePoint(value),
-        });
-      });
-    },
-    get(node: KifuNode) {
-      const markup = node.markup.filter((m) => m.type === type) as PointMarkup[];
-      return markup.map((m) => SGFPropertiesBag.pointToSGFValue(m));
-    },
-  };
-}
-
-export function createLineMarkupDescriptor(type: LineMarkup['type']) {
-  return {
-    set(values: string[], node: KifuNode) {
-      node.markup = node.markup.filter((m) => m.type !== type);
-      values.forEach((value) => {
-        node.addMarkup({
-          type,
-          ...SGFPropertiesBag.parseVector(value),
-        });
-      });
-    },
-    get(node: KifuNode) {
-      const lineMarkup = node.markup.filter((m) => m.type === type) as LineMarkup[];
-      return lineMarkup.map((m) => SGFPropertiesBag.vectorToSGFValue(m));
-    },
-  };
-}
-
-export function createLabelMarkupDescriptor(type: LabelMarkup['type']) {
-  return {
-    set(values: string[], node: KifuNode) {
-      node.markup = node.markup.filter((m) => m.type !== type);
-      values.forEach((value) => {
-        node.addMarkup({
-          type,
-          text: value.substring(3),
-          ...SGFPropertiesBag.parsePoint(value),
-        });
-      });
-    },
-    get(node: KifuNode) {
-      const labelMarkup = node.markup.filter((m) => m.type === type) as LabelMarkup[];
-      return labelMarkup.map((m) => `${SGFPropertiesBag.pointToSGFValue(m)}:${m.text}`);
-    },
-  };
-}
+import KifuNode, { MarkupType } from './KifuNode';
 
 const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
-  B: createMoveDescriptor(Color.Black),
-  W: createMoveDescriptor(Color.White),
-  AB: createSetupDescriptor(Color.Black),
-  AW: createSetupDescriptor(Color.White),
-  AE: createSetupDescriptor(Color.Empty),
+  B: KifuNode.createMoveDescriptor(Color.Black),
+  W: KifuNode.createMoveDescriptor(Color.White),
+  AB: KifuNode.createSetupDescriptor(Color.Black),
+  AW: KifuNode.createSetupDescriptor(Color.White),
+  AE: KifuNode.createSetupDescriptor(Color.Empty),
   PL: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.turn = undefined;
         return;
@@ -115,7 +23,7 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
     },
   },
   VW: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.boardSection = undefined;
         return;
@@ -129,7 +37,7 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
     },
   },
   BL: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.blackTimeLeft = undefined;
         return;
@@ -143,7 +51,7 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
     },
   },
   OB: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.blackStonesLeft = undefined;
         return;
@@ -157,7 +65,7 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
     },
   },
   WL: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.whiteTimeLeft = undefined;
         return;
@@ -171,7 +79,7 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
     },
   },
   OW: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.whiteStonesLeft = undefined;
         return;
@@ -185,7 +93,7 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
     },
   },
   C: {
-    set([value], node) {
+    set(node, [value]) {
       if (!value) {
         node.comment = undefined;
         return;
@@ -198,15 +106,15 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
       }
     },
   },
-  CR: createPointMarkupDescriptor(MarkupType.Circle),
-  DD: createPointMarkupDescriptor(MarkupType.Dim),
-  MA: createPointMarkupDescriptor(MarkupType.XMark),
-  SL: createPointMarkupDescriptor(MarkupType.Selected),
-  SQ: createPointMarkupDescriptor(MarkupType.Square),
-  TR: createPointMarkupDescriptor(MarkupType.Triangle),
-  AR: createLineMarkupDescriptor(MarkupType.Arrow),
-  LN: createLineMarkupDescriptor(MarkupType.Line),
-  LB: createLabelMarkupDescriptor(MarkupType.Label),
+  CR: KifuNode.createPointMarkupDescriptor(MarkupType.Circle),
+  DD: KifuNode.createPointMarkupDescriptor(MarkupType.Dim),
+  MA: KifuNode.createPointMarkupDescriptor(MarkupType.XMark),
+  SL: KifuNode.createPointMarkupDescriptor(MarkupType.Selected),
+  SQ: KifuNode.createPointMarkupDescriptor(MarkupType.Square),
+  TR: KifuNode.createPointMarkupDescriptor(MarkupType.Triangle),
+  AR: KifuNode.createLineMarkupDescriptor(MarkupType.Arrow),
+  LN: KifuNode.createLineMarkupDescriptor(MarkupType.Line),
+  LB: KifuNode.createLabelMarkupDescriptor(MarkupType.Label),
 };
 
 export default kifuNodeSGFPropertyDescriptors;

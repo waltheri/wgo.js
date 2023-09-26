@@ -1,14 +1,7 @@
-import { SGFProperties } from '../SGFParser';
-import { SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
+import { SGFPropertiesBag, SGFPropertyDescriptors, SGFProperties } from '../sgf';
 import { Color, Field, Move, Point } from '../types';
 import kifuInfoSGFPropertyDescriptors from './kifuInfoSGFPropertyDescriptors';
-import kifuNodeSGFPropertyDescriptors, {
-  createLabelMarkupDescriptor,
-  createLineMarkupDescriptor,
-  createMoveDescriptor,
-  createPointMarkupDescriptor,
-  createSetupDescriptor,
-} from './kifuNodeSGFPropertyDescriptors';
+import kifuNodeSGFPropertyDescriptors from './kifuNodeSGFPropertyDescriptors';
 
 export enum MarkupType {
   Arrow = 'AR',
@@ -209,9 +202,95 @@ export default class KifuNode extends SGFPropertiesBag {
     Object.assign(kifuNodeSGFPropertyDescriptors, sgfPropertyDescriptors);
   }
 
-  static createMoveDescriptor = createMoveDescriptor;
-  static createSetupDescriptor = createSetupDescriptor;
-  static createPointMarkupDescriptor = createPointMarkupDescriptor;
-  static createLineMarkupDescriptor = createLineMarkupDescriptor;
-  static createLabelMarkupDescriptor = createLabelMarkupDescriptor;
+  static createMoveDescriptor(color: Color.Black | Color.White) {
+    return {
+      set(node: KifuNode, [value]: string[]) {
+        if (value) {
+          node.move = {
+            ...SGFPropertiesBag.parsePoint(value),
+            c: color,
+          };
+        } else if (value === '') {
+          node.move = { c: color };
+        } else {
+          node.move = undefined;
+        }
+      },
+      get(node: KifuNode) {
+        if (node.move && node.move.c === color) {
+          return ['x' in node.move ? SGFPropertiesBag.pointToSGFValue(node.move) : ''];
+        }
+      },
+    };
+  }
+
+  static createSetupDescriptor(color: Color) {
+    return {
+      set(node: KifuNode, values: string[]) {
+        node.setup = node.setup.filter((s) => s.c !== color);
+        values.forEach((value) => {
+          node.addSetup(SGFPropertiesBag.parsePoint(value), color);
+        });
+      },
+      get(node: KifuNode) {
+        const blackStones = node.setup.filter((s) => s.c === color);
+        return blackStones.map((bs) => SGFPropertiesBag.pointToSGFValue(bs));
+      },
+    };
+  }
+
+  static createPointMarkupDescriptor(type: PointMarkup['type']) {
+    return {
+      set(node: KifuNode, values: string[]) {
+        node.markup = node.markup.filter((m) => m.type !== type);
+        values.forEach((value) => {
+          node.addMarkup({
+            type,
+            ...SGFPropertiesBag.parsePoint(value),
+          });
+        });
+      },
+      get(node: KifuNode) {
+        const markup = node.markup.filter((m) => m.type === type) as PointMarkup[];
+        return markup.map((m) => SGFPropertiesBag.pointToSGFValue(m));
+      },
+    };
+  }
+
+  static createLineMarkupDescriptor(type: LineMarkup['type']) {
+    return {
+      set(node: KifuNode, values: string[]) {
+        node.markup = node.markup.filter((m) => m.type !== type);
+        values.forEach((value) => {
+          node.addMarkup({
+            type,
+            ...SGFPropertiesBag.parseVector(value),
+          });
+        });
+      },
+      get(node: KifuNode) {
+        const lineMarkup = node.markup.filter((m) => m.type === type) as LineMarkup[];
+        return lineMarkup.map((m) => SGFPropertiesBag.vectorToSGFValue(m));
+      },
+    };
+  }
+
+  static createLabelMarkupDescriptor(type: LabelMarkup['type']) {
+    return {
+      set(node: KifuNode, values: string[]) {
+        node.markup = node.markup.filter((m) => m.type !== type);
+        values.forEach((value) => {
+          node.addMarkup({
+            type,
+            text: value.substring(3),
+            ...SGFPropertiesBag.parsePoint(value),
+          });
+        });
+      },
+      get(node: KifuNode) {
+        const labelMarkup = node.markup.filter((m) => m.type === type) as LabelMarkup[];
+        return labelMarkup.map((m) => `${SGFPropertiesBag.pointToSGFValue(m)}:${m.text}`);
+      },
+    };
+  }
 }

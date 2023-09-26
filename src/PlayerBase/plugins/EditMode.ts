@@ -1,6 +1,6 @@
 import { FieldBoardObject } from '../../BoardBase';
 import KifuNode, { Path } from '../../kifu/KifuNode';
-import { PropIdent } from '../../SGFParser/sgfTypes';
+import { PropIdent } from '../../sgf/sgfTypes';
 import { Color, Point } from '../../types';
 import makeConfig, { PartialRecursive } from '../../utils/makeConfig';
 import PlayerBase from '../PlayerBase';
@@ -116,7 +116,7 @@ export default class EditMode implements PlayerPlugin {
     } else if (!value && this.config.enabled) {
       this._disable();
     }
-  }
+  };
 
   private _enable() {
     this._saveGameState();
@@ -152,7 +152,6 @@ export default class EditMode implements PlayerPlugin {
             this.player.emit('board.addTemporaryObject', boardObject);
             addedStone = boardObject;
           }
-
         } else {
           this._boardMouseOutEvent();
         }
