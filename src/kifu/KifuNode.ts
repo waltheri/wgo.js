@@ -1,7 +1,7 @@
 import { SGFPropertiesBag, SGFPropertyDescriptors, SGFProperties } from '../sgf';
 import { Color, Field, Move, Point } from '../types';
-import kifuInfoSGFPropertyDescriptors from './kifuInfoSGFPropertyDescriptors';
-import kifuNodeSGFPropertyDescriptors from './kifuNodeSGFPropertyDescriptors';
+import { kifuInfoSGFPropertyDescriptors } from './kifuInfoSGFPropertyDescriptors';
+import { kifuNodeSGFPropertyDescriptors } from './kifuNodeSGFPropertyDescriptors';
 
 export enum MarkupType {
   Arrow = 'AR',
@@ -52,7 +52,7 @@ export interface KifuNodeCustomProperties {
  * Class representing one kifu node. It contains some helpful methods for working with the node. Not all SGF properties are supported,
  * but you can access them through `properties` property.
  */
-export default class KifuNode extends SGFPropertiesBag {
+export class KifuNode extends SGFPropertiesBag {
   /**
    * Children of the node. Usually there is only one child representing next move, but there can be more children,
    * that would mean multiple variations.

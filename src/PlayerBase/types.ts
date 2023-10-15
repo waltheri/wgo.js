@@ -1,4 +1,4 @@
-import { GoRules } from '../Game';
+import { GoRules } from '../Game-old';
 import PlayerBase from './PlayerBase';
 import { PropIdent } from '../sgf';
 

@@ -7,11 +7,14 @@ export { version } from '../package.json';
 // SGF parser
 export * from './sgf';
 
-// KifuNode related
+// Go game record (kifu) related
 export * from './kifu';
 
+// Go game evaluation
+export * from './game';
+
+/*
 // Game logic
-export * from './Game';
 
 // UI Board
 export * from './BoardBase';
@@ -26,3 +29,4 @@ export { default as PlayerDOM } from './PlayerDOM/PlayerDOM';
 export * from './PlayerDOM/components';
 
 export { default as SimplePlayer } from './SimplePlayer';
+*/

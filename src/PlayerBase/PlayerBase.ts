@@ -1,6 +1,6 @@
 import KifuNode, { Path } from '../kifu/KifuNode';
 import EventEmitter from '../utils/EventEmitter';
-import { Game, goRules, GoRules, JAPANESE_RULES } from '../Game';
+import { Game, goRules, GoRules, JAPANESE_RULES } from '../Game-old';
 import { PropIdent } from '../sgf/sgfTypes';
 import PropertyHandler from './PropertyHandler';
 import { PlayerInitParams } from './types';

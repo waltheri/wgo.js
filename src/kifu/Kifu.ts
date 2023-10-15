@@ -1,6 +1,6 @@
 import { SGFGameTree, SGFParser } from '../sgf';
-import KifuInfo from './KifuInfo';
-import KifuNode from './KifuNode';
+import { KifuInfo } from './KifuInfo';
+import { KifuNode } from './KifuNode';
 
 /**
  * Object describing position of kifu node in kifu tree. When kifu changes, kifu paths must be
@@ -25,14 +25,55 @@ export interface KifuPath {
  * if SGF contains B and W properties on the same node, Kifu only stores the later one.
  *
  * Kifu doesn't have any internal state - it consists only from game information and game tree.
+ *
+ * @example
+ * ```javascript
+ * import { Kifu, KifuNode, MarkupType } from 'wgo';
+ *
+ * // Create kifu object from SGF
+ * const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
+ *
+ * console.log(kifu.info.boardSize); // 19
+ * console.log(kifu.info.properties.FF); // 4
+ * console.log(kifu.info.properties.AB); // undefined - AB is stored in kifu node
+ * console.log(kifu.root.setup); // [{ x: 0, y: 1, c: 1 }] - Color.Black equals to 1
+ * console.log(kifu.root.move); // undefined - no move here
+ *
+ * const move1 = kifu.root.children[0];
+ * console.log(move1.move); // { x: 2, y: 3, c: 1 }
+ *
+ * const move2 = move1.children[0];
+ * console.log(move2.move); // { x: 4, y: 5, c: -1 } - Color.White equals to -1
+ *
+ * // Add variation
+ * const altMove2 = new KifuNode();
+ * altMove2.move = { x: 6, y: 7, c: -1 };
+ * move1.children.push(altMove2);
+ * console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]))'
+ *
+ * // Set properties (markup) in SGF format
+ * altMove2.setSGFProperties({
+ *   TR: ['aa'],
+ *   SQ: ['bb'],
+ * });
+ * console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb]))'
+ *
+ * // Add additional markup
+ * altMove2.addMarkup({ type: MarkupType.Square, x: 2, y: 2});
+ * console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb][cc]))'
+ * ```
  */
-export default class Kifu {
-  /**
-   * @param info Information about the game recorded in this kifu. They are related to the whole game, not to a single node.
-   * @param root Root node of the kifu. Must be set, even if it is empty.
-   */
+export class Kifu {
   constructor(
+    /**
+     * Information about the game recorded in this kifu. It is related to the whole game, not to a single node.
+     * If omitted, empty info object is used.
+     */
     public info = new KifuInfo(),
+    /**
+     * Root node of the kifu. Must be set, even if it is empty.
+     * If omitted, empty node is used.
+     */
     public root = new KifuNode(),
   ) {}
 
@@ -99,7 +140,10 @@ export default class Kifu {
    * Creates Kifu object from plain JS object (JSON).
    */
   static fromJS(kifu: Partial<Kifu>) {
-    return new Kifu(KifuInfo.fromJS(kifu.info), KifuNode.fromJS(kifu.root));
+    return new Kifu(
+      kifu.info && KifuInfo.fromJS(kifu.info),
+      kifu.root && KifuNode.fromJS(kifu.root),
+    );
   }
 
   /**

@@ -1,7 +1,7 @@
 import { SGFPropertyDescriptors } from '../sgf';
-import KifuInfo from './KifuInfo';
+import { KifuInfo } from './KifuInfo';
 
-const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
+export const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
   SZ: {
     set(info, [value]) {
       if (!value) {
@@ -355,5 +355,3 @@ const kifuInfoSGFPropertyDescriptors: SGFPropertyDescriptors<KifuInfo> = {
     },
   },
 };
-
-export default kifuInfoSGFPropertyDescriptors;

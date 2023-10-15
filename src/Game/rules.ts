@@ -13,29 +13,63 @@
 /**
  * Specifies how/if position can be repeated during the game.
  */
-export enum Repeating {
-  /** Position may not be same as the previous one (basic ko rule used in Japanese rules). */
-  KO = 'KO',
+export enum KoRule {
+  /**
+   * Position may not be same as the previous one (basic ko rule used in Japanese rules).
+   */
+  Ko = 'KO',
 
-  /** Position may never occur again - disallows super ko (used in Chinese rules).  */
-  ALL = 'ALL',
+  /**
+   * Position may never occur again - disallows super ko (used in Chinese rules).
+   *
+   * @see https://senseis.xmp.net/?PositionalSuperko
+   */
+  PositionalSuperKo = 'POS_SUPER_KO',
+
+  /**
+   * Situation may never occur again - situation consist of position and turn. For example
+   * if suicide is allowed, playing suicide of one stone would be possible, in `KoRule.PositionalSuperKo`
+   * it would not.
+   *
+   * @see https://senseis.xmp.net/?SituationalSuperko
+   */
+  SituationalSuperKo = 'SIT_SUPER_KO',
 
   /**
    * No restrictions - position can repeat arbitrarily (not in any rules, but can be useful
    * in some situations).
    */
-  NONE = 'NONE',
+  None = 'NONE',
+}
+
+/**
+ * Specify how score is counted.
+ *
+ * @see https://senseis.xmp.net/?Scoring
+ */
+export enum Scoring {
+  /**
+   * In area scoring, your score is the number of empty points which only your stones surround
+   * plus the number of your stones on the board. Used for example in Chinese rules.
+   */
+  Area = 'AREA',
+
+  /**
+   * In territory scoring, your score is the number of points which your stones surround minus
+   * your captured stones. This scoring is used by classical Japanese rules.
+   */
+  Territory = 'TERRITORY',
 }
 
 /**
  * Specification of go rules. Currently this is not complete set of rules to compute
  * game result, however it is enough to decide valid/invalid move.
  */
-export interface GoRules {
+export interface Rules {
   /**
    * What kind of repeating of position is forbidden (ko rule).
    */
-  repeating: Repeating;
+  koRule: KoRule;
 
   /**
    * If set true a move can rewrite existing move (for special applications).
@@ -52,37 +86,46 @@ export interface GoRules {
    * TODO: add some other rule/s needed to count result exactly.
    */
   komi: number;
+
+  /**
+   * Rule used for scoring.
+   */
+  scoring: Scoring;
 }
 
-export const JAPANESE_RULES: GoRules = {
-  repeating: Repeating.KO,
+export const JAPANESE_RULES: Rules = {
+  koRule: KoRule.Ko,
   allowRewrite: false,
   allowSuicide: false,
   komi: 6.5,
+  scoring: Scoring.Territory,
 };
 
-export const CHINESE_RULES: GoRules = {
-  repeating: Repeating.NONE,
+export const CHINESE_RULES: Rules = {
+  koRule: KoRule.PositionalSuperKo,
   allowRewrite: false,
   allowSuicide: false,
   komi: 7.5,
+  scoring: Scoring.Area,
 };
 
-export const ING_RULES: GoRules = {
-  repeating: Repeating.NONE,
+export const ING_RULES: Rules = {
+  koRule: KoRule.SituationalSuperKo,
   allowRewrite: false,
   allowSuicide: true,
   komi: 7.5,
+  scoring: Scoring.Area,
 };
 
-export const NO_RULES: GoRules = {
-  repeating: Repeating.ALL,
+export const NO_RULES: Rules = {
+  koRule: KoRule.None,
   allowRewrite: true,
   allowSuicide: true,
   komi: 0,
+  scoring: Scoring.Territory,
 };
 
-export default {
+export const rules = {
   Japanese: JAPANESE_RULES,
   GOE: ING_RULES,
   NZ: ING_RULES,

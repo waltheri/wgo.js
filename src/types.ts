@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 /**
  * Enumeration representing stone color, can be used for representing board position.
  * Colors are implemented as numbers 1 an -1, so you can easily switch colors with `color * -1`.

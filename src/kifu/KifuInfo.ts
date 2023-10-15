@@ -1,6 +1,6 @@
 import { SGFProperties, SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
-import kifuInfoSGFPropertyDescriptors from './kifuInfoSGFPropertyDescriptors';
-import kifuNodeSGFPropertyDescriptors from './kifuNodeSGFPropertyDescriptors';
+import { kifuInfoSGFPropertyDescriptors } from './kifuInfoSGFPropertyDescriptors';
+import { kifuNodeSGFPropertyDescriptors } from './kifuNodeSGFPropertyDescriptors';
 
 export enum KnownGoRule {
   AGA = 'AGA',
@@ -18,7 +18,7 @@ export interface KifuInfoCustomProperties {
  * Information about the game. Listed fields are recognized by WGo and will rendered for example by the player if provided.
  * However, any other properties can be stored in `properties` object.
  */
-export default class KifuInfo extends SGFPropertiesBag {
+export class KifuInfo extends SGFPropertiesBag {
   /**
    * Size of the board.
    *

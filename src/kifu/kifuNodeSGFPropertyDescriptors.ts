@@ -1,8 +1,8 @@
 import { SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
 import { Color } from '../types';
-import KifuNode, { MarkupType } from './KifuNode';
+import { KifuNode, MarkupType } from './KifuNode';
 
-const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
+export const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
   B: KifuNode.createMoveDescriptor(Color.Black),
   W: KifuNode.createMoveDescriptor(Color.White),
   AB: KifuNode.createSetupDescriptor(Color.Black),
@@ -116,5 +116,3 @@ const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = {
   LN: KifuNode.createLineMarkupDescriptor(MarkupType.Line),
   LB: KifuNode.createLabelMarkupDescriptor(MarkupType.Label),
 };
-
-export default kifuNodeSGFPropertyDescriptors;

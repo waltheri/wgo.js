@@ -1,9 +1,7 @@
-/* Test of WGo kifu classes and functionality */
-
 import { strictEqual, deepEqual, ok } from 'assert';
-import KifuInfo from '../src/kifu/KifuInfo';
+import { kifuInfoSGFPropertyDescriptors } from '../src/kifu/kifuInfoSGFPropertyDescriptors';
+import { KifuInfo } from '../src/kifu';
 import { PropIdent } from '../src/sgf';
-import { kifuInfoSGFPropertyDescriptors } from '../src/kifu';
 
 describe('KifuInfo', () => {
   describe('Correct transformation from SGF property values.', () => {
@@ -518,12 +516,12 @@ describe('KifuInfo', () => {
     it('Adding custom properties', () => {
       KifuInfo.defineProperties({
         FF: {
-          get(node: any) {
-            return node.sgfVersion ? [String(node.sgfVersion)] : undefined;
+          get(info: any) {
+            return info.sgfVersion ? [String(info.sgfVersion)] : undefined;
           },
-          set(node: any, [value]) {
+          set(info: any, [value]) {
             if (value) {
-              node.sgfVersion = value;
+              info.sgfVersion = value;
             }
           },
         },

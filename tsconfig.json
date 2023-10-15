@@ -1,14 +1,20 @@
 {
   "include": [
-    "./src/**/*"
+    "./src/index.ts",
+    "./src/types.ts",
+    "./src/sgf/**/*",
+    "./src/kifu/**/*",
+    "./src/game/**/*"
   ],
   "compilerOptions": {
-    "target": "ES5",
+    "target": "ES2015",
     "sourceMap": true,
     "declaration": true,
     "strict": true,
     "strictNullChecks": false,
     "downlevelIteration": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true
   }
 }

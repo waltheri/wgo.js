@@ -10,7 +10,7 @@ WGo contains low level `SGFParser` class, which can parse SGF string into JavaSc
 
 #### Basic usage
 
-```typescript
+```javascript
 // Parse SGF string into array of game records (SGF format actually allows multiple games in one file)
 import { SGFParser } from 'wgo';
 
@@ -58,7 +58,43 @@ Kifu is higher representation of go game record. It consists of game info object
 works in similar manner as in SGF, however instead of having game information in root node, they are in custom entity.
 
 Although Kifu is class, it doesn't contain any state and it is easily serializable into plain JS object (JSON) and back. It only adds some utility methods for
-easy manipulation.
+easy manipulation. Basic usage is like this:
+
+```javascript
+import { Kifu, KifuNode, MarkupType } from 'wgo';
+
+// Create kifu object from SGF
+const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
+
+console.log(kifu.info.boardSize); // 19
+console.log(kifu.info.properties.FF); // 4
+console.log(kifu.info.properties.AB); // undefined - AB is stored in kifu node
+console.log(kifu.root.setup); // [{ x: 0, y: 1, c: 1 }] - Color.Black equals to 1
+console.log(kifu.root.move); // undefined - no move here
+
+const move1 = kifu.root.children[0];
+console.log(move1.move); // { x: 2, y: 3, c: 1 }
+
+const move2 = move1.children[0];
+console.log(move2.move); // { x: 4, y: 5, c: -1 } - Color.White equals to -1
+
+// Add variation
+const altMove2 = new KifuNode();
+altMove2.move = { x: 6, y: 7, c: -1 };
+move1.children.push(altMove2);
+console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]))'
+
+// Set properties (markup) in SGF format
+altMove2.setSGFProperties({
+  TR: ['aa'],
+  SQ: ['bb'],
+});
+console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb]))'
+
+// Add additional markup
+altMove2.addMarkup({ type: MarkupType.Square, x: 2, y: 2});
+console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb][cc]))'
+```
 
 #### Kifu methods and properties
 
@@ -77,6 +113,10 @@ Returns this kifu as plain JS object (JSON). This is useful for serialization.
 ##### `clone(): `*`Kifu`*
 
 Deeply clones this kifu.
+
+##### `getNode(path: `*`KifuPath`*` | `*`number`*`): `*`KifuNode`*
+
+Gets kifu node located at given path. Path can be either simple number representing move number or object in format `{ moveNumber: number, variations: number[] }`, where variations are indexes of children, leading from root node to desired node, if there is more choices than one.
 
 ##### `info: `*`KifuInfo`*
 
@@ -159,7 +199,7 @@ There is also `properties` attribute for unknown SGF properties. Moreover there 
 
 Add setup. This will override existing setup in the node, so it is guaranteed there won't be more stones on one field. Example:
 
-```typescript
+```javascript
 import { Kifu, Color } from 'wgo';
 
 const kifu = new Kifu();
@@ -177,7 +217,7 @@ Removes existing setup on given position.
 
 Adds markup object into the node. Contrary to setup, there can be more markups on one field, but not the same type. Example:
 
-```typescript
+```javascript
 import { Kifu, KifuNode, Color, MarkupType } from 'wgo';
 
 const kifu = new Kifu();
@@ -207,41 +247,50 @@ Removes existing markup (same type on same position).
 
 Removes all markup on given position. Line markups won't be affected.
 
-### Basic example of Kifu
+#### Handling custom SGF properties
 
-This example contains most basic use cases - create kifu from SGF, edit something and then convert it back to SGF.
+Kifu object (info and nodes) can contain custom properties - you can simply do `kifu.info.myCustomProperty = 'value'`. But what if you have custom SGF
+property which should be added to Kifu. Luckily there are static methods `KifuInfo.defineProperties` and `KifuNode.defineProperties` which can de 
+used to define custom SGF properties. Example:
 
-```typescript
-import { Kifu } from 'wgo';
+```javascript
+import { Kifu, KifuInfo } from 'wgo';
+
+// FF property is not handled by default, but we can add it
+KifuInfo.defineProperties({
+  FF: {
+    get(info) {
+      return info.sgfVersion ? [String(info.sgfVersion)] : undefined;
+    },
+    set(info, [value]) {
+      if (value) {
+        info.sgfVersion = value;
+      }
+    },
+  },
+});
 
 const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
-
-console.log(kifu.info.boardSize); // 19
-console.log(kifu.info.properties.FF); // 4
-console.log(kifu.info.properties.AB); // undefined - AB is stored in kifu node
-console.log(kifu.root.setup); // [{ x: 0, y: 1, c: 1 }] - Color.Black equals to 1
-console.log(kifu.root.move); // undefined - no move here
-
-const move1 = kifu.root.children[0];
-console.log(move1.move); // { x: 2, y: 3, c: 1 }
-
-const move2 = move1.children[0];
-console.log(move2.move); // { x: 4, y: 5, c: -1 } - Color.White equals to -1
-
-// Add variation
-const altMove2 = new KifuNode();
-altMove2.move = { x: 6, y: 7, c: -1 };
-move1.children.push(altMove2);
-console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]))'
-
-// Set properties (markup) in SGF format
-altMove2.setSGFProperties({
-  TR: ['aa'],
-  SQ: ['bb'],
-});
-console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb]))'
-
-// Add additional markup
-altMove2.addMarkup({ type: MarkupType.Square, x: 2, y: 2});
-console.log(kifu.toSGF()); // '(;FF[4]SZ[19]AB[ab];B[cd](;W[ef])(;W[GH]TR[aa]SQ[bb][cc]))'
+console.log(kifu.info.sgfVersion); // 4
+kifu.info.sgfVersion = 5;
+console.log(kifu.toSGF()); // (;FF[5]SZ[19]AB[ab];B[cd];W[ef])
 ```
+
+We can add properties to `KifuNode` too, there are even some additional helpers to add custom markups:
+
+```javascript
+import { Kifu, KifuNode } from 'wgo';
+
+KifuNode.defineProperties({
+  STAR: KifuNode.createPointMarkupDescriptor('FOO'),
+  RECT: KifuNode.createLineMarkupDescriptor('BAR'),
+});
+const kifu = Kifu.fromSGF('(;STAR[ab];RECT[cd:ef])');
+
+console.log(kifu.root.markup); // [{ x: 0, y: 1, type: 'STAR' }]
+console.log(kifu.root.children[0].markup); // [{ x1: 2, y1: 3, x2: 4, y2: 5, type: 'RECT' }]
+```
+
+### Game
+
+Go game evaluator, board position, game state...

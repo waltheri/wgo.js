@@ -2,7 +2,7 @@
 import { Color } from '../src/types';
 import KifuNode from '../src/kifu/KifuNode';
 import { PlayerBase } from '../src/PlayerBase';
-import { JAPANESE_RULES, CHINESE_RULES } from '../src/Game/rules';
+import { JAPANESE_RULES, CHINESE_RULES } from '../src/Game-o/rules';
 import { PropIdent } from '../src/SGFParser/sgfTypes';
 
 describe('PlayerBase object', () => {

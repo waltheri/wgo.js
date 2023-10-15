@@ -1,11 +1,11 @@
-import SGFSyntaxError from './SGFSyntaxError';
+import { SGFSyntaxError } from './SGFSyntaxError';
 
 const CODE_WHITE_CHAR = ' '.charCodeAt(0);
 
 /**
  * SGF parsing context. This is internal class for SGFParser.
  */
-export default class SGFParsingContext {
+export class SGFParsingContext {
   /** Current character position */
   position: number = 0;
 

@@ -1,5 +1,5 @@
-import SGFSyntaxError from './SGFSyntaxError';
-import SGFParsingContext from './SGFParsingContext';
+import { SGFSyntaxError } from './SGFSyntaxError';
+import { SGFParsingContext } from './SGFParsingContext';
 import { PropIdent, SGFProperties, SGFCollection, SGFGameTree, SGFNode } from './sgfTypes';
 
 /**
@@ -20,12 +20,29 @@ function isCharUCLetter(char: string) {
 }
 
 /**
- * Class for parsing of sgf files. Can be used for parsing of SGF fragments as well.
+ * Parses SGF string into plain JavaScript object. You probably won't need to use this class, if you are using
+ * other parts of the library. However this can be useful for example if you want to convert SGF file to other
+ * formats or your own data structure. SGF property values in resulting object are stored as strings, so this is
+ * not best choice for further processing. For that reason, WGo also contains `Kifu` object, which is higher
+ * representation of go game record with methods for its easier manipulation.
+ *
+ * @example
+ * ```javascript
+ * // Parse SGF string into array of game records (SGF format actually allows multiple games in one file)
+ * import { SGFParser } from 'wgo';
+ *
+ * const sgfParser = new SGFParser();
+ * const parsedGameRecords = sgfParser.parseCollection('(;DT[2100-12-01]KM[7.5];B[aa];W[bb])');
+ * console.log(parsedGameRecords[0]); // { sequence: [ { DT: ['2100-12-01'], KM: ['7.5'] }, { B: ['aa'] }, { W: ['bb'] } ], children: [] }
+ * ```
  */
-export default class SGFParser {
+export class SGFParser {
   /**
    * Parse SGF property value - `"[" CValueType "]"`.
-   * @param optional
+   *
+   * @param sgfString
+   * @param optional If true, empty string will be accepted and undefined will be returned.
+   * @param context Internal state of the parsing. This should never be set.
    */
   parsePropertyValue(
     sgfString: string,
@@ -72,6 +89,9 @@ export default class SGFParser {
 
   /**
    * Reads the property identifiers (One or more UC letters) - `UcLetter { UcLetter }`.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parsePropertyIdent(sgfString: string, context = new SGFParsingContext()): PropIdent {
     let ident = '';
@@ -102,6 +122,9 @@ export default class SGFParser {
 
   /**
    * Parses sequence of property values - `PropValue { PropValue }`.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parsePropertyValues(sgfString: string, context = new SGFParsingContext()) {
     const values: string[] = [];
@@ -117,6 +140,9 @@ export default class SGFParser {
 
   /**
    * Parses a SGF property - `PropIdent PropValue { PropValue }`.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parseProperty(sgfString: string, context = new SGFParsingContext()): [PropIdent, string[]] {
     if (!isCharUCLetter(context.currentNonWhitespaceChar(sgfString))) {
@@ -131,6 +157,9 @@ export default class SGFParser {
 
   /**
    * Parses a SGF node - `";" { Property }`.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parseNode(sgfString: string, context = new SGFParsingContext()): SGFNode {
     context.assertCharAndMoveToNext(sgfString, ';');
@@ -147,6 +176,9 @@ export default class SGFParser {
 
   /**
    * Parses a SGF Sequence - `Node { Node }`.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parseSequence(sgfString: string, context = new SGFParsingContext()): SGFNode[] {
     const sequence: SGFNode[] = [];
@@ -162,6 +194,9 @@ export default class SGFParser {
 
   /**
    * Parses a SGF *GameTree* - `"(" Sequence { GameTree } ")"`.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parseGameTree(sgfString: string, context = new SGFParsingContext()): SGFGameTree {
     context.assertCharAndMoveToNext(sgfString, '(');
@@ -180,6 +215,9 @@ export default class SGFParser {
 
   /**
    * Parses a SGF *Collection* - `Collection = GameTree { GameTree }`. This is the main method for parsing SGF file.
+   *
+   * @param sgfString
+   * @param context Internal state of the parsing. This should never be set.
    */
   parseCollection(sgfString: string, context = new SGFParsingContext()): SGFCollection {
     const gameTrees: SGFCollection = [];

@@ -1,5 +1,5 @@
 import { Point } from '../types';
-import SGFParser from './SGFParser';
+import { SGFParser } from './SGFParser';
 import { PropIdent, SGFProperties } from './sgfTypes';
 
 export interface SGFPropertyDescriptors<T> {
@@ -12,7 +12,7 @@ export interface SGFPropertyDescriptors<T> {
 /**
  * TODO: better name?
  */
-export default abstract class SGFPropertiesBag {
+export abstract class SGFPropertiesBag {
   abstract getPropertyDescriptors(): SGFPropertyDescriptors<this>;
 
   abstract setUnknownSGFProperty(propIdent: string, propValues: string[]): void;

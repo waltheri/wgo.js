@@ -1,7 +1,7 @@
 import { LifeCycleEvent } from './types';
 import { PropIdent } from '../sgf';
 import { Color, Point } from '../types';
-import { goRules } from '../Game';
+import { goRules } from '../Game-old';
 
 export function beforeInitSZ(event: LifeCycleEvent<number[]>) {
   event.target.params.size = event.value;

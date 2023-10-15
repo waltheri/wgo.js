@@ -1,10 +1,7 @@
-/* Test of WGo kifu classes and functionality */
-
 import { strictEqual, deepEqual, ok } from 'assert';
-// import { Color } from '../src/types';
-import KifuNode, { MarkupType } from '../src/kifu/KifuNode';
+import { KifuNode, MarkupType } from '../src/kifu';
 import { PropIdent } from '../src/sgf';
-import { kifuNodeSGFPropertyDescriptors } from '../src/kifu';
+import { kifuNodeSGFPropertyDescriptors } from '../src/kifu/kifuNodeSGFPropertyDescriptors';
 import { Color } from '../src/types';
 
 describe('KifuNode', () => {

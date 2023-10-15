@@ -2,7 +2,7 @@
  * Class for syntax errors in SGF string.
  * @ extends Error
  */
-export default class SGFSyntaxError extends Error {
+export class SGFSyntaxError extends Error {
   // tslint:disable-next-line:variable-name
   __proto__: Error;
 
