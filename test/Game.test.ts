@@ -6,7 +6,7 @@ import {
   JAPANESE_RULES,
   NO_RULES,
   Position,
-  rules,
+  sgfRulesMap,
 } from '../src/game';
 import { Color } from '../src/types';
 import assert, { strictEqual, deepEqual } from 'assert';
@@ -17,7 +17,7 @@ describe('Game object', () => {
       const game = new Game();
       strictEqual(game.position.cols, 19);
       strictEqual(game.position.rows, 19);
-      deepEqual(game.rules, rules.Japanese);
+      deepEqual(game.rules, sgfRulesMap.Japanese);
       strictEqual(game.player, Color.Black);
       strictEqual(game.rules.komi, 6.5);
       strictEqual(game.blackCaptures, 0);
@@ -26,10 +26,10 @@ describe('Game object', () => {
     });
 
     it('Custom board size and rules', () => {
-      const game = new Game(9, rules.Chinese);
+      const game = new Game(9, sgfRulesMap.Chinese);
       strictEqual(game.position.cols, 9);
       strictEqual(game.position.rows, 9);
-      deepEqual(game.rules, rules.Chinese);
+      deepEqual(game.rules, sgfRulesMap.Chinese);
       strictEqual(game.player, Color.Black);
       strictEqual(game.rules.komi, 7.5);
       strictEqual(game.blackCaptures, 0);

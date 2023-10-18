@@ -1,4 +1,4 @@
-import { Color } from '../types';
+import { BoardSize, Color } from '../types';
 import { Position } from './Position';
 import { JAPANESE_RULES, KoRule, Rules } from './rules';
 
@@ -11,13 +11,13 @@ import { JAPANESE_RULES, KoRule, Rules } from './rules';
  */
 export class Game {
   position: Position;
-  rules: Rules;
+  rules: Readonly<Rules>;
   #history: Array<{ position: Position; player: Color.Black | Color.White }> = [];
   blackCaptures = 0;
   whiteCaptures = 0;
   player: Color.Black | Color.White = Color.Black;
 
-  constructor(size?: number | { cols: number; rows: number }, rules: Rules = JAPANESE_RULES) {
+  constructor(size?: BoardSize, rules: Rules = JAPANESE_RULES) {
     this.rules = rules;
     this.player = Color.Black;
     this.position =
@@ -102,5 +102,17 @@ export class Game {
     }
 
     return true;
+  }
+
+  /**
+   * Clones the game. This won't deeply clone all the content, only properties, which can be changed.
+   * For example current `position` is cloned deeply, because it can be changed, but positions in `#history` are not,
+   * because there is no method to change them.
+   */
+  clone(): Game {
+    const clone = new Game();
+    Object.assign(clone, this);
+    clone.position = this.position.clone();
+    return clone;
   }
 }

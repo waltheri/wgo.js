@@ -91,6 +91,11 @@ export interface Rules {
    * Rule used for scoring.
    */
   scoring: Scoring;
+
+  /**
+   * Name of the rules. Used in SGF or UI.
+   */
+  name?: string;
 }
 
 export const JAPANESE_RULES: Rules = {
@@ -99,6 +104,7 @@ export const JAPANESE_RULES: Rules = {
   allowSuicide: false,
   komi: 6.5,
   scoring: Scoring.Territory,
+  name: 'Japanese',
 };
 
 export const CHINESE_RULES: Rules = {
@@ -107,6 +113,7 @@ export const CHINESE_RULES: Rules = {
   allowSuicide: false,
   komi: 7.5,
   scoring: Scoring.Area,
+  name: 'Chinese',
 };
 
 export const ING_RULES: Rules = {
@@ -115,6 +122,7 @@ export const ING_RULES: Rules = {
   allowSuicide: true,
   komi: 7.5,
   scoring: Scoring.Area,
+  name: 'GOE',
 };
 
 export const NO_RULES: Rules = {
@@ -125,10 +133,13 @@ export const NO_RULES: Rules = {
   scoring: Scoring.Territory,
 };
 
-export const rules = {
+export const sgfRulesMap = {
   Japanese: JAPANESE_RULES,
   GOE: ING_RULES,
   NZ: ING_RULES,
-  AGA: CHINESE_RULES,
   Chinese: CHINESE_RULES,
+  AGA: {
+    ...CHINESE_RULES,
+    name: 'AGA',
+  },
 };
