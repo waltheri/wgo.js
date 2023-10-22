@@ -1,4 +1,4 @@
-import { strictEqual, deepEqual, notDeepEqual } from 'assert';
+import assert, { strictEqual, deepEqual, notDeepEqual } from 'assert';
 import { Kifu, KifuInfo, KifuNode } from '../src/kifu';
 import { Color } from '../src/types';
 
@@ -33,7 +33,7 @@ describe('Kifu object', () => {
     const kifu = Kifu.fromSGF('(;FF[4]SZ[19]AB[ab];B[cd];W[ef])');
     const kifu2 = kifu.clone();
     deepEqual(kifu, kifu2);
-    kifu2.root.children[0].move!.c = Color.W;
+    kifu2.root.children[0].move! = { ...kifu2.root.children[0].move, c: Color.W };
     notDeepEqual(kifu, kifu2);
   });
 
@@ -64,5 +64,42 @@ describe('Kifu object', () => {
     strictEqual(kifu.getNode({ moveNumber: 3, variations: [0, 1] })?.comment, '4ab');
     strictEqual(kifu.getNode({ moveNumber: 2, variations: [1] })?.comment, '3b');
     strictEqual(kifu.getNode({ moveNumber: 2, variations: [2] }), null);
+  });
+
+  it('Method getPath works for root node', () => {
+    const kifu = Kifu.fromSGF('(;C[1](;C[2a];C[3a](;C[4aa])(;C[4ab]))(;C[2b];C[3b]))');
+    deepEqual(kifu.getPath(kifu.root), { moveNumber: 0, variations: [] });
+  });
+
+  it('Method getPath works for deep nodes', () => {
+    const kifu = Kifu.fromSGF('(;C[1](;C[2a];C[3a](;C[4aa])(;C[4ab]))(;C[2b];C[3b]))');
+    deepEqual(kifu.getPath(kifu.root), { moveNumber: 0, variations: [] });
+
+    const node1 = kifu.getNode({ moveNumber: 3, variations: [0, 1] });
+    const node2 = kifu.getNode({ moveNumber: 2, variations: [1] });
+    const node3 = new KifuNode();
+
+    deepEqual(kifu.getPath(node1!), { moveNumber: 3, variations: [0, 1] });
+    deepEqual(kifu.getPath(node2!), { moveNumber: 2, variations: [1] });
+    assert(kifu.getPath(node3) == null);
+  });
+
+  it('Method find finds first matching node (path)', () => {
+    const kifu = Kifu.fromSGF('(;C[1](;C[2a];N[3a](;C[4aa])(;B[ab]))(;N[2b];C[3b]))');
+
+    const firstComment = kifu.find((node) => node.comment != null);
+    deepEqual(firstComment?.path, { moveNumber: 0, variations: [] });
+    strictEqual(firstComment?.node, kifu.root);
+
+    const firstNodeName = kifu.find((node) => node.properties.N != null);
+    deepEqual(firstNodeName?.path, { moveNumber: 1, variations: [1] });
+    strictEqual(firstNodeName?.node, kifu.root.children[1]);
+
+    const firstMove = kifu.find((node) => node.move != null);
+    deepEqual(firstMove?.path, { moveNumber: 3, variations: [0, 1] });
+    strictEqual(firstMove?.node, kifu.root.children[0].children[0].children[1]);
+
+    const firstSetup = kifu.find((node) => node.setup.length > 0);
+    strictEqual(firstSetup, null);
   });
 });

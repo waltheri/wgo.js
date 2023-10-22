@@ -30,15 +30,17 @@ export enum Color {
  */
 export interface Point {
   /** X coordinate - 0 is first column from the left, boardSize - 1 is the last column.  */
-  x: number;
+  readonly x: number;
 
   /** Y coordinate - 0 is first row from the top, boardSize - 1 is the last row.  */
-  y: number;
+  readonly y: number;
 }
 
 /**
  * Vector represented with starting and ending point. Can be used to reference arrow or
  * line segment on the board.
+ *
+ * @deprecated remove this
  */
 export type Vector = [Point, Point];
 
@@ -47,14 +49,14 @@ export type Vector = [Point, Point];
  */
 export interface Label extends Point {
   /** Text to display, shouldn't be too long (max. 3 characters are recommended) */
-  text: string;
+  readonly text: string;
 }
 
 /**
  * Represents one field on the board. It consists from coordinates and color.
  */
 export interface Field extends Point {
-  c: Color;
+  readonly c: Color;
 }
 
 /**
@@ -63,8 +65,10 @@ export interface Field extends Point {
  */
 export type Move =
   | ({
-      c: Color.Black | Color.White;
+      readonly c: Color.Black | Color.White;
     } & Point)
   | {
-      c: Color.Black | Color.White;
+      readonly c: Color.Black | Color.White;
     };
+
+export type BoardSize = number | { readonly cols: number; readonly rows: number };

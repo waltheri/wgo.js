@@ -62,10 +62,10 @@ describe('KifuNode', () => {
       tests++;
 
       const node = KifuNode.fromSGF('PL[W]');
-      strictEqual(node.turn, Color.W);
+      strictEqual(node.player, Color.W);
 
       const node2 = KifuNode.fromSGF('PL[B]');
-      strictEqual(node2.turn, Color.B);
+      strictEqual(node2.player, Color.B);
     });
 
     it('Property VW', () => {
@@ -252,14 +252,14 @@ describe('KifuNode', () => {
       tests++;
       const node = KifuNode.fromSGF('PL[W]');
       node.setSGFProperty(PropIdent.SetTurn, []);
-      strictEqual(node.turn, undefined);
+      strictEqual(node.player, undefined);
     });
 
     it('Property VW', () => {
       tests++;
       const node = KifuNode.fromSGF('VW[cd:ef]');
       node.setSGFProperty(PropIdent.BoardSection, []);
-      strictEqual(node.turn, undefined);
+      strictEqual(node.player, undefined);
     });
 
     it('Property BL', () => {
@@ -427,10 +427,10 @@ describe('KifuNode', () => {
     it('Property PL', () => {
       tests++;
 
-      const node = KifuNode.fromJS({ turn: Color.W });
+      const node = KifuNode.fromJS({ player: Color.W });
       strictEqual(node.getSGFProperties(), 'PL[W]');
 
-      const node2 = KifuNode.fromJS({ turn: Color.W });
+      const node2 = KifuNode.fromJS({ player: Color.W });
       strictEqual(node2.getSGFProperties(), 'PL[W]');
     });
 

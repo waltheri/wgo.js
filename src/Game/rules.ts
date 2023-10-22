@@ -69,33 +69,33 @@ export interface Rules {
   /**
    * What kind of repeating of position is forbidden (ko rule).
    */
-  koRule: KoRule;
+  readonly koRule: KoRule;
 
   /**
    * If set true a move can rewrite existing move (for special applications).
    */
-  allowRewrite: boolean;
+  readonly allowRewrite: boolean;
 
   /**
    * If set true a suicide will be allowed (and stone will be immediately captured), used in ING rules.
    */
-  allowSuicide: boolean;
+  readonly allowSuicide: boolean;
 
   /**
    * Size of a komi (white's extra points). Can be used to count result. However it may not be enough.
    * TODO: add some other rule/s needed to count result exactly.
    */
-  komi: number;
+  readonly komi: number;
 
   /**
    * Rule used for scoring.
    */
-  scoring: Scoring;
+  readonly scoring: Scoring;
 
   /**
    * Name of the rules. Used in SGF or UI.
    */
-  name?: string;
+  readonly name?: string;
 }
 
 export const JAPANESE_RULES: Rules = {

@@ -4,17 +4,17 @@ import { KifuNode } from './KifuNode';
 
 /**
  * Object describing position of kifu node in kifu tree. When kifu changes, kifu paths must be
- * updated too, if we want them to correspond to the same nodes.
+ * updated too, if we want them to correspond to the same nodes. This is immutable object.
  */
 export interface KifuPath {
   /** Depth of node (for root node it is 0) */
-  moveNumber: number;
+  readonly moveNumber: number;
 
   /**
    * Array of children array indexes of all predecessors which have siblings. These numbers
    * are used, when there is fork in kifu tree and we have to decide witch child to use.
    */
-  variations: number[];
+  readonly variations: ReadonlyArray<number>;
 }
 
 /**
@@ -106,11 +106,25 @@ export class Kifu {
   }
 
   /**
-   * Finds path of specified node. If kifu doesn't contain the node, null is returned.
+   * Finds path of specified node. If kifu doesn't contain the node, null is returned. This method
+   * uses breadth-first search to find the node.
    */
-  /*getPath(node: KifuNode): KifuPath | null {
-    
-  }*/
+  getPath(node: KifuNode): KifuPath | null {
+    return this.#bfs((n) => n === node)?.path;
+  }
+
+  /**
+   * Find and go to the first node in the kifu which matches the predicate. If there is no such node, null is returned.
+   * You can specify starting path, from which the search will begin (excluding the node on that path).
+   *
+   * This method uses breadth-first search to find the node.
+   */
+  find(
+    predicate: (node: KifuNode) => boolean,
+    startingPath?: KifuPath,
+  ): { node: KifuNode; path: KifuPath } | null {
+    return this.#bfs(predicate, startingPath);
+  }
 
   /**
    * Generates full SGF string from this kifu.
@@ -134,6 +148,33 @@ export class Kifu {
    */
   clone(): Kifu {
     return Kifu.fromJS(JSON.parse(JSON.stringify(this.toJS())));
+  }
+
+  #bfs(
+    predicate: (node: KifuNode) => boolean,
+    fromPath?: KifuPath,
+  ): { node: KifuNode; path: KifuPath } | null {
+    const queue: Array<{ node: KifuNode; path: KifuPath }> = [];
+
+    if (fromPath) {
+      const fromNode = this.getNode(fromPath);
+      if (fromNode) {
+        queue.push(...childrenWithPaths(fromNode, fromPath));
+      }
+    } else {
+      queue.push({ node: this.root, path: { moveNumber: 0, variations: [] } });
+    }
+
+    while (queue.length) {
+      const item = queue.shift()!;
+      if (predicate(item.node)) {
+        return item;
+      }
+
+      queue.push(...childrenWithPaths(item.node, item.path));
+    }
+
+    return null;
   }
 
   /**
@@ -194,4 +235,14 @@ function gameTreeToSgf(node: KifuNode): string {
   }
 
   return properties;
+}
+
+function childrenWithPaths(node: KifuNode, path: KifuPath) {
+  return node.children.map((childNode, index) => ({
+    node: childNode,
+    path: {
+      moveNumber: path.moveNumber + 1,
+      variations: node.children.length > 1 ? [...path.variations, index] : path.variations,
+    },
+  }));
 }

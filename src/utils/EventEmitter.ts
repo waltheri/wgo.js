@@ -1,28 +1,51 @@
 /**
- * Simple base class for event handling. It tries to follow Node.js EventEmitter class API,
- * but contains only basic methods.
+ * Simple event interface.
  */
-export default class EventEmitter {
-  // tslint:disable-next-line:variable-name
-  private _events: {[eventName: string]: Function[]} = {};
+interface Event<T> {
+  target: T;
+  type: string;
+}
 
-  on(evName: string, callback: Function) {
-    this._events[evName] = this._events[evName] || [];
-    this._events[evName].push(callback);
+/**
+ * Simple base class for event handling. It is similar to Node.js EventEmitter class API,
+ * but contains only basic methods and is not as robust - for example when calling `off`,
+ * all listeners are removed (not just the first occurrence). On the other hand, this allows
+ * better typings.
+ */
+export class EventEmitter<T = any> {
+  #events: { [eventName: string | symbol]: Array<(event: any) => void> } = {};
+
+  on<E extends keyof T>(event: E, listener: (event: Event<this> & T[E]) => void): this;
+  on(event: string, listener: (event: Event<this> & { [key: string]: any }) => void): this;
+  on(event: string, listener: (event: any) => void) {
+    this.#events[event] = this.#events[event] || [];
+    this.#events[event].push(listener);
+
+    return this;
   }
 
-  off(evName: string, callback: Function) {
-    if (this._events[evName]) {
-      if (callback == null) {
-        this._events[evName] = [];
-      }
-      this._events[evName] = this._events[evName].filter(fn => fn !== callback);
+  off<E extends keyof T>(event: E, listener: (event: Event<this> & T[E]) => void): this;
+  off(event: string, listener: (event: Event<this> & { [key: string]: any }) => void): this;
+  off(event: string, listener: (event: any) => void) {
+    if (this.#events[event]) {
+      this.#events[event] = this.#events[event].filter((fn) => fn !== listener);
     }
+
+    return this;
   }
 
-  emit(evName: string, ...args: any[]) {
-    if (this._events[evName]) {
-      this._events[evName].forEach(fn => fn(...args));
+  emit<E extends keyof T>(event: E, payload?: T[E]): boolean;
+  emit<E extends string>(
+    event: E extends keyof T ? never : E,
+    payload?: { [key: string]: any },
+  ): boolean;
+  emit(event: string, payload: any = {}) {
+    if (this.#events[event]) {
+      this.#events[event].forEach((fn) => fn({ target: this, type: event, ...payload }));
+
+      return true;
     }
+
+    return false;
   }
 }

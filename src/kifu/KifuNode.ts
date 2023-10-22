@@ -16,30 +16,30 @@ export enum MarkupType {
 }
 
 export interface PointMarkup {
-  type:
+  readonly type:
     | MarkupType.Circle
     | MarkupType.Dim
     | MarkupType.Selected
     | MarkupType.Square
     | MarkupType.Triangle
     | MarkupType.XMark;
-  x: number;
-  y: number;
+  readonly x: number;
+  readonly y: number;
 }
 
 export interface LineMarkup {
-  type: MarkupType.Arrow | MarkupType.Line;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
+  readonly type: MarkupType.Arrow | MarkupType.Line;
+  readonly x1: number;
+  readonly y1: number;
+  readonly x2: number;
+  readonly y2: number;
 }
 
 export interface LabelMarkup {
-  type: MarkupType.Label;
-  x: number;
-  y: number;
-  text: string;
+  readonly type: MarkupType.Label;
+  readonly x: number;
+  readonly y: number;
+  readonly text: string;
 }
 
 export type Markup = PointMarkup | LineMarkup | LabelMarkup;
@@ -66,6 +66,8 @@ export class KifuNode extends SGFPropertiesBag {
 
   /**
    * Setup black or white stones or clear existing stones. This is taken from SGF properties `AB`, `AW` and `AE`.
+   *
+   * This shouldn't be mutated directly, you can replace it or use methods `removeSetupAt` or `addSetup`.
    */
   setup: Field[] = [];
 
@@ -74,11 +76,13 @@ export class KifuNode extends SGFPropertiesBag {
    *
    * @see https://www.red-bean.com/sgf/properties.html#PL
    */
-  turn?: Color.Black | Color.White;
+  player?: Color.Black | Color.White;
 
   /**
    * Node markup - for example triangles or square marking some stones or empty fields. WGo supports these
    * SGF markup properties: `AR`, `CR`, `DD`, `LN`, `LB`, `MA`, `SL`, `SQ` and `TR`.
+   *
+   * This shouldn't be mutated directly, you can replace it or use methods `removeMarkup`, `removeMarkupAt` or `addMarkup`.
    */
   markup: Markup[] = [];
 
@@ -87,7 +91,12 @@ export class KifuNode extends SGFPropertiesBag {
    *
    * @see https://www.red-bean.com/sgf/properties.html#VW
    */
-  boardSection?: { x1: number; y1: number; x2: number; y2: number };
+  boardSection?: {
+    readonly x1: number;
+    readonly y1: number;
+    readonly x2: number;
+    readonly y2: number;
+  };
 
   /**
    * Time left for black, after the move was made. Value is given in seconds.
@@ -147,7 +156,7 @@ export class KifuNode extends SGFPropertiesBag {
     this.setup.push({
       ...point,
       c: color,
-    });
+    }); // Setup is cloned in `this.removeSetupAt`, so this is not mutation.
   }
 
   /**
@@ -173,7 +182,7 @@ export class KifuNode extends SGFPropertiesBag {
 
   addMarkup(markup: Markup) {
     this.removeMarkup(markup);
-    this.markup.push(markup);
+    this.markup.push(markup); // Markup is cloned in `this.removeMarkup`, so this is not mutation.
   }
 
   override getPropertyDescriptors() {

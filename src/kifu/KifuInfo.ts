@@ -1,4 +1,5 @@
 import { SGFProperties, SGFPropertiesBag, SGFPropertyDescriptors } from '../sgf';
+import { BoardSize } from '../types';
 import { kifuInfoSGFPropertyDescriptors } from './kifuInfoSGFPropertyDescriptors';
 import { kifuNodeSGFPropertyDescriptors } from './kifuNodeSGFPropertyDescriptors';
 
@@ -24,7 +25,7 @@ export class KifuInfo extends SGFPropertiesBag {
    *
    * @see https://www.red-bean.com/sgf/properties.html#SZ
    */
-  boardSize?: number | { cols: number; rows: number };
+  boardSize?: BoardSize;
 
   /**
    * Handicap. This is for information only, handicap stones must be set with `AB` properties.
@@ -48,12 +49,12 @@ export class KifuInfo extends SGFPropertiesBag {
      * If true variations of current node should be shown (siblings variations). Otherwise successor info
      * variations are shown (children variations).
      */
-    currentNode?: boolean;
+    readonly currentNode?: boolean;
 
     /**
      * If true, no variation markup should be shown on board.
      */
-    noMarkup?: boolean;
+    readonly noMarkup?: boolean;
   };
 
   /**

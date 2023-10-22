@@ -11,14 +11,14 @@ export const kifuNodeSGFPropertyDescriptors: SGFPropertyDescriptors<KifuNode> = 
   PL: {
     set(node, [value]) {
       if (!value) {
-        node.turn = undefined;
+        node.player = undefined;
         return;
       }
-      node.turn = value.toUpperCase() === 'W' ? Color.White : Color.Black;
+      node.player = value.toUpperCase() === 'W' ? Color.White : Color.Black;
     },
     get(node) {
-      if (node.turn) {
-        return [node.turn === Color.White ? 'W' : 'B'];
+      if (node.player) {
+        return [node.player === Color.White ? 'W' : 'B'];
       }
     },
   },
