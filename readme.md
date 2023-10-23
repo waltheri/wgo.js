@@ -205,8 +205,8 @@ import { Kifu, Color } from 'wgo';
 const kifu = new Kifu();
 
 // Set 2 handicap stones
-kifu.root.addSetup({ x: 3 y: 3 }, Color.Black);
-kifu.root.addSetup({ x: 15 y: 15 }, Color.Black);
+kifu.root.addSetup({ x: 3 y: 3 c: Color.Black });
+kifu.root.addSetup({ x: 15 y: 15, c: Color.Black });
 ```
 
 ##### `removeSetupAt(point: `*`Point`*`)`

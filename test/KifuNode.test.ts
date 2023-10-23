@@ -672,13 +672,15 @@ describe('KifuNode', () => {
     it('addSetup()', () => {
       const node = new KifuNode();
 
-      node.addSetup({ x: 2, y: 3 }, Color.B);
-      node.addSetup({ x: 3, y: 4 }, Color.W);
+      node.addSetup({ x: 2, y: 3, c: Color.B });
+      node.addSetup({ x: 3, y: 4, c: Color.W });
 
-      node.addSetup({ x: 5, y: 6 }, Color.B);
-      node.addSetup({ x: 5, y: 6 }, Color.W);
-      node.addSetup({ x: 5, y: 6 }, Color.E);
-      node.addSetup({ x: 5, y: 6 }, Color.E);
+      node.addSetup([
+        { x: 5, y: 6, c: Color.B },
+        { x: 5, y: 6, c: Color.W },
+        { x: 5, y: 6, c: Color.E },
+        { x: 5, y: 6, c: Color.E },
+      ]);
 
       deepEqual(node.setup, [
         { x: 2, y: 3, c: Color.B },
@@ -692,8 +694,15 @@ describe('KifuNode', () => {
       node.setup = [
         { x: 2, y: 3, c: Color.B },
         { x: 4, y: 5, c: Color.W },
+        { x: 6, y: 7, c: Color.W },
+        { x: 8, y: 9, c: Color.W },
       ];
       node.removeSetupAt({ x: 2, y: 3 });
+      node.removeSetupAt([
+        { x: 2, y: 3 },
+        { x: 6, y: 7 },
+        { x: 8, y: 9 },
+      ]);
       deepEqual(node.setup, [{ x: 4, y: 5, c: Color.W }]);
     });
 
@@ -701,9 +710,11 @@ describe('KifuNode', () => {
       const node = new KifuNode();
 
       node.addMarkup({ type: MarkupType.Circle, x: 2, y: 3 });
-      node.addMarkup({ type: MarkupType.Label, text: 'X', x: 2, y: 3 });
-      node.addMarkup({ type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 });
-      node.addMarkup({ type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 });
+      node.addMarkup([
+        { type: MarkupType.Label, text: 'X', x: 2, y: 3 },
+        { type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 },
+        { type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 },
+      ]);
 
       deepEqual(node.markup, [
         { type: MarkupType.Circle, x: 2, y: 3 },
@@ -716,6 +727,7 @@ describe('KifuNode', () => {
       const node = new KifuNode();
 
       node.addMarkup({ type: MarkupType.Circle, x: 2, y: 3 });
+      node.addMarkup({ type: MarkupType.Triangle, x: 2, y: 3 });
       node.addMarkup({ type: MarkupType.Label, text: 'X', x: 2, y: 3 });
       node.addMarkup({ type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 });
       node.addMarkup({ type: MarkupType.Dim, x: 4, y: 5 });
@@ -737,8 +749,10 @@ describe('KifuNode', () => {
       node.addMarkup({ type: MarkupType.Dim, x: 4, y: 5 });
 
       node.removeMarkup({ type: MarkupType.Circle, x: 2, y: 3 });
-      node.removeMarkup({ type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 });
-      node.removeMarkup({ type: MarkupType.Label, text: 'X', x: 2, y: 3 });
+      node.removeMarkup([
+        { type: MarkupType.Arrow, x1: 2, y1: 3, x2: 4, y2: 5 },
+        { type: MarkupType.Label, text: 'X', x: 2, y: 3 },
+      ]);
 
       deepEqual(node.markup, [{ type: MarkupType.Dim, x: 4, y: 5 }]);
     });

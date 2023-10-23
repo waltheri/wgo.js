@@ -39,10 +39,20 @@ export interface Point {
 /**
  * Vector represented with starting and ending point. Can be used to reference arrow or
  * line segment on the board.
- *
- * @deprecated remove this
  */
-export type Vector = [Point, Point];
+export interface Vector {
+  /** Starting X coordinate - 0 is first column from the left, boardSize - 1 is the last column.  */
+  readonly x1: number;
+
+  /** Starting Y coordinate - 0 is first row from the top, boardSize - 1 is the last row.  */
+  readonly y1: number;
+
+  /** Ending X coordinate - 0 is first column from the left, boardSize - 1 is the last column.  */
+  readonly x2: number;
+
+  /** Ending Y coordinate - 0 is first row from the top, boardSize - 1 is the last row.  */
+  readonly y2: number;
+}
 
 /**
  * Represents text label on specified field of the board.

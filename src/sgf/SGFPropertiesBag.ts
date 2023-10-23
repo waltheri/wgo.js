@@ -1,4 +1,4 @@
-import { Point } from '../types';
+import { Point, Vector } from '../types';
 import { SGFParser } from './SGFParser';
 import { PropIdent, SGFProperties } from './sgfTypes';
 
@@ -85,7 +85,7 @@ export abstract class SGFPropertiesBag {
     return String.fromCharCode(point.x + 97) + String.fromCharCode(point.y + 97);
   }
 
-  static vectorToSGFValue(vector: { x1: number; y1: number; x2: number; y2: number }) {
+  static vectorToSGFValue(vector: Vector) {
     return `${String.fromCharCode(vector.x1 + 97) + String.fromCharCode(vector.y1 + 97)}:${
       String.fromCharCode(vector.x2 + 97) + String.fromCharCode(vector.y2 + 97)
     }`;

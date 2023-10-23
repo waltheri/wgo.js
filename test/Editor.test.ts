@@ -12,10 +12,10 @@ describe('Editor object', () => {
 
       strictEqual(editor.gameState.position.cols, 19);
       strictEqual(editor.gameState.position.rows, 19);
-      strictEqual(editor.gameRules.allowRewrite, false);
-      strictEqual(editor.gameRules.allowSuicide, false);
-      strictEqual(editor.gameRules.koRule, KoRule.Ko);
-      strictEqual(editor.gameRules.komi, 6.5);
+      strictEqual(editor.gameEvaluator.rules.allowRewrite, false);
+      strictEqual(editor.gameEvaluator.rules.allowSuicide, false);
+      strictEqual(editor.gameEvaluator.rules.koRule, KoRule.Ko);
+      strictEqual(editor.gameEvaluator.rules.komi, 6.5);
       strictEqual(editor.gameState.player, Color.Black);
 
       strictEqual(editor.kifu.info.boardSize, 19);
@@ -31,9 +31,9 @@ describe('Editor object', () => {
 
       strictEqual(editor.gameState.position.cols, 9);
       strictEqual(editor.gameState.position.rows, 13);
-      strictEqual(editor.gameRules.allowRewrite, false);
-      strictEqual(editor.gameRules.allowSuicide, true);
-      strictEqual(editor.gameRules.koRule, KoRule.SituationalSuperKo);
+      strictEqual(editor.gameEvaluator.rules.allowRewrite, false);
+      strictEqual(editor.gameEvaluator.rules.allowSuicide, true);
+      strictEqual(editor.gameEvaluator.rules.koRule, KoRule.SituationalSuperKo);
 
       deepStrictEqual(editor.kifu.info.boardSize, { cols: 9, rows: 13 });
       strictEqual(editor.kifu.info.rules, 'GOE');
@@ -49,10 +49,10 @@ describe('Editor object', () => {
 
       strictEqual(editor.gameState.position.cols, 9);
       strictEqual(editor.gameState.position.rows, 9);
-      strictEqual(editor.gameRules.allowRewrite, false);
-      strictEqual(editor.gameRules.allowSuicide, true);
-      strictEqual(editor.gameRules.koRule, KoRule.SituationalSuperKo);
-      strictEqual(editor.gameRules.komi, 7.5);
+      strictEqual(editor.gameEvaluator.rules.allowRewrite, false);
+      strictEqual(editor.gameEvaluator.rules.allowSuicide, true);
+      strictEqual(editor.gameEvaluator.rules.koRule, KoRule.SituationalSuperKo);
+      strictEqual(editor.gameEvaluator.rules.komi, 7.5);
       strictEqual(editor.gameState.player, Color.Black);
 
       assert(editor.kifu.info.komi == null);
@@ -68,31 +68,37 @@ describe('Editor object', () => {
       const kifu = Kifu.fromSGF('(;SZ[19]RU[Japanese]HA[3]KM[0]AB[ab][ba][bb])');
       editor.loadKifu(kifu);
 
-      strictEqual(editor.gameRules.komi, 0);
+      strictEqual(editor.gameEvaluator.rules.komi, 0);
       deepStrictEqual(editor.gameState.position.get(0, 1), Color.Black);
       deepStrictEqual(editor.gameState.position.get(1, 0), Color.Black);
       deepStrictEqual(editor.gameState.position.get(1, 1), Color.Black);
       strictEqual(editor.gameState.player, Color.White);
 
       strictEqual(editor.kifu.info.handicap, 3);
+
+      editor.loadKifu(Kifu.fromSGF('(;SZ[9]RU[GOE])'));
+
+      strictEqual(editor.gameEvaluator.rules.komi, 7.5);
+      strictEqual(editor.kifu.info.rules, 'GOE');
+      strictEqual(editor.kifu.info.boardSize, 9);
+      deepStrictEqual(editor.gameState.position.get(0, 1), Color.Empty);
+      deepStrictEqual(editor.gameState.position.get(1, 0), Color.Empty);
+      deepStrictEqual(editor.gameState.position.get(1, 1), Color.Empty);
     });
 
     it('Player is correctly set, when HA property is present', () => {
-      const editor1 = new Editor();
-      editor1.loadKifu(Kifu.fromSGF('(;HA[0])'));
-      strictEqual(editor1.gameState.player, Color.Black);
+      const editor = new Editor();
+      editor.loadKifu(Kifu.fromSGF('(;HA[0])'));
+      strictEqual(editor.gameState.player, Color.Black);
 
-      const editor2 = new Editor();
-      editor2.loadKifu(Kifu.fromSGF('(;HA[1]PL[W])'));
-      strictEqual(editor2.gameState.player, Color.White);
+      editor.loadKifu(Kifu.fromSGF('(;HA[1]PL[W])'));
+      strictEqual(editor.gameState.player, Color.White);
 
-      const editor3 = new Editor();
-      editor3.loadKifu(Kifu.fromSGF('(;HA[2])'));
-      strictEqual(editor3.gameState.player, Color.White);
+      editor.loadKifu(Kifu.fromSGF('(;HA[2])'));
+      strictEqual(editor.gameState.player, Color.White);
 
-      const editor4 = new Editor();
-      editor4.loadKifu(Kifu.fromSGF('(;HA[3]PL[B])'));
-      strictEqual(editor4.gameState.player, Color.Black);
+      editor.loadKifu(Kifu.fromSGF('(;HA[3]PL[B])'));
+      strictEqual(editor.gameState.player, Color.Black);
     });
   });
 
@@ -428,6 +434,76 @@ describe('Editor object', () => {
       strictEqual(editor.currentNode.comment, 'bar');
       assert(!editor.previousMatch((node) => !!node.comment));
       strictEqual(editor.currentNode, editor.kifu.root);
+    });
+  });
+
+  describe('Query methods', () => {
+    it('Simple checking of move validity', () => {
+      const editor = new Editor();
+      const kifu = Kifu.fromSGF('(;SZ[9];B[ab];W[ba])');
+      editor.loadKifu(kifu);
+      editor.last();
+
+      assert(!editor.isValidMove(0, 1));
+      assert(!editor.isValidMove(1, 0));
+      assert(!editor.isValidMove(0, -1));
+      assert(!editor.isValidMove(-1, 0));
+      assert(!editor.isValidMove(0, 9));
+      assert(!editor.isValidMove(9, 0));
+      assert(editor.isValidMove(0, 0));
+      strictEqual(editor.gameState.position.get(0, 0), Color.Empty);
+    });
+
+    it('Validation of ko works', () => {
+      const editor = new Editor();
+      const kifu = Kifu.fromSGF('(;SZ[9]AB[ab][ba][cb]AW[ac][bd][cc];B[bc];W[bb];B[ff];W[gg])');
+      editor.loadKifu(kifu);
+      editor.next();
+      editor.next();
+
+      assert(!editor.isValidMove(1, 2)); // invalid capture
+
+      // ko threat
+      editor.next();
+      editor.next();
+
+      assert(editor.isValidMove(1, 2)); // black captures
+    });
+
+    it('Suicide impossible in Japanese rules, but allowed in Ing rules', () => {
+      const editor = new Editor();
+
+      editor.loadKifu(Kifu.fromSGF('(;SZ[9]AB[ab]AW[ac][ba][bb])'));
+      assert(!editor.isValidMove(0, 0));
+
+      editor.loadKifu(Kifu.fromSGF('(;SZ[9]RU[GOE]AB[ab]AW[ac][ba][bb])'));
+      assert(editor.isValidMove(0, 0));
+    });
+
+    it('Checking current node is root', () => {
+      const editor = new Editor();
+      const kifu = Kifu.fromSGF('(;SZ[9];B[ab];W[ba])');
+      editor.loadKifu(kifu);
+
+      assert(editor.isFirst());
+      editor.next();
+      assert(!editor.isFirst());
+      editor.previous();
+      assert(editor.isFirst());
+    });
+
+    it('Checking current node is leaf', () => {
+      const editor = new Editor();
+      const kifu = Kifu.fromSGF('(;SZ[9];B[ab];W[ba])');
+      editor.loadKifu(kifu);
+
+      assert(!editor.isLast());
+      editor.next();
+      assert(!editor.isLast());
+      editor.next();
+      assert(editor.isLast());
+      editor.previous();
+      assert(!editor.isLast());
     });
   });
 });

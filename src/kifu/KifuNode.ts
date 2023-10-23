@@ -1,5 +1,5 @@
 import { SGFPropertiesBag, SGFPropertyDescriptors, SGFProperties } from '../sgf';
-import { Color, Field, Move, Point } from '../types';
+import { Color, Field, Move, Point, Vector } from '../types';
 import { kifuInfoSGFPropertyDescriptors } from './kifuInfoSGFPropertyDescriptors';
 import { kifuNodeSGFPropertyDescriptors } from './kifuNodeSGFPropertyDescriptors';
 
@@ -15,7 +15,7 @@ export enum MarkupType {
   Triangle = 'TR',
 }
 
-export interface PointMarkup {
+export interface PointMarkup extends Point {
   readonly type:
     | MarkupType.Circle
     | MarkupType.Dim
@@ -23,22 +23,14 @@ export interface PointMarkup {
     | MarkupType.Square
     | MarkupType.Triangle
     | MarkupType.XMark;
-  readonly x: number;
-  readonly y: number;
 }
 
-export interface LineMarkup {
+export interface LineMarkup extends Vector {
   readonly type: MarkupType.Arrow | MarkupType.Line;
-  readonly x1: number;
-  readonly y1: number;
-  readonly x2: number;
-  readonly y2: number;
 }
 
-export interface LabelMarkup {
+export interface LabelMarkup extends Point {
   readonly type: MarkupType.Label;
-  readonly x: number;
-  readonly y: number;
   readonly text: string;
 }
 
@@ -69,7 +61,7 @@ export class KifuNode extends SGFPropertiesBag {
    *
    * This shouldn't be mutated directly, you can replace it or use methods `removeSetupAt` or `addSetup`.
    */
-  setup: Field[] = [];
+  setup: ReadonlyArray<Field> = [];
 
   /**
    * Sets player turn - next move should be played with this color.
@@ -84,7 +76,7 @@ export class KifuNode extends SGFPropertiesBag {
    *
    * This shouldn't be mutated directly, you can replace it or use methods `removeMarkup`, `removeMarkupAt` or `addMarkup`.
    */
-  markup: Markup[] = [];
+  markup: ReadonlyArray<Markup> = [];
 
   /**
    * View only part of the board.
@@ -140,49 +132,96 @@ export class KifuNode extends SGFPropertiesBag {
   properties: KifuNodeCustomProperties = {};
 
   /**
-   * Removes setup at given point.
-   *
-   * @param point
-   */
-  removeSetupAt(point: Point) {
-    this.setup = this.setup.filter((s) => s.x !== point.x || s.y !== point.y);
-  }
-
-  /**
    * Adds setup at given point.
    */
-  addSetup(point: Point, color: Color) {
-    this.removeSetupAt(point);
-    this.setup.push({
-      ...point,
-      c: color,
-    }); // Setup is cloned in `this.removeSetupAt`, so this is not mutation.
+  addSetup(setup: Field | Field[]) {
+    if (!Array.isArray(setup)) {
+      setup = [setup];
+    }
+
+    const newSetupList = [...this.setup];
+    setup.forEach((s) => {
+      const existingSetupIndex = newSetupList.findIndex((s2) => s2.x === s.x && s2.y === s.y);
+      if (existingSetupIndex !== -1) {
+        newSetupList.splice(existingSetupIndex, 1);
+      }
+      newSetupList.push(s);
+    });
+    this.setup = newSetupList;
   }
 
   /**
-   * Removes specified markup. Markup objects are compared shallowly.
-   *
-   * @param markup
+   * Removes setup at given point.
    */
-  removeMarkup<T extends Markup>(markup: T) {
-    const markupKeys = Object.keys(markup) as Array<keyof T>;
-    this.markup = this.markup.filter(
-      (m: any) => !markupKeys.every((key) => m[key] === markup[key]),
+  removeSetupAt(point: Point | Point[]) {
+    if (!Array.isArray(point)) {
+      point = [point];
+    }
+
+    this.setup = this.setup.filter(
+      (s) => !(point as Point[]).some((p) => p.x === s.x && p.y === s.y),
     );
   }
 
   /**
-   * Removes markup at given point. Line markup is not affected by this method.
+   * Adds specified markup. If markup already exist in the node, it won't be added. Markups are the same,
+   * if they have same properties. You can provide multiple markups at once.
    *
-   * @param point
+   * @example
+   * ```javascript
+   * const node = new KifuNode({
+   *   markup: [
+   *     { type: 'CR', x: 1, y: 1 }
+   *     { type: 'TR', x: 1, y: 1 }
+   *   ],
+   * });
+   *
+   * node.addMarkup([
+   *   { type: 'CR', x: 1, y: 1 },
+   *   { type: 'AR', x1: 1, y1: 1, x2: 2, y2: 2 },
+   * ]);
+   *
+   * console.log(node.markup); // [{ type: 'CR', x: 1, y: 1 }, { type: 'TR', x: 1, y: 1 }, { type: 'AR', x1: 1, y1: 1, x2: 2, y2: 2 }]
+   * ```
    */
-  removeMarkupAt(point: Point) {
-    this.markup = this.markup.filter((m) => !('x' in m) || m.x !== point.x || m.y !== point.y);
+  addMarkup(markup: Markup | Markup[]) {
+    if (!Array.isArray(markup)) {
+      markup = [markup];
+    }
+
+    const newMarkup = [...this.markup];
+    markup.forEach((m) => {
+      if (!newMarkup.some((m2) => compareMarkup(m, m2))) {
+        newMarkup.push(m);
+      }
+    });
+    this.markup = newMarkup;
   }
 
-  addMarkup(markup: Markup) {
-    this.removeMarkup(markup);
-    this.markup.push(markup); // Markup is cloned in `this.removeMarkup`, so this is not mutation.
+  /**
+   * Removes specified markup. Markup objects are compared shallowly.
+   */
+  removeMarkup(markup: Markup | Markup[]) {
+    if (!Array.isArray(markup)) {
+      markup = [markup];
+    }
+
+    this.markup = this.markup.filter(
+      (m) => !(markup as Markup[]).some((m2) => compareMarkup(m, m2)),
+    );
+  }
+
+  /**
+   * Removes markup at given point or vector.
+   */
+  removeMarkupAt(point: Point | Vector | (Point | Vector)[]) {
+    if (!Array.isArray(point)) {
+      point = [point];
+    }
+
+    this.markup = this.markup.filter(
+      (m) => !(point as (Point | Vector)[]).some((p) => comparePoints(p, m)),
+    );
   }
 
   override getPropertyDescriptors() {
@@ -237,9 +276,12 @@ export class KifuNode extends SGFPropertiesBag {
     return {
       set(node: KifuNode, values: string[]) {
         node.setup = node.setup.filter((s) => s.c !== color);
-        values.forEach((value) => {
-          node.addSetup(SGFPropertiesBag.parsePoint(value), color);
-        });
+        node.addSetup(
+          values.map((value) => ({
+            c: color,
+            ...SGFPropertiesBag.parsePoint(value),
+          })),
+        );
       },
       get(node: KifuNode) {
         const blackStones = node.setup.filter((s) => s.c === color);
@@ -252,12 +294,12 @@ export class KifuNode extends SGFPropertiesBag {
     return {
       set(node: KifuNode, values: string[]) {
         node.markup = node.markup.filter((m) => m.type !== type);
-        values.forEach((value) => {
-          node.addMarkup({
+        node.addMarkup(
+          values.map((value) => ({
             type,
             ...SGFPropertiesBag.parsePoint(value),
-          });
-        });
+          })),
+        );
       },
       get(node: KifuNode) {
         const markup = node.markup.filter((m) => m.type === type) as PointMarkup[];
@@ -270,12 +312,12 @@ export class KifuNode extends SGFPropertiesBag {
     return {
       set(node: KifuNode, values: string[]) {
         node.markup = node.markup.filter((m) => m.type !== type);
-        values.forEach((value) => {
-          node.addMarkup({
+        node.addMarkup(
+          values.map((value) => ({
             type,
             ...SGFPropertiesBag.parseVector(value),
-          });
-        });
+          })),
+        );
       },
       get(node: KifuNode) {
         const lineMarkup = node.markup.filter((m) => m.type === type) as LineMarkup[];
@@ -288,13 +330,13 @@ export class KifuNode extends SGFPropertiesBag {
     return {
       set(node: KifuNode, values: string[]) {
         node.markup = node.markup.filter((m) => m.type !== type);
-        values.forEach((value) => {
-          node.addMarkup({
+        node.addMarkup(
+          values.map((value) => ({
             type,
             text: value.substring(3),
             ...SGFPropertiesBag.parsePoint(value),
-          });
-        });
+          })),
+        );
       },
       get(node: KifuNode) {
         const labelMarkup = node.markup.filter((m) => m.type === type) as LabelMarkup[];
@@ -302,4 +344,26 @@ export class KifuNode extends SGFPropertiesBag {
       },
     };
   }
+}
+
+function compareMarkup(a: Markup, b: Markup) {
+  if (a.type !== b.type) {
+    return false;
+  }
+
+  const keys = Object.keys(b);
+  return keys.every((key) => (a as any)[key] === (b as any)[key]);
+}
+
+function comparePoints(a: Point | Vector, b: Point | Vector) {
+  const isAPoint = 'x' in a;
+  const isBPoint = 'x' in b;
+
+  if (isAPoint && isBPoint) {
+    return a.x === b.x && a.y === b.y;
+  } else if (!isAPoint && !isBPoint) {
+    return a.x1 === b.x1 && a.y1 === b.y1 && a.x2 === b.x2 && a.y2 === b.y2;
+  }
+
+  return false;
 }

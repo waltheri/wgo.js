@@ -1,6 +1,6 @@
-import { Position, Rules, sgfRulesMap, GameState } from '../game';
+import { Position, Rules, sgfRulesMap, GameState, GameEvaluator } from '../game';
 import { Kifu, KifuInfo, KifuNode, KifuPath, Markup } from '../kifu';
-import { BoardSize, Color, Move } from '../types';
+import { BoardSize, Color, Field, Move, Point, Vector } from '../types';
 import { EventEmitter } from '../utils/EventEmitter';
 import { EditorConfig, defaultEditorConfig } from './EditorConfig';
 import { EditorHistoryManager, EditorHistoryOperation } from './EditorHistoryManager';
@@ -29,20 +29,26 @@ interface EditorEvents {
  * - nextFork
  * - previousFork
  * - goTo
- * - find
- * - findLast
+ * - nextMatch
+ * - previousMatch
  *
  * Methods for querying:
+ * - isFirst
+ * - isLast
  * - isValidMove
  *
  * Methods for editing:
  * - play
  * - pass
  * - setPlayer
- * - setMove
  * - addNode
  * - removeNode
  * - shiftNode
+ * - addSetup
+ * - addMarkup
+ * - removeMarkupAt
+ * - updateCurrentNode
+ * - updateGameInfo
  *
  * History:
  * - undo
@@ -74,9 +80,10 @@ export class Editor extends EventEmitter<EditorEvents> {
   gameState: GameState;
 
   /**
-   * Rules of go game. It is used to determine komi and other game rules.
+   * Go game evaluator class. It contains method to check validity of move according to the rules. In future
+   * there could be score calculation methods too.
    */
-  gameRules: Rules;
+  gameEvaluator: GameEvaluator;
 
   /**
    * Currently visited node of the kifu (go game record). It shouldn't be modified directly, use editor methods
@@ -137,7 +144,7 @@ export class Editor extends EventEmitter<EditorEvents> {
 
     this.kifu = kifu;
     this.kifu.info.komi = rules.komi;
-    this.#initGame(size, rules);
+    this.#initGame(rules);
   }
 
   /**
@@ -162,7 +169,7 @@ export class Editor extends EventEmitter<EditorEvents> {
       rules = { ...rules, komi: kifu.info.komi };
     }
 
-    this.#initGame(kifu.info.boardSize, rules);
+    this.#initGame(rules);
   }
 
   /**
@@ -353,10 +360,28 @@ export class Editor extends EventEmitter<EditorEvents> {
   }
 
   /**
+   * Returns true, if current node is the root node.
+   */
+  isFirst() {
+    return this.currentNode === this.kifu.root;
+  }
+
+  /**
+   * Returns true, if current node is the last/leaf node - there are no children nodes.
+   */
+  isLast() {
+    return !this.currentNode.children.length;
+  }
+
+  /**
    * Returns true, if specified move can be played in the current position with given rule set.
    */
   isValidMove(x: number, y: number): boolean {
-    throw new Error('Not implemented');
+    return this.gameEvaluator.isValidMove(
+      this.gameState.position,
+      { x, y, c: this.gameState.player },
+      this.#previousGameStates,
+    );
   }
 
   /**
@@ -364,76 +389,191 @@ export class Editor extends EventEmitter<EditorEvents> {
    * will be created witch specified move and then editor will move to it.
    */
   play(x: number, y: number) {
-    throw new Error('Not implemented');
+    const node = KifuNode.fromJS({ move: { x, y, c: this.gameState.player } });
+    const nodeIndex = this.currentNode.children.push(node);
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.next(nodeIndex - 1);
   }
 
   /**
    * Pass with current player. This will create new kifu node with pass move and editor will move to it.
    */
-  pass() {}
+  pass() {
+    const node = KifuNode.fromJS({ move: { c: this.gameState.player } });
+    const nodeIndex = this.currentNode.children.push(node);
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.next(nodeIndex - 1);
+  }
+
+  /**
+   * Set move on specified coordinates. Current position will be changed, but no new node is created. This is useful
+   * for editing existing move. When adding new move, use `play()` method instead, which creates a new node.
+   */
+  setMove(x: number, y: number, color: Color.Black | Color.White) {
+    this.currentNode.move = { x, y, c: color };
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.#reExecuteCurrentNode();
+  }
 
   /**
    * Set current player. This will not affect current position, but it will affect next move.
    */
-  setPlayer(color: Color) {
-    throw new Error('Not implemented');
-  }
-
-  /**
-   * Set move on specified coordinates. This will change current position - no new node is created.
-   */
-  setMove(x: number, y: number, color: Color) {
-    throw new Error('Not implemented');
+  setPlayer(color: Color.Black | Color.White) {
+    this.gameState.player = color;
+    this.currentNode.player = color;
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.emit('gameStateChange', { gameState: this.gameState });
   }
 
   /**
    * Adds new node to the current node and moves to it. If node is not specified, new empty node is created.
    */
   addNode(node = new KifuNode(), index?: number) {
-    throw new Error('Not implemented');
+    if (index != null) {
+      this.currentNode.children.splice(index, 0, node);
+      this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+      this.next(index);
+    } else {
+      const nodeIndex = this.currentNode.children.push(node);
+      this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+      this.next(nodeIndex);
+    }
   }
 
   /**
    * Removes node from the kifu. It must be children of the current node.
    */
   removeNode(node: number | KifuNode) {
-    throw new Error('Not implemented');
+    const index = this.#getNextNodeIndex(this.currentNode, node);
+    this.currentNode.children.splice(index, 1);
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.emit('nodeChange', { node: this.currentNode });
   }
 
   /**
    * Shifts node to the specified index within current node children.
    */
   shiftNode(node: KifuNode, index: number) {
-    throw new Error('Not implemented');
+    const nodeIndex = this.#getNextNodeIndex(this.currentNode, node);
+    this.currentNode.children.splice(nodeIndex, 1);
+    this.currentNode.children.splice(index, 0, node);
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.emit('nodeChange', { node: this.currentNode });
   }
 
   /**
-   * Adds markup to the current node.
+   * Add setup. If current node contains a move, then new node will be created with the setup and editor will move
+   * to it. Otherwise setup will be added to the current node. This aims to prevent invalid node, where setup is mixed
+   * with a move. If you want for some reason to create such node, you can use general `updateCurrentNode` method.
+   *
+   * Editor doesn't contain method for removing setup - with this method you can set black stone, white stone, or empty
+   * field. So removing a setup is not strictly necessary, however Kifu node supports it with `removeSetupAt` method.
+   * So this is once again possible with `updateCurrentNode` method.
+   *
+   * @example
+   * ```javascript
+   * const editor = new Editor();
+   * editor.loadKifu(Kifu.fromSGF('(;FF[4]SZ[19];B[cd];W[ef])'));
+   *
+   * function toggleBlackStone(x, y) {
+   *   if (editor.gameState.position.get(x, y) === Color.Black) {
+   *     editor.addSetup({ x, y, c: Color.Empty });
+   *   } else {
+   *     editor.addSetup({ x, y, c: Color.Black });
+   *   }
+   * }
+   *
+   * editor.next(); // Go to move 1
+   * toggleBlackStone(2, 3); // This will remove black stone from 2, 3
+   * toggleBlackStone(2, 3); // This will add it back
+   * ```
+   */
+  addSetup(setup: Field) {
+    if (this.currentNode.move) {
+      const node = KifuNode.fromJS({ setup: [setup] });
+      const nodeIndex = this.currentNode.children.push(node);
+      this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+      this.next(nodeIndex - 1);
+    } else {
+      this.currentNode.addSetup(setup);
+      this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+      this.emit('gameStateChange', { gameState: this.gameState });
+    }
+  }
+
+  /**
+   * Adds markup to the current node. If markup exists on given coordinates, it will be replaced. So this method
+   * doesn't support multiple markups on the same coordinates in contrast to `KifuNode.addMarkup` which supports it.
+   * If you want to add multiple markups, you can use general `updateCurrentNode` method.
+   *
+   * This also apply on line markup - in that case if start and end points match, line markup will be replaced.
+   *
+   * @example
+   * ```javascript
+   * const editor = new Editor();
+   * editor.loadKifu(Kifu.fromSGF('(;FF[4]SZ[19];B[cd];W[ef])'));
+   *
+   * function toggleMarkup(x, y, type) {
+   *   if (editor.currentNode.markup.some(m => x === m.x && y === m.y && m.type === type)) {
+   *     editor.removeMarkupAt({ x, y });
+   *   } else {
+   *     editor.addMarkup({ x, y, type });
+   *   }
+   * }
+   *
+   * toggleTriangle(2, 3, Markup.Triangle); // Adds triangle
+   * toggleTriangle(2, 3, Markup.Square); // Change it to square
+   * toggleTriangle(2, 3, Markup.Square); // Clear markup
+   * ```
    */
   addMarkup(markup: Markup) {
-    throw new Error('Not implemented');
+    this.currentNode.removeMarkupAt(markup);
+    this.currentNode.addMarkup(markup);
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.emit('nodeChange', { node: this.currentNode });
   }
 
   /**
    * Removes markup from the current node. Markup object doesn't have to be the same instance as the one added,
    * this method removes markup with the same coordinates and type.
    */
-  removeMarkup(markup: Markup) {
-    throw new Error('Not implemented');
+  removeMarkupAt(markup: Point | Vector) {
+    this.currentNode.removeMarkupAt(markup);
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.emit('nodeChange', { node: this.currentNode });
   }
 
   /**
-   * Calls updater function with current node as an argument. This creates record in history, so changes can be undone.
+   * Update current node. This method allow general updates of the current kifu node. You can specify updater function,
+   * which can arbitrarily change current node passed in the argument, or you can specify partial kifu node
+   * object, whose properties will be assigned to the current node. This creates record in history, so changes can be undone.
    */
-  updateCurrentNode(updater: (node: KifuNode) => void) {
-    throw new Error('Not implemented');
+  updateCurrentNode(update: ((node: KifuNode) => void) | Partial<KifuNode>) {
+    if (typeof update === 'function') {
+      update(this.currentNode);
+    } else {
+      Object.assign(this.currentNode, update);
+    }
+
+    this.#historyManager.addNodeUpdateOperation(this.currentPath, this.currentNode);
+    this.#reExecuteCurrentNode();
   }
 
   /**
-   * Calls updater function with kifu info as an argument. This creates record in history, so changes can be undone.
+   * Update game information. This method allow general updates of the kifu info. You can specify updater function,
+   * which can arbitrarily change info passed in the argument, or you can specify partial kifu info object, whose
+   * properties will be assigned to it. This creates record in history, so changes can be undone.
+   *
+   * This method cannot be used to change board size or rules, use `newGame` method instead.
    */
-  updateGameInfo(updater: (info: KifuInfo) => void) {
-    throw new Error('Not implemented');
+  updateGameInfo(update: ((info: KifuInfo) => void) | Partial<KifuInfo>) {
+    if (typeof update === 'function') {
+      update(this.kifu.info);
+    } else {
+      Object.assign(this.kifu.info, update);
+    }
+
+    this.emit('gameInfoChange', { gameInfo: this.kifu.info });
   }
 
   /**
@@ -472,21 +612,28 @@ export class Editor extends EventEmitter<EditorEvents> {
     return this.#historyManager.canRedo();
   }
 
-  #initGame(size?: BoardSize, rules?: Rules) {
+  #initGame(rules?: Rules) {
     this.#previousGameStates = [];
     this.#previousNodes = [];
     this.#historyManager = new EditorHistoryManager(this.kifu);
     this.#visitedVariations = new Map();
+    this.gameEvaluator = new GameEvaluator(rules || this.config.defaultRules);
 
-    this.gameState = new GameState(
-      typeof size === 'object' ? new Position(size.cols, size.rows) : new Position(size),
-    );
-    this.gameRules = rules || this.config.defaultRules;
     this.currentNode = this.kifu.root;
     this.currentPath = {
       moveNumber: 0,
       variations: [],
     };
+
+    this.#initGameState();
+    this.emit('init');
+  }
+
+  #initGameState() {
+    const size = this.kifu.info.boardSize;
+    this.gameState = new GameState(
+      typeof size === 'object' ? new Position(size.cols, size.rows) : new Position(size),
+    );
 
     if (this.kifu.info.handicap && this.kifu.info.handicap > 1) {
       // Special case - if handicap is set and larger than 1, we need to set player to white
@@ -494,7 +641,6 @@ export class Editor extends EventEmitter<EditorEvents> {
     }
 
     this.#updateGameFromNode();
-    this.emit('init');
   }
 
   #updateGameFromNode() {
@@ -534,15 +680,18 @@ export class Editor extends EventEmitter<EditorEvents> {
   #applyChanges(operation: EditorHistoryOperation) {
     switch (operation.type) {
       case 'init':
-        this.first();
         Object.assign(this.kifu.root, operation.node);
         Object.assign(this.kifu.info, operation.gameInfo);
-        this.emit('init');
+        this.first();
         break;
       case 'node':
+        const node = this.kifu.getNode(operation.path);
+        if (!node) {
+          // Should not happen, but doing nothing is probably better than crash.
+          return;
+        }
+        Object.assign(node, operation.node);
         this.goTo(operation.path);
-        Object.assign(this.currentNode, operation.node);
-        this.emit('nodeChange', { node: this.currentNode });
         break;
       case 'gameInfo':
         Object.assign(this.kifu.info, operation.gameInfo);
@@ -618,17 +767,18 @@ export class Editor extends EventEmitter<EditorEvents> {
     return true;
   }
 
+  #reExecuteCurrentNode() {
+    if (this.currentNode === this.kifu.root) {
+      this.#initGameState();
+      this.#emitNodeChangeEvents();
+    } else {
+      this.#executePreviousNode();
+      this.next();
+    }
+  }
+
   #emitNodeChangeEvents() {
     this.emit('nodeChange', { node: this.currentNode });
     this.emit('gameStateChange', { gameState: this.gameState });
   }
-
-  /*#emitGameChangeEvents() {
-    this.emit('positionChange', { position: this.game.position });
-    this.emit('playerChange', { player: this.game.player });
-    this.emit('capturesChange', {
-      blackCaptures: this.game.blackCaptures,
-      whiteCaptures: this.game.whiteCaptures,
-    });
-  }*/
 }
