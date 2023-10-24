@@ -1,4 +1,4 @@
-import EventEmitter from '../utils/EventEmitter';
+import { EventEmitter } from '../utils/EventEmitter';
 import BoardObject from './BoardObject';
 import { Point } from '../types';
 
@@ -12,7 +12,7 @@ export interface Board extends EventEmitter {
   setDimensions(width: number, height: number): void;
   getViewport(): BoardViewport;
   setViewport(viewport: BoardViewport): void;
-  getSize(): { x: number, y: number };
+  getSize(): { x: number; y: number };
   setSize(size: number): void;
   setSize(sizeX: number, sizeY: number): void;
   getCoordinates(): boolean;

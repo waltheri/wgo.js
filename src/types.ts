@@ -82,3 +82,10 @@ export type Move =
     };
 
 export type BoardSize = number | { readonly cols: number; readonly rows: number };
+
+/**
+ * Marks provided type as a class, so its values will have different syntax highlighting in VSCode - same as namespace.
+ */
+export type Namespace<T> = {
+  new (): never;
+} & T;

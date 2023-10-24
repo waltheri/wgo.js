@@ -505,5 +505,43 @@ describe('Editor object', () => {
       editor.previous();
       assert(!editor.isLast());
     });
+
+    it('Getting variations - basic', () => {
+      const editor = new Editor();
+      const kifu = Kifu.fromSGF(
+        '(;SZ[9]C[bar](;B[aa]C[baz];W[bb](;C[foo])(;B[ba]))(;B[bb];W[aa]))',
+      );
+      editor.loadKifu(kifu);
+
+      deepStrictEqual(editor.getVariations(), kifu.root.children);
+
+      editor.next();
+      deepStrictEqual(editor.getVariations(), kifu.root.children[0].children);
+
+      editor.next();
+      deepStrictEqual(editor.getVariations(), [kifu.root.children[0].children[0].children[1]]);
+
+      editor.next();
+      deepStrictEqual(editor.getVariations(), []);
+    });
+
+    it('Getting variations - current', () => {
+      const editor = new Editor();
+      const kifu = Kifu.fromSGF(
+        '(;SZ[9]C[bar]ST[1](;B[aa]C[baz];W[bb](;C[foo])(;B[ba]))(;B[bb];W[aa]))',
+      );
+      editor.loadKifu(kifu);
+
+      deepStrictEqual(editor.getVariations(), []);
+
+      editor.next();
+      deepStrictEqual(editor.getVariations(), kifu.root.children);
+
+      editor.next();
+      deepStrictEqual(editor.getVariations(), kifu.root.children[0].children);
+
+      editor.next();
+      deepStrictEqual(editor.getVariations(), [kifu.root.children[0].children[0].children[1]]);
+    });
   });
 });

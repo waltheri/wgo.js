@@ -6,7 +6,7 @@ import { EditorConfig, defaultEditorConfig } from './EditorConfig';
 import { EditorHistoryManager, EditorHistoryOperation } from './EditorHistoryManager';
 
 interface EditorEvents {
-  init: Record<string, never>;
+  gameLoad: Record<string, never>;
   nodeChange: { node: KifuNode };
   gameInfoChange: { gameInfo: KifuInfo };
   gameStateChange: { gameState: GameState };
@@ -36,6 +36,7 @@ interface EditorEvents {
  * - isFirst
  * - isLast
  * - isValidMove
+ * - getVariations
  *
  * Methods for editing:
  * - play
@@ -385,6 +386,27 @@ export class Editor extends EventEmitter<EditorEvents> {
   }
 
   /**
+   * Returns variations for current node. This method differs from simple `this.currentNode.children` in fact,
+   * that returns only nodes with moves. Also it takes into account kifu `variationsStyle` property. If `variationsStyle.currentNode`
+   * is true, then siblings of the current node are returned instead of children.
+   */
+  getVariations(): KifuNode[] {
+    const { variationsStyle = {} } = this.kifu.info;
+    let variations: KifuNode[];
+
+    if (variationsStyle.currentNode) {
+      if (!this.#previousNodes.length) {
+        return [];
+      }
+      variations = this.#previousNodes[this.#previousNodes.length - 1].children;
+    } else {
+      variations = this.currentNode.children;
+    }
+
+    return variations.filter((node) => node.move);
+  }
+
+  /**
    * Play specified move. Move will be played by current player and executed even if invalid. Technically new kifu node
    * will be created witch specified move and then editor will move to it.
    */
@@ -626,7 +648,8 @@ export class Editor extends EventEmitter<EditorEvents> {
     };
 
     this.#initGameState();
-    this.emit('init');
+    this.emit('gameLoad');
+    this.#emitNodeChangeEvents();
   }
 
   #initGameState() {
@@ -778,7 +801,7 @@ export class Editor extends EventEmitter<EditorEvents> {
   }
 
   #emitNodeChangeEvents() {
-    this.emit('nodeChange', { node: this.currentNode });
     this.emit('gameStateChange', { gameState: this.gameState });
+    this.emit('nodeChange', { node: this.currentNode });
   }
 }

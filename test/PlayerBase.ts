@@ -1,3 +1,5 @@
+export {};
+
 /*import { deepEqual, equal, ok as assert } from 'assert';
 import { Color } from '../src/types';
 import KifuNode from '../src/kifu/KifuNode';

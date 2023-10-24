@@ -1,4 +1,4 @@
-import EventEmitter from '../utils/EventEmitter';
+import { EventEmitter } from '../utils/EventEmitter';
 import makeConfig, { PartialRecursive } from '../utils/makeConfig';
 import { Board, BoardBaseConfig, BoardViewport } from './types';
 import { BoardObject } from '.';
@@ -61,9 +61,7 @@ export default class BoardBase extends EventEmitter implements Board {
    *
    * @param boardObject
    */
-  updateObject(boardObject: BoardObject | BoardObject[]) {
-
-  }
+  updateObject(boardObject: BoardObject | BoardObject[]) {}
 
   /**
    * Remove board object. Main function for removing graphics on the board.
@@ -154,16 +152,16 @@ export default class BoardBase extends EventEmitter implements Board {
   }
 
   /**
-	 * Get currently visible section of the board.
-	 */
+   * Get currently visible section of the board.
+   */
 
   getViewport() {
     return this.config.viewport;
   }
 
   /**
-	 * Set section of the board to be displayed.
-	 */
+   * Set section of the board to be displayed.
+   */
   setViewport(viewport: BoardViewport) {
     this.config.viewport = viewport;
   }

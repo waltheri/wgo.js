@@ -39,7 +39,7 @@ export default class SVGBoard extends BoardBase {
     [key: string]: SVGElement;
   } = {};
 
-  constructor (elem: HTMLElement, config: PartialRecursive<SVGBoardConfig> = {}) {
+  constructor(elem: HTMLElement, config: PartialRecursive<SVGBoardConfig> = {}) {
     super(elem, makeConfig(svgBoardDefaultConfig, config));
 
     this.boardElement = document.createElement('div');
@@ -121,7 +121,9 @@ export default class SVGBoard extends BoardBase {
     const size = this.getSize();
     this.contexts[SVG_GRID_MASK] = document.createElementNS(SVG_NS, 'mask');
     this.contexts[SVG_GRID_MASK].id = generateId('mask');
-    this.contexts[SVG_GRID_MASK].innerHTML = `<rect x="-0.5" y="-0.5" width="${size.x}" height="${size.y}" fill="white" />`;
+    this.contexts[
+      SVG_GRID_MASK
+    ].innerHTML = `<rect x="-0.5" y="-0.5" width="${size.x}" height="${size.y}" fill="white" />`;
     this.svgElement.appendChild(this.contexts[SVG_GRID_MASK]);
 
     // create grid
@@ -161,7 +163,7 @@ export default class SVGBoard extends BoardBase {
 
     // prepare map for objects and add all objects
     this.objectsElementMap = new Map();
-    this.objects.forEach(boardObject => this.createObjectElements(boardObject));
+    this.objects.forEach((boardObject) => this.createObjectElements(boardObject));
   }
 
   addObject(boardObject: SVGBoardObject | SVGBoardObject[]) {
@@ -182,7 +184,9 @@ export default class SVGBoard extends BoardBase {
     const handler = this.getObjectHandler(boardObject);
 
     // create element or elements and add them to the svg
-    const elem = handler.createElement(this.config, (def: SVGElement) => this.defsElement.appendChild(def));
+    const elem = handler.createElement(this.config, (def: SVGElement) =>
+      this.defsElement.appendChild(def),
+    );
     let elements: BoardObjectSVGElements;
 
     if (elem instanceof SVGElement) {
@@ -191,13 +195,15 @@ export default class SVGBoard extends BoardBase {
       elements = elem;
     }
     this.objectsElementMap.set(boardObject, elements);
-    Object.keys(elements).forEach(key => this.contexts[key].appendChild(elements[key]));
+    Object.keys(elements).forEach((key) => this.contexts[key].appendChild(elements[key]));
 
     handler.updateElement(elements, boardObject, this.config);
   }
 
   getObjectHandler(boardObject: SVGBoardObject) {
-    return 'handler' in boardObject ? boardObject.handler : this.config.theme.drawHandlers[boardObject.type];
+    return 'handler' in boardObject
+      ? boardObject.handler
+      : this.config.theme.drawHandlers[boardObject.type];
   }
 
   removeObject(boardObject: SVGBoardObject | SVGBoardObject[]) {
@@ -207,7 +213,7 @@ export default class SVGBoard extends BoardBase {
       const elements = this.objectsElementMap.get(boardObject);
       if (elements) {
         this.objectsElementMap.delete(boardObject);
-        Object.keys(elements).forEach(key => this.contexts[key].removeChild(elements[key]));
+        Object.keys(elements).forEach((key) => this.contexts[key].removeChild(elements[key]));
       }
     }
   }
@@ -248,13 +254,36 @@ export default class SVGBoard extends BoardBase {
       },
     } = theme;
 
-    this.top = viewport.top - 0.5 - (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) - marginSize;
-    this.left = viewport.left - 0.5 - (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) - marginSize;
+    this.top =
+      viewport.top -
+      0.5 -
+      (coordinates && coordinatesTop && !viewport.top ? fontSize : 0) -
+      marginSize;
+    this.left =
+      viewport.left -
+      0.5 -
+      (coordinates && coordinatesLeft && !viewport.left ? fontSize : 0) -
+      marginSize;
     // tslint:disable-next-line:max-line-length
-    this.bottom = size.y - 0.5 - this.top - viewport.bottom + (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) + marginSize;
+    this.bottom =
+      size.y -
+      0.5 -
+      this.top -
+      viewport.bottom +
+      (coordinates && coordinatesBottom && !viewport.bottom ? fontSize : 0) +
+      marginSize;
     // tslint:disable-next-line:max-line-length
-    this.right = size.x - 0.5 - this.left - viewport.right + (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) + marginSize;
-    this.svgElement.setAttribute('viewBox', `${this.left} ${this.top} ${this.right} ${this.bottom}`);
+    this.right =
+      size.x -
+      0.5 -
+      this.left -
+      viewport.right +
+      (coordinates && coordinatesRight && !viewport.right ? fontSize : 0) +
+      marginSize;
+    this.svgElement.setAttribute(
+      'viewBox',
+      `${this.left} ${this.top} ${this.right} ${this.bottom}`,
+    );
   }
 
   setSize(sizeX: number = 19, sizeY = sizeX) {
@@ -269,7 +298,7 @@ export default class SVGBoard extends BoardBase {
     this.setViewport();
   }
 
-  on(type: string, callback: (event: UIEvent, point: Point) => void) {
+  on(type: string, callback: (event: Event & { point?: Point }) => void) {
     super.on(type, callback);
     this.registerBoardListener(type);
   }
@@ -278,7 +307,7 @@ export default class SVGBoard extends BoardBase {
     this.touchArea.addEventListener(type, (evt) => {
       if ((evt as any).layerX != null) {
         const pos = this.getRelativeCoordinates((evt as any).layerX, (evt as any).layerY);
-        this.emit(type, evt, pos);
+        this.emit(type, { ...evt, point: pos });
       } else {
         this.emit(type, evt);
       }
@@ -288,11 +317,11 @@ export default class SVGBoard extends BoardBase {
   getRelativeCoordinates(absoluteX: number, absoluteY: number) {
     // new hopefully better translation of coordinates
 
-    const fieldWidth = this.touchArea.offsetWidth / (this.right);
-    const fieldHeight = this.touchArea.offsetHeight / (this.bottom);
+    const fieldWidth = this.touchArea.offsetWidth / this.right;
+    const fieldHeight = this.touchArea.offsetHeight / this.bottom;
 
-    const x = Math.round((absoluteX / fieldWidth + this.left));
-    const y = Math.round((absoluteY / fieldHeight + this.top));
+    const x = Math.round(absoluteX / fieldWidth + this.left);
+    const y = Math.round(absoluteY / fieldHeight + this.top);
     const size = this.getSize();
 
     if (x < 0 || x >= size.x || y < 0 || y >= size.y) {
